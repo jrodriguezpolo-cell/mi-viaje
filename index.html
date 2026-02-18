@@ -1050,41 +1050,17 @@ NO incluyas URLs.`;
 
 /* ------------------------ Save / Load (simple) ----------------------- */
 
-/* ------------------------ Backups (manual + restore) ------------------------ */
-const MV_BACKUPS_KEY = "miviaje.backups";
-const MV_BACKUPS_MAX = 20;
+/* ------------------- Manual Backups (list + restore) ------------------- */
+const MANUAL_BACKUPS_KEY = "miviaje.backups";
+const MANUAL_BACKUPS_MAX = 20;
 
-function mvDeepClone(obj) {
+function deepCloneJSON(obj) {
   try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
 }
 
-function mvGuessDeviceName() {
-  // Prefer user-defined device name if present
+function getManualBackups() {
   try {
-    const v = (localStorage.getItem(DEVICE_KEY) || "").trim();
-    if (v) return v;
-  } catch {}
-  const ua = navigator.userAgent || "";
-  const plat = navigator.platform || "";
-  let device = "Dispositivo";
-  if (/iPad/i.test(ua)) device = "iPad";
-  else if (/iPhone/i.test(ua)) device = "iPhone";
-  else if (/Android/i.test(ua)) device = "Android";
-  else if (/Mac/i.test(plat)) device = "Mac";
-  else if (/Win/i.test(plat)) device = "Windows";
-
-  let browser = "";
-  if (/CriOS|Chrome/i.test(ua)) browser = "Chrome";
-  else if (/FxiOS|Firefox/i.test(ua)) browser = "Firefox";
-  else if (/Safari/i.test(ua) && !/Chrome|CriOS|Edg/i.test(ua)) browser = "Safari";
-  else if (/Edg/i.test(ua)) browser = "Edge";
-
-  return browser ? `${device} · ${browser}` : device;
-}
-
-function mvGetBackups() {
-  try {
-    const raw = localStorage.getItem(MV_BACKUPS_KEY);
+    const raw = localStorage.getItem(MANUAL_BACKUPS_KEY);
     const arr = raw ? JSON.parse(raw) : [];
     return Array.isArray(arr) ? arr : [];
   } catch {
@@ -1092,52 +1068,54 @@ function mvGetBackups() {
   }
 }
 
-function mvSaveBackups(list) {
-  localStorage.setItem(MV_BACKUPS_KEY, JSON.stringify(list));
+function saveManualBackups(list) {
+  localStorage.setItem(MANUAL_BACKUPS_KEY, JSON.stringify(list));
 }
 
-function mvEnforceBackupLimit(list) {
+function enforceManualBackupLimit(list) {
   const sorted = list.slice().sort((a, b) => {
     const ta = Date.parse(a?.savedAt || "") || 0;
     const tb = Date.parse(b?.savedAt || "") || 0;
     return ta - tb;
   });
-  return sorted.slice(Math.max(0, sorted.length - MV_BACKUPS_MAX));
+  return sorted.slice(Math.max(0, sorted.length - MANUAL_BACKUPS_MAX));
 }
 
-function mvCreateBackupEntry(opts = {}) {
-  const snapshot = mvDeepClone(state);
+function createManualBackupEntry(label = "") {
+  const snapshot = deepCloneJSON(state);
   if (!snapshot) {
     alert("No se pudo crear el backup (estado no serializable).");
     return null;
   }
+  const now = new Date();
+  const deviceName = (typeof getDeviceName === "function") ? getDeviceName(false) : "Dispositivo";
   const entry = {
     id: String(Date.now()) + "-" + Math.random().toString(16).slice(2),
-    savedAt: new Date().toISOString(),
-    deviceName: opts.deviceName || mvGuessDeviceName(),
+    savedAt: now.toISOString(),
+    deviceName: label ? `${deviceName} ${label}` : deviceName,
     state: snapshot
   };
-  const list = mvGetBackups();
+  const list = getManualBackups();
   list.push(entry);
-  mvSaveBackups(mvEnforceBackupLimit(list));
+  saveManualBackups(enforceManualBackupLimit(list));
   return entry;
 }
 
-function mvFormatBackupLabel(b) {
+function formatManualBackupLabel(b) {
   const iso = b?.savedAt || "";
   let pretty = iso;
   try { pretty = new Date(iso).toLocaleString(); } catch {}
   return `${pretty} · ${b?.deviceName || "Dispositivo"}`;
 }
 
-function mvRenderBackupList() {
-  const box = $("backupList");
+function renderManualBackupList() {
+  const box = $("manualBackupList");
   if (!box) return;
 
-  const list = mvGetBackups().slice().sort((a, b) => {
+  const list = getManualBackups().slice().sort((a, b) => {
     const ta = Date.parse(a?.savedAt || "") || 0;
     const tb = Date.parse(b?.savedAt || "") || 0;
-    return tb - ta;
+    return tb - ta; // newest first
   });
 
   if (!list.length) {
@@ -1148,44 +1126,39 @@ function mvRenderBackupList() {
   box.innerHTML = list.map((b) => `
     <div class="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-white">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${escapeHtml(mvFormatBackupLabel(b))}</div>
-        <div class="text-xs text-slate-500 truncate">${escapeHtml(b.id || "")}</div>
+        <div class="text-sm font-semibold truncate">${escapeHtml(formatManualBackupLabel(b))}</div>
       </div>
-      <button class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-backup-restore="${escapeHtml(b.id)}">
+      <button class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-manual-backup-restore="${escapeHtml(b.id || "")}">
         Restaurar
       </button>
     </div>
   `).join("");
 
-  box.querySelectorAll("[data-backup-restore]").forEach(btn => {
+  box.querySelectorAll("[data-manual-backup-restore]").forEach(btn => {
     btn.onclick = () => {
-      const id = btn.getAttribute("data-backup-restore");
+      const id = btn.getAttribute("data-manual-backup-restore");
       if (!id) return;
-      mvRestoreBackupById(id);
+      restoreManualBackupById(id);
     };
   });
 }
 
-function mvRestoreBackupById(id) {
-  const list = mvGetBackups();
+function restoreManualBackupById(id) {
+  const list = getManualBackups();
   const b = list.find(x => x && x.id === id);
   if (!b || !b.state) return;
 
   const ok = confirm(
-    "Vas a restaurar este backup:
-
-" +
-    mvFormatBackupLabel(b) +
-    "
-
-Se hará un backup automático del estado actual antes de restaurar."
+    "Vas a restaurar este backup:\n\n" +
+    formatManualBackupLabel(b) +
+    "\n\nSe hará un backup automático del estado actual antes de restaurar."
   );
   if (!ok) return;
 
-  // Seguridad: backup automático del estado actual
-  mvCreateBackupEntry({ deviceName: `${mvGuessDeviceName()} (auto pre-restore)` });
+  // Safety: automatic backup of current state
+  createManualBackupEntry("(auto pre-restore)");
 
-  const next = mvDeepClone(b.state);
+  const next = deepCloneJSON(b.state);
   if (!next) {
     alert("No se pudo restaurar (backup corrupto o no serializable).");
     return;
@@ -1197,7 +1170,8 @@ Se hará un backup automático del estado actual antes de restaurar."
   renderAll();
   alert("Backup restaurado.");
 }
-/* ---------------------- /Backups (manual + restore) ---------------------- */
+/* ----------------- /Manual Backups (list + restore) ------------------ */
+
 
 function openTripsModal() {
   const html = `
@@ -1209,7 +1183,6 @@ function openTripsModal() {
       <button id="restoreBackup" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold">Restaurar último backup</button>
       <button id="setDeviceName" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold">Nombre del iPhone</button>
     </div>
-
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <button id="doExport" class="tap px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">Guardar (descargar .json)</button>
       <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer">
@@ -1223,20 +1196,20 @@ function openTripsModal() {
         Crear backup ahora
       </button>
       <div class="mt-2 text-xs text-slate-500">
-        Los backups se guardan en este dispositivo (localStorage). Máximo 20.
+        Los backups se guardan en este dispositivo (localStorage). Máximo ${MANUAL_BACKUPS_MAX}.
       </div>
     </div>
 
     <div class="mt-5">
       <div class="font-extrabold mb-2">Backups (local)</div>
-      <div id="backupList" class="space-y-2"></div>
+      <div id="manualBackupList" class="space-y-2"></div>
     </div>
 
-    <div class="mt-6">
+    <div class="mt-4">
       <div class="font-extrabold mb-2">Mis viajes (local)</div>
       <div id="tripList" class="space-y-2"></div>
     </div>
-`;
+  `;
   showModal("Guardar / Cargar", html, []);
   setTimeout(() => {
     const refresh = () => {
@@ -1253,6 +1226,18 @@ function openTripsModal() {
 
     $("doExport").onclick = () => { exportTrip(); refresh(); };
     $("doImport").onchange = async (ev) => { await importTrip(ev); refresh(); };
+
+    const bn = $("doBackupNow");
+    if (bn) {
+      bn.onclick = () => {
+        const entry = createManualBackupEntry();
+        if (entry) {
+          renderManualBackupList();
+          alert("Backup creado.");
+        }
+      };
+    }
+
     $("restoreBackup").onclick = () => {
       const b = getLatestBackup();
       if (!b) return alert("No hay backups todavía.");
@@ -1269,18 +1254,6 @@ function openTripsModal() {
       refresh();
     };
 
-    const bn = $("doBackupNow");
-    if (bn) {
-      bn.onclick = () => {
-        const entry = mvCreateBackupEntry();
-        if (entry) {
-          mvRenderBackupList();
-          alert("Backup creado.");
-        }
-      };
-    }
-
-    mvRenderBackupList();
     renderTripList();
     refresh();
   }, 0);
