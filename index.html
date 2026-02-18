@@ -283,6 +283,37 @@
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+
+/* ------------------------ Trip name (modal + export/import) ------------------------ */
+const TRIP_NAME_KEY = "miviaje.tripName";
+
+function getTripName() {
+  const v = localStorage.getItem(TRIP_NAME_KEY) || "";
+  return String(v || "").trim();
+}
+
+function setTripName(v) {
+  localStorage.setItem(TRIP_NAME_KEY, String(v || "").trim());
+}
+
+function sanitizeFileBaseName(name) {
+  name = String(name || "").trim();
+  if (!name) return "MI_VIAJE";
+
+  try {
+    name = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  } catch {}
+
+  name = name.replace(/\s+/g, "_");
+  name = name.replace(/[^A-Za-z0-9_-]/g, "");
+  return name || "MI_VIAJE";
+}
+
+function yyyyMmDdToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+/* ---------------------- /Trip name (modal + export/import) ---------------------- */
 const cap1 = (s) => {
   s = String(s ?? "").trim();
   if (!s) return "";
@@ -1199,7 +1230,21 @@ function openTripsModal() {
         </button>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      
+      <div class="mb-4">
+        <label class="text-xs text-slate-600">Nombre del viaje</label>
+        <input id="tripNameInput"
+               class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+               placeholder="Ej: Nueva York"
+               autocapitalize="words"
+               autocomplete="off"
+               spellcheck="false">
+        <div class="mt-1 text-xs text-slate-500">
+          Se usará para el nombre del archivo y para identificar “Mis viajes”.
+        </div>
+      </div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button id="doExport" class="tap px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
           Guardar (descargar .json)
         </button>
@@ -1343,45 +1388,27 @@ ${label}`)) return;
 }
 
 function exportTrip() {
-  const deviceName = getDeviceName(true);
+  const rawName = getTripName();
+  const tripName = rawName || "MI_VIAJE";
 
-  // Warn if this device has synced more recently than it has exported
-  const meta = getMeta();
-  if (meta.lastSyncAt) {
-    const lastSync = Date.parse(meta.lastSyncAt);
-    const lastExport = meta.lastSavedAt ? Date.parse(meta.lastSavedAt) : 0;
-    if (Number.isFinite(lastSync) && lastSync && lastExport < lastSync) {
-      const when = new Date(meta.lastSyncAt).toLocaleString();
-      const from = meta.lastSyncedFromDevice ? ` (desde ${meta.lastSyncedFromDevice})` : "";
-      const ok = confirm(`Ojo: este iPhone sincronizó el ${when}${from}, pero aún no ha exportado después.\n\nSi exportas ahora desde un teléfono que no ha importado lo último, podrías sobrescribir el archivo maestro de iCloud.\n\n¿Quieres exportar igualmente?`);
-      if (!ok) return;
-    }
-  }
-
-  const name = prompt("Nombre para este viaje (ej: Japón 2026):", "MI VIAJE");
-  const savedAtNow = new Date().toISOString();
-  const payload = {
-    schemaVersion: 1,
-    name: name || "MI VIAJE",
-    savedAt: savedAtNow,
-    deviceName,
-    state
-  };
+  const payload = { name: tripName, savedAt: new Date().toISOString(), state };
 
   // save to local list
   const list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
   list.unshift(payload);
-  localStorage.setItem("miviaje.trip.list", JSON.stringify(list.slice(0,30)));
+  localStorage.setItem("miviaje.trip.list", JSON.stringify(list.slice(0, 30)));
 
-  // update meta
-  setMeta({ lastSavedAt: savedAtNow, lastSavedByDevice: deviceName });
+  const base = sanitizeFileBaseName(tripName);
+  const date = yyyyMmDdToday();
+  const filename = `${base}_${date}.json`;
 
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = (payload.name.replace(/[^\w\-]+/g,"_") || "mi_viaje") + ".json";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
+
   renderTripList();
 }
 
@@ -1394,6 +1421,11 @@ async function importTrip(ev) {
 
   try {
     const payload = JSON.parse(txt);
+    if (payload && typeof payload.name === "string" && payload.name.trim()) {
+      setTripName(payload.name.trim());
+      const tn = $("tripNameInput");
+      if (tn) tn.value = payload.name.trim();
+    }
     if (!payload || !payload.state) throw new Error("Formato no válido (falta state)");
 
     const meta = getMeta();
