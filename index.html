@@ -555,6 +555,8 @@ function loadState() {
 }
 function saveState() {
   localStorage.setItem(LS_KEY, JSON.stringify(state));
+  // Update sync meta so "lastSavedAt" reflects real editing time (not only export/import).
+  try { setMeta({ lastSavedAt: new Date().toISOString() }); } catch {}
 }
 function curScenario() { return state.scenarios[state.scenario]; }
 
