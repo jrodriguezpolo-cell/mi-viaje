@@ -1371,7 +1371,27 @@ function openTripsModal() {
       const lastExport = meta.lastSavedAt ? new Date(meta.lastSavedAt).toLocaleString() : "—";
       const dev = getDeviceName(false);
       const el = $("syncStatus");
-      if (el) el.textContent = `Este iPhone: ${dev} • Última sincronización: ${lastSync}${fromDev} • Última exportación: ${lastExport}`;
+      if (el) {
+        const ro = (localStorage.getItem("miviaje.readonly") === "1") ? "ON" : "OFF";
+        const exp = meta.lastExportAt || meta.lastSavedAt || null;
+        const imp = meta.lastImportAt || meta.lastSyncAt || null;
+        const expS = exp ? new Date(exp).toLocaleString() : "Nunca";
+        const impS = imp ? new Date(imp).toLocaleString() : "Nunca";
+        el.innerHTML = `
+          <div class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50">
+            <div class="text-[12px] leading-4 text-slate-700">
+              <div class="flex flex-wrap gap-x-3 gap-y-1">
+                <span><b>Dispositivo:</b> ${escapeHtml(dev)}</span>
+                <span><b>Lectura:</b> ${escapeHtml(ro)}</span>
+              </div>
+              <div class="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                <span><b>Últ. export:</b> ${escapeHtml(expS)}</span>
+                <span><b>Últ. import:</b> ${escapeHtml(impS)}${fromDev ? escapeHtml(fromDev) : ""}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       const b = getLatestManualBackup() || getLatestBackup();
       const rb = $("restoreBackup");
       if (rb) {
@@ -1490,6 +1510,16 @@ function exportTrip() {
   // 4) Export payload + filename
   const payload = { name: finalName, savedAt: new Date().toISOString(), state };
 
+// Sync meta (for multi-device safety)
+try {
+  setMeta({
+    deviceName: getDeviceName(false),
+    lastExportAt: payload.savedAt,
+    lastSavedAt: payload.savedAt
+  });
+} catch {}
+
+
   const list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
   list.unshift(payload);
   localStorage.setItem("miviaje.trip.list", JSON.stringify(list.slice(0, 30)));
@@ -1539,8 +1569,8 @@ async function importTrip(ev) {
       const who = payload.deviceName ? `\n(Exportado por: ${payload.deviceName})` : "";
       const ok = confirm(`Vas a cargar una versión MÁS ANTIGUA.\n\nArchivo: ${r}${who}\nTu iPhone: ${l}\n\n¿Quieres continuar?`);
       if (!ok) { input.value = ""; return; }
-    } else if (!payload.savedAt) {
-      const ok = confirm("El archivo no incluye fecha (savedAt). ¿Quieres importar igualmente?");
+    } else if (!payload.savedAt || !Number.isFinite(remoteAt)) {
+      const ok = confirm("La fecha del archivo es DESCONOCIDA (savedAt inválido). ¿Quieres importar igualmente?");
       if (!ok) { input.value = ""; return; }
     }
 
@@ -1554,9 +1584,11 @@ async function importTrip(ev) {
 
     const now = new Date().toISOString();
     setMeta({
+      lastImportAt: now,
       lastSyncAt: now,
       lastSyncedFromDevice: payload.deviceName || "Archivo",
-      lastImportedSavedAt: payload.savedAt || null
+      lastImportedSavedAt: payload.savedAt || null,
+      lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
     });
 
     alert("Viaje cargado.");
