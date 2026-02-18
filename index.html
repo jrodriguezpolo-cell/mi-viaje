@@ -1185,42 +1185,92 @@ function restoreManualBackupById(id) {
 
 function openTripsModal() {
   const html = `
-    <div class="text-sm text-slate-600 mb-3">
-      Guardar / Cargar en el dispositivo. También se guarda una copia local para listar viajes.
-    </div>
     <div id="syncStatus" class="text-xs text-slate-500 mb-3"></div>
-    <div class="flex items-center justify-between gap-2 mb-3">
-      <button id="restoreBackup" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold">Restaurar último backup</button>
-      <button id="setDeviceName" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold">Nombre del iPhone</button>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <button id="doExport" class="tap px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">Guardar (descargar .json)</button>
-      <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer">
-        Cargar (importar .json)
-        <input id="doImport" type="file" accept="application/json" class="hidden">
-      </label>
-    </div>
 
-    <div class="mt-3">
-      <button id="doBackupNow" class="tap w-full px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
-        Crear backup ahora
-      </button>
-      <div class="mt-2 text-xs text-slate-500">
-        Los backups se guardan en este dispositivo (localStorage). Máximo ${MANUAL_BACKUPS_MAX}.
+    <!-- 1) BLOQUE PRINCIPAL — ARCHIVOS -->
+    <div class="bg-white border border-slate-200 rounded-3xl p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div>
+          <div class="font-extrabold text-base">Archivos</div>
+          <div class="text-xs text-slate-500">Exporta o importa el viaje en .json</div>
+        </div>
+        <button id="setDeviceName" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold whitespace-nowrap">
+          Nombre del iPhone
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button id="doExport" class="tap px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+          Guardar (descargar .json)
+        </button>
+
+        <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer">
+          Cargar (importar .json)
+          <input id="doImport" type="file" accept="application/json" class="hidden">
+        </label>
+      </div>
+
+      <!-- Acordeón: Mis viajes (local) — cerrado por defecto -->
+      <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
+        <button data-acc="modalTrips" class="w-full tap flex items-center justify-between px-4 py-4">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex w-9 h-9 rounded-2xl bg-slate-50 items-center justify-center">🗂️</span>
+            <div class="text-left">
+              <div class="font-extrabold">Mis viajes (local)</div>
+              <div class="text-xs text-slate-500">Lista local del dispositivo</div>
+            </div>
+          </div>
+          <span class="accIcon text-slate-400 text-xl">▾</span>
+        </button>
+        <div data-acc-body="modalTrips" class="px-4 pb-4 hidden">
+          <div id="tripList" class="space-y-2 max-h-[35vh] overflow-y-auto pr-1 overscroll-contain ios-scroll"></div>
+        </div>
       </div>
     </div>
 
-    <div class="mt-5">
-      <div class="font-extrabold mb-2">Backups (local)</div>
-      <div id="manualBackupList" class="space-y-2"></div>
-    </div>
+    <!-- 2) BLOQUE SEGURIDAD — BACKUPS -->
+    <div class="mt-4 bg-white border border-slate-200 rounded-3xl p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <div class="font-extrabold text-base">Seguridad</div>
+          <div class="text-xs text-slate-500">Backups locales para restauración</div>
+        </div>
+        <button id="restoreBackup" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold whitespace-nowrap">
+          Restaurar último backup
+        </button>
+      </div>
 
-    <div class="mt-4">
-      <div class="font-extrabold mb-2">Mis viajes (local)</div>
-      <div id="tripList" class="space-y-2"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button id="doBackupNow" class="tap px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+          Crear backup ahora
+        </button>
+
+        <div class="text-xs text-slate-500 sm:text-right self-center">
+          Máximo ${MANUAL_BACKUPS_MAX} backups en este dispositivo
+        </div>
+      </div>
+
+      <!-- Acordeón: Backups (local) — cerrado por defecto -->
+      <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
+        <button data-acc="modalBackups" class="w-full tap flex items-center justify-between px-4 py-4">
+          <div class="flex items-center gap-3">
+            <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🛡️</span>
+            <div class="text-left">
+              <div class="font-extrabold">Backups (local)</div>
+              <div class="text-xs text-slate-500">Restaurables desde este dispositivo</div>
+            </div>
+          </div>
+          <span class="accIcon text-slate-400 text-xl">▾</span>
+        </button>
+        <div data-acc-body="modalBackups" class="px-4 pb-4 hidden">
+          <div id="manualBackupList" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1 overscroll-contain ios-scroll"></div>
+        </div>
+      </div>
     </div>
   `;
+
   showModal("Guardar / Cargar", html, []);
+
   setTimeout(() => {
     const refresh = () => {
       const meta = getMeta();
@@ -1228,10 +1278,14 @@ function openTripsModal() {
       const fromDev = meta.lastSyncedFromDevice ? ` • desde ${meta.lastSyncedFromDevice}` : "";
       const lastExport = meta.lastSavedAt ? new Date(meta.lastSavedAt).toLocaleString() : "—";
       const dev = getDeviceName(false);
-      $("syncStatus").textContent = `Este iPhone: ${dev} • Última sincronización: ${lastSync}${fromDev} • Última exportación: ${lastExport}`;
+      const el = $("syncStatus");
+      if (el) el.textContent = `Este iPhone: ${dev} • Última sincronización: ${lastSync}${fromDev} • Última exportación: ${lastExport}`;
       const b = getLatestManualBackup() || getLatestBackup();
-      $("restoreBackup").disabled = !b;
-      $("restoreBackup").classList.toggle("opacity-40", !b);
+      const rb = $("restoreBackup");
+      if (rb) {
+        rb.disabled = !b;
+        rb.classList.toggle("opacity-40", !b);
+      }
     };
 
     $("doExport").onclick = () => { exportTrip(); refresh(); };
@@ -1260,6 +1314,7 @@ ${label}`)) return;
       renderAll();
       alert("Backup restaurado.");
     };
+
     $("setDeviceName").onclick = () => {
       const v = prompt("Nombre de este iPhone:", (localStorage.getItem(DEVICE_KEY) || "").trim());
       if (v && v.trim()) localStorage.setItem(DEVICE_KEY, v.trim());
@@ -1269,6 +1324,21 @@ ${label}`)) return;
     renderManualBackupList();
     renderTripList();
     refresh();
+
+    // Acordeón scoped al modal
+    const root = $("modalBody");
+    if (root) {
+      root.querySelectorAll("[data-acc]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.getAttribute("data-acc");
+          const body = root.querySelector(`[data-acc-body="${key}"]`);
+          if (!body) return;
+          body.classList.toggle("hidden");
+          const icon = btn.querySelector(".accIcon");
+          if (icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+        });
+      });
+    }
   }, 0);
 }
 
