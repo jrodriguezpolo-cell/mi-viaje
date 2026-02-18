@@ -207,6 +207,9 @@
             <span class="accIcon text-slate-400 text-xl">▾</span>
           </button>
           <div data-acc-body="timeline" class="px-5 pb-5 hidden">
+            <div class="flex justify-end mb-3">
+              <button id="timelineNext" class="tap px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold">Próximo</button>
+            </div>
             <div id="timelineList" class="space-y-2"></div>
           </div>
         </div>
@@ -279,6 +282,38 @@ const parseMoney = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 const uniq = (arr) => Array.from(new Set(arr.map(x => String(x).trim()).filter(Boolean)));
+
+
+/* -------------------------- Timeline jump --------------------------- */
+function todayYMD() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function scrollToNextTimelineItem() {
+  // Ensure the timeline accordion is open so the scroll makes sense to the user
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+
+  const t = todayYMD();
+  const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
+  const next = els.find(el => {
+    const d = el.getAttribute("data-date") || "9999-99-99";
+    return d !== "9999-99-99" && d >= t;
+  });
+
+  if (next) {
+    next.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else {
+    alert("No hay próximos eventos con fecha a partir de hoy.");
+  }
+}
 
 function showModal(title, bodyHtml, footerButtons = []) {
   $("modalTitle").textContent = title;
@@ -693,7 +728,7 @@ function renderTimeline() {
   }
 
   box.innerHTML = items.map(it => `
-    <div class="flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3 bg-slate-50">
+    <div class="timelineItem flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3 bg-slate-50" data-date="${escapeHtml(it.date)}">
       <div>
         <div class="text-xs text-slate-500">${it.date === "9999-99-99" ? "Sin fecha" : it.date} • ${it.type}</div>
         <div class="font-semibold">${escapeHtml(it.title)}</div>
@@ -1231,6 +1266,9 @@ $("aiPick").addEventListener("click", openAIPickModal);
 $("aiGenerate").addEventListener("click", generateAIGuide);
 
 $("btnTrips").addEventListener("click", openTripsModal);
+const __tn = $("timelineNext");
+if (__tn) __tn.addEventListener("click", scrollToNextTimelineItem);
+
 
 
 
