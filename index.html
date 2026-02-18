@@ -314,6 +314,53 @@ function yyyyMmDdToday() {
   return new Date().toISOString().slice(0, 10);
 }
 /* ---------------------- /Trip name (modal + export/import) ---------------------- */
+
+/* ------------------------ Trip name mode (minimal) ------------------------ */
+const LS_TRIP_NAME_MODE = "miviaje.tripNameMode"; // "auto" | "custom"
+
+function getTripNameMode() {
+  const v = (localStorage.getItem(LS_TRIP_NAME_MODE) || "").trim();
+  return (v === "custom" || v === "auto") ? v : "auto";
+}
+function setTripNameMode(mode) {
+  const m = (mode === "custom") ? "custom" : "auto";
+  localStorage.setItem(LS_TRIP_NAME_MODE, m);
+}
+
+/**
+ * "Destino actual" recalculado:
+ * - Prioridad: último leg.to no vacío del escenario actual
+ * - Fallback: primer stay.city no vacío
+ * - Fallback: primer activity.city no vacío
+ * - Fallback final: "MI_VIAJE"
+ */
+function computeAutoTripName() {
+  try {
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if (sc) {
+      const legs = Array.isArray(sc.legs) ? sc.legs : [];
+      for (let i = legs.length - 1; i >= 0; i--) {
+        const to = String(legs[i]?.to || "").trim();
+        if (to) return to;
+      }
+
+      const stays = Array.isArray(sc.stays) ? sc.stays : [];
+      for (let i = 0; i < stays.length; i++) {
+        const city = String(stays[i]?.city || "").trim();
+        if (city) return city;
+      }
+
+      const acts = Array.isArray(sc.activities) ? sc.activities : [];
+      for (let i = 0; i < acts.length; i++) {
+        const city = String(acts[i]?.city || "").trim();
+        if (city) return city;
+      }
+    }
+  } catch {}
+  return "MI_VIAJE";
+}
+/* ---------------------- /Trip name mode (minimal) ---------------------- */
+
 const cap1 = (s) => {
   s = String(s ?? "").trim();
   if (!s) return "";
@@ -1388,117 +1435,53 @@ ${label}`)) return;
 }
 
 function exportTrip() {
-  // --- helpers (local-only; no cambia estructura global) ---
-  function safeGetTripName() {
-    try {
-      if (typeof getTripName === "function") return String(getTripName() || "").trim();
-    } catch {}
-    try { return String(localStorage.getItem("miviaje.tripName") || "").trim(); } catch {}
-    return "";
+  // 1) Resolver sugerencia base
+  const inputEl = document.getElementById("tripNameInput");
+  const nameFromInput = inputEl ? String(inputEl.value || "").trim() : "";
+  const nameFromLS = (typeof getTripName === "function")
+    ? String(getTripName() || "").trim()
+    : String(localStorage.getItem("miviaje.tripName") || "").trim();
+
+  const mode = (typeof getTripNameMode === "function") ? getTripNameMode() : "auto";
+  const autoName = (typeof computeAutoTripName === "function") ? computeAutoTripName() : "MI_VIAJE";
+
+  // Si el modo es auto, preferimos el destino actual; si es custom, preferimos el nombre guardado
+  let baseName = nameFromInput || (mode === "custom" ? (nameFromLS || autoName) : autoName) || "MI_VIAJE";
+
+  // 2) Pedir/confirmar nombre (siempre)
+  const entered = prompt("Nombre para este viaje (ej: Japón 2026):", baseName);
+  if (entered === null) return;
+
+  const raw = String(entered || "").trim();
+
+  // 3) Determinar nombre final + modo
+  let finalName = raw;
+  if (!finalName) {
+    // vacío => auto (recalcular)
+    finalName = autoName || "MI_VIAJE";
+    try { localStorage.setItem("miviaje.tripNameMode", "auto"); } catch {}
+  } else {
+    // Si el usuario deja el sugerido automático, lo tratamos como auto; si lo cambia, custom
+    const shouldBeAuto = (finalName === autoName);
+    try { localStorage.setItem("miviaje.tripNameMode", shouldBeAuto ? "auto" : "custom"); } catch {}
   }
 
-  function getDefaultCity() {
-    // 1) Si en otros builds existe state.logistics.arrivalCity, lo respetamos
-    try {
-      const v = state && state.logistics && state.logistics.arrivalCity;
-      if (v && String(v).trim()) return String(v).trim();
-    } catch {}
-
-    // 2) En ESTE build: último destino del plan (legs[].to)
-    try {
-      const sc = curScenario();
-      const legs = (sc && sc.legs) ? sc.legs : [];
-      for (let i = legs.length - 1; i >= 0; i--) {
-        const to = String(legs[i]?.to || "").trim();
-        if (to) return to;
-      }
-    } catch {}
-
-    // 3) Fallback: primera ciudad de alojamiento
-    try {
-      const sc = curScenario();
-      const stays = (sc && sc.stays) ? sc.stays : [];
-      for (let i = 0; i < stays.length; i++) {
-        const city = String(stays[i]?.city || "").trim();
-        if (city) return city;
-      }
-    } catch {}
-
-    // 4) Fallback: primera ciudad de actividad
-    try {
-      const sc = curScenario();
-      const acts = (sc && sc.activities) ? sc.activities : [];
-      for (let i = 0; i < acts.length; i++) {
-        const city = String(acts[i]?.city || "").trim();
-        if (city) return city;
-      }
-    } catch {}
-
-    return "";
-  }
-
-  function pad2(n) { return String(n).padStart(2, "0"); }
-  function localYYYYMMDD() {
-    const d = new Date();
-    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
-  }
-
-  function fallbackSanitizeFileBaseName(s) {
-    s = String(s || "").trim();
-    // espacios -> _
-    s = s.replace(/\s+/g, "_");
-    // cualquier cosa rara -> _
-    s = s.replace(/[^\w\-]+/g, "_");
-    // colapsa ___
-    s = s.replace(/_+/g, "_");
-    // recorta _
-    s = s.replace(/^_+|_+$/g, "");
-    return s || "MI_VIAJE";
-  }
-
-  function sanitizeBaseName(name) {
-    try {
-      if (typeof sanitizeFileBaseName === "function") {
-        const out = String(sanitizeFileBaseName(name) || "").trim();
-        return out || "MI_VIAJE";
-      }
-    } catch {}
-    return fallbackSanitizeFileBaseName(name);
-  }
-
-  // --- 1) nombre base (prioridad) ---
-  const tripNameInputEl = document.getElementById("tripNameInput");
-  const nameFromInput = tripNameInputEl ? String(tripNameInputEl.value || "").trim() : "";
-  const nameFromLS = safeGetTripName();
-  const defaultCity = getDefaultCity();
-
-  let baseName = nameFromInput || nameFromLS || defaultCity || "MI_VIAJE";
-
-  // --- 2) prompt pre-rellenado ---
-  const userName = prompt("Nombre para este viaje (ej: Japón 2026):", baseName);
-
-  // --- 3) cancel -> no exportar ---
-  if (userName === null) return;
-
-  // --- 4) acepta -> resolve nombre final ---
-  let finalName = String(userName || "").trim();
-  if (!finalName) finalName = defaultCity || "MI_VIAJE";
-
-  // persistir nombre final
+  // Persistir nombre y reflejar en input
   try { localStorage.setItem("miviaje.tripName", finalName); } catch {}
+  if (inputEl) inputEl.value = finalName;
 
-  // actualizar input si existe
-  if (tripNameInputEl) tripNameInputEl.value = finalName;
-
-  // --- 5) export payload + filename ---
+  // 4) Export payload + filename
   const payload = { name: finalName, savedAt: new Date().toISOString(), state };
 
-  // save to local list (NO tocar backups)
   const list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
   list.unshift(payload);
   localStorage.setItem("miviaje.trip.list", JSON.stringify(list.slice(0, 30)));
 
-  const filename = sanitizeBaseName(finalName) + "_" + localYYYYMMDD() + ".json";
+  const base = (typeof sanitizeFileBaseName === "function")
+    ? sanitizeFileBaseName(finalName)
+    : (finalName.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
+  const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
+  const filename = `${base}_${date}.json`;
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
