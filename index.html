@@ -1108,6 +1108,14 @@ function formatManualBackupLabel(b) {
   return `${pretty} · ${b?.deviceName || "Dispositivo"}`;
 }
 
+
+function getLatestManualBackup() {
+  const list = getManualBackups();
+  if (!list.length) return null;
+  // pick newest by savedAt
+  return list.slice().sort((a,b) => (Date.parse(b.savedAt||"")||0) - (Date.parse(a.savedAt||"")||0))[0] || null;
+}
+
 function renderManualBackupList() {
   const box = $("manualBackupList");
   if (!box) return;
@@ -1219,7 +1227,7 @@ function openTripsModal() {
       const lastExport = meta.lastSavedAt ? new Date(meta.lastSavedAt).toLocaleString() : "—";
       const dev = getDeviceName(false);
       $("syncStatus").textContent = `Este iPhone: ${dev} • Última sincronización: ${lastSync}${fromDev} • Última exportación: ${lastExport}`;
-      const b = getLatestBackup();
+      const b = getLatestManualBackup() || getLatestBackup();
       $("restoreBackup").disabled = !b;
       $("restoreBackup").classList.toggle("opacity-40", !b);
     };
@@ -1239,9 +1247,11 @@ function openTripsModal() {
     }
 
     $("restoreBackup").onclick = () => {
-      const b = getLatestBackup();
+      const b = getLatestManualBackup() || getLatestBackup();
       if (!b) return alert("No hay backups todavía.");
-      if (!confirm(`¿Restaurar el último backup?\n${b.savedAt}\nMotivo: ${b.reason}`)) return;
+      const label = b.savedAt ? new Date(b.savedAt).toLocaleString() : "(sin fecha)";
+      if (!confirm(`¿Restaurar el último backup?
+${label}`)) return;
       state = b.state;
       saveState();
       closeModal();
@@ -1254,6 +1264,7 @@ function openTripsModal() {
       refresh();
     };
 
+    renderManualBackupList();
     renderTripList();
     refresh();
   }, 0);
