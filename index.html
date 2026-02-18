@@ -1130,6 +1130,24 @@ NO incluyas URLs.`;
   renderAIResults(sections);
 }
 
+/* ----------------------- Device name \(minimal\) ------------------------ */
+const LS_DEVICE_NAME = "miviaje.deviceName";
+
+function getDeviceName() {
+  const v = (localStorage.getItem(LS_DEVICE_NAME) || "").trim();
+  return v || "Este iPhone";
+}
+
+function setDeviceName(name) {
+  const v = String(name || "").trim();
+  if (v) localStorage.setItem(LS_DEVICE_NAME, v);
+  else localStorage.removeItem(LS_DEVICE_NAME); // vuelve al fallback
+  // Mantén meta.deviceName alineado (si usas meta)
+  if (typeof setMeta === "function") setMeta({ deviceName: getDeviceName() });
+}
+/* --------------------- /Device name \(minimal\) --------------------- */
+
+
 /* ------------------------ Save / Load (simple) ----------------------- */
 
 /* ------------------- Manual Backups (list + restore) ------------------- */
@@ -1513,10 +1531,13 @@ function exportTrip() {
   // 4) Export payload + filename
   const payload = { name: finalName, savedAt: new Date().toISOString(), state };
 
+  // Identidad de dispositivo
+  payload.deviceName = getDeviceName();
+
 // Sync meta (for multi-device safety)
 try {
   setMeta({
-    deviceName: getDeviceName(false),
+    deviceName: getDeviceName(),
     lastExportAt: payload.savedAt,
     lastSavedAt: payload.savedAt
   });
