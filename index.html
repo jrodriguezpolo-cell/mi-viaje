@@ -707,7 +707,6 @@ function renderActivities() {
 
 function renderTimeline() {
   const today = todayYMD();
-
   const box = $("timelineList");
   const sc = curScenario();
   const items = [];
@@ -730,7 +729,7 @@ function renderTimeline() {
   }
 
   box.innerHTML = items.map(it => `
-    <div class="timelineItem ${it.date < today ? "past" : it.date === today ? "today" : ""} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3 bg-slate-50" data-date="${escapeHtml(it.date)}">
+    <div class="timelineItem flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3 bg-slate-50" data-date="${escapeHtml(it.date)}">
       <div>
         <div class="text-xs text-slate-500">${it.date === "9999-99-99" ? "Sin fecha" : it.date} • ${it.type}</div>
         <div class="font-semibold">${escapeHtml(it.title)}</div>
