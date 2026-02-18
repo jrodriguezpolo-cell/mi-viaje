@@ -1397,20 +1397,40 @@ function exportTrip() {
     return "";
   }
 
-  function getArrivalCity() {
+  function getDefaultCity() {
+    // 1) Si en otros builds existe state.logistics.arrivalCity, lo respetamos
     try {
-      // Si en otros builds existe state.logistics.arrivalCity, lo respetamos
       const v = state && state.logistics && state.logistics.arrivalCity;
       if (v && String(v).trim()) return String(v).trim();
     } catch {}
 
-    // En ESTE build, la “llegada” real es el último destino del plan (legs[].to)
+    // 2) En ESTE build: último destino del plan (legs[].to)
     try {
       const sc = curScenario();
       const legs = (sc && sc.legs) ? sc.legs : [];
       for (let i = legs.length - 1; i >= 0; i--) {
         const to = String(legs[i]?.to || "").trim();
         if (to) return to;
+      }
+    } catch {}
+
+    // 3) Fallback: primera ciudad de alojamiento
+    try {
+      const sc = curScenario();
+      const stays = (sc && sc.stays) ? sc.stays : [];
+      for (let i = 0; i < stays.length; i++) {
+        const city = String(stays[i]?.city || "").trim();
+        if (city) return city;
+      }
+    } catch {}
+
+    // 4) Fallback: primera ciudad de actividad
+    try {
+      const sc = curScenario();
+      const acts = (sc && sc.activities) ? sc.activities : [];
+      for (let i = 0; i < acts.length; i++) {
+        const city = String(acts[i]?.city || "").trim();
+        if (city) return city;
       }
     } catch {}
 
@@ -1450,9 +1470,9 @@ function exportTrip() {
   const tripNameInputEl = document.getElementById("tripNameInput");
   const nameFromInput = tripNameInputEl ? String(tripNameInputEl.value || "").trim() : "";
   const nameFromLS = safeGetTripName();
-  const arrivalCity = getArrivalCity();
+  const defaultCity = getDefaultCity();
 
-  let baseName = nameFromInput || nameFromLS || arrivalCity || "MI_VIAJE";
+  let baseName = nameFromInput || nameFromLS || defaultCity || "MI_VIAJE";
 
   // --- 2) prompt pre-rellenado ---
   const userName = prompt("Nombre para este viaje (ej: Japón 2026):", baseName);
@@ -1462,7 +1482,7 @@ function exportTrip() {
 
   // --- 4) acepta -> resolve nombre final ---
   let finalName = String(userName || "").trim();
-  if (!finalName) finalName = arrivalCity || "MI_VIAJE";
+  if (!finalName) finalName = defaultCity || "MI_VIAJE";
 
   // persistir nombre final
   try { localStorage.setItem("miviaje.tripName", finalName); } catch {}
@@ -1470,7 +1490,7 @@ function exportTrip() {
   // actualizar input si existe
   if (tripNameInputEl) tripNameInputEl.value = finalName;
 
-  // --- 4/5) export payload + filename ---
+  // --- 5) export payload + filename ---
   const payload = { name: finalName, savedAt: new Date().toISOString(), state };
 
   // save to local list (NO tocar backups)
@@ -1489,6 +1509,7 @@ function exportTrip() {
 
   renderTripList();
 }
+
 
 
 
