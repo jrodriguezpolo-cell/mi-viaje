@@ -12,7 +12,16 @@
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     .safe-t { padding-top: max(env(safe-area-inset-top), 12px); }
     .tap { -webkit-tap-highlight-color: transparent; }
-  </style>
+  
+    /* Read-only mode */
+    body.readonly-mode button[disabled],
+    body.readonly-mode input[disabled],
+    body.readonly-mode select[disabled],
+    body.readonly-mode textarea[disabled]{
+      opacity: .55;
+      cursor: not-allowed;
+    }
+</style>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <!-- Top bar -->
@@ -29,6 +38,9 @@
       <div class="flex items-center gap-2">
         <button id="btnTrips" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">
           Guardar / Cargar
+        </button>
+        <button id="btnReadOnly" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" aria-pressed="false">
+          🔒 Modo lectura
         </button>
         <button id="btnKey" class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold">
           Cambiar clave
@@ -286,7 +298,58 @@ $("modalBackdrop").addEventListener("click", closeModal);
 
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
-const LS_KEY_GEMINI = "miviaje.gemini.key";
+const LS_KEY_GEMINI = "miviaje\.gemini\.key";
+
+/* --------------------------- Read-only mode -------------------------- */
+const LS_KEY_READONLY = "miviaje.readonly";
+function isReadOnly() { return localStorage.getItem(LS_KEY_READONLY) === "1"; }
+
+function setReadOnly(on) {
+  localStorage.setItem(LS_KEY_READONLY, on ? "1" : "0");
+  applyReadOnlyMode();
+}
+
+function applyReadOnlyMode() {
+  const on = isReadOnly();
+
+  // body class
+  document.body.classList.toggle("readonly-mode", on);
+
+  // Toggle button label
+  const btn = $("btnReadOnly");
+  if (btn) {
+    btn.textContent = on ? "🔓 Editar" : "🔒 Modo lectura";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  // Disable all form controls (except file inputs for import/export modal)
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (el.type === "file") return; // allow import in modal
+    el.disabled = on;
+  });
+
+  // Disable only the buttons that modify data
+  const idsToDisable = [
+    "addLeg", "addStay", "addAct",
+    "tabA", "tabB",
+    "aiPick", "aiGenerate"
+  ];
+  idsToDisable.forEach(id => {
+    const el = $(id);
+    if (el) el.disabled = on;
+  });
+
+  // Disable delete buttons (created dynamically)
+  document.querySelectorAll("[data-leg-del], [data-stay-del], [data-act-del]").forEach(b => {
+    b.disabled = on;
+  });
+
+  // Block AI actions that add items (created dynamically)
+  document.querySelectorAll("#aiResults button").forEach(b => {
+    b.disabled = on;
+  });
+}
+
 
 /* ------------------------- Sync helpers (iCloud) ------------------------- */
 const META_KEY = "miviaje.meta.v1";
@@ -394,6 +457,7 @@ function renderAll() {
   renderActivities();
   renderTimeline();
   calcSummary();
+  applyReadOnlyMode();
 }
 
 function renderTabs() {
@@ -1168,6 +1232,11 @@ $("aiGenerate").addEventListener("click", generateAIGuide);
 
 $("btnTrips").addEventListener("click", openTripsModal);
 
+
+
+$("btnReadOnly").addEventListener("click", () => {
+  setReadOnly(!isReadOnly());
+});
 $("btnCompare").addEventListener("click", ()=>{
   const a = state.scenarios.A;
   const b = state.scenarios.B;
