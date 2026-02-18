@@ -1383,6 +1383,23 @@ function openTripsModal() {
     $("doExport").onclick = () => { exportTrip(); refresh(); };
     $("doImport").onchange = async (ev) => { await importTrip(ev); refresh(); };
 
+// Trip name input: show custom name if set, otherwise keep empty (auto will use destination)
+const tn = $("tripNameInput");
+if (tn) {
+  const mode = (typeof getTripNameMode === "function") ? getTripNameMode() : (localStorage.getItem("miviaje.tripNameMode") || "auto");
+  const saved = (typeof getTripName === "function") ? getTripName() : String(localStorage.getItem("miviaje.tripName") || "").trim();
+  tn.value = (mode === "custom" && saved) ? saved : "";
+  tn.addEventListener("input", () => {
+    const v = String(tn.value || "").trim();
+    if (typeof setTripName === "function") setTripName(v);
+    else localStorage.setItem("miviaje.tripName", v);
+    if (typeof setTripNameMode === "function") setTripNameMode(v ? "custom" : "auto");
+    else localStorage.setItem("miviaje.tripNameMode", v ? "custom" : "auto");
+  }, { passive: true });
+}
+
+
+
     const bn = $("doBackupNow");
     if (bn) {
       bn.onclick = () => {
