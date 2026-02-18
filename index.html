@@ -1390,6 +1390,7 @@ function openTripsModal() {
                 <span><b>Últ. export:</b> ${escapeHtml(expS)}</span>
                 <span><b>Últ. import:</b> ${escapeHtml(impS)}${fromDev ? escapeHtml(fromDev) : ""}</span>
               </div>
+              ${imp ? ('<div class="mt-1 text-[12px] leading-4 text-slate-600"><b>Último import:</b> ' + escapeHtml(impS) + ((meta.lastImportFromDeviceName || meta.lastSyncedFromDevice) ? (' (origen: ' + escapeHtml(meta.lastImportFromDeviceName || meta.lastSyncedFromDevice) + ')') : '') + '</div>') : ''}
             </div>
           </div>
         `;
@@ -1565,14 +1566,41 @@ async function importTrip(ev) {
     const localAtRaw = meta.lastSavedAt || meta.lastSyncAt || "";
     const localAt = localAtRaw ? Date.parse(localAtRaw) : NaN;
 
+
+    // --- PREVIEW (para confirmaciones de import) ---
+    const previewName = (payload?.name ? String(payload.name).trim() : "") || "Sin nombre";
+    const previewSavedAt = (!payload.savedAt || !Number.isFinite(remoteAt)) ? "Fecha desconocida" : new Date(payload.savedAt).toLocaleString();
+    const previewDevice = (payload?.deviceName ? String(payload.deviceName).trim() : "") || "Dispositivo desconocido";
+    const previewLocal = localAtRaw ? new Date(localAtRaw).toLocaleString() : "Desconocido";
+
+    const previewText =
+      "Vista previa del fichero:\n" +
+      `- Nombre: ${previewName}\n` +
+      `- Guardado: ${previewSavedAt}\n` +
+      `- Dispositivo: ${previewDevice}\n\n` +
+      "Tu versión local:\n" +
+      `- Últ. guardado: ${previewLocal}\n`;
+
     if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
       const r = new Date(payload.savedAt).toLocaleString();
       const l = new Date(localAtRaw).toLocaleString();
       const who = payload.deviceName ? `\n(Exportado por: ${payload.deviceName})` : "";
-      const ok = confirm(`Vas a cargar una versión MÁS ANTIGUA.\n\nArchivo: ${r}${who}\nTu iPhone: ${l}\n\n¿Quieres continuar?`);
+      const ok = confirm(
+        "🚨 FICHERO MÁS ANTIGUO\n" +
+        "El fichero que vas a importar es MÁS ANTIGUO que tu versión actual. Puedes perder cambios.\n\n" +
+        `Tu versión: ${previewLocal}\n` +
+        `Fichero: ${previewSavedAt}\n\n` +
+        previewText +
+        "\n¿Importar igualmente?"
+      );
       if (!ok) { input.value = ""; return; }
     } else if (!payload.savedAt || !Number.isFinite(remoteAt)) {
-      const ok = confirm("La fecha del archivo es DESCONOCIDA (savedAt inválido). ¿Quieres importar igualmente?");
+      const ok = confirm(
+        "⚠️ FECHA DESCONOCIDA\n" +
+        "El fichero no tiene savedAt válido. Podrías perder cambios si es más antiguo.\n\n" +
+        previewText +
+        "\n¿Importar igualmente?"
+      );
       if (!ok) { input.value = ""; return; }
     }
 
@@ -1589,6 +1617,7 @@ async function importTrip(ev) {
       lastImportAt: now,
       lastSyncAt: now,
       lastSyncedFromDevice: payload.deviceName || "Archivo",
+      lastImportFromDeviceName: (payload?.deviceName ? String(payload.deviceName).trim() : "") || null,
       lastImportedSavedAt: payload.savedAt || null,
       lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
     });
