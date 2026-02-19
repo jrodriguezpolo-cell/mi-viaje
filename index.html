@@ -28,6 +28,10 @@
 
 
 .ios-scroll{ -webkit-overflow-scrolling: touch; }
+
+/* Done state (minimal) */
+.done-item { opacity: 0.55; }
+.done-item .done-text { text-decoration: line-through; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -223,6 +227,8 @@
     </div>
   </div>
             <div id="timelineList" class="space-y-2"></div>
+            <!-- Notas rápidas del día -->
+            <div id="dailyNotesBox" class="mt-4 p-3 rounded-2xl border border-slate-200 bg-white"></div>
           </div>
         </div>
 
@@ -543,7 +549,8 @@ const emptyScenario = () => ({
   legs: [],
   stays: [],
   meals: { daily: 0, people: 1, days: 1 },
-  activities: []
+  activities: [],
+  dailyNotes: {}
 });
 
 let state = {
@@ -605,6 +612,30 @@ function renderAll() {
   applyReadOnlyMode();
 }
 
+
+function toggleDone(type, id, done) {
+  const sc = curScenario();
+  const list =
+    type === "leg" ? sc.legs :
+    type === "stay" ? sc.stays :
+    type === "act" ? sc.activities :
+    null;
+
+  if (!list) return;
+  const item = list.find(x => String(x.id) === String(id));
+  if (!item) return;
+
+  item.done = !!done;
+  saveState();
+
+  if (type === "leg") renderLegs();
+  else if (type === "stay") renderStays();
+  else if (type === "act") renderActivities();
+
+  if (typeof renderTimeline === "function") renderTimeline();
+  if (typeof calcSummary === "function") calcSummary();
+  applyReadOnlyMode();
+}
 function renderTabs() {
   const a = $("tabA"), b = $("tabB");
   const onA = state.scenario === "A";
@@ -619,7 +650,7 @@ function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${stay.done ? "done-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-3">
         <label class="text-xs text-slate-600">Salida</label>
@@ -639,7 +670,11 @@ function legCard(leg) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
       </div>
-      <div class="sm:col-span-2 flex justify-end">
+      <div class="sm:col-span-2 flex items-center justify-end gap-3">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-done-type="leg" data-done-id="${leg.id}" ${leg.done ? "checked" : ""}>
+          Hecho
+        </label>
         <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -655,7 +690,13 @@ function renderLegs() {
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
     saveState(); renderAll();
+  }));  // Marcar como hecho
+  box.querySelectorAll('[data-done-type="leg"]').forEach(cb => cb.addEventListener("change", () => {
+    toggleDone("leg", cb.getAttribute("data-done-id"), cb.checked);
+    renderAll();
   }));
+
+
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
     const id = inp.getAttribute("data-leg-from");
@@ -689,7 +730,7 @@ function renderLegs() {
 
 function stayCard(stay) {
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${act.done ? "done-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Ciudad</label>
@@ -707,7 +748,11 @@ function stayCard(stay) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
       </div>
-      <div class="sm:col-span-1 flex justify-end">
+      <div class="sm:col-span-2 flex items-center justify-end gap-3">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-done-type="stay" data-done-id="${stay.id}" ${stay.done ? "checked" : ""}>
+          Hecho
+        </label>
         <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -722,6 +767,11 @@ function renderStays() {
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
     saveState(); renderAll();
+  }));
+  // Marcar como hecho
+  box.querySelectorAll('[data-done-type="stay"]').forEach(cb => cb.addEventListener("change", () => {
+    toggleDone("stay", cb.getAttribute("data-done-id"), cb.checked);
+    renderAll();
   }));
   box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-city");
@@ -757,7 +807,7 @@ function renderMeals() {
 
 function actCard(act) {
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${leg.done ? "done-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Actividad</label>
@@ -775,7 +825,11 @@ function actCard(act) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.cost ?? "")}">
       </div>
-      <div class="sm:col-span-1 flex justify-end">
+      <div class="sm:col-span-2 flex items-center justify-end gap-3">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-done-type="act" data-done-id="${act.id}" ${act.done ? "checked" : ""}>
+          Hecho
+        </label>
         <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -791,6 +845,11 @@ function renderActivities() {
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
     saveState(); renderAll();
+  }));
+  // Marcar como hecho
+  box.querySelectorAll('[data-done-type="act"]').forEach(cb => cb.addEventListener("change", () => {
+    toggleDone("act", cb.getAttribute("data-done-id"), cb.checked);
+    renderAll();
   }));
   box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-title");
@@ -819,6 +878,7 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
+  if (!sc.dailyNotes) sc.dailyNotes = {};
   const items = [];
 
   for (const leg of sc.legs) {
@@ -835,20 +895,78 @@ function renderTimeline() {
 
   if (!items.length) {
     box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos todavía.</div>`;
+    renderDailyNotes();
     return;
   }
 
   box.innerHTML = items.map(it => `
     <div class="timelineItem ${it.date !== '9999-99-99' && it.date < today ? 'past' : it.date === today ? 'today' : ''} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3 bg-slate-50" data-date="${escapeHtml(it.date)}">
       <div>
-        <div class="text-xs text-slate-500">${it.date === "9999-99-99" ? "Sin fecha" : it.date} • ${it.type}</div>
+        <div class="text-xs text-slate-500">${it.date === "9999-99-99" ? "Sin fecha" : it.date} • ${it.type}${(it.date && it.date !== "9999-99-99" && sc.dailyNotes && String(sc.dailyNotes[it.date] || "").trim()) ? " 📝" : ""}</div>
         <div class="font-semibold">${escapeHtml(it.title)}</div>
       </div>
       <div class="font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
     </div>
   `).join("");
+  renderDailyNotes();
 }
 
+
+function renderDailyNotes() {
+  const box = document.getElementById("dailyNotesBox");
+  if (!box) return;
+
+  const sc = curScenario();
+  if (!sc.dailyNotes) sc.dailyNotes = {};
+
+  const today = new Date();
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const defaultDate = `${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
+
+  const selected = (box.dataset.selDate || defaultDate);
+  const existing = String(sc.dailyNotes[selected] || "");
+
+  box.innerHTML = `
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="font-semibold text-sm">Notas rápidas del día</div>
+      <input id="dailyNoteDate" type="date" value="${escapeHtml(selected)}"
+             class="px-2 py-1 rounded-xl border border-slate-200 text-sm bg-white">
+    </div>
+
+    <textarea id="dailyNoteText" rows="3"
+      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
+      placeholder="Apunta aquí lo importante de hoy...">${escapeHtml(existing)}</textarea>
+
+    <div class="mt-2 flex items-center gap-2">
+      <button id="saveDailyNote" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+        Guardar nota
+      </button>
+      <span id="dailyNoteStatus" class="text-xs text-slate-500"></span>
+    </div>
+  `;
+
+  const dateEl = document.getElementById("dailyNoteDate");
+  const textEl = document.getElementById("dailyNoteText");
+  const btn = document.getElementById("saveDailyNote");
+  const status = document.getElementById("dailyNoteStatus");
+
+  dateEl.onchange = () => {
+    box.dataset.selDate = dateEl.value || defaultDate;
+    renderDailyNotes();
+  };
+
+  btn.onclick = () => {
+    const k = (dateEl.value || "").trim();
+    if (!k) return;
+
+    const v = (textEl.value || "").trim();
+    sc.dailyNotes[k] = v;
+
+    saveState();
+    if (status) status.textContent = "Guardado ✓";
+    if (typeof renderTimeline === "function") renderTimeline();
+  };
+}
 function calcSummary() {
   const sc = curScenario();
   const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
@@ -1507,7 +1625,15 @@ ${label}`)) return;
   }, 0);
 }
 
-function exportTrip() {
+
+function awaitMaybeShare(file, payload) {
+  return navigator.share({
+    files: [file],
+    title: payload?.name || "Mi Viaje",
+    text: "Viaje exportado desde Mi Viaje"
+  });
+}
+async function exportTrip() {
   // 1) Resolver sugerencia base
   const inputEl = document.getElementById("tripNameInput");
   const nameFromInput = inputEl ? String(inputEl.value || "").trim() : "";
@@ -1569,17 +1695,33 @@ try {
   const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
   const filename = `${base}_${date}.json`;
 
+  // Descarga / Share Sheet (iOS)
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+
+  let shared = false;
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: "application/json" });
+      const can = (typeof navigator.canShare === "function") ? navigator.canShare({ files: [file] }) : true;
+      if (can) {
+        await awaitMaybeShare(file, payload);
+        shared = true;
+      }
+    }
+  } catch { shared = false; }
+
+  if (!shared) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   renderTripList();
 }
 
-function exportMilestone() {
+async function exportMilestone() {
   // Igual que exportTrip(), pero guarda un "HITO" con timestamp y marca milestone=true.
   const inputEl = document.getElementById("tripNameInput");
   const nameFromInput = inputEl ? String(inputEl.value || "").trim() : "";
@@ -1641,12 +1783,28 @@ function exportMilestone() {
   const hm = `${pad2(d.getHours())}-${pad2(d.getMinutes())}`;
   const filename = `HITO_${safe}_${ymd}_${hm}.json`;
 
+  // Descarga / Share Sheet (iOS)
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+
+  let shared = false;
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: "application/json" });
+      const can = (typeof navigator.canShare === "function") ? navigator.canShare({ files: [file] }) : true;
+      if (can) {
+        await awaitMaybeShare(file, payload);
+        shared = true;
+      }
+    }
+  } catch { shared = false; }
+
+  if (!shared) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   renderTripList();
 }
