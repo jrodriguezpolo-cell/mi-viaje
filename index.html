@@ -36,43 +36,28 @@
     .skipped-badge { color: #b91c1c; } /* red-700 */
     .auto-badge { color: #64748b; } /* slate-500 */
 
-    /* Timeline UX states (v32+) */
-
-/* Hoy pendiente (verde claro) */
-.tl-today {
-  background: rgba(16,185,129,0.10);
-  border-color: rgba(16,185,129,0.22);
+    /* Timeline UX states (v32+) — force override Tailwind bg/border utilities */
+.timelineItem.tl-today{
+  background-color: rgba(16,185,129,0.10) !important;
+  border-color: rgba(16,185,129,0.22) !important;
+}
+.timelineItem.tl-today-done{
+  background-color: rgba(59,130,246,0.12) !important;
+  border-color: rgba(59,130,246,0.28) !important;
+}
+.timelineItem.tl-auto-done{
+  background-color: rgba(100,116,139,0.08) !important;
+  border-color: rgba(100,116,139,0.18) !important;
+}
+.timelineItem.tl-skipped{
+  background-color: rgba(239,68,68,0.10) !important;
+  border-color: rgba(239,68,68,0.25) !important;
+}
+.timelineItem.tl-future{
+  background-color: rgba(234,179,8,0.08) !important;
+  border-color: rgba(234,179,8,0.20) !important;
 }
 
-/* Hoy hecho (AZUL muy claro) */
-.tl-today-done {
-  background: rgba(59,130,246,0.12);
-  border-color: rgba(59,130,246,0.28);
-}
-
-/* Pasado asumido (auto) - gris tenue */
-.tl-auto-done {
-  background: rgba(100,116,139,0.08);
-  border-color: rgba(100,116,139,0.18);
-}
-
-/* No realizado (skipped) - rojo suave */
-.tl-skipped {
-  background: rgba(239,68,68,0.10);
-  border-color: rgba(239,68,68,0.25);
-}
-
-/* Futuro - amarillo suave */
-.tl-future {
-  background: rgba(234,179,8,0.08);
-  border-color: rgba(234,179,8,0.20);
-}
-
-.tl-today,
-.tl-today-done,
-.tl-auto-done,
-.tl-skipped,
-.tl-future { background-clip: padding-box; }
 
 </style>
 </head>
@@ -844,7 +829,6 @@ function renderMeals() {
 /* ---------------- Activities: smart done ---------------- */
 
 function todayKey() {
-  try { if (typeof todayYMD === "function") return String(todayYMD() || "").trim(); } catch {}
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -910,6 +894,31 @@ function handleActDoneToggle(id, targetChecked, el) {
   }
 
   if (targetChecked === true) {
+    // Sin fecha: permitir asignar fecha si el usuario quiere
+    if (!dateKey) {
+      const choice = prompt(
+        "Evento sin fecha. ¿Qué quieres hacer?\n" +
+        "1 = Hecho (sin fecha)\n" +
+        "2 = Hecho y asignar a HOY\n" +
+        "3 = Hecho y elegir fecha…\n\n" +
+        "Escribe 1, 2 o 3:",
+        "2"
+      );
+      if (choice === null) { if (el) el.checked = prevChecked; return; }
+      const c = String(choice).trim();
+      if (c === "1") { act.doneManual = true; act.skipped = false; }
+      else if (c === "2") { act.doneManual = true; act.skipped = false; act.date = today; }
+      else if (c === "3") {
+        const nd = promptDate(today);
+        if (nd === null) { if (el) el.checked = prevChecked; return; }
+        act.doneManual = true; act.skipped = false; act.date = nd;
+      } else { if (el) el.checked = prevChecked; return; }
+      saveState();
+      renderActivities();
+      if (typeof renderTimeline === "function") renderTimeline();
+      if (typeof calcSummary === "function") calcSummary();
+      return;
+    }
     if (dateKey && isFuture(dateKey)) {
       const choice = prompt(
         "Evento futuro. ¿Qué quieres hacer?\n" +
@@ -1034,6 +1043,31 @@ function handleLegDoneToggle(id, targetChecked, el) {
   const dateKey = String(leg.date || "");
 
   if (targetChecked === true) {
+    // Sin fecha: permitir asignar fecha si el usuario quiere
+    if (!dateKey) {
+      const choice = prompt(
+        "Evento sin fecha. ¿Qué quieres hacer?\n" +
+        "1 = Hecho (sin fecha)\n" +
+        "2 = Hecho y asignar a HOY\n" +
+        "3 = Hecho y elegir fecha…\n\n" +
+        "Escribe 1, 2 o 3:",
+        "2"
+      );
+      if (choice === null) { if (el) el.checked = prevChecked; return; }
+      const c = String(choice).trim();
+      if (c === "1") { leg.doneManual = true; leg.skipped = false; }
+      else if (c === "2") { leg.doneManual = true; leg.skipped = false; leg.date = today; }
+      else if (c === "3") {
+        const nd = promptDate(today);
+        if (nd === null) { if (el) el.checked = prevChecked; return; }
+        leg.doneManual = true; leg.skipped = false; leg.date = nd;
+      } else { if (el) el.checked = prevChecked; return; }
+      saveState();
+      renderLegs();
+      if (typeof renderTimeline === "function") renderTimeline();
+      if (typeof calcSummary === "function") calcSummary();
+      return;
+    }
     if (dateKey && isFuture(dateKey)) {
       const choice = prompt(
         "Trayecto futuro. ¿Qué quieres hacer?\n" +
@@ -1055,27 +1089,7 @@ function handleLegDoneToggle(id, targetChecked, el) {
         leg.doneManual = true; leg.skipped = false; leg.date = nd;
       } else { if (el) el.checked = prevChecked; return; }
     } else {
-      if (!dateKey) {
-        const choice = prompt(
-          "Trayecto sin fecha. ¿Qué quieres hacer?\n" +
-          "1 = Hecho (sin fecha)\n" +
-          "2 = Asignar a HOY\n" +
-          "3 = Elegir fecha…\n\n" +
-          "Escribe 1, 2 o 3:",
-          "2"
-        );
-        if (choice === null) { if (el) el.checked = prevChecked; return; }
-        const c = String(choice).trim();
-        if (c === "1") { leg.doneManual = true; leg.skipped = false; }
-        else if (c === "2") { leg.doneManual = true; leg.skipped = false; leg.date = today; }
-        else if (c === "3") {
-          const nd = promptDate(today);
-          if (nd === null) { if (el) el.checked = prevChecked; return; }
-          leg.doneManual = true; leg.skipped = false; leg.date = nd;
-        } else { if (el) el.checked = prevChecked; return; }
-      } else {
-        leg.doneManual = true; leg.skipped = false;
-      }
+      leg.doneManual = true; leg.skipped = false;
     }
     saveState(); renderLegs(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
     return;
@@ -1121,29 +1135,7 @@ function handleStayDoneToggle(id, targetChecked, el) {
   }
 
   if (targetChecked === true) {
-    const dateKey = String(stay.date || "");
-    if (!dateKey) {
-      const today = todayKey();
-      const choice = prompt(
-        "Alojamiento sin fecha. ¿Qué quieres hacer?\n" +
-        "1 = Hecho (sin fecha)\n" +
-        "2 = Asignar a HOY\n" +
-        "3 = Elegir fecha…\n\n" +
-        "Escribe 1, 2 o 3:",
-        "2"
-      );
-      if (choice === null) { if (el) el.checked = prevChecked; return; }
-      const c = String(choice).trim();
-      if (c === "1") { stay.doneManual = true; stay.skipped = false; }
-      else if (c === "2") { stay.doneManual = true; stay.skipped = false; stay.date = today; }
-      else if (c === "3") {
-        const nd = promptDate(today);
-        if (nd === null) { if (el) el.checked = prevChecked; return; }
-        stay.doneManual = true; stay.skipped = false; stay.date = nd;
-      } else { if (el) el.checked = prevChecked; return; }
-    } else {
-      stay.doneManual = true; stay.skipped = false;
-    }
+    stay.doneManual = true; stay.skipped = false;
     saveState(); renderStays(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
     return;
   }
@@ -1256,7 +1248,7 @@ function renderTimeline() {
     items.push({ date: leg.date || "9999-99-99", type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id });
   }
   for (const s of sc.stays) {
-    items.push({ date: s.date || "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id });
+    items.push({ date: "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id });
   }
   for (const a of sc.activities) {
     items.push({ date: a.date || "9999-99-99", type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id });
@@ -1298,7 +1290,7 @@ function renderTimeline() {
     else if (it.stayId != null) { kind = "stay"; itemObj = stayById.get(String(it.stayId)); }
 
     if (itemObj && !it.isNote) {
-      const dateKey = String(itemObj.date || it.date || "");
+      const dateKey = (kind === "stay") ? "" : String(itemObj.date || it.date || "");
       const st = (kind === "act") ? computeDoneState(itemObj) : computeDoneStateGeneric(itemObj, dateKey);
       const isToday = (dateKey && String(dateKey) === todayKey());
 
