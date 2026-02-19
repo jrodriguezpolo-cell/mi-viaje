@@ -28,7 +28,15 @@
 
 
 .ios-scroll{ -webkit-overflow-scrolling: touch; }
-</style>
+
+    /* Activities: done/skipped (minimal) */
+    .done-item { opacity: 0.55; }
+    .done-text { text-decoration: line-through; }
+    .skipped-item { opacity: 0.55; }
+    .skipped-badge { color: #b91c1c; } /* red-700 */
+    .auto-badge { color: #64748b; } /* slate-500 */
+
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <!-- Top bar -->
@@ -773,33 +781,212 @@ function renderMeals() {
   $("mealTotal").textContent = total.toFixed(2);
 }
 
+/* ---------------- Activities: smart done ---------------- */
+
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Devuelve -1, 0, 1 comparando YYYY-MM-DD (lexicográfico funciona)
+function cmpDate(a, b) {
+  const A = String(a || "");
+  const B = String(b || "");
+  if (A === B) return 0;
+  return A < B ? -1 : 1;
+}
+
+function isPast(dateKey) {
+  return cmpDate(String(dateKey || ""), todayKey()) < 0;
+}
+function isFuture(dateKey) {
+  return cmpDate(String(dateKey || ""), todayKey()) > 0;
+}
+
+function promptDate(defaultKey) {
+  const def = defaultKey || todayKey();
+  const raw = prompt("Fecha (YYYY-MM-DD):", def);
+  if (raw === null) return null;
+  const v = String(raw).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+
+  const d = new Date(v + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const norm = `${y}-${m}-${day}`;
+  return norm === v ? v : null;
+}
+
+// Estado visual (no altera datos)
+function computeDoneState(act) {
+  const dateKey = String(act?.date || "");
+  if (act?.doneManual === true) return { done: true, auto: false, skipped: false };
+  if (act?.skipped === true) return { done: false, auto: false, skipped: true };
+  if (dateKey && isPast(dateKey)) return { done: true, auto: true, skipped: false };
+  return { done: false, auto: false, skipped: false };
+}
+
+function handleActDoneToggle(id, targetChecked, el) {
+  const sc = curScenario();
+  const act = (sc?.activities || []).find(a => String(a.id) === String(id));
+  if (!act) return;
+
+  const prevVisual = computeDoneState(act);
+  const prevChecked = !!prevVisual.done;
+
+  const today = todayKey();
+  const dateKey = String(act.date || "");
+
+  if (localStorage.getItem("miviaje.readonly") === "1") {
+    if (el) el.checked = prevChecked;
+    return;
+  }
+
+  if (targetChecked === true) {
+    if (dateKey && isFuture(dateKey)) {
+      const choice = prompt(
+        "Evento futuro. ¿Qué quieres hacer?\n" +
+        "1 = Hecho (mantener fecha)\n" +
+        "2 = Hecho y mover a HOY\n" +
+        "3 = Hecho y elegir fecha…\n\n" +
+        "Escribe 1, 2 o 3:",
+        "2"
+      );
+      if (choice === null) {
+        if (el) el.checked = prevChecked;
+        return;
+      }
+      const c = String(choice).trim();
+
+      if (c === "1") {
+        act.doneManual = true;
+        act.skipped = false;
+      } else if (c === "2") {
+        act.doneManual = true;
+        act.skipped = false;
+        act.date = today;
+      } else if (c === "3") {
+        const nd = promptDate(today);
+        if (nd === null) {
+          if (el) el.checked = prevChecked;
+          return;
+        }
+        act.doneManual = true;
+        act.skipped = false;
+        act.date = nd;
+      } else {
+        if (el) el.checked = prevChecked;
+        return;
+      }
+    } else {
+      act.doneManual = true;
+      act.skipped = false;
+    }
+
+    saveState();
+    renderActivities();
+    if (typeof renderTimeline === "function") renderTimeline();
+    if (typeof calcSummary === "function") calcSummary();
+    return;
+  }
+
+  if (targetChecked === false) {
+    if (dateKey && isPast(dateKey)) {
+      const choice = prompt(
+        "Evento pasado. ¿Qué quieres hacer?\n" +
+        "1 = No realizado (mantener fecha)\n" +
+        "2 = Reprogramar\n\n" +
+        "Escribe 1 o 2:",
+        "1"
+      );
+      if (choice === null) {
+        if (el) el.checked = prevChecked;
+        return;
+      }
+      const c = String(choice).trim();
+
+      if (c === "1") {
+        act.doneManual = false;
+        act.skipped = true;
+      } else if (c === "2") {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const def = `${y}-${m}-${day}`;
+
+        const nd = promptDate(def);
+        if (nd === null) {
+          if (el) el.checked = prevChecked;
+          return;
+        }
+        act.date = nd;
+        act.doneManual = false;
+        act.skipped = false;
+      } else {
+        if (el) el.checked = prevChecked;
+        return;
+      }
+    } else {
+      act.doneManual = false;
+      act.skipped = false;
+    }
+
+    saveState();
+    renderActivities();
+    if (typeof renderTimeline === "function") renderTimeline();
+    if (typeof calcSummary === "function") calcSummary();
+  }
+}
+
+/* ---------------- /Activities: smart done ---------------- */
+
+
 function actCard(act) {
+  const st = computeDoneState(act);
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Actividad</label>
-        <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.title)}" placeholder="Ej: Museo / Tour / Restaurante">
+        <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.title)}" placeholder="Ej: Museo / Tour / Restaurante">
       </div>
       <div class="sm:col-span-3">
         <label class="text-xs text-slate-600">Ciudad</label>
-        <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.city)}" placeholder="Ciudad">
+        <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.city)}" placeholder="Ciudad">
       </div>
       <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Fecha</label>
-        <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.date||"")}">
+        <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.date||"")}">
       </div>
       <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Coste</label>
-        <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.cost ?? "")}">
+        <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.cost ?? "")}">
       </div>
-      <div class="sm:col-span-1 flex justify-end">
+      <div class="sm:col-span-1 flex justify-end gap-2 items-center">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-act-done="${act.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+          Hecho
+        </label>
         <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
-    ${act.fromAI ? `<div class="mt-2 text-xs text-slate-500">Añadida desde IA</div>` : ``}
+    <div class="mt-2 flex items-center gap-3 text-xs">
+      ${st.skipped ? `<span class="font-semibold skipped-badge">No realizado</span>` : ``}
+      ${(!st.skipped && st.auto) ? `<span class="auto-badge">Asumido</span>` : ``}
+      ${act.fromAI ? `<span class="text-slate-500">Añadida desde IA</span>` : ``}
+    </div>
   </div>`;
 }
+
 function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
@@ -831,6 +1018,10 @@ function renderActivities() {
     sc.activities.find(x => x.id === id).cost = parseMoney(inp.value);
     saveState(); calcSummary();
   }));
+  box.querySelectorAll("[data-act-done]").forEach(cb => cb.addEventListener("change", () => {
+    handleActDoneToggle(cb.getAttribute("data-act-done"), cb.checked, cb);
+  }));
+
 }
 
 function renderTimeline() {
