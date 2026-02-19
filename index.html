@@ -110,7 +110,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
       <section class="lg:col-span-8 space-y-4">
 
-        <!-- LOGISTICA -->
+        <!-- TIMELINE -->
         <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="timeline" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
@@ -148,7 +148,11 @@
 
           </div>
         </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+
+      
+
+        <!-- LOGISTICA -->
+        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="legs" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
               <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
@@ -165,7 +169,9 @@
             <div id="legsList" class="space-y-3"></div>
           </div>
         </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+
+        <!-- ALOJAMIENTO -->
+        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="stays" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
               <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
@@ -182,7 +188,9 @@
             <div id="staysList" class="space-y-3"></div>
           </div>
         </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+
+        <!-- COMIDAS -->
+        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="meals" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
               <span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
@@ -200,11 +208,11 @@
               </div>
               <div>
                 <label class="text-xs text-slate-600">Nº personas</label>
-                <input id="mealPeople" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="1">
+                <input id="mealPeople" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: 2">
               </div>
               <div>
                 <label class="text-xs text-slate-600">Días totales</label>
-                <input id="mealDays" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="1">
+                <input id="mealDays" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: 20">
               </div>
             </div>
             <div class="mt-3 text-sm">
@@ -214,7 +222,9 @@
             </div>
           </div>
         </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+
+        <!-- ACTIVIDADES -->
+        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="acts" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
               <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
@@ -232,7 +242,7 @@
           </div>
         </div>
 
-      <!-- IA -->
+        <!-- IA -->
         <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
           <button data-acc="ai" class="w-full tap flex items-center justify-between px-5 py-4">
             <div class="flex items-center gap-3">
@@ -288,11 +298,11 @@
   <!-- Bottom bar for mobile -->
   <nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
     <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
+      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button>
+      
     </div>
   </nav>
 
@@ -312,17 +322,6 @@
 
 <script>
 /* ----------------------------- Utilities ----------------------------- */
-// CSS.escape polyfill (minimal)
-if (typeof CSS === "undefined") window.CSS = {};
-if (typeof CSS.escape !== "function") {
-  CSS.escape = function (value) {
-    return String(value).replace(/[^a-zA-Z0-9_\-]/g, function (s) {
-      const hex = s.charCodeAt(0).toString(16);
-      return "\\" + hex + " ";
-    });
-  };
-}
-
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
@@ -584,7 +583,7 @@ function getLatestBackup() {
 const emptyScenario = () => ({
   legs: [],
   stays: [],
-  meals: { daily: 0, people: 1, days: 1 },
+  meals: { daily: 0, people: "", days: "" },
   activities: []
 ,
   dailyNotes: {}
@@ -758,7 +757,15 @@ function stayCard(stay) {
   return `
   <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-      <div class="sm:col-span-3">
+      <div class="sm:col-span-4">
+        <label class="text-xs text-slate-600">Ciudad</label>
+        <input data-stay-city="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.city)}" placeholder="Ciudad">
+      </div>
+      <div class="sm:col-span-4">
+        <label class="text-xs text-slate-600">Alojamiento</label>
+        <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Hotel / Airbnb / Camping…">
+      </div>
+      <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Fecha (check-in)</label>
         <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date || "")}">
       </div>
@@ -766,14 +773,7 @@ function stayCard(stay) {
         <label class="text-xs text-slate-600">Hora (opcional)</label>
         <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
       </div>
-      <div class="sm:col-span-4">
-        <label class="text-xs text-slate-600">Ciudad</label>
-        <input data-stay-city="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.city)}" placeholder="Ciudad">
-      </div>
-      <div class="sm:col-span-3">
-        <label class="text-xs text-slate-600">Hotel</label>
-        <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Nombre">
-      </div>
+
       <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Noches</label>
         <input data-stay-nights="${stay.id}" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights ?? 1)}">
@@ -782,7 +782,7 @@ function stayCard(stay) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
       </div>
-      <div class="sm:col-span-1 flex flex-col items-end gap-2">
+      <div class="sm:col-span-2 flex flex-col items-end gap-2">
         <label class="flex items-center gap-2 text-xs text-slate-600">
           <input type="checkbox" class="h-4 w-4" data-stay-done="${stay.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
           Hecho
@@ -793,6 +793,7 @@ function stayCard(stay) {
     </div>
   </div>`;
 }
+function renderStays(
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
@@ -843,9 +844,16 @@ function renderStays() {
 function renderMeals() {
   const sc = curScenario();
   $("mealDaily").value = sc.meals.daily ?? 0;
-  $("mealPeople").value = sc.meals.people ?? 1;
-  $("mealDays").value = sc.meals.days ?? 1;
-  const total = (parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10)));
+
+  // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
+  $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
+  $("mealDays").value = (sc.meals.days === "" || sc.meals.days == null) ? "" : sc.meals.days;
+
+  const total = (
+    parseMoney(sc.meals.daily) *
+    (parseInt(sc.meals.people || 1, 10)) *
+    (parseInt(sc.meals.days || 1, 10))
+  );
   $("mealTotal").textContent = total.toFixed(2);
 }
 
@@ -1314,6 +1322,8 @@ function jumpToItem(kind, id) {
   }, 60);
 }
 /* ---------------- /Timeline: jump to item ---------------- */
+const __tlExpanded = new Set();
+
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
@@ -1366,6 +1376,23 @@ function renderTimeline() {
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
+    const datePart = (it.date === "9999-99-99" ? "Sin fecha" : String(it.date));
+    const timePart = (it.time && String(it.time).trim()) ? String(it.time).trim() : "—";
+    const dateLine = `${datePart}  ${timePart}`;
+
+    // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
+    const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
+    const isExpanded = __tlExpanded.has(tlKey);
+
+    // Línea meta en detalle (mantiene lo que ya enseñábamos arriba)
+    const metaLine = whenLabel;
+
+    // Notas del día: acceso rápido por fecha (si no hay fecha, no mostramos botón)
+    const noteBtn = (it.date && it.date !== "9999-99-99" && !it.isNote)
+      ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasNote ? "font-semibold" : ""}"
+                data-tl-note-date="${escapeHtml(it.date)}" title="Notas del día">🗒️</button>`
+      : "";
+
 
     // Checkpoint (Hecho) para Transporte / Alojamiento / Actividades en el cronograma
     let tlCheckbox = "";
@@ -1400,44 +1427,49 @@ function renderTimeline() {
                     : kind === "leg" ? `data-tl-leg-done="${escapeHtml(String(it.legId))}"`
                     : `data-tl-stay-done="${escapeHtml(String(it.stayId))}"`;
 
-      tlCheckbox = `
-        <label class="inline-flex items-center gap-1 text-xs text-slate-600">
-          <input type="checkbox"
+      tlCheckbox = `<input type="checkbox" class="h-4 w-4" 
                  class="h-4 w-4"
                  ${dataAttr}
                  ${st.done ? "checked" : ""}
-                 ${ro ? "disabled" : ""}>
-          Hecho
-        </label>
-      `;
+                 ${ro ? "disabled" : ""}>`;
     }
 
 
-    const tlKey = `${jumpType}:${jumpId}:${it.date || ""}:${it.time || ""}`;
-
     return `
-      <div class="rounded-2xl border border-slate-200 bg-white p-3 timelineItem ${clsTime}${visualClass}${noteBadge}" data-date="${escapeHtml(it.date)}" data-tl-key="${escapeHtml(tlKey)}" data-tl-jump-type="${jumpType}" data-tl-jump-id="${escapeHtml(jumpId)}">
+      <div class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}"
+           data-date="${escapeHtml(it.date)}"
+           data-tl-jump-type="${jumpType}"
+           data-tl-jump-id="${escapeHtml(jumpId)}"
+           data-tl-key="${escapeHtml(tlKey)}">
+
         <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2 min-w-0">
-              ${icon ? `<span class="text-lg">${icon}</span>` : ``}
-              <div class="font-semibold truncate">${escapeHtml(it.title)}</div>
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="shrink-0 text-lg leading-none mt-[2px]">${escapeHtml(icon || (it.isNote ? "📝" : "•"))}</div>
+
+            <div class="min-w-0">
+              <div class="font-semibold text-sm truncate">${escapeHtml(it.title)}</div>
+              <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dateLine)}</div>
             </div>
-            <div class="text-xs text-slate-500 mt-1 truncate">${escapeHtml(whenLabel)}</div>
           </div>
+
           <div class="shrink-0 flex items-center gap-2">
             ${tlCheckbox ? tlCheckbox : ""}
-            ${hasNote ? `<span class="text-base" title="Hay nota del día">📝</span>` : ``}
-            <button type="button" class="tap px-2 py-1 rounded-xl border border-slate-200 bg-white text-slate-600 tlToggle" data-tl-toggle="${escapeHtml(tlKey)}" aria-expanded="false">▾</button>
+            ${noteBtn ? noteBtn : ""}
           </div>
         </div>
-        <div class="mt-2 hidden tlBody" data-tl-body="${escapeHtml(tlKey)}">
-          <div class="text-sm text-slate-700">${it.cost ? `Coste: ${escapeHtml(fmtMoney(it.cost))}` : "Sin coste"}</div>
-          ${tlBadges ? `<div class="mt-1">${tlBadges}</div>` : ``}
+
+        <div class="mt-2 ${isExpanded ? "" : "hidden"}" data-tl-details="${escapeHtml(tlKey)}">
+          <div class="text-xs text-slate-500">
+            ${escapeHtml(metaLine)}
+            ${hasNote ? " 📝" : ""}
+          </div>
+          <div class="mt-1 flex items-center justify-between gap-3">
+            <div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
+            <div class="flex items-center gap-2">${tlBadges ? tlBadges : ""}</div>
+          </div>
         </div>
       </div>
     `;
-
 }).join("");
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
@@ -1451,31 +1483,50 @@ function renderTimeline() {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
 
-  
-
-  // Expandir/plegar item (sin interferir con jump)
-  box.querySelectorAll("[data-tl-toggle]").forEach(btn => {
-    btn.onclick = (e) => {
-      e.preventDefault();
+  // Notas del día (botón en cronograma)
+  box.querySelectorAll("[data-tl-note-date]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      const k = btn.getAttribute("data-tl-toggle");
-      if (!k) return;
-      const body = box.querySelector(`[data-tl-body="${CSS.escape(k)}"]`);
-      if (!body) return;
-      const isHidden = body.classList.toggle("hidden");
-      btn.textContent = isHidden ? "▾" : "▴";
-      btn.setAttribute("aria-expanded", isHidden ? "false" : "true");
-    };
+      const d = btn.getAttribute("data-tl-note-date");
+      if (!d) return;
+      // Abrir acordeón de NOTAS DEL DÍA dentro del cronograma
+      const dnBody = document.querySelector('[data-acc-body="dailyNotes"]');
+      const dnBtn  = document.querySelector('[data-acc="dailyNotes"]');
+      if (dnBody && dnBtn && dnBody.classList.contains("hidden")) dnBtn.click();
+
+      const boxNotes = document.getElementById("dailyNotesBox");
+      if (boxNotes) boxNotes.dataset.selDate = d;
+      renderDailyNotes();
+
+      // Scroll suave hacia el bloque de notas
+      try {
+        const dnWrap = dnBtn ? dnBtn.closest(".bg-white") : null;
+        if (dnWrap) dnWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch {}
+    });
   });
-// Click en item del cronograma -> ir al item (sin interferir con checkbox)
-  box.querySelectorAll(".timelineItem[data-tl-jump-type]").forEach(row => {
+
+  // Tap en item:
+  // - si está plegado => expandir
+  // - si ya está expandido => jump al item (si aplica)
+  box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
     row.addEventListener("click", (e) => {
       const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
       if (tag === "input" || tag === "label" || tag === "button") return;
+
+      const key = row.getAttribute("data-tl-key") || "";
+      if (!key) return;
+
+      if (!__tlExpanded.has(key)) {
+        __tlExpanded.add(key);
+        renderTimeline();
+        return;
+      }
+
+      // Ya expandido -> jump (si existe)
       const kind = row.getAttribute("data-tl-jump-type");
       const id = row.getAttribute("data-tl-jump-id");
-      if (!kind || !id) return;
-      jumpToItem(kind, id);
+      if (kind && id) jumpToItem(kind, id);
     });
   });
 
@@ -2725,8 +2776,11 @@ $("addAct").addEventListener("click", ()=>{
   $(id).addEventListener("input", ()=>{
     const sc = curScenario();
     sc.meals.daily = parseMoney($("mealDaily").value);
-    sc.meals.people = Math.max(1, parseInt($("mealPeople").value||"1",10));
-    sc.meals.days = Math.max(1, parseInt($("mealDays").value||"1",10));
+    const rawP = $("mealPeople").value;
+    const rawD = $("mealDays").value;
+
+    sc.meals.people = (String(rawP).trim() === "") ? "" : Math.max(1, parseInt(rawP || "1",10));
+    sc.meals.days = (String(rawD).trim() === "") ? "" : Math.max(1, parseInt(rawD || "1",10));
     saveState(); renderMeals(); calcSummary();
   });
 });
