@@ -1277,6 +1277,40 @@ function renderActivities() {
 
 }
 
+
+/* ---------------- Timeline: jump to item ---------------- */
+function openAccordionKey(key) {
+  const body = document.querySelector(`[data-acc-body="${key}"]`);
+  const btn = document.querySelector(`[data-acc="${key}"]`);
+  if (!body || !btn) return;
+  if (body.classList.contains("hidden")) btn.click();
+}
+
+function jumpToItem(kind, id) {
+  const k = String(kind || "");
+  const itemId = String(id || "");
+  if (!k || !itemId) return;
+
+  const map = {
+    leg:  { acc: "legs",  sel: `[data-leg-date="${CSS.escape(itemId)}"], [data-leg-from="${CSS.escape(itemId)}"]` },
+    stay: { acc: "stays", sel: `[data-stay-date="${CSS.escape(itemId)}"], [data-stay-city="${CSS.escape(itemId)}"]` },
+    act:  { acc: "acts",  sel: `[data-act-date="${CSS.escape(itemId)}"], [data-act-title="${CSS.escape(itemId)}"]` }
+  };
+  const cfg = map[k];
+  if (!cfg) return;
+
+  openAccordionKey(cfg.acc);
+
+  // Espera un tick para que el acordeón se abra antes de hacer scroll
+  setTimeout(() => {
+    const el = document.querySelector(cfg.sel);
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      try { el.focus({ preventScroll: true }); } catch {}
+    }
+  }, 60);
+}
+/* ---------------- /Timeline: jump to item ---------------- */
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
@@ -1323,6 +1357,7 @@ function renderTimeline() {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
+    const icon = (jumpType === 'leg') ? '🛫' : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
@@ -1374,10 +1409,11 @@ function renderTimeline() {
       `;
     }
 
+
     return `
-      <div class="timelineItem ${clsTime}${visualClass} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}">
+      <div class="timelineItem cursor-pointer ${clsTime}${visualClass} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}" data-tl-jump-type="${jumpType}" data-tl-jump-id="${escapeHtml(jumpId)}">
         <div class="min-w-0">
-          <div class="text-xs text-slate-500 truncate">${escapeHtml(whenLabel)}${hasNote ? ' 📝' : ''} • ${escapeHtml(it.type)}</div>
+          <div class="text-xs text-slate-500 truncate">${escapeHtml(whenLabel)}${hasNote ? ' 📝' : ''}${icon ? ` • ${icon}` : ``}</div>
           <div class="font-semibold truncate">${escapeHtml(it.title)}</div>
         </div>
         <div class="flex flex-col items-end gap-2 shrink-0">
@@ -1398,6 +1434,18 @@ function renderTimeline() {
   });
   box.querySelectorAll("[data-tl-stay-done]").forEach(cb => {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
+  });
+
+  // Click en item del cronograma -> ir al item (sin interferir con checkbox)
+  box.querySelectorAll(".timelineItem[data-tl-jump-type]").forEach(row => {
+    row.addEventListener("click", (e) => {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+      if (tag === "input" || tag === "label" || tag === "button") return;
+      const kind = row.getAttribute("data-tl-jump-type");
+      const id = row.getAttribute("data-tl-jump-id");
+      if (!kind || !id) return;
+      jumpToItem(kind, id);
+    });
   });
 
   renderDailyNotes();
