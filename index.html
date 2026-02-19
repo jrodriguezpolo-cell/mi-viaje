@@ -1136,34 +1136,22 @@ NO incluyas URLs.`;
   renderAIResults(sections);
 }
 
-/* ----------------------- Device name (unified) ------------------------ */
-// Fuente de verdad: miviaje.deviceName (nuevo). Compat: miviaje.deviceName.v1 (legacy)
-function getDeviceName(askIfMissing = true) {
-  let v = (localStorage.getItem("miviaje.deviceName") || "").trim();
-  try { if (!v && typeof DEVICE_KEY !== "undefined") v = (localStorage.getItem(DEVICE_KEY) || "").trim(); } catch {}
+/* ----------------------- Device name \(minimal\) ------------------------ */
+const LS_DEVICE_NAME = "miviaje.deviceName";
 
-  if (!v && askIfMissing) {
-    v = (prompt("Nombre de este dispositivo (ej: iPhone Ana / iPhone Luis):", "") || "").trim();
-    if (v) {
-      try { localStorage.setItem("miviaje.deviceName", v); } catch {}
-      try { if (typeof DEVICE_KEY !== "undefined") localStorage.setItem(DEVICE_KEY, v); } catch {}
-    }
-  }
-  return v || "Dispositivo";
+function getDeviceName() {
+  const v = (localStorage.getItem(LS_DEVICE_NAME) || "").trim();
+  return v || "Este iPhone";
 }
 
 function setDeviceName(name) {
   const v = String(name || "").trim();
-  if (v) {
-    try { localStorage.setItem("miviaje.deviceName", v); } catch {}
-    try { if (typeof DEVICE_KEY !== "undefined") localStorage.setItem(DEVICE_KEY, v); } catch {}
-  } else {
-    try { localStorage.removeItem("miviaje.deviceName"); } catch {}
-    try { if (typeof DEVICE_KEY !== "undefined") localStorage.removeItem(DEVICE_KEY); } catch {}
-  }
-  if (typeof setMeta === "function") setMeta({ deviceName: getDeviceName(false) });
+  if (v) localStorage.setItem(LS_DEVICE_NAME, v);
+  else localStorage.removeItem(LS_DEVICE_NAME); // vuelve al fallback
+  // Mantén meta.deviceName alineado (si usas meta)
+  if (typeof setMeta === "function") setMeta({ deviceName: getDeviceName() });
 }
-/* --------------------- /Device name (unified) --------------------- */
+/* --------------------- /Device name \(minimal\) --------------------- */
 
 
 /* ------------------------ Save / Load (simple) ----------------------- */
@@ -1357,6 +1345,9 @@ function openTripsModal() {
           <span class="accIcon text-slate-400 text-xl">▾</span>
         </button>
         <div data-acc-body="modalTrips" class="px-4 pb-4 hidden">
+          
+          <input id="tripSearchInput" type="text" placeholder="Buscar viaje..."
+                 class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm mb-2">
           <div id="tripList" class="space-y-2 max-h-[35vh] overflow-y-auto pr-1 overscroll-contain ios-scroll"></div>
         </div>
       </div>
@@ -1499,7 +1490,13 @@ ${label}`)) return;
     };
 
     renderManualBackupList();
-    renderTripList();
+    const search = document.getElementById("tripSearchInput");
+    if (search) {
+      search.value = "";
+      search.oninput = () => renderTripList(search.value);
+    }
+
+    renderTripList("");
     refresh();
 
     // Acordeón scoped al modal
@@ -1700,7 +1697,7 @@ async function importTrip(ev) {
       `- Guardado: ${previewSavedAt}\n` +
       `- Dispositivo: ${previewDevice}\n\n` +
       "Tu versión local:\n" +
-      `- Últ. guardado: ${previewLocal}\n`;
+      `- Últ. guardado: ${previewLocal}\n`
 
     // --- BLOQUEO POR CONFLICTO: "mismo dispositivo" ---
     const deviceLocal = getDeviceName(false);
@@ -1741,6 +1738,8 @@ async function importTrip(ev) {
     }
     // --- FIN BLOQUEO POR CONFLICTO ---
 
+;
+
     if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
       const r = new Date(payload.savedAt).toLocaleString();
       const l = new Date(localAtRaw).toLocaleString();
@@ -1769,6 +1768,8 @@ async function importTrip(ev) {
 
     state = payload.state;
     saveState();
+    closeModal();
+    renderAll();
 
     const now = new Date().toISOString();
     setMeta({
@@ -1780,15 +1781,6 @@ async function importTrip(ev) {
       lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
     });
 
-    closeModal();
-    try {
-      renderAll();
-    } catch (e) {
-      console.error(e);
-      alert("Viaje cargado, pero hubo un error al mostrarlo: " + (e?.message || e));
-      return;
-    }
-
     alert("Viaje cargado.");
   } catch(e) {
     alert("No se pudo cargar: " + e.message);
@@ -1798,20 +1790,72 @@ async function importTrip(ev) {
 }
 
 
-function renderTripList() {
+function renderTripList(filterText = "") {
   const box = $("tripList");
   if (!box) return;
-  const list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
-  if (!list.length) { box.innerHTML = `<div class="text-sm text-slate-500">Aún no hay viajes guardados localmente.</div>`; return; }
-  box.innerHTML = list.map((t, idx)=>`
-    <button class="tap w-full text-left p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50" data-trip="${idx}">
-      <div class="font-extrabold">${escapeHtml(t.name || "MI VIAJE")}</div>
-      <div class="text-xs text-slate-500">${escapeHtml(t.savedAt || "")}${t.deviceName ? " • " + escapeHtml(t.deviceName) : ""}</div>
-    </button>
-  `).join("");
-  box.querySelectorAll("[data-trip]").forEach(b => b.onclick = () => {
-    const idx = parseInt(b.getAttribute("data-trip"),10);
-    const payload = list[idx];
+
+  const q = String(filterText || "").trim().toLowerCase();
+
+  let list = [];
+  try {
+    list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
+    if (!Array.isArray(list)) list = [];
+  } catch { list = []; }
+
+  const fmt = (iso) => {
+    try { if (typeof fmtWhen === "function") return fmtWhen(iso); } catch {}
+    if (!iso) return "Nunca";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "Fecha desconocida";
+    return d.toLocaleString("es-ES", { year:"2-digit", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+  };
+
+  const makeTripId = (p, idx) => {
+    const sa = (p && p.savedAt) ? String(p.savedAt) : "";
+    const nm = (p && p.name) ? String(p.name) : "";
+    if (sa) return `${sa}|${nm}`;
+    return `idx:${idx}`;
+  };
+
+  const rows = list
+    .map((p, idx) => ({ p, idx, id: makeTripId(p, idx) }))
+    .filter(({ p }) => {
+      if (!q) return true;
+      const name = String(p?.name || "").toLowerCase();
+      const date = fmt(p?.savedAt).toLowerCase();
+      const dev  = String(p?.deviceName || "").toLowerCase();
+      return name.includes(q) || date.includes(q) || dev.includes(q);
+    });
+
+  if (!rows.length) {
+    box.innerHTML = `<div class="text-sm text-slate-500">No hay viajes que coincidan.</div>`;
+    return;
+  }
+
+  box.innerHTML = rows.map(({ p, idx, id }) => {
+    const name = String(p?.name || "MI VIAJE");
+    const when = fmt(p?.savedAt);
+    const dev = (p?.deviceName ? String(p.deviceName) : "");
+    return `
+      <div class="p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50">
+        <div class="flex items-start justify-between gap-3">
+          <button class="tap text-left min-w-0 flex-1" data-trip-load="${escapeHtml(id)}">
+            <div class="font-extrabold truncate">${escapeHtml(name)}</div>
+            <div class="text-xs text-slate-500 truncate">${escapeHtml(when)}${dev ? " • " + escapeHtml(dev) : ""}</div>
+          </button>
+
+          <button class="tap px-3 py-2 rounded-xl text-red-600 text-xs font-semibold" data-trip-delete="${escapeHtml(id)}">
+            Eliminar
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // LOAD handlers (preserve existing behavior: backup + meta + render)
+  box.querySelectorAll("[data-trip-load]").forEach(b => b.onclick = () => {
+    const id = b.getAttribute("data-trip-load");
+    const payload = list.find((p, i) => makeTripId(p, i) === id);
     if (!payload?.state) return;
 
     const meta = getMeta();
@@ -1822,8 +1866,14 @@ function renderTripList() {
     if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
       const r = new Date(payload.savedAt).toLocaleString();
       const l = new Date(localAtRaw).toLocaleString();
-      const who = payload.deviceName ? `\n(Creado por: ${payload.deviceName})` : "";
-      const ok = confirm(`Vas a cargar un viaje local MÁS ANTIGUO.\n\nViaje: ${r}${who}\nTu iPhone: ${l}\n\n¿Quieres continuar?`);
+      const who = payload.deviceName ? `
+(Creado por: ${payload.deviceName})` : "";
+      const ok = confirm(`Vas a cargar un viaje local MÁS ANTIGUO.
+
+Viaje: ${r}${who}
+Tu iPhone: ${l}
+
+¿Quieres continuar?`);
       if (!ok) return;
     }
 
@@ -1840,6 +1890,26 @@ function renderTripList() {
 
     closeModal();
     renderAll();
+  });
+
+  // DELETE handlers
+  box.querySelectorAll("[data-trip-delete]").forEach(btn => btn.onclick = () => {
+    const id = btn.getAttribute("data-trip-delete");
+    const ok = confirm("¿Eliminar este viaje del listado local?
+(Esta acción no borra archivos descargados.)");
+    if (!ok) return;
+
+    let current = [];
+    try {
+      current = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
+      if (!Array.isArray(current)) current = [];
+    } catch { current = []; }
+
+    const next = current.filter((p, i) => makeTripId(p, i) !== id);
+    localStorage.setItem("miviaje.trip.list", JSON.stringify(next));
+
+    const search = document.getElementById("tripSearchInput");
+    renderTripList(search ? search.value : filterText);
   });
 }
 
