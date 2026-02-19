@@ -679,6 +679,10 @@ function legCard(leg) {
         <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
       </div>
       <div class="sm:col-span-2">
+        <label class="text-xs text-slate-600">Hora (opcional)</label>
+        <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
+      </div>
+      <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Coste</label>
         <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
       </div>
@@ -740,11 +744,19 @@ function renderLegs() {
 }
 
 function stayCard(stay) {
-  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, "") : {done:false,auto:false,skipped:false};
+  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
   <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+      <div class="sm:col-span-3">
+        <label class="text-xs text-slate-600">Fecha (check-in)</label>
+        <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date || "")}">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="text-xs text-slate-600">Hora (opcional)</label>
+        <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
+      </div>
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Ciudad</label>
         <input data-stay-city="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.city)}" placeholder="Ciudad">
@@ -786,6 +798,16 @@ function renderStays() {
     const id = inp.getAttribute("data-stay-city");
     const s = sc.stays.find(x => x.id === id);
     s.city = cap1(inp.value); inp.value = s.city;
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-date]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-date");
+    sc.stays.find(x => x.id === id).date = inp.value;
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-time]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-time");
+    sc.stays.find(x => x.id === id).time = inp.value;
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-stay-name]").forEach(inp => inp.addEventListener("change", () => {
@@ -841,6 +863,21 @@ function isPast(dateKey) {
 }
 function isFuture(dateKey) {
   return cmpDate(String(dateKey || ""), todayKey()) > 0;
+}
+
+function timeToMinutes(t) {
+  const v = String(t || "").trim();
+  if (!/^\d{2}:\d{2}$/.test(v)) return null;
+  const hh = parseInt(v.slice(0,2), 10);
+  const mm = parseInt(v.slice(3,5), 10);
+  if (Number.isNaN(hh) || Number.isNaN(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return hh * 60 + mm;
+}
+
+function timeSortKey(t) {
+  const m = timeToMinutes(t);
+  // Sin hora => al final del día
+  return (m === null) ? (24 * 60 + 1) : m;
 }
 
 function promptDate(defaultKey) {
@@ -1118,7 +1155,7 @@ function handleStayDoneToggle(id, targetChecked, el) {
   const stay = (sc?.stays || []).find(s => String(s.id) === String(id));
   if (!stay) return;
 
-  const prevVisual = computeDoneStateGeneric(stay, ""); // stays no tienen fecha en este build
+  const prevVisual = computeDoneStateGeneric(stay, stay.date || ""); // stays no tienen fecha en este build
   const prevChecked = !!prevVisual.done;
 
   if (localStorage.getItem("miviaje.readonly") === "1") {
@@ -1253,7 +1290,13 @@ function renderTimeline() {
     items.push({ date: d, type:"Nota", title: "📝 Notas del día", cost: null, isNote: true });
   });
 
-  items.sort((x,y)=> String(x.date).localeCompare(String(y.date)) || String(x.type).localeCompare(String(y.type)));
+  items.sort((a,b)=>{
+    if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
+    const ta = timeSortKey(a.time);
+    const tb = timeSortKey(b.time);
+    if (ta !== tb) return ta - tb;
+    return String(a.type+':'+a.id).localeCompare(String(b.type+':'+b.id));
+  });
 
   if (!items.length) {
     box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos todavía.</div>`;
@@ -1264,7 +1307,7 @@ function renderTimeline() {
   box.innerHTML = items.map(it => {
     const isDated = it.date && it.date !== "9999-99-99";
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
-    const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date);
+    const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
 
@@ -2567,17 +2610,17 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.legs.push({ id: nowId(), from:"", to:"", date:"", cost:0, tzFrom:null, tzTo:null });
+  sc.legs.push({ id: nowId(), from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
   saveState(); renderLegs(); renderTimeline(); calcSummary();
 });
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.stays.push({ id: nowId(), city:"", name:"", nights:1, cost:0 });
+  sc.stays.push({ id: nowId(), city:"", name:"", date:"", time:"", nights:1, cost:0 });
   saveState(); renderStays(); renderTimeline(); calcSummary();
 });
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.activities.push({ id: nowId(), title:"", city:"", date:"", cost:0, fromAI:false });
+  sc.activities.push({ id: nowId(), title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   saveState(); renderActivities(); renderTimeline(); calcSummary();
 });
 
