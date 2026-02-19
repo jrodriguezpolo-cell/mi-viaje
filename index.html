@@ -36,7 +36,10 @@
     .skipped-badge { color: #b91c1c; } /* red-700 */
     .auto-badge { color: #64748b; } /* slate-500 */
 
-  </style>
+    /* Timeline: hoy + hecho (verde más claro) */
+  .tl-today-done{background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.22);}
+
+</style>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <!-- Top bar -->
@@ -1028,6 +1031,8 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const notes = sc.dailyNotes || {};
   const items = [];
 
@@ -1038,7 +1043,7 @@ function renderTimeline() {
     items.push({ date: "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost) });
   }
   for (const a of sc.activities) {
-    items.push({ date: a.date || "9999-99-99", type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost) });
+    items.push({ date: a.date || "9999-99-99", type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id });
   }
 
   // Add note markers as timeline items so you can see notes even if there was no event that day
@@ -1062,16 +1067,56 @@ function renderTimeline() {
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date);
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
+
+    // Checkbox "Hecho" solo para actividades en el cronograma
+    let tlActCheckbox = "";
+    let todayDoneClass = "";
+    let tlBadges = "";
+
+    if (it.actId != null) {
+      const actId = String(it.actId);
+      const act = actById.get(actId);
+      if (act) {
+        const st = computeDoneState(act);
+        const isToday = (String(it.date || act.date || "") === todayKey());
+
+        if (isToday && st.done) todayDoneClass = " tl-today-done";
+
+        tlActCheckbox = `
+          <label class="inline-flex items-center gap-1 text-xs text-slate-600">
+            <input type="checkbox"
+                   class="h-4 w-4"
+                   data-tl-act-done="${escapeHtml(actId)}"
+                   ${st.done ? "checked" : ""}
+                   ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+        `;
+
+        if (st.skipped) tlBadges = `<span class="text-xs font-semibold skipped-badge">No realizado</span>`;
+        else if (st.auto && st.done) tlBadges = `<span class="text-xs auto-badge">Asumido</span>`;
+      }
+    }
+
     return `
-      <div class="timelineItem ${clsTime} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}">
-        <div>
-          <div class="text-xs text-slate-500">${escapeHtml(whenLabel)}${hasNote ? ' 📝' : ''} • ${escapeHtml(it.type)}</div>
-          <div class="font-semibold">${escapeHtml(it.title)}</div>
+      <div class="timelineItem ${clsTime}${todayDoneClass} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}">
+        <div class="min-w-0">
+          <div class="text-xs text-slate-500 truncate">${escapeHtml(whenLabel)}${hasNote ? ' 📝' : ''} • ${escapeHtml(it.type)}</div>
+          <div class="font-semibold truncate">${escapeHtml(it.title)}</div>
         </div>
-        <div class="font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
+        <div class="flex flex-col items-end gap-2 shrink-0">
+          <div class="font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
+          ${tlActCheckbox ? tlActCheckbox : ""}
+          ${tlBadges ? tlBadges : ""}
+        </div>
       </div>
     `;
   }).join("");
+
+  // Listeners scoped: checkbox "Hecho" en cronograma (solo actividades)
+  box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
+    cb.onchange = () => handleActDoneToggle(cb.dataset.tlActDone, cb.checked, cb);
+  });
 
   renderDailyNotes();
 }
