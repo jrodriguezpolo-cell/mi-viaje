@@ -504,10 +504,16 @@ function setMeta(patch) {
   return next;
 }
 function getDeviceName(askIfMissing = true) {
-  let v = (localStorage.getItem(DEVICE_KEY) || "").trim();
+  // Fuente de verdad: miviaje.deviceName (nuevo). Compat: miviaje.deviceName.v1 (legacy)
+  let v = (localStorage.getItem("miviaje.deviceName") || "").trim();
+  if (!v) v = (localStorage.getItem(DEVICE_KEY) || "").trim();
+
   if (!v && askIfMissing) {
-    v = (prompt("Nombre de este dispositivo (ej: iPhone Juan / iPhone María):", "") || "").trim();
-    if (v) localStorage.setItem(DEVICE_KEY, v);
+    v = (prompt("Nombre de este dispositivo (ej: iPhone Ana / iPhone Luis):", "") || "").trim();
+    if (v) {
+      try { localStorage.setItem("miviaje.deviceName", v); } catch {}
+      try { localStorage.setItem(DEVICE_KEY, v); } catch {}
+    }
   }
   return v || "Dispositivo";
 }
@@ -1467,7 +1473,11 @@ ${label}`)) return;
 
     $("setDeviceName").onclick = () => {
       const v = prompt("Nombre de este iPhone:", (localStorage.getItem(DEVICE_KEY) || "").trim());
-      if (v && v.trim()) localStorage.setItem(DEVICE_KEY, v.trim());
+      if (v && v.trim()) {
+        try { localStorage.setItem("miviaje.deviceName", v.trim()); } catch {}
+        try { localStorage.setItem(DEVICE_KEY, v.trim()); } catch {}
+        try { setMeta({ deviceName: v.trim() }); } catch {}
+      }
       refresh();
     };
 
