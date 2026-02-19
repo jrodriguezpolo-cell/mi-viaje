@@ -36,8 +36,43 @@
     .skipped-badge { color: #b91c1c; } /* red-700 */
     .auto-badge { color: #64748b; } /* slate-500 */
 
-    /* Timeline: hoy + hecho (verde más claro) */
-  .tl-today-done{background: rgba(16,185,129,0.10); border-color: rgba(16,185,129,0.22);}
+    /* Timeline UX states (v32+) */
+
+/* Hoy pendiente (verde claro) */
+.tl-today {
+  background: rgba(16,185,129,0.10);
+  border-color: rgba(16,185,129,0.22);
+}
+
+/* Hoy hecho (AZUL muy claro) */
+.tl-today-done {
+  background: rgba(59,130,246,0.12);
+  border-color: rgba(59,130,246,0.28);
+}
+
+/* Pasado asumido (auto) - gris tenue */
+.tl-auto-done {
+  background: rgba(100,116,139,0.08);
+  border-color: rgba(100,116,139,0.18);
+}
+
+/* No realizado (skipped) - rojo suave */
+.tl-skipped {
+  background: rgba(239,68,68,0.10);
+  border-color: rgba(239,68,68,0.25);
+}
+
+/* Futuro - amarillo suave */
+.tl-future {
+  background: rgba(234,179,8,0.08);
+  border-color: rgba(234,179,8,0.20);
+}
+
+.tl-today,
+.tl-today-done,
+.tl-auto-done,
+.tl-skipped,
+.tl-future { background-clip: padding-box; }
 
 </style>
 </head>
@@ -647,8 +682,10 @@ function renderTabs() {
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
+    const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-3">
         <label class="text-xs text-slate-600">Salida</label>
@@ -668,7 +705,12 @@ function legCard(leg) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
       </div>
-      <div class="sm:col-span-2 flex justify-end">
+      <div class="sm:col-span-2 flex items-center justify-between gap-2">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+          Hecho
+        </label>
+        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
         <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -714,11 +756,17 @@ function renderLegs() {
     leg.cost = parseMoney(inp.value);
     saveState(); calcSummary(); renderTimeline();
   }));
+
+  box.querySelectorAll("[data-leg-done]").forEach(cb => cb.addEventListener("change", () => {
+    handleLegDoneToggle(cb.getAttribute("data-leg-done"), cb.checked, cb);
+  }));
 }
 
 function stayCard(stay) {
+  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, "") : {done:false,auto:false,skipped:false};
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Ciudad</label>
@@ -736,7 +784,12 @@ function stayCard(stay) {
         <label class="text-xs text-slate-600">Coste</label>
         <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
       </div>
-      <div class="sm:col-span-1 flex justify-end">
+      <div class="sm:col-span-1 flex flex-col items-end gap-2">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <input type="checkbox" class="h-4 w-4" data-stay-done="${stay.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+          Hecho
+        </label>
+        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : ``}
         <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -772,6 +825,10 @@ function renderStays() {
     const id = inp.getAttribute("data-stay-cost");
     sc.stays.find(x => x.id === id).cost = parseMoney(inp.value);
     saveState(); calcSummary();
+  }));
+
+  box.querySelectorAll("[data-stay-done]").forEach(cb => cb.addEventListener("change", () => {
+    handleStayDoneToggle(cb.getAttribute("data-stay-done"), cb.checked, cb);
   }));
 }
 
@@ -949,6 +1006,119 @@ function handleActDoneToggle(id, targetChecked, el) {
   }
 }
 
+/* ---------------- Legs/Stays: smart done (v32+) ---------------- */
+// Estado visual genérico para elementos con fecha (legs) o sin fecha (stays)
+function computeDoneStateGeneric(item, dateKey) {
+  const dk = String(dateKey || "");
+  if (item?.doneManual === true) return { done: true, auto: false, skipped: false };
+  if (item?.skipped === true) return { done: false, auto: false, skipped: true };
+  if (dk && isPast(dk)) return { done: true, auto: true, skipped: false };
+  return { done: false, auto: false, skipped: false };
+}
+
+function handleLegDoneToggle(id, targetChecked, el) {
+  const sc = curScenario();
+  const leg = (sc?.legs || []).find(l => String(l.id) === String(id));
+  if (!leg) return;
+
+  const prevVisual = computeDoneStateGeneric(leg, leg.date);
+  const prevChecked = !!prevVisual.done;
+
+  if (localStorage.getItem("miviaje.readonly") === "1") {
+    if (el) el.checked = prevChecked;
+    return;
+  }
+
+  const today = todayKey();
+  const dateKey = String(leg.date || "");
+
+  if (targetChecked === true) {
+    if (dateKey && isFuture(dateKey)) {
+      const choice = prompt(
+        "Trayecto futuro. ¿Qué quieres hacer?\n" +
+        "1 = Hecho (mantener fecha)\n" +
+        "2 = Hecho y mover a HOY\n" +
+        "3 = Hecho y elegir fecha…\n\n" +
+        "Escribe 1, 2 o 3:",
+        "2"
+      );
+      if (choice === null) { if (el) el.checked = prevChecked; return; }
+      const c = String(choice).trim();
+      if (c === "1") {
+        leg.doneManual = true; leg.skipped = false;
+      } else if (c === "2") {
+        leg.doneManual = true; leg.skipped = false; leg.date = today;
+      } else if (c === "3") {
+        const nd = promptDate(today);
+        if (nd === null) { if (el) el.checked = prevChecked; return; }
+        leg.doneManual = true; leg.skipped = false; leg.date = nd;
+      } else { if (el) el.checked = prevChecked; return; }
+    } else {
+      leg.doneManual = true; leg.skipped = false;
+    }
+    saveState(); renderLegs(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
+    return;
+  }
+
+  // targetChecked === false
+  if (dateKey && isPast(dateKey)) {
+    const choice = prompt(
+      "Trayecto pasado. ¿Qué quieres hacer?\n" +
+      "1 = No realizado (mantener fecha)\n" +
+      "2 = Reprogramar\n\n" +
+      "Escribe 1 o 2:",
+      "1"
+    );
+    if (choice === null) { if (el) el.checked = prevChecked; return; }
+    const c = String(choice).trim();
+    if (c === "1") {
+      leg.doneManual = false; leg.skipped = true;
+    } else if (c === "2") {
+      const d = new Date(); d.setDate(d.getDate() + 1);
+      const def = d.toISOString().slice(0,10);
+      const nd = promptDate(def);
+      if (nd === null) { if (el) el.checked = prevChecked; return; }
+      leg.date = nd; leg.doneManual = false; leg.skipped = false;
+    } else { if (el) el.checked = prevChecked; return; }
+  } else {
+    leg.doneManual = false; leg.skipped = false;
+  }
+  saveState(); renderLegs(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
+}
+
+function handleStayDoneToggle(id, targetChecked, el) {
+  const sc = curScenario();
+  const stay = (sc?.stays || []).find(s => String(s.id) === String(id));
+  if (!stay) return;
+
+  const prevVisual = computeDoneStateGeneric(stay, ""); // stays no tienen fecha en este build
+  const prevChecked = !!prevVisual.done;
+
+  if (localStorage.getItem("miviaje.readonly") === "1") {
+    if (el) el.checked = prevChecked;
+    return;
+  }
+
+  if (targetChecked === true) {
+    stay.doneManual = true; stay.skipped = false;
+    saveState(); renderStays(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
+    return;
+  }
+
+  // OFF: confirmación si estaba marcado manual
+  if (stay.doneManual === true) {
+    const ok = confirm("¿Marcar este alojamiento como NO realizado?\n(Se mantendrá en la lista, pero como no realizado.)");
+    if (!ok) { if (el) el.checked = prevChecked; return; }
+    stay.doneManual = false; stay.skipped = true;
+  } else {
+    stay.doneManual = false; stay.skipped = false;
+  }
+
+  saveState(); renderStays(); if (typeof renderTimeline === "function") renderTimeline(); if (typeof calcSummary === "function") calcSummary();
+}
+/* ---------------- /Legs/Stays: smart done ---------------- */
+
+
 /* ---------------- /Activities: smart done ---------------- */
 
 
@@ -979,6 +1149,7 @@ function actCard(act) {
           <input type="checkbox" class="h-4 w-4" data-act-done="${act.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
           Hecho
         </label>
+        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
         <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
@@ -1033,14 +1204,16 @@ function renderTimeline() {
   const sc = curScenario();
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
+  const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
+  const stayById = new Map((sc.stays || []).map(s => [String(s.id), s]));
   const notes = sc.dailyNotes || {};
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({ date: leg.date || "9999-99-99", type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost) });
+    items.push({ date: leg.date || "9999-99-99", type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id });
   }
   for (const s of sc.stays) {
-    items.push({ date: "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost) });
+    items.push({ date: "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id });
   }
   for (const a of sc.activities) {
     items.push({ date: a.date || "9999-99-99", type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id });
@@ -1068,54 +1241,75 @@ function renderTimeline() {
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
 
-    // Checkbox "Hecho" solo para actividades en el cronograma
-    let tlActCheckbox = "";
-    let todayDoneClass = "";
+    // Checkpoint (Hecho) para Transporte / Alojamiento / Actividades en el cronograma
+    let tlCheckbox = "";
+    let visualClass = "";
     let tlBadges = "";
 
-    if (it.actId != null) {
-      const actId = String(it.actId);
-      const act = actById.get(actId);
-      if (act) {
-        const st = computeDoneState(act);
-        const isToday = (String(it.date || act.date || "") === todayKey());
+    // Resolver elemento del state + handler según tipo
+    let kind = "";
+    let itemObj = null;
 
-        if (isToday && st.done) todayDoneClass = " tl-today-done";
+    if (it.actId != null) { kind = "act"; itemObj = actById.get(String(it.actId)); }
+    else if (it.legId != null) { kind = "leg"; itemObj = legById.get(String(it.legId)); }
+    else if (it.stayId != null) { kind = "stay"; itemObj = stayById.get(String(it.stayId)); }
 
-        tlActCheckbox = `
-          <label class="inline-flex items-center gap-1 text-xs text-slate-600">
-            <input type="checkbox"
-                   class="h-4 w-4"
-                   data-tl-act-done="${escapeHtml(actId)}"
-                   ${st.done ? "checked" : ""}
-                   ${ro ? "disabled" : ""}>
-            Hecho
-          </label>
-        `;
+    if (itemObj && !it.isNote) {
+      const dateKey = (kind === "stay") ? "" : String(itemObj.date || it.date || "");
+      const st = (kind === "act") ? computeDoneState(itemObj) : computeDoneStateGeneric(itemObj, dateKey);
+      const isToday = (dateKey && String(dateKey) === todayKey());
 
-        if (st.skipped) tlBadges = `<span class="text-xs font-semibold skipped-badge">No realizado</span>`;
-        else if (st.auto && st.done) tlBadges = `<span class="text-xs auto-badge">Asumido</span>`;
-      }
+      // Badges
+      if (st.skipped) tlBadges = `<span class="text-xs font-semibold skipped-badge">No realizado</span>`;
+      else if (st.auto && st.done) tlBadges = `<span class="text-xs auto-badge">Asumido</span>`;
+
+      // Clases visuales
+      if (st.skipped) visualClass = " tl-skipped";
+      else if (isToday && st.done) visualClass = " tl-today-done";
+      else if (isToday && !st.done) visualClass = " tl-today";
+      else if (st.auto && st.done) visualClass = " tl-auto-done";
+      else if (dateKey && isFuture(dateKey)) visualClass = " tl-future";
+
+      const dataAttr = kind === "act" ? `data-tl-act-done="${escapeHtml(String(it.actId))}"`
+                    : kind === "leg" ? `data-tl-leg-done="${escapeHtml(String(it.legId))}"`
+                    : `data-tl-stay-done="${escapeHtml(String(it.stayId))}"`;
+
+      tlCheckbox = `
+        <label class="inline-flex items-center gap-1 text-xs text-slate-600">
+          <input type="checkbox"
+                 class="h-4 w-4"
+                 ${dataAttr}
+                 ${st.done ? "checked" : ""}
+                 ${ro ? "disabled" : ""}>
+          Hecho
+        </label>
+      `;
     }
 
     return `
-      <div class="timelineItem ${clsTime}${todayDoneClass} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}">
+      <div class="timelineItem ${clsTime}${visualClass} flex items-start justify-between gap-3 border border-slate-200 rounded-2xl p-3${noteBadge}" data-date="${escapeHtml(it.date)}">
         <div class="min-w-0">
           <div class="text-xs text-slate-500 truncate">${escapeHtml(whenLabel)}${hasNote ? ' 📝' : ''} • ${escapeHtml(it.type)}</div>
           <div class="font-semibold truncate">${escapeHtml(it.title)}</div>
         </div>
         <div class="flex flex-col items-end gap-2 shrink-0">
           <div class="font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
-          ${tlActCheckbox ? tlActCheckbox : ""}
+          ${tlCheckbox ? tlCheckbox : ""}
           ${tlBadges ? tlBadges : ""}
         </div>
       </div>
     `;
   }).join("");
 
-  // Listeners scoped: checkbox "Hecho" en cronograma (solo actividades)
+  // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
     cb.onchange = () => handleActDoneToggle(cb.dataset.tlActDone, cb.checked, cb);
+  });
+  box.querySelectorAll("[data-tl-leg-done]").forEach(cb => {
+    cb.onchange = () => handleLegDoneToggle(cb.dataset.tlLegDone, cb.checked, cb);
+  });
+  box.querySelectorAll("[data-tl-stay-done]").forEach(cb => {
+    cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
 
   renderDailyNotes();
