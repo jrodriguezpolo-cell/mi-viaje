@@ -661,62 +661,24 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
-  // Summary default: always collapsed on load (no persistence)
-  summaryExpanded = false;
-  bindSummaryToggleOnce();
-  applySummaryMode();
 }
 
 
 /* ------------------------ Summary collapse (session-only) ------------------------ */
 let summaryExpanded = false;
 
-function applySummaryMode() {
-  const collapsed = document.getElementById('summaryCollapsed');
-  const detail = document.getElementById('summaryDetail');
-  const btn = document.getElementById('summaryToggle');
-  if (!collapsed || !detail || !btn) return;
-
-  collapsed.classList.toggle('hidden', summaryExpanded);
-  detail.classList.toggle('hidden', !summaryExpanded);
-  btn.textContent = summaryExpanded ? 'Ocultar detalle ▴' : 'Ver detalle ▾';
-}
-
-function bindSummaryToggleOnce() {
-  const btn = document.getElementById('summaryToggle');
-  if (!btn || btn.dataset.bound === '1') return;
-  btn.dataset.bound = '1';
-  btn.addEventListener('click', () => {
-    summaryExpanded = !summaryExpanded;
-    applySummaryMode();
-  });
-}
-
-
 /* ----------------------------- Accordion ----------------------------- */
 function setupAccordion() {
-  // Delegated accordion handler (robust): works even if sections re-render.
-  // Expects: data-acc="key" and a body with data-acc-body="key".
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-acc]");
-    if (!btn) return;
-
-    // Avoid interfering with controls inside accordion headers
-    const tag = (e.target.tagName || "").toLowerCase();
-    if (tag === "input" || tag === "select" || tag === "textarea" || tag === "label") return;
-
-    const key = btn.getAttribute("data-acc");
-    if (!key) return;
-
-    const body = document.querySelector('[data-acc-body="' + key.replace(/"/g, '\"') + '"]');
-    if (!body) return;
-
-    body.classList.toggle("hidden");
-    const icon = btn.querySelector(".accIcon");
-    if (icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
-
-    e.preventDefault();
-  }, { passive: false });
+  document.querySelectorAll("[data-acc]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-acc");
+      const body = document.querySelector(`[data-acc-body="${key}"]`);
+      if (!body) return;
+      body.classList.toggle("hidden");
+      const icon = btn.querySelector(".accIcon");
+      if (icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+    });
+  });
 }
 
 function collapseAllAccordions() {
