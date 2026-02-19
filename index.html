@@ -1574,13 +1574,45 @@ try {
     : (finalName.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
   const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
   const filename = `${base}_${date}.json`;
-
+  // --- Share Sheet (iOS) + fallback download (SIN async/await) ---
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+
+  function doDownload() {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: "application/json" });
+      const can = (typeof navigator.canShare === "function")
+        ? navigator.canShare({ files: [file] })
+        : true;
+
+      if (can) {
+        Promise.resolve(
+          navigator.share({
+            files: [file],
+            title: payload?.name || "Mi Viaje",
+            text: "Viaje exportado desde Mi Viaje"
+          })
+        ).catch(() => {
+          // Cancelación o error → fallback a download
+          doDownload();
+        });
+      } else {
+        doDownload();
+      }
+    } else {
+      doDownload();
+    }
+  } catch {
+    doDownload();
+  }
+  // --- FIN ---
 
   renderTripList();
 }
@@ -1646,13 +1678,45 @@ function exportMilestone() {
   const ymd = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   const hm = `${pad2(d.getHours())}-${pad2(d.getMinutes())}`;
   const filename = `HITO_${safe}_${ymd}_${hm}.json`;
-
+  // --- Share Sheet (iOS) + fallback download (SIN async/await) ---
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+
+  function doDownload() {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: "application/json" });
+      const can = (typeof navigator.canShare === "function")
+        ? navigator.canShare({ files: [file] })
+        : true;
+
+      if (can) {
+        Promise.resolve(
+          navigator.share({
+            files: [file],
+            title: payload?.name || "Mi Viaje",
+            text: "Viaje exportado desde Mi Viaje"
+          })
+        ).catch(() => {
+          // Cancelación o error → fallback a download
+          doDownload();
+        });
+      } else {
+        doDownload();
+      }
+    } else {
+      doDownload();
+    }
+  } catch {
+    doDownload();
+  }
+  // --- FIN ---
 
   renderTripList();
 }
