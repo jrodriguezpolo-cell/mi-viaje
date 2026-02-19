@@ -1136,22 +1136,34 @@ NO incluyas URLs.`;
   renderAIResults(sections);
 }
 
-/* ----------------------- Device name \(minimal\) ------------------------ */
-const LS_DEVICE_NAME = "miviaje.deviceName";
+/* ----------------------- Device name (unified) ------------------------ */
+// Fuente de verdad: miviaje.deviceName (nuevo). Compat: miviaje.deviceName.v1 (legacy)
+function getDeviceName(askIfMissing = true) {
+  let v = (localStorage.getItem("miviaje.deviceName") || "").trim();
+  try { if (!v && typeof DEVICE_KEY !== "undefined") v = (localStorage.getItem(DEVICE_KEY) || "").trim(); } catch {}
 
-function getDeviceName() {
-  const v = (localStorage.getItem(LS_DEVICE_NAME) || "").trim();
-  return v || "Este iPhone";
+  if (!v && askIfMissing) {
+    v = (prompt("Nombre de este dispositivo (ej: iPhone Ana / iPhone Luis):", "") || "").trim();
+    if (v) {
+      try { localStorage.setItem("miviaje.deviceName", v); } catch {}
+      try { if (typeof DEVICE_KEY !== "undefined") localStorage.setItem(DEVICE_KEY, v); } catch {}
+    }
+  }
+  return v || "Dispositivo";
 }
 
 function setDeviceName(name) {
   const v = String(name || "").trim();
-  if (v) localStorage.setItem(LS_DEVICE_NAME, v);
-  else localStorage.removeItem(LS_DEVICE_NAME); // vuelve al fallback
-  // Mantén meta.deviceName alineado (si usas meta)
-  if (typeof setMeta === "function") setMeta({ deviceName: getDeviceName() });
+  if (v) {
+    try { localStorage.setItem("miviaje.deviceName", v); } catch {}
+    try { if (typeof DEVICE_KEY !== "undefined") localStorage.setItem(DEVICE_KEY, v); } catch {}
+  } else {
+    try { localStorage.removeItem("miviaje.deviceName"); } catch {}
+    try { if (typeof DEVICE_KEY !== "undefined") localStorage.removeItem(DEVICE_KEY); } catch {}
+  }
+  if (typeof setMeta === "function") setMeta({ deviceName: getDeviceName(false) });
 }
-/* --------------------- /Device name \(minimal\) --------------------- */
+/* --------------------- /Device name (unified) --------------------- */
 
 
 /* ------------------------ Save / Load (simple) ----------------------- */
