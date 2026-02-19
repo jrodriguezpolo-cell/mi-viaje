@@ -1,13 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>MI VIAJE</title>
-  <meta name="theme-color" content="#1d4ed8"/>
-  <link rel="manifest" href="manifest.json">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>MI VIAJE</title>
+<meta content="#1d4ed8" name="theme-color"/>
+<link href="manifest.json" rel="manifest"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
     /* iPhone safe-area helpers */
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     .safe-t { padding-top: max(env(safe-area-inset-top), 12px); }
@@ -97,271 +98,240 @@
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <!-- Top bar -->
-  <header class="safe-t sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <img src="icon.png" class="w-10 h-10 rounded-2xl" alt="MI VIAJE"/>
-        <div class="leading-tight">
-          <div class="font-extrabold tracking-tight text-lg">MI VIAJE</div>
+<!-- Top bar -->
+<header class="safe-t sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+<div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
+<div class="leading-tight">
+<div class="font-extrabold tracking-tight text-lg">MI VIAJE</div>
 </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button id="btnTrips" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">
+</div>
+<div class="flex items-center gap-2">
+<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnTrips">
           Guardar / Cargar
         </button>
-        <button id="btnReadOnly" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" aria-pressed="false">
+<button aria-pressed="false" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnReadOnly">
           🔒 Modo lectura
         </button>
-        <button id="btnKey" class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold">
+<button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main -->
-  <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
-    <!-- Scenario toggle -->
-    <div class="flex items-center justify-between gap-3 mb-5">
-      <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
-        <button id="tabA" class="tap px-4 py-2 rounded-2xl text-sm font-semibold">MI VIAJE</button>
-        <button id="tabB" class="tap px-4 py-2 rounded-2xl text-sm font-semibold">VIAJE ALTERNATIVO</button>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <label class="text-sm text-slate-600">Moneda</label>
-        <select id="displayCurrency" class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm">
-          <option value="EUR">€ EUR</option>
-          <option value="USD">$ USD</option>
-          <option value="GBP">£ GBP</option>
-          <option value="JPY">¥ JPY</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-      <section class="lg:col-span-8 space-y-4 order-last lg:order-first">
-
-        <!-- TIMELINE -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="timeline" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-orange-50 items-center justify-center">🗓️</span>
-              <div class="text-left">
-                <div class="font-extrabold">Cronograma</div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="timeline" class="px-5 pb-5 hidden">
-            <div class="flex justify-end mb-3">
-              <div class="flex gap-2 justify-end">
-      <button id="timelineToday" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold">Hoy</button>
-      <button id="timelineNext" class="tap px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold">
+</div>
+</header>
+<!-- Main -->
+<main class="max-w-6xl mx-auto px-4 py-6 pb-24">
+<!-- Scenario toggle -->
+<div class="flex items-center justify-between gap-3 mb-5">
+<div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
+<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
+<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
+</div>
+<div class="flex items-center gap-2">
+<label class="text-sm text-slate-600">Moneda</label>
+<select class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" id="displayCurrency">
+<option value="EUR">€ EUR</option>
+<option value="USD">$ USD</option>
+<option value="GBP">£ GBP</option>
+<option value="JPY">¥ JPY</option>
+</select>
+</div>
+</div>
+<!-- Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-4"><aside class="lg:col-span-4">
+<div class="bg-white border border-slate-200 rounded-3xl p-5 sticky top-24">
+<div class="font-extrabold text-lg">RESUMEN</div>
+<div class="mt-3 space-y-2 text-sm">
+<div class="flex justify-between"><span class="text-slate-600">Transporte</span><span class="font-semibold" id="sumTransport">0.00</span><button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="summaryToggle">▾ Ver detalle</button></div>
+<div class="flex justify-between"><span class="text-slate-600">Alojamiento</span><span class="font-semibold" id="sumStay">0.00</span></div>
+<div class="flex justify-between"><span class="text-slate-600">Actividades</span><span class="font-semibold" id="sumActs">0.00</span></div>
+<div class="flex justify-between"><span class="text-slate-600">Comidas</span><span class="font-semibold" id="sumMeals">0.00</span></div>
+<hr class="my-2"/>
+<div class="flex justify-between text-base"><span class="font-extrabold">TOTAL</span><span class="font-extrabold" id="sumTotal">0.00</span></div>
+<div class="text-xs text-slate-500">Moneda de visualización: <span id="sumCur">EUR</span></div>
+</div>
+<div class="mt-4 flex gap-2">
+
+</div>
+<div class="mt-3 hidden text-sm bg-slate-50 border border-slate-200 rounded-2xl p-3" id="compareBox"></div>
+</div><div class="mt-3 hidden" id="summaryDetail"><button class="tap flex-1 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCompare">
+              Comparar A/B (simple)
+            </button></div>
+</aside>
+<section class="lg:col-span-8 space-y-4">
+<!-- TIMELINE -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-orange-50 items-center justify-center">🗓️</span>
+<div class="text-left">
+<div class="font-extrabold">Cronograma</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="timeline">
+<div class="flex justify-end mb-3">
+<div class="flex gap-2 justify-end">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Hoy</button>
+<button class="tap px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">
       Próximo
     </button>
-    </div>
-  </div>
-            <div id="timelineList" class="space-y-2"></div>
-                        <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
-              <button data-acc="dailyNotes" class="w-full tap flex items-center justify-between px-4 py-4">
-                <div class="flex items-center gap-3">
-                  <span class="inline-flex w-9 h-9 rounded-2xl bg-slate-50 items-center justify-center">📝</span>
-                  <div class="text-left">
-                    <div class="font-extrabold">NOTAS DEL DÍA</div>
 </div>
-                </div>
-                <span class="accIcon text-slate-400 text-xl">▾</span>
-              </button>
-              <div data-acc-body="dailyNotes" class="px-4 pb-4 hidden">
-                <div id="dailyNotesBox" class="p-3 rounded-2xl border border-slate-200 bg-white"></div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      
-
-        <!-- LOGISTICA -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="legs" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
-              <div class="text-left">
-                <div class="font-extrabold">Transporte</div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="legs" class="px-5 pb-5 hidden">
-            <div class="flex justify-end mb-3">
-              <button id="addLeg" class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold">+ Añadir trayecto</button>
-            </div>
-            <div id="legsList" class="space-y-3"></div>
-          </div>
-        </div>
-
-        <!-- ALOJAMIENTO -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="stays" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
-              <div class="text-left">
-                <div class="font-extrabold">Alojamiento</div>
+<div class="space-y-2" id="timelineList"></div>
+<div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-slate-50 items-center justify-center">📝</span>
+<div class="text-left">
+<div class="font-extrabold">NOTAS DEL DÍA</div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="stays" class="px-5 pb-5 hidden">
-            <div class="flex justify-end mb-3">
-              <button id="addStay" class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold">+ Añadir alojamiento</button>
-            </div>
-            <div id="staysList" class="space-y-3"></div>
-          </div>
-        </div>
-
-        <!-- COMIDAS -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="meals" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
-              <div class="text-left">
-                <div class="font-extrabold">Comida</div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="meals" class="px-5 pb-5 hidden">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label class="text-xs text-slate-600">Gasto diario x persona</label>
-                <input id="mealDaily" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: 30">
-              </div>
-              <div>
-                <label class="text-xs text-slate-600">Nº personas</label>
-                <input id="mealPeople" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: 2">
-              </div>
-              <div>
-                <label class="text-xs text-slate-600">Días totales</label>
-                <input id="mealDays" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: 20">
-              </div>
-            </div>
-            <div class="mt-3 text-sm">
-              <span class="text-slate-600">Total comidas:</span>
-              <span id="mealTotal" class="font-extrabold">0.00</span>
-              <span id="mealCur" class="text-slate-500">EUR</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ACTIVIDADES -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="acts" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
-              <div class="text-left">
-                <div class="font-extrabold">Actividades</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-4 pb-4 hidden" data-acc-body="dailyNotes">
+<div class="p-3 rounded-2xl border border-slate-200 bg-white" id="dailyNotesBox"></div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="acts" class="px-5 pb-5 hidden">
-            <div class="flex justify-end mb-3">
-              <button id="addAct" class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold">+ Añadir actividad</button>
-            </div>
-            <div id="actsList" class="space-y-3"></div>
-          </div>
-        </div>
-
-        <!-- IA -->
-        <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-          <button data-acc="ai" class="w-full tap flex items-center justify-between px-5 py-4">
-            <div class="flex items-center gap-3">
-              <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center">🤖</span>
-              <div class="text-left">
-                <div class="font-extrabold">SUGERENCIAS DE LA IA</div>
 </div>
-            </div>
-            <span class="accIcon text-slate-400 text-xl">▾</span>
-          </button>
-          <div data-acc-body="ai" class="px-5 pb-5 hidden">
-            <div class="flex flex-wrap gap-2 justify-end mb-3">
-              <button id="aiPick" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">1) Elegir temas</button>
-              <button id="aiGenerate" class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold">2) Generar guía</button>
-            </div>
-
-            <div id="aiStatus" class="text-sm text-slate-500">
+</div>
+</div>
+<!-- LOGISTICA -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
+<div class="text-left">
+<div class="font-extrabold">Transporte</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="legs">
+<div class="flex justify-end mb-3">
+<button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
+</div>
+<div class="space-y-3" id="legsList"></div>
+</div>
+</div>
+<!-- ALOJAMIENTO -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
+<div class="text-left">
+<div class="font-extrabold">Alojamiento</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="stays">
+<div class="flex justify-end mb-3">
+<button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
+</div>
+<div class="space-y-3" id="staysList"></div>
+</div>
+</div>
+<!-- COMIDAS -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
+<div class="text-left">
+<div class="font-extrabold">Comida</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="meals">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div>
+<label class="text-xs text-slate-600">Gasto diario x persona</label>
+<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealDaily" min="0" placeholder="Ej: 30" step="0.01" type="number"/>
+</div>
+<div>
+<label class="text-xs text-slate-600">Nº personas</label>
+<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealPeople" min="1" placeholder="Ej: 2" step="1" type="number"/>
+</div>
+<div>
+<label class="text-xs text-slate-600">Días totales</label>
+<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealDays" min="1" placeholder="Ej: 20" step="1" type="number"/>
+</div>
+</div>
+<div class="mt-3 text-sm">
+<span class="text-slate-600">Total comidas:</span>
+<span class="font-extrabold" id="mealTotal">0.00</span>
+<span class="text-slate-500" id="mealCur">EUR</span>
+</div>
+</div>
+</div>
+<!-- ACTIVIDADES -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
+<div class="text-left">
+<div class="font-extrabold">Actividades</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="acts">
+<div class="flex justify-end mb-3">
+<button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
+</div>
+<div class="space-y-3" id="actsList"></div>
+</div>
+</div>
+<!-- IA -->
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
+<div class="flex items-center gap-3">
+<span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center">🤖</span>
+<div class="text-left">
+<div class="font-extrabold">SUGERENCIAS DE LA IA</div>
+</div>
+</div>
+<span class="accIcon text-slate-400 text-xl">▾</span>
+</button>
+<div class="px-5 pb-5 hidden" data-acc-body="ai">
+<div class="flex flex-wrap gap-2 justify-end mb-3">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiPick">1) Elegir temas</button>
+<button class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold" id="aiGenerate">2) Generar guía</button>
+</div>
+<div class="text-sm text-slate-500" id="aiStatus">
               Selecciona primero ciudades/actividades/alojamientos, luego genera.
             </div>
+<div class="mt-4 space-y-4" id="aiResults"></div>
+</div>
+</div>
+</section>
+<!-- Summary -->
 
-            <div id="aiResults" class="mt-4 space-y-4"></div>
-          </div>
-        </div>
-
-        </section>
-
-      <!-- Summary -->
-      <aside class="lg:col-span-4 order-first lg:order-last ">
-        <div class="bg-white border border-slate-200 rounded-3xl p-5 sticky top-24">
-          <div class="flex items-center justify-between gap-2">
-            <div class="font-extrabold text-lg">RESUMEN</div>
-            <button id="summaryToggle" type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold">Ver detalle ▾</button>
-          </div>
-
-          <!-- Collapsed: only TOTAL -->
-          <div id="summaryCollapsed" class="mt-3 text-sm">
-            <div class="flex justify-between text-base">
-              <span class="font-extrabold">TOTAL</span>
-              <span id="sumTotalCollapsed" class="font-extrabold">0.00</span>
-            </div>
-            <div class="text-xs text-slate-500 mt-1">Moneda de visualización: <span id="sumCurCollapsed">EUR</span></div>
-          </div>
-
-          <!-- Detail: original summary -->
-          <div id="summaryDetail" class="mt-3 space-y-2 text-sm hidden">
-            <div class="flex justify-between"><span class="text-slate-600">Transporte</span><span id="sumTransport" class="font-semibold">0.00</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">Alojamiento</span><span id="sumStay" class="font-semibold">0.00</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">Actividades</span><span id="sumActs" class="font-semibold">0.00</span></div>
-            <div class="flex justify-between"><span class="text-slate-600">Comidas</span><span id="sumMeals" class="font-semibold">0.00</span></div>
-            <hr class="my-2">
-            <div class="flex justify-between text-base"><span class="font-extrabold">TOTAL</span><span id="sumTotal" class="font-extrabold">0.00</span></div>
-            <div class="text-xs text-slate-500">Moneda de visualización: <span id="sumCur">EUR</span></div>
-          </div>
-        </div>
-      </aside>
-
-    </div>
-  </main>
-
-  <!-- Bottom bar for mobile -->
-  <nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
-      
-    </div>
-  </nav>
-
-  <!-- Modals -->
-  <div id="modalBackdrop" class="hidden fixed inset-0 z-[60] bg-black/40"></div>
-
-  <div id="modalBox" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4">
-    <div class="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-xl max-h-[85vh] overflow-y-auto ios-scroll">
-      <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
-        <div class="font-extrabold" id="modalTitle">Modal</div>
-        <button id="modalClose" class="tap px-3 py-2 rounded-xl hover:bg-slate-50">✕</button>
-      </div>
-      <div class="p-5" id="modalBody"></div>
-      <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
-    </div>
-  </div>
-
+</div>
+</main>
+<!-- Bottom bar for mobile -->
+<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
+<div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
+</div>
+</nav>
+<!-- Modals -->
+<div class="hidden fixed inset-0 z-[60] bg-black/40" id="modalBackdrop"></div>
+<div class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4" id="modalBox">
+<div class="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-xl max-h-[85vh] overflow-y-auto ios-scroll">
+<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+<div class="font-extrabold" id="modalTitle">Modal</div>
+<button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="modalClose">✕</button>
+</div>
+<div class="p-5" id="modalBody"></div>
+<div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
+</div>
+</div>
 <script>
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
@@ -657,15 +627,10 @@ function curScenario() { return state.scenarios[state.scenario]; }
 function setDisplayCurrency(cur) {
   state.displayCurrency = cur;
   $("sumCur").textContent = cur;
-  const _sc = $("sumCurCollapsed"); if (_sc) _sc.textContent = cur;
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
 }
-
-
-/* ------------------------ Summary collapse (session-only) ------------------------ */
-let summaryExpanded = false;
 
 /* ----------------------------- Accordion ----------------------------- */
 function setupAccordion() {
@@ -673,24 +638,12 @@ function setupAccordion() {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
-      if (!body) return;
       body.classList.toggle("hidden");
       const icon = btn.querySelector(".accIcon");
-      if (icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+      icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
     });
   });
 }
-
-function collapseAllAccordions() {
-  document.querySelectorAll("[data-acc-body]").forEach(body => {
-    body.classList.add("hidden");
-  });
-  document.querySelectorAll("[data-acc]").forEach(btn => {
-    const icon = btn.querySelector(".accIcon");
-    if (icon) icon.textContent = "▾";
-  });
-}
-
 
 /* ------------------------------ Rendering ---------------------------- */
 function renderAll() {
@@ -1936,43 +1889,18 @@ function renderDailyNotes() {
 
 function calcSummary() {
   const sc = curScenario();
-  const transport = (sc.legs || []).reduce((a,x)=>a+parseMoney(x.cost),0);
-  const stay = (sc.stays || []).reduce((a,x)=>a+parseMoney(x.cost),0);
-  const acts = (sc.activities || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
+  const stay = sc.stays.reduce((a,x)=>a+parseMoney(x.cost),0);
+  const acts = sc.activities.reduce((a,x)=>a+parseMoney(x.cost),0);
   const meals = parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10));
 
-  const total = (transport + stay + acts + meals);
-
-  const elT = $("sumTransport"); if (elT) elT.textContent = transport.toFixed(2);
-  const elS = $("sumStay"); if (elS) elS.textContent = stay.toFixed(2);
-  const elA = $("sumActs"); if (elA) elA.textContent = acts.toFixed(2);
-  const elM = $("sumMeals"); if (elM) elM.textContent = meals.toFixed(2);
-
-  const elTot = $("sumTotal"); if (elTot) elTot.textContent = total.toFixed(2);
-  const elTotC = $("sumTotalCollapsed"); if (elTotC) elTotC.textContent = total.toFixed(2);
-
-  // Ensure collapsed/detail visual state (no persistence)
-  const collapsedEl = document.getElementById("summaryCollapsed");
-  const detailEl = document.getElementById("summaryDetail");
-  const toggleEl = document.getElementById("summaryToggle");
-
-  if (collapsedEl && detailEl && toggleEl) {
-    if (!summaryExpanded) {
-      collapsedEl.classList.remove("hidden");
-      detailEl.classList.add("hidden");
-      toggleEl.textContent = "Ver detalle ▾";
-    } else {
-      collapsedEl.classList.add("hidden");
-      detailEl.classList.remove("hidden");
-      toggleEl.textContent = "Ocultar detalle ▴";
-    }
-
-    // Re-attach safely (in case any render rebuilt the node in the future)
-    toggleEl.onclick = () => {
-      summaryExpanded = !summaryExpanded;
-      calcSummary();
-    };
-  }
+  $("sumTransport").textContent = transport.toFixed(2);
+  $("sumStay").textContent = stay.toFixed(2);
+  $("sumActs").textContent = acts.toFixed(2);
+  $("sumMeals").textContent = meals.toFixed(2);
+  $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
+  bindSummaryToggleOnce();
+  applySummaryUI();
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
@@ -3155,9 +3083,6 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
 loadState();
 setupAccordion();
 renderAll();
-collapseAllAccordions();
-summaryExpanded = false;
-calcSummary();
 </script>
 </body>
 </html>
