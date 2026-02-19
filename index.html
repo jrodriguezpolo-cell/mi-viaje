@@ -662,7 +662,7 @@ function legCard(leg) {
     const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-3">
         <label class="text-xs text-slate-600">Salida</label>
@@ -706,7 +706,7 @@ function renderLegs() {
   box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
-    saveState(); renderAll();
+    saveState(); renderTimeline(); calcSummary();
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
@@ -730,6 +730,12 @@ function renderLegs() {
     const leg = sc.legs.find(x => x.id === id);
     leg.date = inp.value;
     saveState(); renderAll();
+  }));
+  box.querySelectorAll("[data-leg-time]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-leg-time");
+    const leg = sc.legs.find(x => x.id === id);
+    leg.time = inp.value;
+    saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-leg-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-leg-cost");
@@ -1190,7 +1196,7 @@ function actCard(act) {
   const st = computeDoneState(act);
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
+  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
       <div class="sm:col-span-4">
         <label class="text-xs text-slate-600">Actividad</label>
@@ -1315,6 +1321,9 @@ function renderTimeline() {
 
   box.innerHTML = items.map(it => {
     const isDated = it.date && it.date !== "9999-99-99";
+    const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
+    const jumpId = it.actId || it.legId || it.stayId || '';
+
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
