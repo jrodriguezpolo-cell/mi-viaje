@@ -1688,7 +1688,7 @@ async function importTrip(ev) {
       `- Guardado: ${previewSavedAt}\n` +
       `- Dispositivo: ${previewDevice}\n\n` +
       "Tu versión local:\n" +
-      `- Últ. guardado: ${previewLocal}\n`
+      `- Últ. guardado: ${previewLocal}\n`;
 
     // --- BLOQUEO POR CONFLICTO: "mismo dispositivo" ---
     const deviceLocal = getDeviceName(false);
@@ -1729,8 +1729,6 @@ async function importTrip(ev) {
     }
     // --- FIN BLOQUEO POR CONFLICTO ---
 
-;
-
     if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
       const r = new Date(payload.savedAt).toLocaleString();
       const l = new Date(localAtRaw).toLocaleString();
@@ -1759,8 +1757,6 @@ async function importTrip(ev) {
 
     state = payload.state;
     saveState();
-    closeModal();
-    renderAll();
 
     const now = new Date().toISOString();
     setMeta({
@@ -1771,6 +1767,15 @@ async function importTrip(ev) {
       lastImportedSavedAt: payload.savedAt || null,
       lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
     });
+
+    closeModal();
+    try {
+      renderAll();
+    } catch (e) {
+      console.error(e);
+      alert("Viaje cargado, pero hubo un error al mostrarlo: " + (e?.message || e));
+      return;
+    }
 
     alert("Viaje cargado.");
   } catch(e) {
