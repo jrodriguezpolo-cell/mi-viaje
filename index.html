@@ -59,7 +59,11 @@
 }
 
 
-</style>
+
+    /* Timeline item notes button */
+    .timelineItem .notes-has { font-weight: 700; }
+
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
   <!-- Top bar -->
@@ -1320,6 +1324,91 @@ function jumpToItem(kind, id) {
     }
   }, 60);
 }
+
+
+/* ---------------- Item notes (timeline CRUD) ---------------- */
+
+function getItemByTypeAndId(type, id) {
+  const sc = curScenario();
+  const t = String(type || "");
+  const itemId = String(id || "");
+  if (!sc || !t || !itemId) return null;
+
+  if (t === "act") return (sc.activities || []).find(a => String(a.id) === itemId) || null;
+  if (t === "leg") return (sc.legs || []).find(l => String(l.id) === itemId) || null;
+  if (t === "stay") return (sc.stays || []).find(s => String(s.id) === itemId) || null;
+  if (t === "meal") return (sc.meals || []).find(m => String(m.id) === itemId) || null;
+  return null;
+}
+
+function openItemNotesModal(type, id) {
+  const item = getItemByTypeAndId(type, id);
+  if (!item) return;
+
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const current = String(item.notes || "");
+
+  const html = `
+    <div class="text-sm text-slate-600 mb-2">Observaciones</div>
+    <textarea id="itemNotesText" rows="5"
+      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
+      placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
+
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button id="itemNotesSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+          Guardar
+        </button>
+        <button id="itemNotesDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+          Borrar
+        </button>
+      </div>
+      <span id="itemNotesStatus" class="text-xs text-slate-500"></span>
+    </div>
+  `;
+
+  showModal("Observaciones", html);
+
+  setTimeout(() => {
+    const ta = $("itemNotesText");
+    const btnSave = $("itemNotesSave");
+    const btnDel = $("itemNotesDelete");
+    const st = $("itemNotesStatus");
+
+    const hasText = !!String(current || "").trim();
+    if (!hasText && btnDel) btnDel.classList.add("hidden");
+
+    if (ro) {
+      if (ta) ta.disabled = true;
+      if (btnSave) btnSave.disabled = true;
+      if (btnDel) btnDel.disabled = true;
+      return;
+    }
+
+    if (btnSave) {
+      btnSave.onclick = () => {
+        const txt = String(ta ? ta.value : "").trim();
+        item.notes = txt;
+        saveState();
+        if (st) st.textContent = "Guardado ✓";
+        renderTimeline();
+        closeModal();
+      };
+    }
+
+    if (btnDel) {
+      btnDel.onclick = () => {
+        const ok = confirm("¿Borrar estas observaciones?\n(Esta acción no borra el item.)");
+        if (!ok) return;
+        item.notes = "";
+        saveState();
+        renderTimeline();
+        closeModal();
+      };
+    }
+  }, 0);
+}
+
 /* ---------------- /Timeline: jump to item ---------------- */
 const __tlExpanded = new Set();
 
@@ -1386,11 +1475,20 @@ function renderTimeline() {
     // Línea meta en detalle (mantiene lo que ya enseñábamos arriba)
     const metaLine = whenLabel;
 
-    // Notas del día: acceso rápido por fecha (si no hay fecha, no mostramos botón)
-    const noteBtn = (it.date && it.date !== "9999-99-99" && !it.isNote)
-      ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasNote ? "font-semibold" : ""}"
-                data-tl-note-date="${escapeHtml(it.date)}" title="Notas del día">🗒️</button>`
+    // Observaciones por item (leg/stay/act) desde el cronograma
+    const itemForNotes = (jumpType === 'act') ? actById.get(String(jumpId))
+                      : (jumpType === 'leg') ? legById.get(String(jumpId))
+                      : (jumpType === 'stay') ? stayById.get(String(jumpId))
+                      : null;
+    const hasItemNotes = !!(itemForNotes && String(itemForNotes.notes || "").trim());
+    const notesBtn = (jumpType && jumpId && !it.isNote)
+      ? `<button type="button"
+                 class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasItemNotes ? "notes-has" : ""}"
+                 data-item-notes-type="${escapeHtml(jumpType)}"
+                 data-item-notes-id="${escapeHtml(String(jumpId))}"
+                 title="Observaciones">🗒️</button>`
       : "";
+
 
 
     // Checkpoint (Hecho) para Transporte / Alojamiento / Actividades en el cronograma
@@ -1453,7 +1551,7 @@ function renderTimeline() {
 
           <div class="shrink-0 flex items-center gap-2">
             ${tlCheckbox ? tlCheckbox : ""}
-            ${noteBtn ? noteBtn : ""}
+            ${notesBtn ? notesBtn : ""}
           </div>
         </div>
 
@@ -1464,7 +1562,10 @@ function renderTimeline() {
           </div>
           <div class="mt-1 flex items-center justify-between gap-3">
             <div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>
-            <div class="flex items-center gap-2">${tlBadges ? tlBadges : ""}</div>
+            <div class="flex items-center gap-2">
+              ${tlBadges ? tlBadges : ""}
+              ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</button>` : ``}
+            </div>
           </div>
         </div>
       </div>
@@ -1482,52 +1583,43 @@ function renderTimeline() {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
 
-  // Notas del día (botón en cronograma)
-  box.querySelectorAll("[data-tl-note-date]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const d = btn.getAttribute("data-tl-note-date");
-      if (!d) return;
-      // Abrir acordeón de NOTAS DEL DÍA dentro del cronograma
-      const dnBody = document.querySelector('[data-acc-body="dailyNotes"]');
-      const dnBtn  = document.querySelector('[data-acc="dailyNotes"]');
-      if (dnBody && dnBtn && dnBody.classList.contains("hidden")) dnBtn.click();
+    // Tap en item: toggle real (plegar/desplegar)
+// - Click en checkbox/notas/Ir NO debe plegar/desplegar
+box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
+  row.addEventListener("click", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "label" || tag === "button" || tag === "textarea" || tag === "a") return;
 
-      const boxNotes = document.getElementById("dailyNotesBox");
-      if (boxNotes) boxNotes.dataset.selDate = d;
-      renderDailyNotes();
+    const key = row.getAttribute("data-tl-key") || "";
+    if (!key) return;
 
-      // Scroll suave hacia el bloque de notas
-      try {
-        const dnWrap = dnBtn ? dnBtn.closest(".bg-white") : null;
-        if (dnWrap) dnWrap.scrollIntoView({ behavior: "smooth", block: "start" });
-      } catch {}
-    });
+    if (__tlExpanded.has(key)) __tlExpanded.delete(key);
+    else __tlExpanded.add(key);
+
+    renderTimeline();
   });
+});
 
-  // Tap en item:
-  // - si está plegado => expandir
-  // - si ya está expandido => jump al item (si aplica)
-  box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
-    row.addEventListener("click", (e) => {
-      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
-      if (tag === "input" || tag === "label" || tag === "button") return;
-
-      const key = row.getAttribute("data-tl-key") || "";
-      if (!key) return;
-
-      if (!__tlExpanded.has(key)) {
-        __tlExpanded.add(key);
-        renderTimeline();
-        return;
-      }
-
-      // Ya expandido -> jump (si existe)
-      const kind = row.getAttribute("data-tl-jump-type");
-      const id = row.getAttribute("data-tl-jump-id");
-      if (kind && id) jumpToItem(kind, id);
-    });
+// Botón "Ir" (solo cuando el item está expandido)
+box.querySelectorAll("[data-tl-go]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const row = btn.closest(".timelineItem");
+    if (!row) return;
+    const kind = row.getAttribute("data-tl-jump-type");
+    const id = row.getAttribute("data-tl-jump-id");
+    if (kind && id) jumpToItem(kind, id);
   });
+});
+
+// Observaciones por item (🗒️)
+box.querySelectorAll("[data-item-notes-type][data-item-notes-id]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openItemNotesModal(btn.getAttribute("data-item-notes-type"), btn.getAttribute("data-item-notes-id"));
+  });
+});
+
 
   renderDailyNotes();
 }
