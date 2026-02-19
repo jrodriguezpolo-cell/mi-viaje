@@ -1322,7 +1322,11 @@ function openTripsModal() {
           Guardar (descargar .json)
         </button>
 
-        <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer">
+        <button id="doExportMilestone" class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">
+          Exportar hito
+        </button>
+
+        <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer sm:col-span-2">
           Cargar (importar .json)
           <input id="doImport" type="file" accept="application/json" class="hidden">
         </label>
@@ -1428,6 +1432,7 @@ function openTripsModal() {
     };
 
     $("doExport").onclick = () => { exportTrip(); refresh(); };
+    $("doExportMilestone").onclick = () => { exportMilestone(); refresh(); };
     $("doImport").onchange = async (ev) => { await importTrip(ev); refresh(); };
 
 // Trip name input: show custom name if set, otherwise keep empty (auto will use destination)
@@ -1574,6 +1579,79 @@ try {
   renderTripList();
 }
 
+function exportMilestone() {
+  // Igual que exportTrip(), pero guarda un "HITO" con timestamp y marca milestone=true.
+  const inputEl = document.getElementById("tripNameInput");
+  const nameFromInput = inputEl ? String(inputEl.value || "").trim() : "";
+  const nameFromLS = (typeof getTripName === "function")
+    ? String(getTripName() || "").trim()
+    : String(localStorage.getItem("miviaje.tripName") || "").trim();
+
+  const mode = (typeof getTripNameMode === "function") ? getTripNameMode() : "auto";
+  const autoName = (typeof computeAutoTripName === "function") ? computeAutoTripName() : "MI_VIAJE";
+
+  let baseName = nameFromInput || (mode === "custom" ? (nameFromLS || autoName) : autoName) || "MI_VIAJE";
+
+  const entered = prompt("Nombre para este HITO (ej: Japón 2026):", baseName);
+  if (entered === null) return;
+
+  const raw = String(entered || "").trim();
+
+  let finalName = raw;
+  if (!finalName) {
+    finalName = autoName || "MI_VIAJE";
+    try { localStorage.setItem("miviaje.tripNameMode", "auto"); } catch {}
+  } else {
+    const shouldBeAuto = (finalName === autoName);
+    try { localStorage.setItem("miviaje.tripNameMode", shouldBeAuto ? "auto" : "custom"); } catch {}
+  }
+
+  try { localStorage.setItem("miviaje.tripName", finalName); } catch {}
+  if (inputEl) inputEl.value = finalName;
+
+  const payload = { name: finalName, savedAt: new Date().toISOString(), state, milestone: true };
+
+  // Identidad de dispositivo
+  payload.deviceName = getDeviceName();
+
+  // Meta: igual que export normal (+ lastMilestoneAt)
+  try {
+    setMeta({
+      deviceName: getDeviceName(),
+      lastExportAt: payload.savedAt,
+      lastSavedAt: payload.savedAt,
+      lastMilestoneAt: payload.savedAt
+    });
+  } catch {}
+
+  // Guardar en lista local (si existe)
+  try {
+    const list = JSON.parse(localStorage.getItem("miviaje.trip.list") || "[]");
+    list.unshift(payload);
+    localStorage.setItem("miviaje.trip.list", JSON.stringify(list.slice(0, 30)));
+  } catch {}
+
+  const safe = (typeof sanitizeFileBaseName === "function")
+    ? sanitizeFileBaseName(finalName)
+    : (finalName.replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
+
+  const d = new Date();
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const ymd = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const hm = `${pad2(d.getHours())}-${pad2(d.getMinutes())}`;
+  const filename = `HITO_${safe}_${ymd}_${hm}.json`;
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  renderTripList();
+}
+
+
 
 
 
@@ -1610,7 +1688,48 @@ async function importTrip(ev) {
       `- Guardado: ${previewSavedAt}\n` +
       `- Dispositivo: ${previewDevice}\n\n` +
       "Tu versión local:\n" +
-      `- Últ. guardado: ${previewLocal}\n`;
+      `- Últ. guardado: ${previewLocal}\n`
+
+    // --- BLOQUEO POR CONFLICTO: "mismo dispositivo" ---
+    const deviceLocal = getDeviceName(false);
+    const deviceFromFile = (payload?.deviceName ? String(payload.deviceName).trim() : "");
+
+    // Si el fichero parece exportado desde ESTE MISMO dispositivo, bloqueamos casos peligrosos
+    if (deviceFromFile && deviceFromFile === deviceLocal) {
+      // a) fecha desconocida -> BLOQUEAR
+      if (!payload.savedAt || !Number.isFinite(remoteAt)) {
+        alert(
+          "🚨 IMPORTACIÓN BLOQUEADA\n\n" +
+          "Este fichero parece exportado desde ESTE MISMO dispositivo y la fecha es desconocida.\n" +
+          "Importar podría sobrescribir tu versión actual.\n\n" +
+          previewText
+        );
+        input.value = "";
+        return;
+      }
+
+      // b) fecha válida, y NO es más nuevo que tu versión -> BLOQUEAR por defecto
+      if (Number.isFinite(localAt) && remoteAt <= localAt) {
+        const msg =
+          "🚨 IMPORTACIÓN BLOQUEADA (mismo dispositivo)\n\n" +
+          previewText +
+          "\n" +
+          `Tu versión: ${previewLocal}\n` +
+          `Fichero: ${previewSavedAt}\n\n` +
+          "Parece el mismo dispositivo y no es más nuevo.\n" +
+          "Para evitar sobrescrituras, la importación está bloqueada.";
+
+        const wantsForce = confirm(msg + "\n\n¿Quieres FORZAR la importación igualmente?");
+        if (!wantsForce) { input.value = ""; return; }
+
+        const confirm2 = prompt("Último paso: escribe IMPORTAR para confirmar la importación forzada:", "");
+        if (String(confirm2 || "").trim() !== "IMPORTAR") { input.value = ""; return; }
+        // Si pasa los 2 pasos, seguimos con la lógica normal
+      }
+    }
+    // --- FIN BLOQUEO POR CONFLICTO ---
+
+;
 
     if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
       const r = new Date(payload.savedAt).toLocaleString();
