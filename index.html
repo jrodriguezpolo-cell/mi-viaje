@@ -299,7 +299,7 @@
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
-      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="activities">🎯<div>Actividades</div></button>
+      <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
       <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button>
     </div>
   </nav>
@@ -1205,6 +1205,10 @@ function actCard(act) {
         <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.date||"")}">
       </div>
       <div class="sm:col-span-2">
+        <label class="text-xs text-slate-600">Hora (opcional)</label>
+        <input data-act-time="${act.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.time||"")}">
+      </div>
+      <div class="sm:col-span-2">
         <label class="text-xs text-slate-600">Coste</label>
         <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.cost ?? "")}">
       </div>
@@ -1251,6 +1255,11 @@ function renderActivities() {
     sc.activities.find(x => x.id === id).date = inp.value;
     saveState(); renderTimeline();
   }));
+  box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-act-time");
+    sc.activities.find(x => x.id === id).time = inp.value;
+    saveState(); renderTimeline();
+  }));
   box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-act-cost");
     sc.activities.find(x => x.id === id).cost = parseMoney(inp.value);
@@ -1274,13 +1283,13 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({ date: leg.date || "9999-99-99", type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id });
+    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id });
   }
   for (const s of sc.stays) {
-    items.push({ date: "9999-99-99", type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id });
+    items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id });
   }
   for (const a of sc.activities) {
-    items.push({ date: a.date || "9999-99-99", type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id });
+    items.push({ date: (a.date || "9999-99-99"), time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id });
   }
 
   // Add note markers as timeline items so you can see notes even if there was no event that day
