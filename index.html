@@ -88,6 +88,12 @@
   box-shadow: 0 0 0 2px white;
 }
 
+
+
+/* Daily notes in timeline (v46 daily notes highlight + CRUD) */
+.tl-dnote { background: rgba(148,163,184,0.10); border-color: rgba(148,163,184,0.25); }
+.tl-dnote-has { }
+.noteDateActive { background: rgba(59,130,246,0.10); border-color: rgba(59,130,246,0.25); }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1434,6 +1440,104 @@ function openItemNotesModal(type, id) {
   }, 0);
 }
 
+
+function openDailyNoteModal(dateKey) {
+  const sc = curScenario();
+  if (!sc.dailyNotes) sc.dailyNotes = {};
+  const key = String(dateKey || "").trim();
+  if (!key) return;
+
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const current = String(sc.dailyNotes[key] || "");
+
+  const html = `
+    <div class="text-sm text-slate-600 mb-2">Notas del día (${escapeHtml(key)})</div>
+    <textarea id="dailyNoteModalText" rows="6"
+      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
+      placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
+
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button id="dailyNoteModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+          Guardar
+        </button>
+        ${current.trim() ? `
+          <button id="dailyNoteModalDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+            Borrar
+          </button>
+        ` : ``}
+      </div>
+      <button id="dailyNoteModalGo" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+        Ir a Notas del día
+      </button>
+    </div>
+  `;
+
+  showModal("Observaciones", html);
+
+  setTimeout(() => {
+    const ta = document.getElementById("dailyNoteModalText");
+    const btnSave = document.getElementById("dailyNoteModalSave");
+    const btnDel = document.getElementById("dailyNoteModalDelete");
+    const btnGo = document.getElementById("dailyNoteModalGo");
+
+    if (ro) {
+      if (ta) ta.disabled = true;
+      if (btnSave) btnSave.disabled = true;
+      if (btnDel) btnDel.disabled = true;
+    }
+
+    if (btnGo) {
+      btnGo.onclick = () => {
+        // Abrir acordeón de Notas del día y seleccionar fecha
+        try {
+          const box = document.getElementById("dailyNotesBox");
+          if (box) box.dataset.selDate = key;
+        } catch {}
+        // Si existe función de abrir acordeones por id, úsala. Si no, jump al timeline/section.
+        try {
+          const accBtn = document.querySelector('[data-acc="dailyNotes"]');
+          if (accBtn) accBtn.click();
+        } catch {}
+        try {
+          const sec = document.getElementById("dailyNotesSection");
+          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch {}
+        try { renderDailyNotes(); } catch {}
+        closeModal();
+      };
+    }
+
+    if (btnSave && !ro) {
+      btnSave.onclick = () => {
+        const v = String(ta?.value || "").trim();
+        if (!v) {
+          // Guardar vacío => borrar key
+          delete sc.dailyNotes[key];
+        } else {
+          sc.dailyNotes[key] = v;
+        }
+        saveState();
+        renderTimeline();
+        try { renderDailyNotes(); } catch {}
+        closeModal();
+      };
+    }
+
+    if (btnDel && !ro) {
+      btnDel.onclick = () => {
+        const ok = confirm("¿Borrar esta nota del día?");
+        if (!ok) return;
+        delete sc.dailyNotes[key];
+        saveState();
+        renderTimeline();
+        try { renderDailyNotes(); } catch {}
+        closeModal();
+      };
+    }
+  }, 0);
+}
+
 /* ---------------- /Timeline: jump to item ---------------- */
 const __tlExpanded = new Set();
 
@@ -1462,7 +1566,7 @@ function renderTimeline() {
   Object.keys(notes).forEach(d => {
     const txt = String(notes[d] || "").trim();
     if (!d || !txt) return;
-    items.push({ date: d, type:"Nota", title: "📝 Notas del día", cost: null, isNote: true });
+    items.push({ date: d, type:"Nota", title: "Notas del día", cost: null, isNote: true });
   });
 
   items.sort((a,b)=>{
@@ -1506,13 +1610,18 @@ function renderTimeline() {
                       : (jumpType === 'stay') ? stayById.get(String(jumpId))
                       : null;
     const hasItemNotes = !!(itemForNotes && String(itemForNotes.notes || "").trim());
-    const notesBtn = (jumpType && jumpId && !it.isNote)
+    const notesBtn = (it.isNote && isDated)
       ? `<button type="button"
+                 class="tap tlNotesBtn px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs notes-has"
+                 data-daily-note-open="${escapeHtml(datePart)}"
+                 title="Notas del día">🗒️<span class="note-dot"></span></button>`
+      : (jumpType && jumpId && !it.isNote)
+        ? `<button type="button"
                  class="tap tlNotesBtn px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasItemNotes ? "notes-has" : ""}"
                  data-item-notes-type="${escapeHtml(jumpType)}"
                  data-item-notes-id="${escapeHtml(String(jumpId))}"
                  title="Observaciones">🗒️${hasItemNotes ? '<span class="note-dot"></span>' : ''}</button>`
-      : "";
+        : "";
 
 
 
@@ -1520,6 +1629,11 @@ function renderTimeline() {
     let tlCheckbox = "";
     let visualClass = "";
     let tlBadges = "";
+
+    // Visual: Notas del día (timeline)
+    if (it.isNote) {
+      visualClass = " tl-dnote tl-dnote-has";
+    }
 
     // Resolver elemento del state + handler según tipo
     let kind = "";
@@ -1643,6 +1757,14 @@ box.querySelectorAll("[data-item-notes-type][data-item-notes-id]").forEach(btn =
     e.stopPropagation();
     openItemNotesModal(btn.getAttribute("data-item-notes-type"), btn.getAttribute("data-item-notes-id"));
   });
+
+// Notas del día desde el cronograma (🗒️)
+box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    openDailyNoteModal(btn.dataset.dailyNoteOpen);
+  });
+});
 });
 
 
@@ -1691,6 +1813,12 @@ function renderDailyNotes() {
         class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
         Guardar nota
       </button>
+
+      <button id="deleteDailyNote"
+        class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+        Borrar
+      </button>
+
       <span id="dailyNoteStatus" class="text-xs text-slate-500"></span>
     </div>
 
@@ -1699,7 +1827,7 @@ function renderDailyNotes() {
         <div class="text-xs font-semibold text-slate-600 mb-1">Días con notas</div>
         <div class="flex flex-wrap gap-2">
           ${noteDates.map(d => `
-            <button class="tap px-2 py-1 rounded-xl border border-slate-200 bg-white text-xs"
+            <button class="tap px-2 py-1 rounded-xl border border-slate-200 bg-white text-xs ${d === selectedDate ? "noteDateActive" : ""}"
                     data-note-date="${escapeHtml(d)}">
               ${escapeHtml(d)}
             </button>
@@ -1712,6 +1840,7 @@ function renderDailyNotes() {
   const dateEl = document.getElementById("dailyNoteDate");
   const textEl = document.getElementById("dailyNoteText");
   const btn = document.getElementById("saveDailyNote");
+  const delBtn = document.getElementById("deleteDailyNote");
   const status = document.getElementById("dailyNoteStatus");
 
   // Respect read-only (fallback)
@@ -1719,6 +1848,7 @@ function renderDailyNotes() {
     if (dateEl) dateEl.disabled = true;
     if (textEl) textEl.disabled = true;
     if (btn) btn.disabled = true;
+    if (delBtn) delBtn.disabled = true;
   }
 
   // iOS a veces dispara mejor 'input' que 'change'
@@ -1739,6 +1869,25 @@ function renderDailyNotes() {
       box.dataset.selDate = d;
       renderDailyNotes();
     };
+
+  // Delete button state
+  if (delBtn) {
+    const hasTxt = String(sc.dailyNotes[selectedDate] || "").trim();
+    delBtn.disabled = ro || !hasTxt;
+    delBtn.style.display = hasTxt ? "" : "none";
+    delBtn.onclick = () => {
+      if (ro) return;
+      const k = String(dateEl?.value || "").trim();
+      if (!k) return;
+      const ok = confirm("¿Borrar esta nota del día?");
+      if (!ok) return;
+      delete sc.dailyNotes[k];
+      saveState();
+      if (status) status.textContent = "Borrado ✓";
+      renderDailyNotes();
+      if (typeof renderTimeline === "function") renderTimeline();
+    };
+  }
   });
 
   if (btn) {
@@ -1747,7 +1896,8 @@ function renderDailyNotes() {
       if (!k) return;
 
       const v = String(textEl?.value || "").trim();
-      sc.dailyNotes[k] = v;
+      if (!v) delete sc.dailyNotes[k];
+      else sc.dailyNotes[k] = v;
 
       saveState();
 
