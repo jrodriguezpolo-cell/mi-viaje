@@ -95,6 +95,38 @@
 .tl-dnote { background: rgba(148,163,184,0.10); border-color: rgba(148,163,184,0.25); }
 .tl-dnote-has { }
 .noteDateActive { background: rgba(59,130,246,0.10); border-color: rgba(59,130,246,0.25); }
+
+    /* --- UX: Floating collapse-all FAB + sticky total bar --- */
+    @media (max-width: 640px){
+      /* Hide header button on mobile; FAB provides access */
+      #collapseAll{ display:none; }
+    }
+    #fabCollapseAll{
+      position: fixed;
+      right: 14px;
+      bottom: calc(env(safe-area-inset-bottom) + 76px);
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.6);
+      background: rgba(255,255,255,.92);
+      box-shadow: 0 6px 16px rgba(15,23,42,.12);
+      color: #0f172a;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      z-index: 60; /* above bottom bar */
+      opacity: .92;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #fabCollapseAll:active{ transform: translateY(1px); }
+
+    #stickyTotalBar{
+      position: sticky;
+      top: var(--app-header-h, 56px);
+      z-index: 39;
+    }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -120,7 +152,15 @@
 </div>
 </div>
 </header>
+<!-- Sticky mini total bar -->
+<div id="stickyTotalBar" class="bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+    <div id="stickyTotalValue" class="text-sm font-semibold text-slate-900">TOTAL: —</div>
+    <button id="stickyTotalToggle" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50">Ver detalle ▾</button>
+  </div>
+</div>
 <!-- Main -->
+
 <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
@@ -1965,7 +2005,7 @@ function applySummaryFold() {
     });
   }
 
-  btn.textContent = summaryExpanded ? "▴ Ocultar detalle" : "▾ Ver detalle";
+  btn.textContent = summaryExpanded ? "Ocultar detalle ▴" : "Ver detalle ▾";
 
   // Rows to hide/show
   const ids = ["sumTransport", "sumStay", "sumMeals", "sumActs", "sumCur"];
@@ -1983,7 +2023,24 @@ function applySummaryFold() {
   // Compare box (A/B) – keep hidden when collapsed
   const cmp = document.getElementById("compareBox");
   if (cmp) cmp.classList.toggle("hidden", !summaryExpanded);
+
+  // Sync sticky mini-bar (if present)
+  const stickyVal = document.getElementById("stickyTotalValue");
+  if (stickyVal) {
+    const totalEl = document.getElementById("sumTotal");
+    const curEl = document.getElementById("sumCur");
+    const totalTxt = totalEl ? totalEl.textContent : "—";
+    const curTxt = (curEl && curEl.textContent) ? curEl.textContent : (document.getElementById("displayCurrency")?.value || "");
+    stickyVal.textContent = `TOTAL: ${totalTxt}${curTxt ? " " + curTxt : ""}`;
+  }
+  const stickyT = document.getElementById("stickyTotalToggle");
+  if (stickyT) {
+    stickyT.textContent = btn.textContent;
+    stickyT.onclick = btn.onclick || (() => btn.click());
+  }
+
 }
+
 /* -------------------- /Summary fold (no persistence) -------------------- */
 
 function calcSummary() {
@@ -1998,6 +2055,11 @@ function calcSummary() {
   $("sumActs").textContent = acts.toFixed(2);
   $("sumMeals").textContent = meals.toFixed(2);
   $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
+  const stickyVal = document.getElementById("stickyTotalValue");
+  if (stickyVal) {
+    const curTxt = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
+    stickyVal.textContent = `TOTAL: ${$("sumTotal").textContent}${curTxt ? " " + curTxt : ""}`;
+  }
   // summary fold (no persistence)
   applySummaryFold();
 }
@@ -3181,14 +3243,29 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
   });
 });
 
+
+function syncHeaderHeightVar(){
+  const hdr = document.querySelector("header");
+  if (!hdr) return;
+  document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
+}
+
 /* ----------------------------- Init ----------------------------- */
 loadState();
 setupAccordion();
+syncHeaderHeightVar();
+window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
+
+  const fab = document.getElementById('fabCollapseAll');
+  if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
   const ca = document.getElementById("collapseAll");
   if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 renderAll();
 applySummaryFold();
 </script>
+
+<!-- Floating FAB: Collapse all -->
+<button id="fabCollapseAll" aria-label="Plegar todo" title="Plegar todo">▾▾</button>
 </body>
 </html>
