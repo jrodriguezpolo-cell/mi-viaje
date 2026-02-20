@@ -135,6 +135,17 @@
     #stickySummaryDetailInner .val { font-weight: 600; }
     #stickySummaryDetailInner .total { font-weight: 800; }
 
+
+/* --- v50->v51: FAB clickability + stacking --- */
+#fabCollapseAll{
+  position: fixed;
+  right: 14px;
+  bottom: calc(env(safe-area-inset-bottom) + 76px);
+  z-index: 80;              /* por encima del contenido, por debajo del modal */
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -705,23 +716,31 @@ function setupAccordion() {
 }
 
 function collapseAllAccordions() {
-  document.querySelectorAll("[data-acc-body]").forEach(body => body.classList.add("hidden"));
-  document.querySelectorAll("[data-acc] .accIcon").forEach(icon => { icon.textContent = "▾"; });
+  document.querySelectorAll("[data-acc-body]").forEach(b => b.classList.add("hidden"));
+  document.querySelectorAll("[data-acc] .accIcon").forEach(ic => { ic.textContent = "▾"; });
+  if (typeof updateFabVisibility === "function") updateFabVisibility();
+}
+
+);
   updateFabVisibility();
 }
 
 
 function anyAccordionOpen() {
-  return !!document.querySelector('[data-acc-body]:not(.hidden)');
+  // Un acordeón está abierto si su body NO tiene .hidden (hidden es la fuente de verdad)
+  const bodies = document.querySelectorAll("[data-acc-body]");
+  for (const b of bodies) {
+    if (!b.classList.contains("hidden")) return true;
+  }
+  return false;
 }
 
 function updateFabVisibility() {
-  const fab = document.getElementById('fabCollapseAll');
+  const fab = document.getElementById("fabCollapseAll");
   if (!fab) return;
-  fab.classList.toggle('hidden', !anyAccordionOpen());
+  const show = anyAccordionOpen();
+  fab.classList.toggle("hidden", !show);
 }
-
-
 
 /* ------------------------------ Rendering ---------------------------- */
 function renderAll() {
