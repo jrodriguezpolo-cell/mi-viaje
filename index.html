@@ -1887,6 +1887,56 @@ function renderDailyNotes() {
   try { if (typeof applyReadOnlyUI === "function") applyReadOnlyUI(); } catch {}
 }
 
+
+/* ---------------------- Summary fold (no persistence) ---------------------- */
+let summaryExpanded = false;
+
+function applySummaryFold() {
+  // Ensure a visible toggle button (placed near the summary title)
+  const summaryRoot = document.getElementById("summary");
+  if (!summaryRoot) return;
+
+  // Hide the legacy toggle if it exists inside rows that may be hidden
+  const legacy = document.getElementById("summaryToggle");
+  if (legacy) legacy.classList.add("hidden");
+
+  // Create/attach a stable toggle button once
+  let btn = document.getElementById("summaryToggleTop");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.id = "summaryToggleTop";
+    btn.className = "tap mt-2 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+    // Insert just under the title inside the summary card
+    const titleEl = summaryRoot.querySelector(".font-extrabold");
+    if (titleEl && titleEl.parentElement) titleEl.parentElement.insertBefore(btn, titleEl.nextSibling);
+    else summaryRoot.prepend(btn);
+    btn.addEventListener("click", () => {
+      summaryExpanded = !summaryExpanded;
+      applySummaryFold();
+    });
+  }
+
+  btn.textContent = summaryExpanded ? "▴ Ocultar detalle" : "▾ Ver detalle";
+
+  // Rows to hide/show
+  const ids = ["sumTransport", "sumStay", "sumMeals", "sumActs", "sumCur"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const row = el.closest(".flex") || el.parentElement;
+    if (row) row.classList.toggle("hidden", !summaryExpanded);
+  });
+
+  // HR divider inside summary card
+  const hr = summaryRoot.querySelector("hr");
+  if (hr) hr.classList.toggle("hidden", !summaryExpanded);
+
+  // Compare box (A/B) – keep hidden when collapsed
+  const cmp = document.getElementById("compareBox");
+  if (cmp) cmp.classList.toggle("hidden", !summaryExpanded);
+}
+/* -------------------- /Summary fold (no persistence) -------------------- */
+
 function calcSummary() {
   const sc = curScenario();
   const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
@@ -1901,6 +1951,7 @@ function calcSummary() {
   $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
   bindSummaryToggleOnce();
   applySummaryUI();
+  applySummaryFold();
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
@@ -3083,6 +3134,7 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
 loadState();
 setupAccordion();
 renderAll();
+applySummaryFold();
 </script>
 </body>
 </html>
