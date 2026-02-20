@@ -516,12 +516,34 @@ function todayYMD() {
 }
 
 
+function getAppTopOffsetPx() {
+  const header = document.querySelector("header");
+  const sticky = document.getElementById("stickyTotalBar");
+  let h = 0;
+  if (header) h += header.getBoundingClientRect().height;
+  if (sticky) h += sticky.getBoundingClientRect().height;
+  return h + 12; // small breathing room
+}
+
+function smoothScrollToEl(el) {
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.pageYOffset - getAppTopOffsetPx();
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
 function scrollToTodayTimelineItem() {
+  // Ensure the timeline accordion is open so the scroll makes sense to the user
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+
   const t = todayYMD();
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
   if (todayEl) {
-    todayEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    smoothScrollToEl(todayEl);
   } else {
     alert("No hay eventos para hoy.");
   }
@@ -543,7 +565,7 @@ function scrollToNextTimelineItem() {
   });
 
   if (next) {
-    next.scrollIntoView({ behavior: "smooth", block: "start" });
+    smoothScrollToEl(next);
   } else {
     alert("No hay próximos eventos con fecha a partir de hoy.");
   }
