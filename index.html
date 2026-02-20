@@ -3266,11 +3266,23 @@ setupAccordion();
 syncHeaderHeightVar();
 window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
 
+document.addEventListener('DOMContentLoaded', () => {
   const fab = document.getElementById('fabCollapseAll');
-  if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  if (fab) fab.addEventListener('click', () => {
+    collapseAllAccordions();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
-  const ca = document.getElementById("collapseAll");
-  if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const ca = document.getElementById('collapseAll');
+  if (ca) ca.addEventListener('click', () => {
+    collapseAllAccordions();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Ensure correct initial visibility once the FAB exists in the DOM.
+  updateFabVisibility();
+});
+
 renderAll();
 summaryExpanded = false;
 applySummaryFold();
