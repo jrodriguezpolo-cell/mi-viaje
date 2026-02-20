@@ -1739,17 +1739,32 @@ function syncTimelineViewUI(days) {
   const navDay = document.getElementById("timelineDayNav");
   const navGlobal = document.getElementById("timelineGlobalNav");
   const lbl = document.getElementById("tlDayLabel");
-  if (btnG) btnG.classList.toggle("bg-slate-900", timelineViewMode === "global");
-  if (btnG) btnG.classList.toggle("text-white", timelineViewMode === "global");
-  if (btnG) btnG.classList.toggle("border-slate-900", timelineViewMode === "global");
-  if (btnG) btnG.classList.toggle("bg-white", timelineViewMode !== "global");
-  if (btnG) btnG.classList.toggle("text-slate-800", timelineViewMode !== "global");
 
-  if (btnD) btnD.classList.toggle("bg-slate-900", timelineViewMode === "day");
-  if (btnD) btnD.classList.toggle("text-white", timelineViewMode === "day");
-  if (btnD) btnD.classList.toggle("border-slate-900", timelineViewMode === "day");
-  if (btnD) btnD.classList.toggle("bg-white", timelineViewMode !== "day");
-  if (btnD) btnD.classList.toggle("text-slate-800", timelineViewMode !== "day");
+  // IMPORTANT: With Tailwind CDN, if both bg/text utility classes exist simultaneously,
+  // the *CSS generation order* (not the DOM class order) can decide the winner.
+  // So we must explicitly add/remove the mutually-exclusive classes (not just toggle one side).
+  const setToggleBtn = (btn, isActive) => {
+    if (!btn) return;
+    // Active style
+    btn.classList.toggle("bg-slate-900", !!isActive);
+    btn.classList.toggle("border-slate-900", !!isActive);
+    btn.classList.toggle("text-white", !!isActive);
+
+    // Inactive style
+    btn.classList.toggle("bg-white", !isActive);
+    btn.classList.toggle("border-slate-200", !isActive);
+    btn.classList.toggle("text-slate-800", !isActive);
+
+    // Make sure conflicting classes are fully removed
+    if (isActive) {
+      btn.classList.remove("bg-white", "border-slate-200", "text-slate-800");
+    } else {
+      btn.classList.remove("bg-slate-900", "border-slate-900", "text-white");
+    }
+  };
+
+  setToggleBtn(btnG, timelineViewMode === "global");
+  setToggleBtn(btnD, timelineViewMode === "day");
 
   if (navDay) navDay.classList.toggle("hidden", timelineViewMode !== "day");
   if (navGlobal) navGlobal.classList.toggle("hidden", timelineViewMode !== "global");
@@ -1761,13 +1776,14 @@ function syncTimelineViewUI(days) {
   const idx = (days || []).indexOf(activeDayISO);
   const prevDisabled = (idx <= 0);
   const nextDisabled = (idx === -1 || idx >= (days.length - 1));
-  // Avoid using the native "disabled" attribute (can block clicks if state desyncs);
-  // we keep it clickable and let moveActiveDay() guard bounds.
+
+  // Do not use native disabled (it blocks click events on some mobile browsers).
+  // We only show a visual hint; bounds are enforced in moveActiveDay().
   if (prev) prev.classList.toggle("opacity-40", prevDisabled);
   if (next) next.classList.toggle("opacity-40", nextDisabled);
 }
 
-function setTimelineViewMode(mode) {
+function setTimelineViewModefunction setTimelineViewMode(mode) {
   timelineViewMode = (mode === "day") ? "day" : "global";
   // When entering day view, active day will be auto-selected in renderTimeline()
   renderTimeline();
@@ -3450,32 +3466,34 @@ function syncHeaderHeightVar(){
 }
 
 /* ----------------------------- Init ----------------------------- */
-loadState();
-setupAccordion();
-syncHeaderHeightVar();
-window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
-
-  const fab = document.getElementById('fabCollapseAll');
-  if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-  const ca = document.getElementById("collapseAll");
-  if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-  // Timeline view controls (Global / Day)
-  const _tlG = document.getElementById("tlViewGlobal");
-  const _tlD = document.getElementById("tlViewDay");
-  if (_tlG) _tlG.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("global"); };
-  if (_tlD) _tlD.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("day"); };
-
-  const _tlPrev = document.getElementById("tlDayPrev");
-  const _tlNext = document.getElementById("tlDayNext");
-  if (_tlPrev) _tlPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(-1); };
-  if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
-
-renderAll();
-summaryExpanded = false;
-applySummaryFold();
-updateFabVisibility();
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  setupAccordion();
+  syncHeaderHeightVar();
+  window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
+  
+    const fab = document.getElementById('fabCollapseAll');
+    if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  
+    const ca = document.getElementById("collapseAll");
+    if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  
+    // Timeline view controls (Global / Day)
+    const _tlG = document.getElementById("tlViewGlobal");
+    const _tlD = document.getElementById("tlViewDay");
+    if (_tlG) _tlG.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("global"); };
+    if (_tlD) _tlD.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("day"); };
+  
+    const _tlPrev = document.getElementById("tlDayPrev");
+    const _tlNext = document.getElementById("tlDayNext");
+    if (_tlPrev) _tlPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(-1); };
+    if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
+  
+  renderAll();
+  summaryExpanded = false;
+  applySummaryFold();
+  updateFabVisibility();
+});
 </script>
 
 <!-- Floating FAB: Collapse all -->
