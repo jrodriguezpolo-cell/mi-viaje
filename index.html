@@ -127,6 +127,14 @@
       z-index: 39;
     }
 
+
+    /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
+    #summary, #summaryDetail { display: none !important; }
+    #stickySummaryDetailInner .row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
+    #stickySummaryDetailInner .lbl { color: rgb(100 116 139); }
+    #stickySummaryDetailInner .val { font-weight: 600; }
+    #stickySummaryDetailInner .total { font-weight: 800; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -157,6 +165,12 @@
   <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
     <div id="stickyTotalValue" class="text-sm font-semibold text-slate-900">TOTAL: —</div>
     <button id="stickyTotalToggle" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50">Ver detalle ▾</button>
+  </div>
+
+  <div id="stickySummaryDetail" class="hidden bg-white/95 backdrop-blur border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div id="stickySummaryDetailInner" class="text-sm"></div>
+    </div>
   </div>
 </div>
 <!-- Main -->
@@ -685,6 +699,7 @@ function setupAccordion() {
       body.classList.toggle("hidden");
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+      updateFabVisibility();
     });
   });
 }
@@ -692,7 +707,20 @@ function setupAccordion() {
 function collapseAllAccordions() {
   document.querySelectorAll("[data-acc-body]").forEach(body => body.classList.add("hidden"));
   document.querySelectorAll("[data-acc] .accIcon").forEach(icon => { icon.textContent = "▾"; });
+  updateFabVisibility();
 }
+
+
+function anyAccordionOpen() {
+  return !!document.querySelector('[data-acc-body]:not(.hidden)');
+}
+
+function updateFabVisibility() {
+  const fab = document.getElementById('fabCollapseAll');
+  if (!fab) return;
+  fab.classList.toggle('hidden', !anyAccordionOpen());
+}
+
 
 
 /* ------------------------------ Rendering ---------------------------- */
@@ -1981,64 +2009,46 @@ function applySummaryUI(){ /* no-op: kept for compatibility */ }
 
 
 function applySummaryFold() {
-  // Ensure a visible toggle button (placed near the summary title)
-  const summaryRoot = document.getElementById("summary");
-  if (!summaryRoot) return;
+  // Legacy summary is intentionally hidden (see CSS). Keep DOM values updated for calculations.
+  const legacySummary = document.getElementById("summary");
+  if (legacySummary) legacySummary.classList.add("hidden");
+  const legacyDetail = document.getElementById("summaryDetail");
+  if (legacyDetail) legacyDetail.classList.add("hidden");
 
-  // Hide the legacy toggle if it exists inside rows that may be hidden
-  const legacy = document.getElementById("summaryToggle");
-  if (legacy) legacy.classList.add("hidden");
+  const t = document.getElementById("stickyTotalToggle");
+  const d = document.getElementById("stickySummaryDetail");
+  const inner = document.getElementById("stickySummaryDetailInner");
 
-  // Create/attach a stable toggle button once
-  let btn = document.getElementById("summaryToggleTop");
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.id = "summaryToggleTop";
-    btn.className = "tap mt-2 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
-    // Insert just under the title inside the summary card
-    const titleEl = summaryRoot.querySelector(".font-extrabold");
-    if (titleEl && titleEl.parentElement) titleEl.parentElement.insertBefore(btn, titleEl.nextSibling);
-    else summaryRoot.prepend(btn);
-    btn.addEventListener("click", () => {
+  if (t) t.textContent = summaryExpanded ? "Ocultar detalle ▴" : "Ver detalle ▾";
+  if (d) d.classList.toggle("hidden", !summaryExpanded);
+
+  // Re-render sticky detail (cheap + keeps it fresh even if calcSummary runs often)
+  if (inner) {
+    const curTxt = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
+    const tr = document.getElementById("sumTransport")?.textContent || "0.00";
+    const st = document.getElementById("sumStay")?.textContent || "0.00";
+    const ac = document.getElementById("sumActs")?.textContent || "0.00";
+    const me = document.getElementById("sumMeals")?.textContent || "0.00";
+    const tot = document.getElementById("sumTotal")?.textContent || "0.00";
+    const cur = curTxt ? ` <span class="text-xs text-slate-500">${curTxt}</span>` : "";
+    inner.innerHTML = `
+      <div class="row"><span class="lbl">Transporte</span><span class="val">${tr}</span></div>
+      <div class="row"><span class="lbl">Alojamiento</span><span class="val">${st}</span></div>
+      <div class="row"><span class="lbl">Actividades</span><span class="val">${ac}</span></div>
+      <div class="row"><span class="lbl">Comidas</span><span class="val">${me}</span></div>
+      <hr class="my-2 border-slate-200"/>
+      <div class="row"><span class="total">TOTAL</span><span class="total">${tot}</span></div>
+      <div class="mt-1">${cur}</div>
+    `;
+  }
+
+  // Stable binding (no scroll): toggle expands/collapses the sticky panel only.
+  if (t) {
+    t.onclick = () => {
       summaryExpanded = !summaryExpanded;
       applySummaryFold();
-    });
+    };
   }
-
-  btn.textContent = summaryExpanded ? "Ocultar detalle ▴" : "Ver detalle ▾";
-
-  // Rows to hide/show
-  const ids = ["sumTransport", "sumStay", "sumMeals", "sumActs", "sumCur"];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const row = el.closest(".flex") || el.parentElement;
-    if (row) row.classList.toggle("hidden", !summaryExpanded);
-  });
-
-  // HR divider inside summary card
-  const hr = summaryRoot.querySelector("hr");
-  if (hr) hr.classList.toggle("hidden", !summaryExpanded);
-
-  // Compare box (A/B) – keep hidden when collapsed
-  const cmp = document.getElementById("compareBox");
-  if (cmp) cmp.classList.toggle("hidden", !summaryExpanded);
-
-  // Sync sticky mini-bar (if present)
-  const stickyVal = document.getElementById("stickyTotalValue");
-  if (stickyVal) {
-    const totalEl = document.getElementById("sumTotal");
-    const curEl = document.getElementById("sumCur");
-    const totalTxt = totalEl ? totalEl.textContent : "—";
-    const curTxt = (curEl && curEl.textContent) ? curEl.textContent : (document.getElementById("displayCurrency")?.value || "");
-    stickyVal.textContent = `TOTAL: ${totalTxt}${curTxt ? " " + curTxt : ""}`;
-  }
-  const stickyT = document.getElementById("stickyTotalToggle");
-  if (stickyT) {
-    stickyT.textContent = btn.textContent;
-    stickyT.onclick = btn.onclick || (() => btn.click());
-  }
-
 }
 
 /* -------------------- /Summary fold (no persistence) -------------------- */
@@ -3262,10 +3272,12 @@ window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
   const ca = document.getElementById("collapseAll");
   if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 renderAll();
+summaryExpanded = false;
 applySummaryFold();
+updateFabVisibility();
 </script>
 
 <!-- Floating FAB: Collapse all -->
-<button id="fabCollapseAll" aria-label="Plegar todo" title="Plegar todo">▾▾</button>
+<button id="fabCollapseAll" class="hidden" aria-label="Plegar todo" title="Plegar todo">▾▾</button>
 </body>
 </html>
