@@ -1800,8 +1800,8 @@ function syncTimelineViewUI(days) {
   const prev = document.getElementById("tlDayPrev");
   const next = document.getElementById("tlDayNext");
   const idx = (days || []).indexOf(activeDayISO);
-  const prevDisabled = (idx <= 0);
-  const nextDisabled = (idx === -1 || idx >= (days.length - 1));
+  const prevDisabled = (idx === -1) ? true : (idx <= 0);
+  const nextDisabled = (idx === -1) ? ((days || []).length === 0) : (idx >= (days.length - 1));
 
   // Do not use native disabled (it blocks click events on some mobile browsers).
   // We only show a visual hint; bounds are enforced in moveActiveDay().
@@ -1868,9 +1868,9 @@ function renderTimeline() {
   __tlDays = days;
 
   if (timelineViewMode === "day") {
-    // Auto-pick active day when entering or when filters change
+    // Auto-pick active day ONLY when entering Day mode (do not change it when filters change)
     const t = todayYMD();
-    if (!activeDayISO || !days.includes(activeDayISO)) {
+    if (!activeDayISO) {
       activeDayISO = days.includes(t) ? t : (days[0] || "");
     }
   }
@@ -1887,7 +1887,7 @@ function renderTimeline() {
     }
     visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
     if (!visibleItems.length) {
-      box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales.</div>`;
+      box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
       return;
     }
