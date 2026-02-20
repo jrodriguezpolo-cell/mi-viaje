@@ -135,6 +135,10 @@ border-radius: 999px;
     #stickySummaryDetailInner .val { font-weight: 600; }
     #stickySummaryDetailInner .total { font-weight: 800; }
 
+
+  /* hide horizontal scrollbar for chips */
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -237,6 +241,11 @@ border-radius: 999px;
       Próximo
     </button>
 </div>
+</div>
+<div class="mb-3 -mx-1">
+  <div id="timelineFilterChips" class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1">
+    <!-- chips injected by JS -->
+  </div>
 </div>
 <div class="space-y-2" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
@@ -972,7 +981,62 @@ function isPast(dateKey) {
 }
 function isFuture(dateKey) {
   return cmpDate(String(dateKey || ""), todayKey()) > 0;
+}/* Timeline category filter (in-memory, no persistence) */
+const timelineFilterState = {
+  categories: new Set() // empty = show all
+};
+
+function timelineItemCategory(item) {
+  const t = String(item?.type || "").toLowerCase();
+  if (t.includes("trayecto") || t.includes("transporte")) return "Transporte";
+  if (t.includes("alojamiento")) return "Alojamiento";
+  if (t.includes("actividad")) return "Actividades";
+  if (t.includes("comida")) return "Comida";
+  return "";
 }
+
+// Pure filter: does not mutate input list
+function getFilteredItems(allItems) {
+  const cats = timelineFilterState.categories;
+  if (!cats || cats.size === 0) return allItems;
+  return (allItems || []).filter(it => {
+    const c = timelineItemCategory(it);
+    return c && cats.has(c);
+  });
+}
+
+function renderTimelineFilterChips() {
+  const host = document.getElementById("timelineFilterChips");
+  if (!host) return;
+
+  const cats = ["Transporte", "Alojamiento", "Comida", "Actividades"];
+  const active = timelineFilterState.categories;
+
+  const chipClass = (isActive) =>
+    "tap shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border " +
+    (isActive ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200");
+
+  const allActive = active.size === 0;
+
+  host.innerHTML = `
+    <button class="${chipClass(allActive)}" data-tlchip="ALL">Todos</button>
+    ${cats.map(c => `<button class="${chipClass(active.has(c))}" data-tlchip="${c}">${c}</button>`).join("")}
+  `;
+
+  host.querySelectorAll("[data-tlchip]").forEach(btn => {
+    btn.onclick = () => {
+      const v = btn.getAttribute("data-tlchip") || "";
+      if (v === "ALL") {
+        active.clear();
+      } else {
+        if (active.has(v)) active.delete(v); else active.add(v);
+      }
+      renderTimelineFilterChips();
+      renderTimeline();
+    };
+  });
+}
+
 
 // Orden: sin fecha primero (para editar), luego por fecha+hora (24h). Sin hora -> final del día.
 
@@ -1637,6 +1701,7 @@ function renderTimeline() {
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
   const stayById = new Map((sc.stays || []).map(s => [String(s.id), s]));
   const notes = sc.dailyNotes || {};
+  renderTimelineFilterChips();
   const items = [];
 
   for (const leg of sc.legs) {
@@ -1664,13 +1729,15 @@ function renderTimeline() {
     return String(a.type+':'+a.id).localeCompare(String(b.type+':'+b.id));
   });
 
-  if (!items.length) {
-    box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos todavía.</div>`;
+  const filteredItems = getFilteredItems(items);
+
+  if (!filteredItems.length) {
+    box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
     renderDailyNotes();
     return;
   }
 
-  box.innerHTML = items.map(it => {
+  box.innerHTML = filteredItems.map(it => {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
@@ -3266,23 +3333,11 @@ setupAccordion();
 syncHeaderHeightVar();
 window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
 
-document.addEventListener('DOMContentLoaded', () => {
   const fab = document.getElementById('fabCollapseAll');
-  if (fab) fab.addEventListener('click', () => {
-    collapseAllAccordions();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  const ca = document.getElementById('collapseAll');
-  if (ca) ca.addEventListener('click', () => {
-    collapseAllAccordions();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  // Ensure correct initial visibility once the FAB exists in the DOM.
-  updateFabVisibility();
-});
-
+  const ca = document.getElementById("collapseAll");
+  if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 renderAll();
 summaryExpanded = false;
 applySummaryFold();
