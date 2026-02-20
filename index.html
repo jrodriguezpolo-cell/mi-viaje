@@ -142,6 +142,9 @@ border-radius: 999px;
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
+  <!-- Tailwind safelist for classes toggled via JS -->
+  <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
+
 <!-- Top bar -->
 <header class="safe-t sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -248,7 +251,7 @@ border-radius: 999px;
 
   <div id="timelineGlobalNav" class="flex gap-2 justify-end">
     <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Hoy</button>
-    <button class="tap px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
+    <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
   </div>
 </div>
 <div class="mb-3 -mx-1">
@@ -1736,15 +1739,15 @@ function syncTimelineViewUI(days) {
   const navDay = document.getElementById("timelineDayNav");
   const navGlobal = document.getElementById("timelineGlobalNav");
   const lbl = document.getElementById("tlDayLabel");
-  if (btnG) btnG.classList.toggle("bg-orange-600", timelineViewMode === "global");
+  if (btnG) btnG.classList.toggle("bg-slate-900", timelineViewMode === "global");
   if (btnG) btnG.classList.toggle("text-white", timelineViewMode === "global");
-  if (btnG) btnG.classList.toggle("border-orange-600", timelineViewMode === "global");
+  if (btnG) btnG.classList.toggle("border-slate-900", timelineViewMode === "global");
   if (btnG) btnG.classList.toggle("bg-white", timelineViewMode !== "global");
   if (btnG) btnG.classList.toggle("text-slate-800", timelineViewMode !== "global");
 
-  if (btnD) btnD.classList.toggle("bg-orange-600", timelineViewMode === "day");
+  if (btnD) btnD.classList.toggle("bg-slate-900", timelineViewMode === "day");
   if (btnD) btnD.classList.toggle("text-white", timelineViewMode === "day");
-  if (btnD) btnD.classList.toggle("border-orange-600", timelineViewMode === "day");
+  if (btnD) btnD.classList.toggle("border-slate-900", timelineViewMode === "day");
   if (btnD) btnD.classList.toggle("bg-white", timelineViewMode !== "day");
   if (btnD) btnD.classList.toggle("text-slate-800", timelineViewMode !== "day");
 
@@ -1756,10 +1759,12 @@ function syncTimelineViewUI(days) {
   const prev = document.getElementById("tlDayPrev");
   const next = document.getElementById("tlDayNext");
   const idx = (days || []).indexOf(activeDayISO);
-  if (prev) prev.disabled = (idx <= 0);
-  if (next) next.disabled = (idx === -1 || idx >= (days.length - 1));
-  if (prev) prev.classList.toggle("opacity-40", prev.disabled);
-  if (next) next.classList.toggle("opacity-40", next.disabled);
+  const prevDisabled = (idx <= 0);
+  const nextDisabled = (idx === -1 || idx >= (days.length - 1));
+  // Avoid using the native "disabled" attribute (can block clicks if state desyncs);
+  // we keep it clickable and let moveActiveDay() guard bounds.
+  if (prev) prev.classList.toggle("opacity-40", prevDisabled);
+  if (next) next.classList.toggle("opacity-40", nextDisabled);
 }
 
 function setTimelineViewMode(mode) {
