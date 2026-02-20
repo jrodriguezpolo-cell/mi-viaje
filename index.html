@@ -1890,6 +1890,10 @@ function renderDailyNotes() {
 
 /* ---------------------- Summary fold (no persistence) ---------------------- */
 let summaryExpanded = false;
+// Backward-compat helpers (avoid runtime errors if older patches referenced them)
+function bindSummaryToggleOnce(){ /* no-op: applySummaryFold() binds onclick each render */ }
+function applySummaryUI(){ /* no-op: kept for compatibility */ }
+
 
 function applySummaryFold() {
   // Ensure a visible toggle button (placed near the summary title)
@@ -1949,8 +1953,7 @@ function calcSummary() {
   $("sumActs").textContent = acts.toFixed(2);
   $("sumMeals").textContent = meals.toFixed(2);
   $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
-  bindSummaryToggleOnce();
-  applySummaryUI();
+  // summary fold (no persistence)
   applySummaryFold();
 }
 
