@@ -739,6 +739,20 @@ function scrollToElWithOffset(el, extra = 0) {
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
+
+function getTopStackOffset() {
+  const cs = getComputedStyle(document.documentElement);
+  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return headerH + totalsH;
+}
+
+function scrollToElTopStack(el, extra = 0) {
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
 function __tlNowMinutes() {
@@ -1977,13 +1991,13 @@ function jumpToItem(kind, id) {
     // Primero: llevar la cabecera de la sección (título + botón Añadir) bajo Totales
     const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
     const headerEl = document.getElementById(headerIdMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
-    if (headerEl) scrollToElWithOffset(headerEl, 10);
+    if (headerEl) scrollToElTopStack(headerEl, 8);
 
     // Segundo: llevar el item concreto a la vista (tras abrir/expandir)
     setTimeout(() => {
       const el = document.querySelector(cfg.sel);
       if (el) {
-        scrollToElWithOffset(el, 18);
+        scrollToElTopStack(el, 16);
         try { el.focus({ preventScroll: true }); } catch {}
       }
     }, 130);
@@ -3936,7 +3950,7 @@ function scrollToSectionHeader(accKey) {
 
   // Premium fine scroll: header sits just under Totals
   setTimeout(() => {
-    scrollToElWithOffset(headerBtn, 10);
+    scrollToElTopStack(headerBtn, 8);
   }, 0);
 }
 
