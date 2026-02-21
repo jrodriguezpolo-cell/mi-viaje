@@ -549,19 +549,9 @@ function todayYMD() {
 function getStickyOffset() {
   const header = document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-  const fixedControls = document.getElementById("timelineControlsFixed");
   let offset = 0;
-
   if (header) offset += header.getBoundingClientRect().height;
-  if (totalBar && !totalBar.classList.contains("hidden")) {
-    offset += totalBar.getBoundingClientRect().height;
-  }
-  // When the fixed timeline controls bar is visible, account for its height too,
-  // otherwise "Actual/Próximo" scroll targets will be hidden underneath it.
-  if (fixedControls && !fixedControls.classList.contains("hidden")) {
-    offset += fixedControls.getBoundingClientRect().height;
-  }
-
+  if (totalBar && !totalBar.classList.contains("hidden")) offset += totalBar.getBoundingClientRect().height;
   offset += 12; // breathing room
   return offset;
 }
@@ -1965,10 +1955,25 @@ function syncTimelineViewUI(days) {
 }
 
 function setTimelineViewMode(mode) {
+  const prev = timelineViewMode;
   timelineViewMode = (mode === "day") ? "day" : "global";
   // When entering day view, active day will be auto-selected in renderTimeline()
   renderTimeline();
+
+  // Entering Day from Global: ensure the first event isn't hidden under the fixed controls bar.
+  if (timelineViewMode === "day" && prev !== "day") {
+    requestAnimationFrame(() => {
+      const nodes = document.querySelectorAll(".timelineItem");
+      let first = null;
+      for (const el of nodes) {
+        const d = (el.getAttribute("data-date") || "").trim();
+        if (d === activeDayISO) { first = el; break; }
+      }
+      if (first) scrollToElWithOffset(first);
+    });
+  }
 }
+
 
 function moveActiveDay(delta) {
   const days = Array.isArray(__tlDays) ? __tlDays : [];
