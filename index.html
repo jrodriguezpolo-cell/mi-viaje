@@ -1338,6 +1338,7 @@ function renderStays() {
   box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
+    __sectionExpanded.stays.delete(id);
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
@@ -1901,6 +1902,7 @@ function renderActivities() {
   box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
+    __sectionExpanded.activities.delete(id);
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
@@ -3835,8 +3837,8 @@ Tu iPhone: ${l}
 
 
 /* ----------------------------- Events ----------------------------- */
-$("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); renderAll(); });
-$("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); renderAll(); });
+$("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
+$("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
