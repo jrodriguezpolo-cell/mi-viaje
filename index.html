@@ -1975,15 +1975,15 @@ function jumpToItem(kind, id) {
   // Espera un tick para que el acordeón se abra antes de hacer scroll
   setTimeout(() => {
     // Primero: llevar la cabecera de la sección (donde está el botón Añadir) bajo Totales
-    const addBtnMap = { legs: "addLeg", stays: "addStay", acts: "addAct" };
-    const headerEl = document.getElementById(addBtnMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
-    if (headerEl) scrollToElWithOffset(headerEl, 28);
+    const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
+    const headerEl = document.getElementById(headerIdMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
+    if (headerEl) scrollToElWithOffset(headerEl, 8);
 
     // Segundo: llevar el item concreto a la vista (un poco menos de offset)
     setTimeout(() => {
       const el = document.querySelector(cfg.sel);
       if (el) {
-        scrollToElWithOffset(el, 18);
+        scrollToElWithOffset(el, 16);
         try { el.focus({ preventScroll: true }); } catch {}
       }
     }, 80);
@@ -3936,7 +3936,7 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
 
     const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
     const target = document.getElementById(headerIdMap[key]) || btn;
-    const extra = (key === "legs" || key === "stays" || key === "acts") ? 14 : 0;
+    const extra = (key === "legs" || key === "stays" || key === "acts") ? 8 : 0;
 
     const wasClosed = !!(body && body.classList.contains("hidden"));
     if (wasClosed) btn.click();
