@@ -1879,8 +1879,8 @@ function jumpToItem(kind, id) {
   // Espera un tick para que el acordeón se abra antes de hacer scroll
   setTimeout(() => {
     const el = document.querySelector(cfg.sel);
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (el) {
+      scrollToElWithOffset(el);
       try { el.focus({ preventScroll: true }); } catch {}
     }
   }, 60);
