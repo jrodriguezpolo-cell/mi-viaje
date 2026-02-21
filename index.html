@@ -122,9 +122,11 @@ border-radius: 999px;
     #fabCollapseAll:active{ transform: translateY(1px); }
 
     #stickyTotalBar{
-      position: sticky;
+      position: fixed;
+      left: 0;
+      right: 0;
       top: var(--app-header-h, 56px);
-      z-index: 39;
+      z-index: 950;
     }
 
 
@@ -171,6 +173,17 @@ border-radius: 999px;
   padding-bottom: 8px;
 }
 
+
+/* --- v78: Fixed header + fixed totals + spacer --- */
+#appHeader{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+#topStackSpacer{ height: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px)); }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -190,7 +203,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- Top bar -->
-<header class="safe-t sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+<header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
@@ -224,6 +237,7 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+<div id="topStackSpacer"></div>
 <!-- Main -->
 <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
@@ -673,18 +687,48 @@ function todayYMD() {
 
 
 function getStickyOffset() {
-  const header = document.querySelector("header");
+  const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
   const controls = document.getElementById("timelineControlsRow");
 
-  let offset = 0;
-  if (header) offset += header.getBoundingClientRect().height;
-  if (totalBar) offset += totalBar.getBoundingClientRect().height;
-  if (controls) offset += controls.getBoundingClientRect().height;
+  // Prefer measured vars (kept in sync by syncTopStackHeights)
+  const root = document.documentElement;
+  const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
+  const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
 
-  offset += 12;
+  let offset = 0;
+  offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
+  offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
+
+  // Controls row only matters when visible (timeline accordion open)
+  if (controls && !controls.classList.contains("hidden")) {
+    offset += controls.getBoundingClientRect().height;
+  }
+
+  offset += 12; // margin
   return offset;
 }
+
+
+
+function syncTopStackHeights() {
+  const header = document.getElementById("appHeader") || document.querySelector("header");
+  const totalBar = document.getElementById("stickyTotalBar");
+  const spacer = document.getElementById("topStackSpacer");
+
+  const headerH = header ? header.getBoundingClientRect().height : 0;
+  const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
+
+  const root = document.documentElement;
+  root.style.setProperty("--app-header-h", headerH + "px");
+  root.style.setProperty("--sticky-totals-h", totalsH + "px");
+
+  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+}
+
+// Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
+window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
+window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
 function scrollToElWithOffset(el) {
   if (!el) return;
@@ -3791,13 +3835,8 @@ function syncHeaderHeightVar(){
 
 
 function syncStickyTotalsHeightVar(){
-  const bar = document.getElementById("stickyTotalBar");
-  let h = 0;
-  if (bar && !bar.classList.contains("hidden")) {
-    // offsetHeight works for sticky/fixed elements too
-    h = bar.offsetHeight || 0;
-  }
-  document.documentElement.style.setProperty("--sticky-totals-h", h + "px");
+  // v78: keep legacy callers working
+  syncTopStackHeights();
 }
 
 function __tlGetTopOffsetPx(){
