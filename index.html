@@ -268,7 +268,7 @@ border-radius: 999px;
   </div>
 
   <div id="timelineGlobalNav" class="flex gap-2 justify-end">
-    <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Hoy</button>
+    <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
     <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
   </div>
 </div>
@@ -548,6 +548,134 @@ function scrollToElWithOffset(el) {
   if (!el) return;
   const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
+let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
+
+function __tlNowMinutes() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function __tlPickCurrentItemForToday(items, todayISO) {
+  const nowMin = __tlNowMinutes();
+  const todays = (items || []).filter(it => String(it.date||"") === String(todayISO) && it.date !== "9999-99-99");
+  if (!todays.length) return null;
+
+  // Prefer real events over note markers when choosing "actual"
+  const main = todays.filter(it => !it.isNote);
+  const pool = main.length ? main : todays;
+
+  // pool is already sorted by date/time in renderTimeline
+  let pick = pool.find(it => timeSortKey(it.time) >= nowMin);
+  if (!pick) pick = pool[pool.length - 1];
+  return pick || null;
+}
+
+function __tlEnsureTimelineOpen() {
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+}
+
+function __tlScrollToItemByKey(tlKey) {
+  if (!tlKey) return false;
+  const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
+  const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
+  if (!el) return false;
+  scrollToElWithOffset(el);
+  return true;
+}
+
+function scrollToCurrentTimelineItem() {
+  __tlEnsureTimelineOpen();
+
+  const todayISO = todayYMD();
+  timelineViewMode = "day";
+  activeDayISO = todayISO;
+  renderTimeline();
+
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  const cur = __tlPickCurrentItemForToday(items, todayISO);
+  if (!cur) {
+    const goNext = confirm("Hoy no hay eventos. ¿Ir al próximo día con eventos?");
+    if (!goNext) return;
+
+    // pick first future day with events (filtered)
+    const days = getTimelineDays(items).filter(d => d && d !== "9999-99-99").sort();
+    const today = todayISO;
+    const nextDay = days.find(d => d > today);
+    if (!nextDay) { alert("No hay próximos eventos."); return; }
+
+    activeDayISO = nextDay;
+    renderTimeline();
+
+    const first = items.find(it => String(it.date||"") === String(nextDay));
+    if (first) {
+      const key = first.isNote ? `note:${nextDay}` : `${first.actId ? "act" : (first.legId ? "leg" : (first.stayId ? "stay" : ""))}:${(first.actId || first.legId || first.stayId || "")}`;
+      __tlLastActualKey = key;
+      __tlScrollToItemByKey(key);
+    }
+    return;
+  }
+
+  const key = cur.isNote ? `note:${todayISO}` : `${cur.actId ? "act" : (cur.legId ? "leg" : (cur.stayId ? "stay" : ""))}:${(cur.actId || cur.legId || cur.stayId || "")}`;
+  __tlLastActualKey = key;
+  __tlScrollToItemByKey(key);
+}
+
+function scrollToNextAfterCurrent() {
+  __tlEnsureTimelineOpen();
+
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  if (!items.length) { alert("No hay próximos eventos."); return; }
+
+  // Find current index: prefer last "Actual" key; fallback to next >= now in global ordering
+  let curIdx = -1;
+  if (__tlLastActualKey) {
+    curIdx = items.findIndex(it => {
+      const k = it.isNote ? `note:${it.date}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
+      return k === __tlLastActualKey;
+    });
+  }
+
+  if (curIdx < 0) {
+    const now = new Date();
+    const nowDate = todayYMD();
+    const nowMin = __tlNowMinutes();
+    curIdx = items.findIndex(it => {
+      const d = String(it.date || "");
+      if (!d || d === "9999-99-99") return false;
+      if (d > nowDate) return true;
+      if (d < nowDate) return false;
+      return timeSortKey(it.time) >= nowMin;
+    });
+    if (curIdx < 0) { alert("No hay próximos eventos."); return; }
+  }
+
+  // next item after current
+  const next = items[curIdx + 1];
+  if (!next) { alert("No hay próximos eventos."); return; }
+
+  const dISO = String(next.date || "");
+  if (!dISO || dISO === "9999-99-99") { alert("No hay próximos eventos."); return; }
+
+  timelineViewMode = "day";
+  activeDayISO = dISO;
+  renderTimeline();
+
+  const key = next.isNote ? `note:${dISO}` : `${next.actId ? "act" : (next.legId ? "leg" : (next.stayId ? "stay" : ""))}:${(next.actId || next.legId || next.stayId || "")}`;
+  __tlLastActualKey = key;
+
+  // If item isn't present due to UI state, just scroll to first item of that day
+  if (!__tlScrollToItemByKey(key)) {
+    const first = items.find(it => String(it.date||"") === dISO);
+    const firstKey = first ? (first.isNote ? `note:${dISO}` : `${first.actId ? "act" : (first.legId ? "leg" : (first.stayId ? "stay" : ""))}:${(first.actId || first.legId || first.stayId || "")}`) : "";
+    __tlLastActualKey = firstKey || key;
+    __tlScrollToItemByKey(firstKey);
+  }
 }
 
 function scrollToTodayTimelineItem() {
@@ -1038,6 +1166,7 @@ function isFuture(dateKey) {
 let timelineViewMode = "global"; // "global" | "day"
 let activeDayISO = ""; // used only in day mode
 let __tlDays = []; // derived cache of available days in current filtered timeline
+let __tlLastFilteredItems = []; // cache of current filtered timeline items (in-memory only)
 
 const timelineFilterState = {
   categories: new Set() // empty = show all
@@ -1862,6 +1991,7 @@ function renderTimeline() {
   });
 
   const filteredItems = getFilteredItems(items);
+  __tlLastFilteredItems = filteredItems;
 
   // Days available in current filtered list (used by Day view navigation)
   const days = getTimelineDays(filteredItems);
@@ -3443,10 +3573,10 @@ $("aiGenerate").addEventListener("click", generateAIGuide);
 
 $("btnTrips").addEventListener("click", openTripsModal);
 const __tn = $("timelineNext");
-if (__tn) __tn.addEventListener("click", scrollToNextTimelineItem);
+if (__tn) __tn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToNextAfterCurrent(); });
 
 const __tt = $("timelineToday");
-if (__tt) __tt.addEventListener("click", scrollToTodayTimelineItem);
+if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); });
 
 
 
