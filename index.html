@@ -546,21 +546,28 @@ function todayYMD() {
 }
 
 
+function __tlPrepareFixedControlsForScroll() {
+  // Ensure the fixed timeline controls are measurable before we compute scroll offsets.
+  // This prevents the target item from ending up under the fixed controls when they appear after scrolling.
+  const fixed = document.getElementById("timelineControlsFixed");
+  if (!fixed) return 0;
+  if (fixed.classList.contains("hidden")) {
+    fixed.classList.remove("hidden");
+  }
+  return fixed.getBoundingClientRect().height || 0;
+}
+
 function getStickyOffset() {
   const header = document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
   const fixedControls = document.getElementById("timelineControlsFixed");
+
   let offset = 0;
-
   if (header) offset += header.getBoundingClientRect().height;
+  if (totalBar && !totalBar.classList.contains("hidden")) offset += totalBar.getBoundingClientRect().height;
 
-  // Sticky totals bar (if visible)
-  if (totalBar && !totalBar.classList.contains("hidden") && totalBar.offsetParent !== null) {
-    offset += totalBar.getBoundingClientRect().height;
-  }
-
-  // Fixed timeline controls (if visible)
-  if (fixedControls && !fixedControls.classList.contains("hidden") && fixedControls.offsetParent !== null) {
+  // Include fixed timeline controls when visible (or when we just made them visible for a scroll action)
+  if (fixedControls && !fixedControls.classList.contains("hidden")) {
     offset += fixedControls.getBoundingClientRect().height;
   }
 
@@ -571,24 +578,12 @@ function getStickyOffset() {
 function scrollToElWithOffset(el) {
   if (!el) return;
 
-  // First pass: scroll using current sticky offset
-  const doScroll = (behavior) => {
-    const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
-    window.scrollTo({ top: Math.max(0, y), behavior });
-  };
+  // Make sure fixed controls are shown BEFORE computing offsets,
+  // because scrolling can cause them to appear and otherwise they'd cover the target.
+  __tlPrepareFixedControlsForScroll();
 
-  doScroll("smooth");
-
-  // Second pass: after the fixed controls potentially appear (IntersectionObserver),
-  // re-adjust so the element is not hidden under the overlays.
-  setTimeout(() => {
-    const top = el.getBoundingClientRect().top;
-    const offset = getStickyOffset();
-    if (top < offset + 4) {
-      const y2 = top + window.pageYOffset - offset;
-      window.scrollTo({ top: Math.max(0, y2), behavior: "auto" });
-    }
-  }, 160);
+  const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
