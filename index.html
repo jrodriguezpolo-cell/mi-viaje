@@ -3926,29 +3926,29 @@ $("btnCompare").addEventListener("click", ()=>{
   `;
 });
 
+/* Bottom nav jump (premium header landing) */
+function scrollToSectionHeader(accKey) {
+  const headerBtn = document.querySelector(`[data-acc="${accKey}"]`);
+  if (!headerBtn) return;
+
+  // Ensure accordion is open so the landing makes sense visually
+  if (typeof openAccordionKey === "function") openAccordionKey(accKey);
+
+  // Premium fine scroll: header sits just under Totals
+  setTimeout(() => {
+    scrollToElWithOffset(headerBtn, -8);
+  }, 0);
+}
+
 /* Jump nav */
-document.querySelectorAll("[data-jump]").forEach(b=>{
-  b.addEventListener("click", ()=>{
-    const key = b.getAttribute("data-jump");
-    const btn = document.querySelector(`[data-acc="${key}"]`);
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (!btn) return;
-
-    const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
-    const target = document.getElementById(headerIdMap[key]) || btn;
-    const extra = (key === "legs" || key === "stays" || key === "acts") ? 8 : 0;
-
-    const wasClosed = !!(body && body.classList.contains("hidden"));
-    if (wasClosed) btn.click();
-
-    // Wait a tick if we just opened an accordion, then scroll with sticky offset
-    if (wasClosed) {
-      setTimeout(() => scrollToElWithOffset(target, extra), 0);
-    } else {
-      scrollToElWithOffset(target, extra);
-    }
+document.querySelectorAll('[data-jump]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const k = btn.getAttribute('data-jump');
+    if (!k) return;
+    scrollToSectionHeader(k);
   });
 });
+
 
 
 function syncHeaderHeightVar(){
