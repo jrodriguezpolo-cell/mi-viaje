@@ -3927,8 +3927,17 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
     const key = b.getAttribute("data-jump");
     const btn = document.querySelector(`[data-acc="${key}"]`);
     const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (body && body.classList.contains("hidden")) btn.click();
-    btn.scrollIntoView({ behavior:"smooth", block:"start" });
+    if (!btn) return;
+
+    const wasClosed = !!(body && body.classList.contains("hidden"));
+    if (wasClosed) btn.click();
+
+    // Wait a tick if we just opened an accordion, then scroll with sticky offset
+    if (wasClosed) {
+      setTimeout(() => scrollToElWithOffset(btn), 0);
+    } else {
+      scrollToElWithOffset(btn);
+    }
   });
 });
 
