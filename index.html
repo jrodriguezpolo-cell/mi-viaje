@@ -1972,22 +1972,22 @@ function jumpToItem(kind, id) {
   else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
   else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  // Espera un tick para que el acordeón se abra antes de hacer scroll
-  setTimeout(() => {
-    // Primero: llevar la cabecera de la sección (donde está el botón Añadir) bajo Totales
+  // Espera a que el acordeón y el DOM tengan altura final (iOS)
+  requestAnimationFrame(() => {
+    // Primero: llevar la cabecera de la sección (título + botón Añadir) bajo Totales
     const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
     const headerEl = document.getElementById(headerIdMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
-    if (headerEl) scrollToElWithOffset(headerEl, 8);
+    if (headerEl) scrollToElWithOffset(headerEl, 10);
 
-    // Segundo: llevar el item concreto a la vista (un poco menos de offset)
+    // Segundo: llevar el item concreto a la vista (tras abrir/expandir)
     setTimeout(() => {
       const el = document.querySelector(cfg.sel);
       if (el) {
-        scrollToElWithOffset(el, 16);
+        scrollToElWithOffset(el, 18);
         try { el.focus({ preventScroll: true }); } catch {}
       }
-    }, 80);
-  }, 60);
+    }, 130);
+  });
 }
 
 
@@ -3936,7 +3936,7 @@ function scrollToSectionHeader(accKey) {
 
   // Premium fine scroll: header sits just under Totals
   setTimeout(() => {
-    scrollToElWithOffset(headerBtn, -8);
+    scrollToElWithOffset(headerBtn, 10);
   }, 0);
 }
 
