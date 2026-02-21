@@ -159,24 +159,28 @@ border-radius: 999px;
 }
 
 
-    /* Timeline controls sticky bar */
-    .timeline-sticky-controls{
-      position: sticky;
-      top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
-      z-index: 70;
-      background: rgba(255,255,255,0.92);
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid #e2e8f0; /* slate-200 */
-      padding-top: 8px;
-      padding-bottom: 8px;
-    }
+/* Timeline fixed controls bar (no “paper” effect) */
+#timelineControlsFixed{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
+  z-index: 38; /* under header (z-40), above content */
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(226,232,240,1); /* slate-200 */
+  padding: 10px 16px;
+}
+#timelineControlsFixedInner{
+  max-width: 72rem; /* match main container width */
+  margin: 0 auto;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-  <!-- Tailwind safelist for classes toggled via JS -->
-  <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
-
+<!-- Tailwind safelist for classes toggled via JS -->
+<div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Top bar -->
 <header class="safe-t sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -200,27 +204,25 @@ border-radius: 999px;
 </div>
 </header>
 <!-- Sticky mini total bar -->
-<div id="stickyTotalBar" class="bg-white/95 backdrop-blur border-b border-slate-200">
-  <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
-    <div id="stickyTotalValue" class="text-sm font-semibold text-slate-900">TOTAL: —</div>
-    <button id="stickyTotalToggle" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50">Ver detalle ▾</button>
-  </div>
-
-  <div id="stickySummaryDetail" class="hidden bg-white/95 backdrop-blur border-t border-slate-200">
-    <div class="max-w-6xl mx-auto px-4 py-3">
-      <div id="stickySummaryDetailInner" class="text-sm"></div>
-    </div>
-  </div>
+<div class="bg-white/95 backdrop-blur border-b border-slate-200" id="stickyTotalBar">
+<div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+<div class="text-sm font-semibold text-slate-900" id="stickyTotalValue">TOTAL: —</div>
+<button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="stickyTotalToggle">Ver detalle ▾</button>
+</div>
+<div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
+<div class="max-w-6xl mx-auto px-4 py-3">
+<div class="text-sm" id="stickySummaryDetailInner"></div>
+</div>
+</div>
 </div>
 <!-- Main -->
-
 <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
 <button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
 <button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
-<button id="collapseAll" class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" title="Plegar todas las secciones">PLEGAR TODO</button>
+<button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 </div>
 <div class="flex items-center gap-2">
 <label class="text-sm text-slate-600">Moneda</label>
@@ -234,10 +236,10 @@ border-radius: 999px;
 </div>
 <!-- Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-4"><aside class="lg:col-span-4">
-<div id="summary" class="bg-white border border-slate-200 rounded-3xl p-5 sticky top-24">
+<div class="bg-white border border-slate-200 rounded-3xl p-5 sticky top-24" id="summary">
 <div class="flex items-center justify-between gap-3">
-  <div class="font-extrabold text-lg">RESUMEN</div>
-  <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="summaryToggle">Ver detalle ▾</button>
+<div class="font-extrabold text-lg">RESUMEN</div>
+<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="summaryToggle">Ver detalle ▾</button>
 </div>
 <div class="mt-3 space-y-2 text-sm">
 <div class="flex justify-between"><span class="text-slate-600">Transporte</span><span class="font-semibold" id="sumTransport">0.00</span></div>
@@ -249,7 +251,6 @@ border-radius: 999px;
 <div class="text-xs text-slate-500">Moneda de visualización: <span id="sumCur">EUR</span></div>
 </div>
 <div class="mt-4 flex gap-2">
-
 </div>
 <div class="mt-3 hidden text-sm bg-slate-50 border border-slate-200 rounded-2xl p-3" id="compareBox"></div>
 </div><div class="mt-3 hidden" id="summaryDetail"><button class="tap flex-1 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCompare">
@@ -269,28 +270,24 @@ border-radius: 999px;
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="timeline">
-<div id="timelineStickyControls" class="timeline-sticky-controls">
-<div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-  <div class="flex items-center gap-2">
-    <button id="tlViewGlobal" class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active">Global</button>
-    <button id="tlViewDay" class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive">Día</button>
-  </div>
-
-  <div id="timelineDayNav" class="hidden flex items-center gap-2">
-    <button id="tlDayPrev" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" aria-label="Día anterior">←</button>
-    <div id="tlDayLabel" class="text-sm font-semibold text-slate-700">—</div>
-    <button id="tlDayNext" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" aria-label="Día siguiente">→</button>
-  </div>
-
-  <div id="timelineGlobalNav" class="flex gap-2 justify-end">
-    <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
-    <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
-  </div>
+<div class="h-0" id="timelineControlsSentinel"></div><div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+<div class="flex items-center gap-2">
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" id="tlViewDay">Día</button>
+</div>
+<div class="hidden flex items-center gap-2" id="timelineDayNav">
+<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayPrev">←</button>
+<div class="text-sm font-semibold text-slate-700" id="tlDayLabel">—</div>
+<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayNext">→</button>
+</div>
+<div class="flex gap-2 justify-end" id="timelineGlobalNav">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
+<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
+</div>
 </div>
 <div class="mb-3 -mx-1">
-  <div id="timelineFilterChips" class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1">
-    <!-- chips injected by JS -->
-  </div>
+<div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
+<!-- chips injected by JS -->
 </div>
 </div>
 <div class="space-y-2" id="timelineList"></div>
@@ -421,7 +418,6 @@ border-radius: 999px;
 </div>
 </section>
 <!-- Summary -->
-
 </div>
 </main>
 <!-- Bottom bar for mobile -->
@@ -892,7 +888,11 @@ function setDisplayCurrency(cur) {
   $("sumCur").textContent = cur;
   $("mealCur").textContent = cur;
   saveState();
+  initTimelineControlsFixedObserver();
+
   renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
 }
 
 /* ----------------------------- Accordion ----------------------------- */
@@ -2654,6 +2654,8 @@ function renderAIResults(sections) {
     }
     saveState();
     renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
     $("aiStatus").textContent = added ? `Añadidas ${added} actividades.` : "No has seleccionado ninguna recomendación.";
   };
 
@@ -2870,6 +2872,8 @@ function restoreManualBackupById(id) {
   saveState();
   closeModal();
   renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
   alert("Backup restaurado.");
 }
 /* ----------------- /Manual Backups (list + restore) ------------------ */
@@ -3058,6 +3062,8 @@ ${label}`)) return;
       saveState();
       closeModal();
       renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
       alert("Backup restaurado.");
     };
 
@@ -3415,6 +3421,8 @@ async function importTrip(ev) {
     saveState();
     closeModal();
     renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
 
     const now = new Date().toISOString();
     setMeta({
@@ -3520,6 +3528,8 @@ Tu iPhone: ${l}
 
     closeModal();
     renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
   });
 
   box.querySelectorAll("[data-trip-del]").forEach(btn => btn.onclick = () => {
@@ -3633,25 +3643,161 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
 
 function syncHeaderHeightVar(){
   const hdr = document.querySelector("header");
-  if (hdr) {
-    document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
-  }
-
-  // Sticky totals height (0 if missing/hidden)
-  const st = document.getElementById("stickyTotalBar");
-  let stH = 0;
-  if (st && !st.classList.contains("hidden") && st.offsetParent !== null) {
-    stH = st.offsetHeight || 0;
-  }
-  document.documentElement.style.setProperty("--sticky-totals-h", stH + "px");
+  if (!hdr) return;
+  document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
 }
 
 /* ----------------------------- Init ----------------------------- */
+
+
+function syncStickyTotalsHeightVar(){
+  const bar = document.getElementById("stickyTotalBar");
+  let h = 0;
+  if (bar && !bar.classList.contains("hidden")) {
+    // offsetHeight works for sticky/fixed elements too
+    h = bar.offsetHeight || 0;
+  }
+  document.documentElement.style.setProperty("--sticky-totals-h", h + "px");
+}
+
+function __tlGetTopOffsetPx(){
+  const cs = getComputedStyle(document.documentElement);
+  const h1 = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const h2 = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return h1 + h2;
+}
+
+function rebuildTimelineControlsFixed(){
+  const inner = document.getElementById("timelineControlsFixedInner");
+  const _g = document.getElementById("tlViewGlobal");
+  const src = _g ? _g.closest("div.flex.items-center.justify-between") : null;
+  if (!inner || !src) return;
+
+  const clone = src.cloneNode(true);
+
+  // Remove IDs to avoid duplicates and wire proxy click
+  const proxyIds = new Set(["tlViewGlobal","tlViewDay","tlDayPrev","tlDayNext","timelineToday","timelineNext"]);
+  clone.querySelectorAll("[id]").forEach(el => {
+    const oid = el.id;
+    if (proxyIds.has(oid)) el.setAttribute("data-proxy-id", oid);
+    else if (oid === "timelineDayNav") el.setAttribute("data-role", "timelineDayNav");
+    else if (oid === "timelineGlobalNav") el.setAttribute("data-role", "timelineGlobalNav");
+    else if (oid === "tlDayLabel") el.setAttribute("data-role", "tlDayLabel");
+    el.removeAttribute("id");
+  });
+
+  // Ensure label keeps text
+  const srcLabel = document.getElementById("tlDayLabel");
+  const dstLabel = clone.querySelector('[data-role="tlDayLabel"]');
+  if (srcLabel && dstLabel) dstLabel.textContent = srcLabel.textContent;
+
+  // Mirror visibility of day/global nav blocks
+  const srcDayNav = document.getElementById("timelineDayNav");
+  const dstDayNav = clone.querySelector('[data-role="timelineDayNav"]');
+  if (srcDayNav && dstDayNav) dstDayNav.classList.toggle("hidden", srcDayNav.classList.contains("hidden"));
+
+  const srcGlobalNav = document.getElementById("timelineGlobalNav");
+  const dstGlobalNav = clone.querySelector('[data-role="timelineGlobalNav"]');
+  if (srcGlobalNav && dstGlobalNav) dstGlobalNav.classList.toggle("hidden", srcGlobalNav.classList.contains("hidden"));
+
+  // Replace content
+  inner.innerHTML = "";
+  inner.appendChild(clone);
+}
+
+function anyTimelineAccordionOpen(){
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (!body) return false;
+  return !body.classList.contains("hidden");
+}
+
+function showHideTimelineControlsFixed(force){
+  const fixed = document.getElementById("timelineControlsFixed");
+  if (!fixed) return;
+
+  if (!anyTimelineAccordionOpen()) {
+    fixed.classList.add("hidden");
+    return;
+  }
+
+  if (typeof force === "boolean") {
+    fixed.classList.toggle("hidden", !force);
+    if (force) rebuildTimelineControlsFixed();
+    return;
+  }
+
+  // Default: decide by sentinel visibility
+  // (handled by observer)
+}
+
+function initTimelineControlsFixedObserver(){
+  const fixed = document.getElementById("timelineControlsFixed");
+  const sentinel = document.getElementById("timelineControlsSentinel");
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (!fixed || !sentinel || !body) return;
+
+  // Delegate clicks to original buttons
+  fixed.addEventListener("click", (e) => {
+    const t = (e.target && e.target.closest) ? e.target.closest("[data-proxy-id]") : null;
+    if (!t) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = t.getAttribute("data-proxy-id");
+    const real = id ? document.getElementById(id) : null;
+    if (real) real.click();
+    // Rebuild quickly to reflect updated label/active classes
+    setTimeout(rebuildTimelineControlsFixed, 0);
+  }, { passive: false });
+
+  // Observe when original controls are visible (sentinel)
+  const makeObserver = () => {
+    const offset = __tlGetTopOffsetPx();
+    return new IntersectionObserver((entries) => {
+      const ent = entries[0];
+      if (!anyTimelineAccordionOpen()) {
+        fixed.classList.add("hidden");
+        return;
+      }
+      if (ent && ent.isIntersecting) {
+        fixed.classList.add("hidden");
+      } else {
+        fixed.classList.remove("hidden");
+        rebuildTimelineControlsFixed();
+      }
+    }, { root: null, threshold: 0, rootMargin: (-offset) + "px 0px 0px 0px" });
+  };
+
+  let io = makeObserver();
+  io.observe(sentinel);
+
+  // Watch accordion open/close (class changes)
+  const mo = new MutationObserver(() => {
+    if (!anyTimelineAccordionOpen()) fixed.classList.add("hidden");
+    else {
+      // When opened, recompute heights and rebuild
+      syncHeaderHeightVar();
+      syncStickyTotalsHeightVar();
+      // Force observer recalibration by recreating it
+      try { io.disconnect(); } catch {}
+      io = makeObserver();
+      io.observe(sentinel);
+      // Decide immediately
+      const rect = sentinel.getBoundingClientRect();
+      const offset = __tlGetTopOffsetPx();
+      const isVisible = rect.top >= offset && rect.bottom > offset;
+      fixed.classList.toggle("hidden", isVisible);
+      if (!isVisible) rebuildTimelineControlsFixed();
+    }
+  });
+  mo.observe(body, { attributes: true, attributeFilter: ["class"] });
+}
+
+
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
   syncHeaderHeightVar();
-  window.addEventListener('resize', syncHeaderHeightVar, { passive: true });
+  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
     if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -3671,13 +3817,28 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  syncStickyTotalsHeightVar();
+  initTimelineControlsFixedObserver();
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
 });
 </script>
-
 <!-- Floating FAB: Collapse all -->
-<button id="fabCollapseAll" class="hidden" aria-label="Plegar todo" title="Plegar todo">▾▾</button>
-</body>
+<button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
+<div class="hidden" id="timelineControlsFixed"><div id="timelineControlsFixedInner"><div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+<div class="flex items-center gap-2">
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" data-proxy-id="tlViewGlobal">Global</button>
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" data-proxy-id="tlViewDay">Día</button>
+</div>
+<div class="hidden flex items-center gap-2" data-role="timelineDayNav">
+<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" data-proxy-id="tlDayPrev">←</button>
+<div class="text-sm font-semibold text-slate-700" data-role="tlDayLabel">—</div>
+<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" data-proxy-id="tlDayNext">→</button>
+</div>
+<div class="flex gap-2 justify-end" data-role="timelineGlobalNav">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" data-proxy-id="timelineToday">Actual</button>
+<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" data-proxy-id="timelineNext">Próximo</button>
+</div>
+</div></div></div></body>
 </html>
