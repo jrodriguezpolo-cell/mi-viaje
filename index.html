@@ -927,6 +927,13 @@ $("modalBackdrop").addEventListener("click", closeModal);
 
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
+
+// Section item accordion state (v80b)
+const __sectionExpanded = {
+  legs: new Set(),
+  stays: new Set(),
+  activities: new Set()
+};
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
 /* --------------------------- Read-only mode -------------------------- */
@@ -1129,41 +1136,58 @@ function renderTabs() {
 
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
-  const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
-    const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
+  const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
+  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.legs.has(leg.id);
+
+  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
+  const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
+  const hasNotes = !!(leg.notes && String(leg.notes).trim());
+
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-      <div class="sm:col-span-3">
-        <label class="text-xs text-slate-600">Salida</label>
-        <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
-        <div class="mt-1">${tzFrom}</div>
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
+      <div class="min-w-0">
+        <div class="text-sm font-semibold truncate">🛫 Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
-      <div class="sm:col-span-3">
-        <label class="text-xs text-slate-600">Llegada</label>
-        <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
-        <div class="mt-1">${tzTo}</div>
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Fecha</label>
-        <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Hora (opcional)</label>
-        <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Coste</label>
-        <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
-      </div>
-      <div class="sm:col-span-2 flex items-center justify-between gap-2">
-        <label class="flex items-center gap-2 text-xs text-slate-600">
-          <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
-          Hecho
-        </label>
+      <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+      </div>
+    </div>
+
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        <div class="sm:col-span-3">
+          <label class="text-xs text-slate-600">Salida</label>
+          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
+          <div class="mt-1">${tzFrom}</div>
+        </div>
+        <div class="sm:col-span-3">
+          <label class="text-xs text-slate-600">Llegada</label>
+          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
+          <div class="mt-1">${tzTo}</div>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Fecha</label>
+          <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Hora (opcional)</label>
+          <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
+        </div>
+        <div class="sm:col-span-2 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -1175,9 +1199,20 @@ function renderLegs() {
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
+  // v80b: accordion per item (legs)
+  box.querySelectorAll("[data-sec-toggle=\"legs\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.legs.has(id)) __sectionExpanded.legs.delete(id);
+    else __sectionExpanded.legs.add(id);
+    renderLegs();
+  }));
+
   box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
+    __sectionExpanded.legs.delete(id);
     saveState(); renderTimeline(); calcSummary();
   }));
 
@@ -1226,41 +1261,60 @@ function renderLegs() {
 function stayCard(stay) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.stays.has(stay.id);
+
+  const city = (stay.city||"").trim() || "—";
+  const name = (stay.name||"").trim() || "—";
+  const dt = `${(stay.date||"").trim() || "—"} ${(stay.time||"").trim() || "—"}`;
+  const hasNotes = !!(stay.notes && String(stay.notes).trim());
+
   return `
   <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-      <div class="sm:col-span-4">
-        <label class="text-xs text-slate-600">Ciudad</label>
-        <input data-stay-city="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.city)}" placeholder="Ciudad">
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
+      <div class="min-w-0">
+        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
-      <div class="sm:col-span-4">
-        <label class="text-xs text-slate-600">Alojamiento</label>
-        <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Hotel / Airbnb / Camping…">
+      <div class="shrink-0 flex items-center gap-2">
+        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Fecha (check-in)</label>
-        <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date || "")}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Hora (opcional)</label>
-        <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
-      </div>
+    </div>
 
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Noches</label>
-        <input data-stay-nights="${stay.id}" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights ?? 1)}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Coste</label>
-        <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
-      </div>
-      <div class="sm:col-span-2 flex flex-col items-end gap-2">
-        <label class="flex items-center gap-2 text-xs text-slate-600">
-          <input type="checkbox" class="h-4 w-4" data-stay-done="${stay.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
-          Hecho
-        </label>
-        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : ``}
-        <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="stays" data-sec-id="${stay.id}">
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        <div class="sm:col-span-4">
+          <label class="text-xs text-slate-600">Ciudad</label>
+          <input data-stay-city="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.city)}" placeholder="Ciudad">
+        </div>
+        <div class="sm:col-span-4">
+          <label class="text-xs text-slate-600">Alojamiento</label>
+          <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Hotel / Airbnb / Camping…">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Fecha (check-in)</label>
+          <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date || "")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Hora (opcional)</label>
+          <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
+        </div>
+
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Noches</label>
+          <input data-stay-nights="${stay.id}" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights ?? 1)}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
+        </div>
+        <div class="sm:col-span-2 flex flex-col items-end gap-2">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-stay-done="${stay.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : ``}
+          <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -1270,6 +1324,16 @@ function renderStays() {
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.stays);
   box.innerHTML = sc.stays.length ? sc.stays.map(stayCard).join("") : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
+
+  // v80b: accordion per item (stays)
+  box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
+    else __sectionExpanded.stays.add(id);
+    renderStays();
+  }));
 
   box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-stay-del");
@@ -1760,42 +1824,60 @@ function handleStayDoneToggle(id, targetChecked, el) {
 function actCard(act) {
   const st = computeDoneState(act);
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.activities.has(act.id);
+
+  const title = (act.title||"").trim() || "—";
+  const city = (act.city||"").trim() || "—";
+  const dt = `${(act.date||"").trim() || "—"} ${(act.time||"").trim() || "—"}`;
+  const hasNotes = !!(act.notes && String(act.notes).trim());
+
   return `
   <div id="act-${act.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-      <div class="sm:col-span-4">
-        <label class="text-xs text-slate-600">Actividad</label>
-        <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.title)}" placeholder="Ej: Museo / Tour / Restaurante">
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="activities" data-sec-id="${act.id}">
+      <div class="min-w-0">
+        <div class="text-sm font-semibold truncate">🎯 Actividad · <span class="done-text">${escapeHtml(title)}</span> <span class="text-slate-500">(${escapeHtml(city)})</span></div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
-      <div class="sm:col-span-3">
-        <label class="text-xs text-slate-600">Ciudad</label>
-        <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.city)}" placeholder="Ciudad">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Fecha</label>
-        <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.date||"")}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Hora (opcional)</label>
-        <input data-act-time="${act.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.time||"")}">
-      </div>
-      <div class="sm:col-span-2">
-        <label class="text-xs text-slate-600">Coste</label>
-        <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.cost ?? "")}">
-      </div>
-      <div class="sm:col-span-1 flex justify-end gap-2 items-center">
-        <label class="flex items-center gap-2 text-xs text-slate-600">
-          <input type="checkbox" class="h-4 w-4" data-act-done="${act.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
-          Hecho
-        </label>
+      <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
       </div>
     </div>
-    <div class="mt-2 flex items-center gap-3 text-xs">
-      ${st.skipped ? `<span class="font-semibold skipped-badge">No realizado</span>` : ``}
-      ${(!st.skipped && st.auto) ? `<span class="auto-badge">Asumido</span>` : ``}
-      ${act.fromAI ? `<span class="text-slate-500">Añadida desde IA</span>` : ``}
+
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="activities" data-sec-id="${act.id}">
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        <div class="sm:col-span-4">
+          <label class="text-xs text-slate-600">Actividad</label>
+          <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.title)}" placeholder="Ej: Museo / Tour / Restaurante">
+        </div>
+        <div class="sm:col-span-3">
+          <label class="text-xs text-slate-600">Ciudad</label>
+          <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.city)}" placeholder="Ciudad">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Fecha</label>
+          <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.date||"")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Hora (opcional)</label>
+          <input data-act-time="${act.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.time||"")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.cost ?? "")}">
+        </div>
+        <div class="sm:col-span-1 flex justify-end gap-2 items-center">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-act-done="${act.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
+      </div>
+      <div class="mt-2 flex items-center gap-3 text-xs">
+        ${st.skipped ? `<span class="font-semibold skipped-badge">No realizado</span>` : ``}
+        ${(!st.skipped && st.auto) ? `<span class="auto-badge">Asumido</span>` : ``}
+        ${act.fromAI ? `<span class="text-slate-500">Añadida desde IA</span>` : ``}
+      </div>
     </div>
   </div>`;
 }
@@ -1805,6 +1887,16 @@ function renderActivities() {
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.activities);
   box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
+
+  // v80b: accordion per item (activities)
+  box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
+    else __sectionExpanded.activities.add(id);
+    renderActivities();
+  }));
 
   box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-act-del");
@@ -1875,6 +1967,11 @@ function jumpToItem(kind, id) {
   if (!cfg) return;
 
   openAccordionKey(cfg.acc);
+
+  // v80b: expand target item within section
+  if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
+  else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
+  else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
   // Espera un tick para que el acordeón se abra antes de hacer scroll
   setTimeout(() => {
@@ -3745,19 +3842,25 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.legs.unshift({ id: nowId(), from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  const id = nowId();
+  sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("legs");
 });
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.stays.unshift({ id: nowId(), city:"", name:"", date:"", time:"", nights:1, cost:0 });
+  const id = nowId();
+  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
+  __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
-  sc.activities.unshift({ id: nowId(), title:"", city:"", date:"", time:"", cost:0, fromAI:false });
+  const id = nowId();
+  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
+  __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("acts");
 });
