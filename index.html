@@ -1333,6 +1333,7 @@ function isFuture(dateKey) {
 // Timeline view mode (UI only, not persisted)
 let timelineViewMode = "global"; // "global" | "day"
 let activeDayISO = ""; // used only in day mode
+window.__tlControlsTemplateHTML = window.__tlControlsTemplateHTML || "";
 let __tlDays = []; // derived cache of available days in current filtered timeline
 let __tlLastFilteredItems = []; // cache of current filtered timeline items (in-memory only)
 
@@ -3836,9 +3837,15 @@ function __tlGetTopOffsetPx(){
 
 function rebuildTimelineControlsFixed(){
   const inner = document.getElementById("timelineControlsFixedInner");
-  const _g = document.getElementById("tlViewGlobal");
-  const src = _g ? _g.closest("div.flex.items-center.justify-between") : null;
-  if (!inner || !src) return;
+  if (!inner) return;
+
+  const tpl = window.__tlControlsTemplateHTML;
+  if (!tpl) return; // fail-safe: keep existing fixed controls
+
+  const tmp = document.createElement("div");
+  tmp.innerHTML = String(tpl).trim();
+  const src = tmp.firstElementChild;
+  if (!src) return; // fail-safe
 
   const clone = src.cloneNode(true);
 
@@ -3995,6 +4002,19 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
+  try {
+    const sentinel = document.getElementById("timelineControlsSentinel");
+    const originalRow = sentinel ? sentinel.nextElementSibling : null;
+    if (originalRow && !window.__tlControlsTemplateHTML) {
+      window.__tlControlsTemplateHTML = originalRow.outerHTML;
+    } else if (!window.__tlControlsTemplateHTML) {
+      const g = document.getElementById("tlViewGlobal");
+      const row = g ? g.closest("div.flex.items-center.justify-between") : null;
+      if (row) window.__tlControlsTemplateHTML = row.outerHTML;
+    }
+  } catch (e) { /* no-op */ }
+
   syncStickyTotalsHeightVar();
   initTimelineControlsFixedObserver();
   summaryExpanded = false;
