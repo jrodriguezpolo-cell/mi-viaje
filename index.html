@@ -1971,37 +1971,39 @@ function jumpToItem(kind, id) {
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { acc: "legs",  sel: `[data-leg-date="${CSS.escape(itemId)}"], [data-leg-from="${CSS.escape(itemId)}"]` },
-    stay: { acc: "stays", sel: `[data-stay-date="${CSS.escape(itemId)}"], [data-stay-city="${CSS.escape(itemId)}"]` },
-    act:  { acc: "acts",  sel: `[data-act-date="${CSS.escape(itemId)}"], [data-act-title="${CSS.escape(itemId)}"]` }
+    leg:  { acc: "legs",  secToggle: "legs" },
+    stay: { acc: "stays", secToggle: "stays" },
+    act:  { acc: "acts",  secToggle: "activities" }
   };
   const cfg = map[k];
   if (!cfg) return;
 
+  // 1) Open target accordion section
   openAccordionKey(cfg.acc);
 
-  // v80b: expand target item within section
+  // 2) Expand target item within section (v80b accordion)
   if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
   else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
   else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  // Espera a que el acordeón y el DOM tengan altura final (iOS)
-  requestAnimationFrame(() => {
-    // Primero: llevar la cabecera de la sección (título + botón Añadir) bajo Totales
-    const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
-    const headerEl = document.getElementById(headerIdMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
-    if (headerEl) scrollToElWithOffset(headerEl, 10);
+  const accBtn = document.querySelector(`[data-acc="${cfg.acc}"]`);
+  const itemEl = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`);
 
-    // Segundo: llevar el item concreto a la vista (tras abrir/expandir)
-    setTimeout(() => {
-      const el = document.querySelector(cfg.sel);
-      if (el) {
-        scrollToElWithOffset(el, 18);
-        try { el.focus({ preventScroll: true }); } catch {}
-      }
-    }, 130);
+  // 3) Scroll using TopStack (Header + Totals). Never include timeline controls here.
+  requestAnimationFrame(() => {
+    if (accBtn) scrollToElTopStack(accBtn, 8);
   });
+
+  // 4) After DOM settles, scroll item into view
+  setTimeout(() => {
+    const el = itemEl || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
+    if (el) {
+      scrollToElTopStack(el, 16);
+      try { el.focus({ preventScroll: true }); } catch {}
+    }
+  }, 120);
 }
+
 
 
 /* ---------------- Item notes (timeline CRUD) ---------------- */
