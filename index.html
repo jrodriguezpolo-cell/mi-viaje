@@ -469,12 +469,16 @@ const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&l
   - Persist: localStorage key "trip_app_mode"
 */
 let appMode = "planning"; // "planning" | "travel"
-const LS_APP_MODE = "trip_app_mode";
+const LS_APP_MODE = "miviaje.appMode";
+const LS_APP_MODE_LEGACY = "trip_app_mode";
 
 function getSavedAppMode() {
   try {
-    const v = String(localStorage.getItem(LS_APP_MODE) || "").trim();
-    return (v === "planning" || v === "travel") ? v : "";
+    const v1 = String(localStorage.getItem(LS_APP_MODE) || "").trim();
+    if (v1 === "planning" || v1 === "travel") return v1;
+    const v0 = String(localStorage.getItem(LS_APP_MODE_LEGACY) || "").trim();
+    if (v0 === "planning" || v0 === "travel") return v0;
+    return "";
   } catch { return ""; }
 }
 
@@ -502,11 +506,10 @@ function setAppMode(mode, fromInside = false) {
 }
 
 function toggleAppModeFromHeader() {
-  if (appMode === "travel") {
-    setAppMode("planning", true); // travel -> planning (no confirm needed)
-  } else {
-    setAppMode("travel", true); // planning -> travel (confirm)
-  }
+  const ok = confirm("¿Quieres cambiar de modo?");
+  if (!ok) return;
+  const entry = document.getElementById("entryScreen");
+  if (entry) entry.style.display = "block";
 }
 
 function applyAppModeUI() {
@@ -3898,6 +3901,7 @@ function initTimelineControlsFixedObserver(){
   const fixed = document.getElementById("timelineControlsFixed");
   const sentinel = document.getElementById("timelineControlsSentinel");
   const body = document.querySelector('[data-acc-body="timeline"]');
+  const originalRow = sentinel ? sentinel.nextElementSibling : null;
   if (!fixed || !sentinel || !body) return;
 
   // Delegate clicks to original buttons
@@ -3920,12 +3924,15 @@ function initTimelineControlsFixedObserver(){
       const ent = entries[0];
       if (!anyTimelineAccordionOpen()) {
         fixed.classList.add("hidden");
+        if (originalRow) { originalRow.style.visibility = "visible"; originalRow.style.pointerEvents = "auto"; }
         return;
       }
       if (ent && ent.isIntersecting) {
         fixed.classList.add("hidden");
+        if (originalRow) { originalRow.style.visibility = "visible"; originalRow.style.pointerEvents = "auto"; }
       } else {
         fixed.classList.remove("hidden");
+        if (originalRow) { originalRow.style.visibility = "hidden"; originalRow.style.pointerEvents = "none"; }
         rebuildTimelineControlsFixed();
       }
     }, { root: null, threshold: 0, rootMargin: (-offset) + "px 0px 0px 0px" });
@@ -3936,8 +3943,10 @@ function initTimelineControlsFixedObserver(){
 
   // Watch accordion open/close (class changes)
   const mo = new MutationObserver(() => {
-    if (!anyTimelineAccordionOpen()) fixed.classList.add("hidden");
-    else {
+    if (!anyTimelineAccordionOpen()) {
+      fixed.classList.add("hidden");
+      if (originalRow) { originalRow.style.visibility = "visible"; originalRow.style.pointerEvents = "auto"; }
+    } else {
       // When opened, recompute heights and rebuild
       syncHeaderHeightVar();
       syncStickyTotalsHeightVar();
@@ -3950,7 +3959,12 @@ function initTimelineControlsFixedObserver(){
       const offset = __tlGetTopOffsetPx();
       const isVisible = rect.top >= offset && rect.bottom > offset;
       fixed.classList.toggle("hidden", isVisible);
-      if (!isVisible) rebuildTimelineControlsFixed();
+      if (isVisible) {
+        if (originalRow) { originalRow.style.visibility = "visible"; originalRow.style.pointerEvents = "auto"; }
+      } else {
+        if (originalRow) { originalRow.style.visibility = "hidden"; originalRow.style.pointerEvents = "none"; }
+        rebuildTimelineControlsFixed();
+      }
     }
   });
   mo.observe(body, { attributes: true, attributeFilter: ["class"] });
