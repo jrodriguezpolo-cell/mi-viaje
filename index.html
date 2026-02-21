@@ -176,6 +176,18 @@ border-radius: 999px;
   max-width: 72rem; /* match main container width */
   margin: 0 auto;
 }
+
+/* App mode entry + travel mode UI (minimal, iOS-safe) */
+#entryScreen{ position:fixed; inset:0; z-index:90; background:rgba(255,255,255,0.96); backdrop-filter: blur(10px); display:flex; align-items:center; justify-content:center; padding:24px; }
+#entryCard{ width:min(420px, 100%); background:#fff; border:1px solid #e2e8f0; border-radius:24px; padding:20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+#entryCard .btn{ width:100%; padding:12px 14px; border-radius:16px; font-weight:700; }
+#entryCard .btnPrimary{ background:#0f172a; color:#fff; }
+#entryCard .btnGhost{ background:#fff; color:#0f172a; border:1px solid #e2e8f0; }
+#appModePill{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #e2e8f0; border-radius:999px; background:#fff; }
+#appModeLabel{ font-size:12px; font-weight:700; color:#334155; }
+#appModeSwitch{ font-size:12px; font-weight:800; padding:6px 10px; border-radius:999px; border:1px solid #e2e8f0; background:#fff; }
+#appModeSwitch:active{ transform: translateY(1px); }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -200,6 +212,10 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
+<div id="appModePill" class="ml-2">
+  <span id="appModeLabel">Modo: Planificación</span>
+  <button id="appModeSwitch" class="tap" title="Cambiar modo">Cambiar</button>
+</div>
 </div>
 </div>
 </header>
@@ -546,42 +562,18 @@ function todayYMD() {
 }
 
 
-function __tlPrepareFixedControlsForScroll() {
-  // Ensure the fixed timeline controls are measurable before we compute scroll offsets.
-  // This prevents the target item from ending up under the fixed controls when they appear after scrolling.
-  const fixed = document.getElementById("timelineControlsFixed");
-  if (!fixed) return 0;
-  if (fixed.classList.contains("hidden")) {
-    fixed.classList.remove("hidden");
-  }
-  return fixed.getBoundingClientRect().height || 0;
-}
-
 function getStickyOffset() {
   const header = document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-  const fixedControls = document.getElementById("timelineControlsFixed");
-
   let offset = 0;
   if (header) offset += header.getBoundingClientRect().height;
   if (totalBar && !totalBar.classList.contains("hidden")) offset += totalBar.getBoundingClientRect().height;
-
-  // Include fixed timeline controls when visible (or when we just made them visible for a scroll action)
-  if (fixedControls && !fixedControls.classList.contains("hidden")) {
-    offset += fixedControls.getBoundingClientRect().height;
-  }
-
   offset += 12; // breathing room
   return offset;
 }
 
 function scrollToElWithOffset(el) {
   if (!el) return;
-
-  // Make sure fixed controls are shown BEFORE computing offsets,
-  // because scrolling can cause them to appear and otherwise they'd cover the target.
-  __tlPrepareFixedControlsForScroll();
-
   const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
@@ -2418,6 +2410,57 @@ function renderDailyNotes() {
 
 
 /* ---------------------- Summary fold (no persistence) ---------------------- */
+
+// App mode (planning / travel) — UI-only, persisted
+let appMode = "planning"; // default
+const APP_MODE_KEY = "trip_app_mode";
+
+function loadAppMode() {
+  try {
+    const saved = localStorage.getItem(APP_MODE_KEY);
+    if (saved === "planning" || saved === "travel") appMode = saved;
+    return saved;
+  } catch { return null; }
+}
+function saveAppMode() {
+  try { localStorage.setItem(APP_MODE_KEY, appMode); } catch {}
+}
+
+function setAppMode(nextMode, { confirmTravel = false } = {}) {
+  if (nextMode !== "planning" && nextMode !== "travel") return;
+  if (nextMode === "travel" && confirmTravel) {
+    const ok = window.confirm("¿Estás de viaje?");
+    if (!ok) return;
+  }
+  appMode = nextMode;
+  saveAppMode();
+  applyAppModeUI();
+}
+
+function applyAppModeUI() {
+  const label = document.getElementById("appModeLabel");
+  if (label) label.textContent = (appMode === "travel") ? "Modo: Viaje" : "Modo: Planificación";
+
+  // Travel mode shows only timeline (and totals/header). Hide other accordions UI-only.
+  const hideKeys = ["legs", "stays", "meals", "acts", "dailyNotes", "ai"];
+  hideKeys.forEach(k => {
+    const btn = document.querySelector(`[data-acc="${k}"]`);
+    const wrap = btn ? btn.parentElement : null; // wrapper div of the accordion
+    if (!wrap) return;
+    wrap.classList.toggle("hidden", appMode === "travel");
+  });
+
+  // Ensure timeline visible
+  const tlBtn = document.querySelector('[data-acc="timeline"]');
+  const tlWrap = tlBtn ? tlBtn.parentElement : null;
+  if (tlWrap) tlWrap.classList.remove("hidden");
+
+  if (appMode === "travel") {
+    // Open timeline by default (safe)
+    try { openAccordionKey("timeline"); } catch {}
+  }
+}
+
 let summaryExpanded = false;
 // Backward-compat helpers (avoid runtime errors if older patches referenced them)
 function bindSummaryToggleOnce(){ /* no-op: applySummaryFold() binds onclick each render */ }
@@ -3835,6 +3878,8 @@ function initTimelineControlsFixedObserver(){
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
+  // App mode init (persisted)
+  const _savedMode = loadAppMode();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
@@ -3856,6 +3901,26 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  applyAppModeUI();
+
+  // Entry screen if no saved mode
+  const entry = document.getElementById("entryScreen");
+  const btnP = document.getElementById("btnChoosePlanning");
+  const btnT = document.getElementById("btnChooseTravel");
+  if (entry && !_savedMode) entry.classList.remove("hidden");
+  const closeEntry = () => { if (entry) entry.classList.add("hidden"); };
+
+  if (btnP) btnP.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setAppMode("planning"); closeEntry(); };
+  if (btnT) btnT.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setAppMode("travel"); closeEntry(); };
+
+  // In-app mode switch
+  const sw = document.getElementById("appModeSwitch");
+  if (sw) sw.onclick = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (appMode === "travel") setAppMode("planning");
+    else setAppMode("travel", { confirmTravel: true });
+  };
+
   syncStickyTotalsHeightVar();
   initTimelineControlsFixedObserver();
   summaryExpanded = false;
@@ -3879,5 +3944,17 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" data-proxy-id="timelineToday">Actual</button>
 <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" data-proxy-id="timelineNext">Próximo</button>
 </div>
-</div></div></div></body>
+</div></div></div>
+<!-- Entry Screen: choose app mode (planning / travel) -->
+<div id="entryScreen" class="hidden" role="dialog" aria-modal="true" aria-label="Selecciona modo">
+  <div id="entryCard">
+    <div class="text-lg font-extrabold tracking-tight text-slate-900">Elige tu modo</div>
+    <div class="mt-1 text-sm text-slate-600">Puedes cambiarlo más tarde desde arriba.</div>
+    <div class="mt-4 space-y-3">
+      <button id="btnChoosePlanning" class="btn btnGhost tap">Planifica tu viaje</button>
+      <button id="btnChooseTravel" class="btn btnPrimary tap">Estoy viajando</button>
+    </div>
+  </div>
+</div>
+</body>
 </html>
