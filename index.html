@@ -739,7 +739,6 @@ function scrollToElWithOffset(el, extra = 0) {
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
-
 function getTopStackOffset() {
   const cs = getComputedStyle(document.documentElement);
   const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
@@ -1991,13 +1990,13 @@ function jumpToItem(kind, id) {
     // Primero: llevar la cabecera de la sección (título + botón Añadir) bajo Totales
     const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
     const headerEl = document.getElementById(headerIdMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
-    if (headerEl) scrollToElTopStack(headerEl, 8);
+    if (headerEl) scrollToElWithOffset(headerEl, 10);
 
     // Segundo: llevar el item concreto a la vista (tras abrir/expandir)
     setTimeout(() => {
       const el = document.querySelector(cfg.sel);
       if (el) {
-        scrollToElTopStack(el, 16);
+        scrollToElWithOffset(el, 18);
         try { el.focus({ preventScroll: true }); } catch {}
       }
     }, 130);
@@ -3950,18 +3949,28 @@ function scrollToSectionHeader(accKey) {
 
   // Premium fine scroll: header sits just under Totals
   setTimeout(() => {
-    scrollToElTopStack(headerBtn, 8);
+    scrollToElWithOffset(headerBtn, 10);
   }, 0);
 }
 
 /* Jump nav */
 document.querySelectorAll('[data-jump]').forEach(btn => {
   btn.addEventListener('click', () => {
-    const k = btn.getAttribute('data-jump');
-    if (!k) return;
-    scrollToSectionHeader(k);
+    const key = btn.getAttribute('data-jump');
+    if (!key) return;
+
+    const accBtn = document.querySelector(`[data-acc="${key}"]`);
+    if (!accBtn) return;
+
+    const body = document.querySelector(`[data-acc-body="${key}"]`);
+    if (body && body.classList.contains('hidden')) accBtn.click();
+
+    requestAnimationFrame(() => {
+      scrollToElTopStack(accBtn, 4); // premium micro offset under Totals
+    });
   });
 });
+
 
 
 
