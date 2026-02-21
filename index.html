@@ -335,7 +335,7 @@ border-radius: 999px;
 </div>
 <!-- LOGISTICA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
+<button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
 <div class="text-left">
@@ -353,7 +353,7 @@ border-radius: 999px;
 </div>
 <!-- ALOJAMIENTO -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
+<button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
 <div class="text-left">
@@ -404,7 +404,7 @@ border-radius: 999px;
 </div>
 <!-- ACTIVIDADES -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
+<button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
@@ -733,12 +733,9 @@ function syncTopStackHeights() {
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
-function scrollToElWithOffset(el) {
+function scrollToElWithOffset(el, extra = 0) {
   if (!el) return;
-
-  // Make sure fixed controls are shown BEFORE computing offsets,
-  // because scrolling can cause them to appear and otherwise they'd cover the target.
-  const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
+  const y = el.getBoundingClientRect().top + window.pageYOffset - (getStickyOffset() + (extra || 0));
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
@@ -1977,11 +1974,19 @@ function jumpToItem(kind, id) {
 
   // Espera un tick para que el acordeón se abra antes de hacer scroll
   setTimeout(() => {
-    const el = document.querySelector(cfg.sel);
-    if (el) {
-      scrollToElWithOffset(el);
-      try { el.focus({ preventScroll: true }); } catch {}
-    }
+    // Primero: llevar la cabecera de la sección (donde está el botón Añadir) bajo Totales
+    const addBtnMap = { legs: "addLeg", stays: "addStay", acts: "addAct" };
+    const headerEl = document.getElementById(addBtnMap[cfg.acc]) || document.querySelector(`[data-acc="${cfg.acc}"]`);
+    if (headerEl) scrollToElWithOffset(headerEl, 28);
+
+    // Segundo: llevar el item concreto a la vista (un poco menos de offset)
+    setTimeout(() => {
+      const el = document.querySelector(cfg.sel);
+      if (el) {
+        scrollToElWithOffset(el, 18);
+        try { el.focus({ preventScroll: true }); } catch {}
+      }
+    }, 80);
   }, 60);
 }
 
@@ -3929,14 +3934,18 @@ document.querySelectorAll("[data-jump]").forEach(b=>{
     const body = document.querySelector(`[data-acc-body="${key}"]`);
     if (!btn) return;
 
+    const headerIdMap = { legs: "legsHeader", stays: "staysHeader", acts: "actsHeader" };
+    const target = document.getElementById(headerIdMap[key]) || btn;
+    const extra = (key === "legs" || key === "stays" || key === "acts") ? 14 : 0;
+
     const wasClosed = !!(body && body.classList.contains("hidden"));
     if (wasClosed) btn.click();
 
     // Wait a tick if we just opened an accordion, then scroll with sticky offset
     if (wasClosed) {
-      setTimeout(() => scrollToElWithOffset(btn), 0);
+      setTimeout(() => scrollToElWithOffset(target, extra), 0);
     } else {
-      scrollToElWithOffset(btn);
+      scrollToElWithOffset(target, extra);
     }
   });
 });
