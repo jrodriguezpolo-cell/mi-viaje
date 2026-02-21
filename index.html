@@ -549,9 +549,21 @@ function todayYMD() {
 function getStickyOffset() {
   const header = document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
+  const fixedControls = document.getElementById("timelineControlsFixed");
   let offset = 0;
+
   if (header) offset += header.getBoundingClientRect().height;
-  if (totalBar && !totalBar.classList.contains("hidden")) offset += totalBar.getBoundingClientRect().height;
+
+  // Sticky totals bar (if visible)
+  if (totalBar && !totalBar.classList.contains("hidden") && totalBar.offsetParent !== null) {
+    offset += totalBar.getBoundingClientRect().height;
+  }
+
+  // Fixed timeline controls (if visible)
+  if (fixedControls && !fixedControls.classList.contains("hidden") && fixedControls.offsetParent !== null) {
+    offset += fixedControls.getBoundingClientRect().height;
+  }
+
   offset += 12; // breathing room
   return offset;
 }
