@@ -570,8 +570,25 @@ function getStickyOffset() {
 
 function scrollToElWithOffset(el) {
   if (!el) return;
-  const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+  // First pass: scroll using current sticky offset
+  const doScroll = (behavior) => {
+    const y = el.getBoundingClientRect().top + window.pageYOffset - getStickyOffset();
+    window.scrollTo({ top: Math.max(0, y), behavior });
+  };
+
+  doScroll("smooth");
+
+  // Second pass: after the fixed controls potentially appear (IntersectionObserver),
+  // re-adjust so the element is not hidden under the overlays.
+  setTimeout(() => {
+    const top = el.getBoundingClientRect().top;
+    const offset = getStickyOffset();
+    if (top < offset + 4) {
+      const y2 = top + window.pageYOffset - offset;
+      window.scrollTo({ top: Math.max(0, y2), behavior: "auto" });
+    }
+  }, 160);
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
