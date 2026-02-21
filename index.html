@@ -759,6 +759,24 @@ function __tlNowMinutes() {
   return n.getHours() * 60 + n.getMinutes();
 }
 
+function getEstimatedDurationMinutes(item) {
+  // Transporte / Alojamiento / Actividades (fallback 60)
+  if (item && (item.legId || String(item.uid||"").startsWith("leg:"))) return 180;
+  if (item && (item.stayId || String(item.uid||"").startsWith("stay:"))) return 60;
+  if (item && (item.actId || String(item.uid||"").startsWith("act:"))) return 90;
+  return 60;
+}
+
+function getEventStartDateTime(item) {
+  // Returns a Date for today items with valid time, else null
+  const d = String(item?.date || "");
+  const t = String(item?.time || "");
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return null;
+  if (!/^[0-9]{2}:[0-9]{2}$/.test(t)) return null;
+  const dt = new Date(`${d}T${t}:00`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
 function __tlPickCurrentItemForToday(items, todayISO) {
   const nowMin = __tlNowMinutes();
   const todays = (items || []).filter(it => String(it.date||"") === String(todayISO) && it.date !== "9999-99-99");
@@ -766,12 +784,24 @@ function __tlPickCurrentItemForToday(items, todayISO) {
 
   // Prefer real events over note markers when choosing "actual"
   const main = todays.filter(it => !it.isNote);
-  const pool = main.length ? main : todays;
 
-  // pool is already sorted by date/time in renderTimeline
-  let pick = pool.find(it => timeSortKey(it.time) >= nowMin);
-  if (!pick) pick = pool[pool.length - 1];
-  return pick || null;
+  // Only consider items with a valid time for "in progress"
+  const pool = (main.length ? main : todays).filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || "")));
+
+  if (!pool.length) return null;
+
+  // In progress: start <= now < end (estimated duration)
+  const inProgress = pool.filter(it => {
+    const startMin = timeSortKey(it.time);
+    const endMin = startMin + getEstimatedDurationMinutes(it);
+    return startMin <= nowMin && nowMin < endMin;
+  });
+
+  if (!inProgress.length) return null;
+
+  // If several: pick the one that started most recently
+  inProgress.sort((a,b) => timeSortKey(b.time) - timeSortKey(a.time));
+  return inProgress[0] || null;
 }
 
 function __tlEnsureTimelineOpen() {
@@ -802,24 +832,7 @@ function scrollToCurrentTimelineItem() {
   const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
   const cur = __tlPickCurrentItemForToday(items, todayISO);
   if (!cur) {
-    const goNext = confirm("Hoy no hay eventos. ¿Ir al próximo día con eventos?");
-    if (!goNext) return;
-
-    // pick first future day with events (filtered)
-    const days = getTimelineDays(items).filter(d => d && d !== "9999-99-99").sort();
-    const today = todayISO;
-    const nextDay = days.find(d => d > today);
-    if (!nextDay) { alert("No hay próximos eventos."); return; }
-
-    activeDayISO = nextDay;
-    renderTimeline();
-
-    const first = items.find(it => String(it.date||"") === String(nextDay));
-    if (first) {
-      const key = first.isNote ? `note:${nextDay}` : `${first.actId ? "act" : (first.legId ? "leg" : (first.stayId ? "stay" : ""))}:${(first.actId || first.legId || first.stayId || "")}`;
-      __tlLastActualKey = key;
-      __tlScrollToItemByKey(key);
-    }
+    alert("No hay eventos en curso ahora mismo");
     return;
   }
 
