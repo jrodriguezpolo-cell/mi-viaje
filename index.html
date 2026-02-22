@@ -1011,6 +1011,23 @@ function closeModal() {
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
+
+/* ------------------------ Normalization (boot safety) ------------------------ */
+function normalizeScenario(sc) {
+  if (!sc || typeof sc !== "object") return;
+  if (!Array.isArray(sc.legs)) sc.legs = [];
+  if (!Array.isArray(sc.stays)) sc.stays = [];
+  if (!Array.isArray(sc.activities)) sc.activities = [];
+  if (!Array.isArray(sc.meals)) sc.meals = [];
+  if (!sc.dailyNotes || typeof sc.dailyNotes !== "object") sc.dailyNotes = {};
+}
+function normalizeState() {
+  if (!state || typeof state !== "object") return;
+  if (!state.scenarios || typeof state.scenarios !== "object") return;
+  Object.values(state.scenarios).forEach(normalizeScenario);
+}
+
+
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
 
@@ -1368,6 +1385,9 @@ function legCard(leg) {
 function renderLegs() {
   const box = $("legsList");
   const sc = curScenario();
+  if (!box) return;
+  if (!Array.isArray(sc.legs)) sc.legs = [];
+
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
@@ -1641,6 +1661,9 @@ function stayCard(stay) {
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
+  if (!box) return;
+  if (!Array.isArray(sc.stays)) sc.stays = [];
+
   sortByDateTimeEmptyFirst(sc.stays);
   box.innerHTML = sc.stays.length ? sc.stays.map(stayCard).join("") : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
 
@@ -2243,6 +2266,9 @@ function actCard(act) {
 function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
+  if (!box) return;
+  if (!Array.isArray(sc.activities)) sc.activities = [];
+
   sortByDateTimeEmptyFirst(sc.activities);
   box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
@@ -2634,6 +2660,14 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
+  if (!box) return;
+
+  if (!Array.isArray(sc.legs)) sc.legs = [];
+  if (!Array.isArray(sc.stays)) sc.stays = [];
+  if (!Array.isArray(sc.activities)) sc.activities = [];
+  if (!Array.isArray(sc.meals)) sc.meals = [];
+  if (!sc.dailyNotes || typeof sc.dailyNotes !== "object") sc.dailyNotes = {};
+
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
@@ -4399,6 +4433,7 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  normalizeState();
   setupAccordion();
   timelineViewMode = "global";
   activeDayISO = "";
