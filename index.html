@@ -205,6 +205,15 @@ border-radius: 999px;
 /* Views scroll container */
 html, body { height: 100%; }
 body { overflow: hidden; }
+
+/* Timeline controls dock (fixed under totals, visible only in timeline view) */
+#timelineControlsDock{
+  position: fixed;
+  left: 0; right: 0;
+  top: calc(var(--app-header-h, 0px) + var(--sticky-totals-h, 0px));
+  z-index: 940;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -244,14 +253,41 @@ body { overflow: hidden; }
 </div>
 </div>
 </div>
+<div id="timelineControlsDock" class="hidden bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 py-2">
+<div id="timelineControlsRow">
+<div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+<div class="flex items-center gap-2">
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" id="tlViewDay">Día</button>
+</div>
+<div class="hidden flex items-center gap-2" id="timelineDayNav">
+<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayPrev">←</button>
+<div class="text-sm font-semibold text-slate-700" id="tlDayLabel">—</div>
+<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayNext">→</button>
+</div>
+<div class="flex gap-2 justify-end" id="timelineGlobalNav">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
+<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
+</div>
+</div>
+<div class="mb-3 -mx-1">
+<div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
+<!-- chips injected by JS -->
+</div>
+</div>
+</div>
+  </div>
+</div>
+
 <div id="topStackSpacer"></div>
 <!-- Main -->
 <div class="overflow-y-auto ios-scroll" id="mainScroll"><main class="max-w-6xl mx-auto px-4 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
-<div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
-<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
-<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
+<div class="inline-flex bg-white border border-slate-200 rounded-2xl p-0.5">
+<button class="tap px-3 py-1.5 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
+<button class="tap px-3 py-1.5 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 </div>
 <div class="flex items-center gap-2">
@@ -301,28 +337,6 @@ body { overflow: hidden; }
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-<div id="timelineControlsRow">
-<div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-<div class="flex items-center gap-2">
-<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
-<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" id="tlViewDay">Día</button>
-</div>
-<div class="hidden flex items-center gap-2" id="timelineDayNav">
-<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayPrev">←</button>
-<div class="text-sm font-semibold text-slate-700" id="tlDayLabel">—</div>
-<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayNext">→</button>
-</div>
-<div class="flex gap-2 justify-end" id="timelineGlobalNav">
-<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
-<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
-</div>
-</div>
-<div class="mb-3 -mx-1">
-<div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
-<!-- chips injected by JS -->
-</div>
-</div>
-</div>
 <div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
@@ -357,7 +371,12 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
-<div class="space-y-3" id="legsList"></div>
+<div class="flex items-center justify-end mt-2">
+  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="legs" id="btnCollapse_legs">Plegar</button>
+</div>
+<div id="legsListWrap">
+  <div class="space-y-3" id="legsList"></div>
+</div>
 </div>
 </div>
 </div>
@@ -377,7 +396,12 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
 </div>
-<div class="space-y-3" id="staysList"></div>
+<div class="flex items-center justify-end mt-2">
+  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="stays" id="btnCollapse_stays">Plegar</button>
+</div>
+<div id="staysListWrap">
+  <div class="space-y-3" id="staysList"></div>
+</div>
 </div>
 </div>
 </div>
@@ -432,7 +456,12 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
 </div>
-<div class="space-y-3" id="actsList"></div>
+<div class="flex items-center justify-end mt-2">
+  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="acts" id="btnCollapse_acts">Plegar</button>
+</div>
+<div id="actsListWrap">
+  <div class="space-y-3" id="actsList"></div>
+</div>
 </div>
 </div>
 </div>
@@ -638,7 +667,8 @@ const root = document.documentElement;
   const cs = getComputedStyle(root);
   const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 0;
   const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
-  const topStackH = headerH + totalsH;
+  const dockH = parseFloat(cs.getPropertyValue("--timeline-controls-h")) || 0;
+  const topStackH = headerH + totalsH + dockH;
 
   const bottomNav = document.getElementById("bottomNav");
   const bottomNavH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
@@ -905,6 +935,22 @@ const __sectionExpanded = {
   stays: new Set(),
   activities: new Set()
 };
+
+// View-level collapse state (v89e2)
+const __viewCollapsed = { legs:false, stays:false, acts:false };
+
+function applyViewCollapsedUI(viewKey){
+  const k = String(viewKey||"");
+  const map = { legs:{wrap:"legsListWrap", btn:"btnCollapse_legs"}, stays:{wrap:"staysListWrap", btn:"btnCollapse_stays"}, acts:{wrap:"actsListWrap", btn:"btnCollapse_acts"} };
+  const cfg = map[k];
+  if (!cfg) return;
+  const wrap = document.getElementById(cfg.wrap);
+  const btn = document.getElementById(cfg.btn);
+  const collapsed = !!__viewCollapsed[k];
+  if (wrap) wrap.classList.toggle("hidden", collapsed);
+  if (btn) btn.textContent = collapsed ? "Desplegar" : "Plegar";
+}
+
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
 /* --------------------------- Read-only mode -------------------------- */
@@ -3919,6 +3965,13 @@ function setView(key, opts){
     else el.classList.add("hidden");
   });
 
+  // Show timeline controls dock only in timeline view
+  const dock = document.getElementById("timelineControlsDock");
+  if (dock) {
+    if (k === "timeline") dock.classList.remove("hidden");
+    else dock.classList.add("hidden");
+  }
+
   // Reset scroll of the central scroll container
   scrollMainToTop();
 
@@ -3931,7 +3984,14 @@ function setView(key, opts){
     else if (k === "meals") renderMeals();
   } catch(e){ /* keep app resilient */ }
 
-  // Re-wire per-item accordions (delegation; safe to call)
+  
+  // Apply view-level collapse UI after render (legs/stays/acts)
+  try{
+    if (k === "legs") applyViewCollapsedUI("legs");
+    if (k === "stays") applyViewCollapsedUI("stays");
+    if (k === "acts") applyViewCollapsedUI("acts");
+  } catch(e){}
+// Re-wire per-item accordions (delegation; safe to call)
   try{ setupItemAccordionsDelegated(); } catch(e){}
 
   // Keep fixed top stack vars + main scroll layout in sync
@@ -4050,7 +4110,26 @@ window.addEventListener('DOMContentLoaded', () => {
   try{ setupItemAccordionsDelegated(); } catch(e){}
   try{ setView('timeline'); } catch(e){}
 
-  // Bottom nav: switch views (no window scroll)
+  
+
+  // View-level collapse toggles (legs/stays/acts)
+  const ms = document.getElementById("mainScroll");
+  if (ms && !ms.__viewCollapseBound) {
+    ms.__viewCollapseBound = true;
+    ms.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-view-collapse]");
+      if (!btn) return;
+      e.preventDefault();
+      const vk = btn.getAttribute("data-view-collapse");
+      if (vk === "legs" || vk === "stays" || vk === "acts") {
+        __viewCollapsed[vk] = !__viewCollapsed[vk];
+        applyViewCollapsedUI(vk);
+        try{ syncTopStackHeights(); } catch(_){}
+      }
+    });
+  }
+
+// Bottom nav: switch views (no window scroll)
   document.querySelectorAll('[data-jump]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.preventDefault();
