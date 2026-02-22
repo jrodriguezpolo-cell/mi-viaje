@@ -388,12 +388,7 @@ border-radius: 999px;
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="legs">
-<div class="flex items-center justify-between mb-3 gap-2">
-  <div class="inline-flex rounded-xl border border-slate-200 bg-white overflow-hidden" id="legCreateSegment">
-    <button id="legCreateOneWay" class="tap px-3 py-2 text-sm font-semibold bg-slate-900 text-white">Ida</button>
-    <button id="legCreateRoundTrip" class="tap px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ida y vuelta</button>
-  </div>
-  <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
+<div class="flex items-center justify-between mb-3 gap-2"><button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
@@ -1438,11 +1433,12 @@ function renderLegs() {
     __sectionExpanded.legs.add(String(id));
     __sectionExpanded.legs.add(String(returnId));
 
+    sortByDateTimeEmptyFirst(sc.legs);
+    sortByDateTimeEmptyFirst(sc.stays);
+    sortByDateTimeEmptyFirst(sc.activities);
     saveState();
-    renderLegs();
-    renderTimeline();
-    calcSummary();
-  }));
+    renderAll();
+    }));
 
   // v91: Convertir a solo ida (remove return + clear group) — works from outbound or return card
   box.querySelectorAll("[data-leg-to-oneway]").forEach(btn => btn.addEventListener("click", (e) => {
@@ -1468,11 +1464,12 @@ function renderLegs() {
       delete outbound.directionRole;
     }
 
+    sortByDateTimeEmptyFirst(sc.legs);
+    sortByDateTimeEmptyFirst(sc.stays);
+    sortByDateTimeEmptyFirst(sc.activities);
     saveState();
-    renderLegs();
-    renderTimeline();
-    calcSummary();
-  }));
+    renderAll();
+    }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
     const id = inp.getAttribute("data-leg-from");
@@ -4220,51 +4217,18 @@ $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sec
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
 
-// v91: leg creation mode (Ida / Ida y vuelta) — UI segment (no state changes)
-let __legCreateMode = "oneway"; // "oneway" | "roundtrip"
-function __updateLegCreateSegmentUI() {
-  const b1 = document.getElementById("legCreateOneWay");
-  const b2 = document.getElementById("legCreateRoundTrip");
-  if (!b1 || !b2) return;
-  if (__legCreateMode === "roundtrip") {
-    b2.classList.add("bg-slate-900","text-white");
-    b2.classList.remove("text-slate-700");
-    b1.classList.remove("bg-slate-900","text-white");
-    b1.classList.add("text-slate-700");
-  } else {
-    b1.classList.add("bg-slate-900","text-white");
-    b1.classList.remove("text-slate-700");
-    b2.classList.remove("bg-slate-900","text-white");
-    b2.classList.add("text-slate-700");
-  }
-}
-document.addEventListener("click", (e) => {
-  const t = e.target;
-  if (!(t instanceof HTMLElement)) return;
-  if (t.id === "legCreateOneWay") { __legCreateMode = "oneway"; __updateLegCreateSegmentUI(); }
-  if (t.id === "legCreateRoundTrip") { __legCreateMode = "roundtrip"; __updateLegCreateSegmentUI(); }
-});
-
+// v91: leg creation mode (Ida / 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const mode = legModeDefault();
-  if (__legCreateMode === "roundtrip") {
-    const groupId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : nowId();
-    const outId = nowId();
-    const retId = nowId();
-
-    const outbound = { id: outId, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null, directionGroupId: groupId, directionRole: "outbound" };
-    const ret = { id: retId, mode, from: outbound.to || "", to: outbound.from || "", fromPlace: outbound.toPlace || "", toPlace: outbound.fromPlace || "", date:"", time:"", cost:0, tzFrom:null, tzTo:null, directionGroupId: groupId, directionRole: "return" };
-
-    sc.legs.unshift(outbound, ret);
-    __sectionExpanded.legs.add(String(outId));
-    __sectionExpanded.legs.add(String(retId));
-  } else {
-    const id = nowId();
-    sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-    __sectionExpanded.legs.add(String(id));
-  }
-  saveState(); renderLegs(); renderTimeline(); calcSummary();
+  const id = nowId();
+  sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  __sectionExpanded.legs.add(String(id));
+  sortByDateTimeEmptyFirst(sc.legs);
+  sortByDateTimeEmptyFirst(sc.stays);
+  sortByDateTimeEmptyFirst(sc.activities);
+  saveState();
+  renderAll();
   scrollAccordionIntoView("legs");
 });
 
@@ -4273,7 +4237,11 @@ $("addStay").addEventListener("click", ()=>{
   const id = nowId();
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
-  saveState(); renderStays(); renderTimeline(); calcSummary();
+  sortByDateTimeEmptyFirst(sc.legs);
+  sortByDateTimeEmptyFirst(sc.stays);
+  sortByDateTimeEmptyFirst(sc.activities);
+  saveState();
+  renderAll();
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
@@ -4281,7 +4249,11 @@ $("addAct").addEventListener("click", ()=>{
   const id = nowId();
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
-  saveState(); renderActivities(); renderTimeline(); calcSummary();
+  sortByDateTimeEmptyFirst(sc.legs);
+  sortByDateTimeEmptyFirst(sc.stays);
+  sortByDateTimeEmptyFirst(sc.activities);
+  saveState();
+  renderAll();
   scrollAccordionBodyToTop("acts");
 });
 
