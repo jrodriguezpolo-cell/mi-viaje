@@ -203,6 +203,11 @@ border-radius: 999px;
 
 /* disable legacy mode screen */
 #entryScreen{display:none !important;}
+
+
+/* Views scroll container */
+html, body { height: 100%; }
+body { overflow: hidden; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -210,15 +215,15 @@ border-radius: 999px;
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Entry Screen (App Mode) -->
 <div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
-</div>
+
 <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
 <button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
 <button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
 </div>
-</div>
-</div>
+
+
 <!-- Top bar -->
-<header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
+<header class="safe-t bg-white/90 backdrop-blur border-b border-slate-200" id="appHeader">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
@@ -253,7 +258,7 @@ border-radius: 999px;
 </div>
 <div id="topStackSpacer"></div>
 <!-- Main -->
-<main class="max-w-6xl mx-auto px-4 pb-24">
+<div class="overflow-y-auto ios-scroll" id="mainScroll"><main class="max-w-6xl mx-auto px-4 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -296,8 +301,7 @@ border-radius: 999px;
 </aside>
 <section class="lg:col-span-8 space-y-4">
 <!-- TIMELINE -->
-
-<div id="view-timeline" class="view active">
+<div class="view active" id="view-timeline">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
 <div class="flex items-center gap-3">
@@ -309,7 +313,7 @@ border-radius: 999px;
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-  <div id="timelineControlsRow">
+<div id="timelineControlsRow">
 <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
 <div class="flex items-center gap-2">
 <button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
@@ -330,9 +334,8 @@ border-radius: 999px;
 <!-- chips injected by JS -->
 </div>
 </div>
-  </div>
-
-  <div class="space-y-3" id="timelineList"></div>
+</div>
+<div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
 <div class="flex items-center gap-3">
@@ -350,12 +353,10 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-
 <!-- LOGISTICA -->
-
-<div id="view-legs" class="view hidden">
+<div class="view hidden" id="view-legs">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs" id="legsHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
 <div class="text-left">
@@ -372,12 +373,10 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-
 <!-- ALOJAMIENTO -->
-
-<div id="view-stays" class="view hidden">
+<div class="view hidden" id="view-stays">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays" id="staysHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
 <div class="text-left">
@@ -394,10 +393,8 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-
 <!-- COMIDAS -->
-
-<div id="view-meals" class="view hidden">
+<div class="view hidden" id="view-meals">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
 <div class="flex items-center gap-3">
@@ -431,12 +428,10 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-
 <!-- ACTIVIDADES -->
-
-<div id="view-acts" class="view hidden">
+<div class="view hidden" id="view-acts">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts" id="actsHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
@@ -453,7 +448,6 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-
 <!-- IA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
@@ -479,9 +473,9 @@ border-radius: 999px;
 </section>
 <!-- Summary -->
 </div>
-</main>
+</main></div>
 <!-- Bottom bar for mobile -->
-<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
+<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200" id="bottomNav">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
@@ -760,7 +754,27 @@ function syncTopStackHeights() {
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
 
-  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+  if (spacer) spacer.style.height = "0px";
+
+  syncMainScrollLayout();
+
+function syncMainScrollLayout() {
+  const root = document.documentElement;
+  const cs = getComputedStyle(root);
+  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 0;
+  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  const topStackH = headerH + totalsH;
+
+  const bottomNav = document.getElementById("bottomNav");
+  const bottomNavH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+
+  const mainScroll = document.getElementById("mainScroll");
+  if (!mainScroll) return;
+
+  const h = Math.max(100, window.innerHeight - topStackH - bottomNavH);
+  mainScroll.style.height = h + "px";
+  mainScroll.style.marginTop = topStackH + "px";
+}
 }
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
@@ -1153,13 +1167,7 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
-
-  try { setupItemAccordions(); } catch {}
-  setView("timeline");
-  // Default view
-  setView("timeline");
-  syncStickyTotalsHeightVar();
-  }
+}
 
 /* ----------------------------- Accordion ----------------------------- */
 function setupAccordion() {
@@ -1310,7 +1318,7 @@ box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", 
 
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
-    __sectionExpanded.legs.delete(id);
+    __sectionExpanded.legs.delete(String(id));
 
     saveState();
     renderTimeline();
@@ -1430,7 +1438,7 @@ function renderStays() {
 box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
-    __sectionExpanded.stays.delete(id);
+    __sectionExpanded.stays.delete(String(id));
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
@@ -1984,7 +1992,7 @@ function renderActivities() {
 box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
-    __sectionExpanded.activities.delete(id);
+    __sectionExpanded.activities.delete(String(id));
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
@@ -2051,12 +2059,12 @@ function jumpToItem(kind, id) {
   if (!cfg) return;
 
   // Switch to the target view
-  setView(cfg.view);
+  setView(cfg.view, { fromJump: true });
 
   // Expand target item within section (v80b accordion)
-  if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
-  else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
-  else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
+  if (k === "leg") { __sectionExpanded.legs.add(String(itemId)); renderLegs(); }
+  else if (k === "stay") { __sectionExpanded.stays.add(String(itemId)); renderStays(); }
+  else if (k === "act") { __sectionExpanded.activities.add(String(itemId)); renderActivities(); }
 
   // After DOM settles, scroll item into view (minimal internal scroll)
   setTimeout(() => {
@@ -3936,7 +3944,7 @@ $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-  __sectionExpanded.legs.add(id);
+  __sectionExpanded.legs.add(String(id));
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("legs");
 });
@@ -3944,7 +3952,7 @@ $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
-  __sectionExpanded.stays.add(id);
+  __sectionExpanded.stays.add(String(id));
   saveState(); renderStays(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("stays");
 });
@@ -3952,7 +3960,7 @@ $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
-  __sectionExpanded.activities.add(id);
+  __sectionExpanded.activities.add(String(id));
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("acts");
 });
@@ -4014,14 +4022,28 @@ $("btnCompare").addEventListener("click", ()=>{
 /* View-based navigation (single active view) */
 const __views = ["timeline","legs","stays","meals","acts"];
 
-function setView(key){
+function setView(key, opts){
   const k = String(key||"");
+  const o = opts || {};
+  const fromJump = !!o.fromJump;
+
+  // Collapse items by default when entering from bottom nav
+  if (!fromJump) {
+    if (k === "legs") __sectionExpanded.legs.clear();
+    if (k === "stays") __sectionExpanded.stays.clear();
+    if (k === "acts") __sectionExpanded.activities.clear();
+  }
+
   __views.forEach(v=>{
     const el = document.getElementById(`view-${v}`);
     if (!el) return;
     if (v === k) el.classList.remove("hidden");
     else el.classList.add("hidden");
   });
+
+  // Reset scroll of the central scroll container (not window)
+  const ms = document.getElementById("mainScroll");
+  if (ms) ms.scrollTop = 0;
 
   // Ensure the view has freshly-rendered content before wiring item accordions
   try{
@@ -4035,7 +4057,7 @@ function setView(key){
   // Re-wire per-item accordions (delegation; safe to call)
   try{ setupItemAccordions(); } catch(e){}
 
-  // Keep fixed top stack spacer vars in sync (header/totals height may vary)
+  // Keep fixed top stack vars + main scroll layout in sync
   try{ syncTopStackHeights(); } catch(e){}
 
   // Bottom nav active state
@@ -4046,8 +4068,7 @@ function setView(key){
     btn.setAttribute("aria-current", bk === k ? "page" : "false");
   });
 
-  // UX: always start at top of the view (no offsets)
-  try{ window.scrollTo({ top: 0, behavior: "auto" }); } catch(e){}
+  window.__activeView = k;
 }
 
 
@@ -4063,7 +4084,7 @@ function setupItemAccordions() {
       const header = e.target.closest(`[data-sec-toggle="${key}"]`);
       if (!header || !box.contains(header)) return;
       if (e.target.closest("button, input, textarea, select, a, label")) return;
-      const id = header.getAttribute("data-sec-id");
+      const id = String(header.getAttribute("data-sec-id") || "");
       if (!id) return;
       if (setRef.has(id)) setRef.delete(id);
       else setRef.add(id);
@@ -4131,10 +4152,10 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
-    if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (fab) fab.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
     const ca = document.getElementById("collapseAll");
-    if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (ca) ca.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
     // Timeline view controls (Global / Day)
     const _tlG = document.getElementById("tlViewGlobal");
@@ -4151,6 +4172,16 @@ window.addEventListener('DOMContentLoaded', () => {
   try{ syncTopStackHeights(); } catch(e){}
   try{ setupItemAccordions(); } catch(e){}
   try{ setView('timeline'); } catch(e){}
+
+  // Bottom nav: switch views (no window scroll)
+  document.querySelectorAll('[data-jump]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const k = btn.getAttribute('data-jump');
+      if (!k) return;
+      setView(k);
+    });
+  });
 
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
