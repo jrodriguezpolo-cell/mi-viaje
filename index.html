@@ -32,7 +32,7 @@
 
     /* Activities: done/skipped (minimal) */
     .done-item { opacity: 0.55; }
-    .done-item .done-text, .skipped-item .done-text { text-decoration: line-through; }
+    .done-text { text-decoration: line-through; }
     .skipped-item { opacity: 0.55; }
     .skipped-badge { color: #b91c1c; } /* red-700 */
     .auto-badge { color: #64748b; } /* slate-500 */
@@ -200,33 +200,6 @@ border-radius: 999px;
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
-
-
-/* Leg roundtrip badges (v90) */
-.legOutboundBadge{
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(37,99,235,0.10);
-  border: 1px solid rgba(37,99,235,0.22);
-  color: #1d4ed8;
-  font-weight: 700;
-}
-.legReturnBadge{
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(16,185,129,0.10);
-  border: 1px solid rgba(16,185,129,0.22);
-  color: #047857;
-  font-weight: 700;
-}
-.legOutboundCard{
-  border-color: rgba(37,99,235,0.30) !important;
-}
-.legReturnCard{
-  border-color: rgba(16,185,129,0.30) !important;
-}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -325,6 +298,8 @@ border-radius: 999px;
 </aside>
 <section class="lg:col-span-8 space-y-4">
 <!-- TIMELINE -->
+
+<div id="view-timeline" class="view active">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
 <div class="flex items-center gap-3">
@@ -351,7 +326,6 @@ border-radius: 999px;
 <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
 <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
 </div>
-<div id="timelineNextHint" class="text-xs text-slate-500 mt-1"></div>
 </div>
 <div class="mb-3 -mx-1">
 <div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
@@ -377,7 +351,11 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+</div>
+
 <!-- LOGISTICA -->
+
+<div id="view-legs" class="view hidden">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
 <div class="flex items-center gap-3">
@@ -389,12 +367,17 @@ border-radius: 999px;
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="legs">
-<div class="flex items-center justify-between mb-3 gap-2"><button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
+<div class="flex justify-end mb-3">
+<button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
 </div>
+</div>
+
 <!-- ALOJAMIENTO -->
+
+<div id="view-stays" class="view hidden">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
 <div class="flex items-center gap-3">
@@ -412,7 +395,11 @@ border-radius: 999px;
 <div class="space-y-3" id="staysList"></div>
 </div>
 </div>
+</div>
+
 <!-- COMIDAS -->
+
+<div id="view-meals" class="view hidden">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
 <div class="flex items-center gap-3">
@@ -445,7 +432,11 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+</div>
+
 <!-- ACTIVIDADES -->
+
+<div id="view-acts" class="view hidden">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
 <div class="flex items-center gap-3">
@@ -463,6 +454,8 @@ border-radius: 999px;
 <div class="space-y-3" id="actsList"></div>
 </div>
 </div>
+</div>
+
 <!-- IA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
@@ -1011,23 +1004,6 @@ function closeModal() {
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
-
-/* ------------------------ Normalization (boot safety) ------------------------ */
-function normalizeScenario(sc) {
-  if (!sc || typeof sc !== "object") return;
-  if (!Array.isArray(sc.legs)) sc.legs = [];
-  if (!Array.isArray(sc.stays)) sc.stays = [];
-  if (!Array.isArray(sc.activities)) sc.activities = [];
-  if (!Array.isArray(sc.meals)) sc.meals = [];
-  if (!sc.dailyNotes || typeof sc.dailyNotes !== "object") sc.dailyNotes = {};
-}
-function normalizeState() {
-  if (!state || typeof state !== "object") return;
-  if (!state.scenarios || typeof state.scenarios !== "object") return;
-  Object.values(state.scenarios).forEach(normalizeScenario);
-}
-
-
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
 
@@ -1178,10 +1154,9 @@ function setDisplayCurrency(cur) {
   $("sumCur").textContent = cur;
   $("mealCur").textContent = cur;
   saveState();
-  // Render timeline filter chips before first render
-  try { renderTimelineFilterChips(); } catch (e) { /* no-op */ }
-
   renderAll();
+  // Default view
+  setView("timeline");
   syncStickyTotalsHeightVar();
   }
 
@@ -1263,33 +1238,6 @@ function renderTabs() {
   $("mealCur").textContent = state.displayCurrency;
 }
 
-
-/* ---------------------- Transport helpers (v89) ---------------------- */
-const LEG_MODE_OPTIONS = [
-  { v: "plane", label: "Avión", emoji: "✈️", place: "Aeropuerto" },
-  { v: "ship",  label: "Barco", emoji: "🚢", place: "Puerto" },
-  { v: "train", label: "Tren",  emoji: "🚆", place: "Estación" },
-  { v: "bus",   label: "Autobús", emoji: "🚌", place: "Estación/Parada" },
-  { v: "car",   label: "Coche", emoji: "🚗", place: "Punto exacto / Dirección" },
-];
-
-function legModeDefault() { return "train"; }
-
-function legModeMeta(mode) {
-  const m = LEG_MODE_OPTIONS.find(x => x.v === mode);
-  return m || LEG_MODE_OPTIONS.find(x => x.v === legModeDefault()) || LEG_MODE_OPTIONS[2];
-}
-
-function legEmoji(mode) { return legModeMeta(mode).emoji; }
-function legPlaceLabel(mode) { return legModeMeta(mode).place; }
-
-function newDirectionGroupId() {
-  try {
-    if (crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  } catch {}
-  return "g_" + nowId() + "_" + Math.random().toString(16).slice(2);
-}
-
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
@@ -1300,66 +1248,30 @@ function legCard(leg) {
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
   const hasNotes = !!(leg.notes && String(leg.notes).trim());
-  const role = leg.directionRole || "";
-  const hasGroup = !!leg.directionGroupId;
-  const roleBadge = hasGroup ? (
-    role === "return"
-      ? `<span class="legReturnBadge">Vuelta</span>`
-      : `<span class="legOutboundBadge">Ida</span>`
-  ) : "";
-
-  const convertSegment = (!hasGroup) ? `
-    <div class="inline-flex rounded-lg border border-slate-200 bg-white overflow-hidden text-xs font-semibold">
-      <button type="button" class="px-2 py-1 bg-slate-900 text-white" disabled>Ida</button>
-      <button type="button" class="px-2 py-1 text-slate-700 hover:bg-slate-50" data-leg-make-rt="${leg.id}">Ida y vuelta</button>
-    </div>
-  ` : "";
-
-  const rtBadge = hasGroup ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-full border border-slate-200 bg-white">Ida y vuelta</span>` : "";
-  const toOneWayBtn = hasGroup ? `<button type="button" class="tap text-xs font-semibold text-blue-700" data-leg-to-oneway="${leg.id}">Convertir a solo ida</button>` : "";
-
-  const rtControls = hasGroup ? `${rtBadge} ${roleBadge} ${toOneWayBtn}` : convertSegment;
-
-  const roleCardClass = hasGroup ? (role === "return" ? "legReturnCard" : "legOutboundCard") : "";
-  const titleStrikeClass = (st.done || st.skipped) ? "done-text" : "";
 
   return `
-  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""} ${roleCardClass}">
+  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${legEmoji(leg.mode || legModeDefault())} Transporte · <span class="${titleStrikeClass}">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">🛫 Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
-        ${rtControls}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
 
     <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-        
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Medio</label>
-          <select data-leg-mode="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white">
-            ${LEG_MODE_OPTIONS.map(o => `<option value="${o.v}" ${((leg.mode||legModeDefault())===o.v) ? "selected" : ""}>${o.label}</option>`).join("")}
-          </select>
-        </div>
-<div class="sm:col-span-3">
+        <div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Salida</label>
           <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
-          
-          <label class="text-xs text-slate-600 mt-2 block">${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))} (salida)</label>
-          <input data-leg-fromplace="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.fromPlace || "")}" placeholder="${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))}">
-<div class="mt-1">${tzFrom}</div>
+          <div class="mt-1">${tzFrom}</div>
         </div>
         <div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Llegada</label>
           <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
-          
-          <label class="text-xs text-slate-600 mt-2 block">${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))} (llegada)</label>
-          <input data-leg-toplace="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.toPlace || "")}" placeholder="${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))}">
-<div class="mt-1">${tzTo}</div>
+          <div class="mt-1">${tzTo}</div>
         </div>
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Fecha</label>
@@ -1388,9 +1300,6 @@ function legCard(leg) {
 function renderLegs() {
   const box = $("legsList");
   const sc = curScenario();
-  if (!box) return;
-  if (!Array.isArray(sc.legs)) sc.legs = [];
-
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
@@ -1420,93 +1329,11 @@ function renderLegs() {
     renderLegs();
   }));
 
-  // v90: Convertir en ida y vuelta (per item)
-  box.querySelectorAll("[data-leg-make-rt]").forEach(btn => btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = btn.getAttribute("data-leg-make-rt");
-    if (!id) return;
-    const leg = sc.legs.find(x => String(x.id) === String(id));
-    if (!leg) return;
-    if (leg.directionGroupId) return;
-
-    const groupId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : nowId();
-    leg.directionGroupId = groupId;
-    leg.directionRole = "outbound";
-
-    const returnId = nowId();
-    const ret = {
-      id: returnId,
-      mode: leg.mode || legModeDefault(),
-      from: leg.to || "",
-      to: leg.from || "",
-      fromPlace: leg.toPlace || "",
-      toPlace: leg.fromPlace || "",
-      date: "",
-      time: "",
-      cost: 0,
-      tzFrom: null,
-      tzTo: null,
-      directionGroupId: groupId,
-      directionRole: "return"
-    };
-
-    const idxLeg = sc.legs.findIndex(x => String(x.id) === String(id));
-    sc.legs.splice(idxLeg + 1, 0, ret);
-
-    __sectionExpanded.legs.add(String(id));
-    __sectionExpanded.legs.add(String(returnId));
-
-    sortByDateTimeEmptyFirst(sc.legs);
-    sortByDateTimeEmptyFirst(sc.stays);
-    sortByDateTimeEmptyFirst(sc.activities);
-    saveState();
-    renderAll();
-    }));
-
-  // v91: Convertir a solo ida (remove return + clear group) — works from outbound or return card
-  box.querySelectorAll("[data-leg-to-oneway]").forEach(btn => btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = btn.getAttribute("data-leg-to-oneway");
-    if (!id) return;
-    const leg = sc.legs.find(x => String(x.id) === String(id));
-    if (!leg || !leg.directionGroupId) return;
-
-    const gid = leg.directionGroupId;
-    const outbound = sc.legs.find(x => x.directionGroupId === gid && x.directionRole === "outbound") || sc.legs.find(x => x.directionGroupId === gid);
-    const ret = sc.legs.find(x => x.directionGroupId === gid && x.directionRole === "return");
-
-    // Remove return leg if exists
-    if (ret) {
-      sc.legs = sc.legs.filter(x => String(x.id) !== String(ret.id));
-      __sectionExpanded.legs.delete(String(ret.id));
-    }
-
-    if (outbound) {
-      delete outbound.directionGroupId;
-      delete outbound.directionRole;
-    }
-
-    sortByDateTimeEmptyFirst(sc.legs);
-    sortByDateTimeEmptyFirst(sc.stays);
-    sortByDateTimeEmptyFirst(sc.activities);
-    saveState();
-    renderAll();
-    }));
-
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
     const id = inp.getAttribute("data-leg-from");
     const leg = sc.legs.find(x => x.id === id);
     leg.from = cap1(inp.value);
     inp.value = leg.from;
-
-    // v91: premium auto-inversion (only fill return fields if empty)
-    if (leg.directionGroupId && leg.directionRole === "outbound") {
-      const ret = sc.legs.find(x => x.directionGroupId === leg.directionGroupId && x.directionRole === "return");
-      if (ret && !String(ret.to || "").trim()) ret.to = leg.from || "";
-    }
-
     saveState(); renderAll();
     await updateTimezoneForLeg(id, "from");
   }));
@@ -1515,70 +1342,16 @@ function renderLegs() {
     const leg = sc.legs.find(x => x.id === id);
     leg.to = cap1(inp.value);
     inp.value = leg.to;
-
-    // v91: premium auto-inversion (only fill return fields if empty)
-    if (leg.directionGroupId && leg.directionRole === "outbound") {
-      const ret = sc.legs.find(x => x.directionGroupId === leg.directionGroupId && x.directionRole === "return");
-      if (ret && !String(ret.from || "").trim()) ret.from = leg.to || "";
-    }
-
     saveState(); renderAll();
     await updateTimezoneForLeg(id, "to");
   }));
-
-  // v89: mode + specific places
-  box.querySelectorAll("[data-leg-mode]").forEach(sel => sel.addEventListener("change", () => {
-    const id = sel.getAttribute("data-leg-mode");
+  box.querySelectorAll("[data-leg-date]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-leg-date");
     const leg = sc.legs.find(x => x.id === id);
-    leg.mode = sel.value || legModeDefault();
-    saveState();
-    // re-render legs to update labels + icon, and timeline to reflect mode icon
-    const prevTop = box.scrollTop;
-    renderLegs();
-    box.scrollTop = prevTop;
-    renderTimeline();
+    leg.date = inp.value;
+    sortByDateTimeEmptyFirst(sc.legs);
+    saveState(); renderAll();
   }));
-  box.querySelectorAll("[data-leg-fromplace]").forEach(inp => inp.addEventListener("change", () => {
-    const id = inp.getAttribute("data-leg-fromplace");
-    const leg = sc.legs.find(x => x.id === id);
-    leg.fromPlace = inp.value.trim();
-
-    // v91: premium auto-inversion (only fill return fields if empty)
-    if (leg.directionGroupId && leg.directionRole === "outbound") {
-      const ret = sc.legs.find(x => x.directionGroupId === leg.directionGroupId && x.directionRole === "return");
-      if (ret && !String(ret.toPlace || "").trim()) ret.toPlace = leg.fromPlace || "";
-    }
-
-    saveState();
-  }));
-  box.querySelectorAll("[data-leg-toplace]").forEach(inp => inp.addEventListener("change", () => {
-    const id = inp.getAttribute("data-leg-toplace");
-    const leg = sc.legs.find(x => x.id === id);
-    leg.toPlace = inp.value.trim();
-
-    // v91: premium auto-inversion (only fill return fields if empty)
-    if (leg.directionGroupId && leg.directionRole === "outbound") {
-      const ret = sc.legs.find(x => x.directionGroupId === leg.directionGroupId && x.directionRole === "return");
-      if (ret && !String(ret.fromPlace || "").trim()) ret.fromPlace = leg.toPlace || "";
-    }
-
-    saveState();
-  }));
-
-  box.querySelectorAll("[data-leg-date]").forEach(inp => {
-    // iOS fix: do NOT rerender on change (closes date picker)
-    inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-leg-date");
-      const leg = sc.legs.find(x => x.id === id);
-      leg.date = inp.value;
-      saveState();
-    });
-    inp.addEventListener("blur", () => {
-      sortByDateTimeEmptyFirst(sc.legs);
-      saveState();
-      requestAnimationFrame(() => renderAll());
-    });
-  });
   box.querySelectorAll("[data-leg-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-leg-time");
     const leg = sc.legs.find(x => x.id === id);
@@ -1607,17 +1380,15 @@ function stayCard(stay) {
   const name = (stay.name||"").trim() || "—";
   const dt = `${(stay.date||"").trim() || "—"} ${(stay.time||"").trim() || "—"}`;
   const hasNotes = !!(stay.notes && String(stay.notes).trim());
-  const titleStrikeClass = (st.done || st.skipped) ? "done-text" : "";
 
   return `
   <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="${titleStrikeClass}">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
+        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
-        ${rtControls}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -1664,9 +1435,6 @@ function stayCard(stay) {
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
-  if (!box) return;
-  if (!Array.isArray(sc.stays)) sc.stays = [];
-
   sortByDateTimeEmptyFirst(sc.stays);
   box.innerHTML = sc.stays.length ? sc.stays.map(stayCard).join("") : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
 
@@ -1694,19 +1462,12 @@ function renderStays() {
     s.city = cap1(inp.value); inp.value = s.city;
     saveState(); renderTimeline();
   }));
-  box.querySelectorAll("[data-stay-date]").forEach(inp => {
-    // iOS fix: do NOT rerender on change (closes date picker)
-    inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-stay-date");
-      sc.stays.find(x => x.id === id).date = inp.value;
-      saveState();
-    });
-    inp.addEventListener("blur", () => {
-      sortByDateTimeEmptyFirst(sc.stays);
-      saveState();
-      requestAnimationFrame(() => renderAll());
-    });
-  });
+  box.querySelectorAll("[data-stay-date]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-date");
+    sc.stays.find(x => x.id === id).date = inp.value;
+    sortByDateTimeEmptyFirst(sc.stays);
+    saveState(); renderTimeline();
+  }));
   box.querySelectorAll("[data-stay-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-time");
     sc.stays.find(x => x.id === id).time = inp.value;
@@ -1773,43 +1534,13 @@ function isPast(dateKey) {
 }
 function isFuture(dateKey) {
   return cmpDate(String(dateKey || ""), todayKey()) > 0;
-}
-
-// Parse robusto para Safari: YYYY-MM-DD + HH:MM -> Date (local)
-function parseISODateTime(dateStr, timeStr, { endOfDayIfNoTime = false } = {}) {
-  const d = String(dateStr || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
-  let hh = 0, mm = 0;
-  const t = String(timeStr || "").trim();
-  if (t && /^\d{2}:\d{2}$/.test(t)) {
-    hh = parseInt(t.slice(0,2), 10);
-    mm = parseInt(t.slice(3,5), 10);
-  } else if (endOfDayIfNoTime) {
-    hh = 23; mm = 59;
-  }
-  const y = parseInt(d.slice(0,4), 10);
-  const mo = parseInt(d.slice(5,7), 10) - 1;
-  const da = parseInt(d.slice(8,10), 10);
-  const dt = new Date(y, mo, da, hh, mm, 0, 0);
-  return Number.isNaN(dt.getTime()) ? null : dt;
-}
-
-function isPastDateTime(dateStr, timeStr) {
-  const dt = parseISODateTime(dateStr, timeStr, { endOfDayIfNoTime: true });
-  if (!dt) return false;
-  return dt.getTime() < Date.now();
-}
-/* Timeline category filter (in-memory, no persistence) */
+}/* Timeline category filter (in-memory, no persistence) */
 // Timeline view mode (UI only, not persisted)
 let timelineViewMode = "global"; // "global" | "day"
 let activeDayISO = ""; // used only in day mode
 window.__tlControlsTemplateHTML = window.__tlControlsTemplateHTML || "";
 let __tlDays = []; // derived cache of available days in current filtered timeline
-let __tlLastFilteredItems = [];
-
-  // clear timeline category filters on boot
-  try { timelineFilterState.categories.clear(); } catch (e) { /* no-op */ }
- // cache of current filtered timeline items (in-memory only)
+let __tlLastFilteredItems = []; // cache of current filtered timeline items (in-memory only)
 
 const timelineFilterState = {
   categories: new Set() // empty = show all
@@ -2068,12 +1799,10 @@ function handleActDoneToggle(id, targetChecked, el) {
 /* ---------------- Legs/Stays: smart done (v32+) ---------------- */
 // Estado visual genérico para elementos con fecha (legs) o sin fecha (stays)
 function computeDoneStateGeneric(item, dateKey) {
-  const dk = String((item && item.date) || dateKey || "");
-  const tk = String((item && item.time) || "");
+  const dk = String(dateKey || "");
   if (item?.doneManual === true) return { done: true, auto: false, skipped: false };
   if (item?.skipped === true) return { done: false, auto: false, skipped: true };
-  // Auto-asumido SOLO si el evento ya está en el pasado real (fecha + hora; si no hay hora => fin del día)
-  if (dk && isPastDateTime(dk, tk)) return { done: true, auto: true, skipped: false };
+  if (dk && isPast(dk)) return { done: true, auto: true, skipped: false };
   return { done: false, auto: false, skipped: false };
 }
 
@@ -2226,7 +1955,6 @@ function actCard(act) {
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
-        ${rtControls}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -2273,9 +2001,6 @@ function actCard(act) {
 function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
-  if (!box) return;
-  if (!Array.isArray(sc.activities)) sc.activities = [];
-
   sortByDateTimeEmptyFirst(sc.activities);
   box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
@@ -2353,38 +2078,31 @@ function jumpToItem(kind, id) {
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { acc: "legs",  secToggle: "legs" },
-    stay: { acc: "stays", secToggle: "stays" },
-    act:  { acc: "acts",  secToggle: "activities" }
+    leg:  { view: "legs",  secToggle: "legs" },
+    stay: { view: "stays", secToggle: "stays" },
+    act:  { view: "acts",  secToggle: "activities" }
   };
   const cfg = map[k];
   if (!cfg) return;
 
-  // 1) Open target accordion section
-  openAccordionKey(cfg.acc);
+  // Switch to the target view
+  setView(cfg.view);
 
-  // 2) Expand target item within section (v80b accordion)
+  // Expand target item within section (v80b accordion)
   if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
   else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
   else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  const accBtn = document.querySelector(`[data-acc="${cfg.acc}"]`);
-  const itemEl = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`);
-
-  // 3) Scroll using TopStack (Header + Totals). Never include timeline controls here.
-  requestAnimationFrame(() => {
-    if (accBtn) scrollToElTopStack(accBtn, 8);
-  });
-
-  // 4) After DOM settles, scroll item into view
+  // After DOM settles, scroll item into view (minimal internal scroll)
   setTimeout(() => {
-    const el = itemEl || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
-    if (el) {
-      scrollToElTopStack(el, 16);
+    const el = document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
       try { el.focus({ preventScroll: true }); } catch {}
     }
-  }, 120);
+  }, 60);
 }
+
 
 
 
@@ -2667,15 +2385,6 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
-  console.log("renderTimeline legs/stays/acts lens:", sc?.legs?.length, sc?.stays?.length, sc?.activities?.length);
-  if (!box) return;
-
-  if (!Array.isArray(sc.legs)) sc.legs = [];
-  if (!Array.isArray(sc.stays)) sc.stays = [];
-  if (!Array.isArray(sc.activities)) sc.activities = [];
-  if (!Array.isArray(sc.meals)) sc.meals = [];
-  if (!sc.dailyNotes || typeof sc.dailyNotes !== "object") sc.dailyNotes = {};
-
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
@@ -2685,8 +2394,7 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    const role = leg.directionRole === "outbound" ? " • Ida" : (leg.directionRole === "return" ? " • Vuelta" : "");
-    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}${role}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
+    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
   }
   for (const s of sc.stays) {
     items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
@@ -2712,22 +2420,6 @@ function renderTimeline() {
 
   const filteredItems = getFilteredItems(items);
   __tlLastFilteredItems = filteredItems;
-
-  // Próximo (preview) on first render: show explicit UI when no future events remain
-  try {
-    const hintEl = document.getElementById("timelineNextHint");
-    if (hintEl) {
-      const now = new Date();
-      const next = (filteredItems || []).find(it => {
-        if (it && it.isNote) return false;
-        const d = String(it?.date || "");
-        if (!d || d === "9999-99-99") return false;
-        const dt = parseISODateTime(d, it?.time, { endOfDayIfNoTime: true });
-        return dt && dt.getTime() >= now.getTime();
-      });
-      hintEl.textContent = next ? "" : "No hay próximos eventos";
-    }
-  } catch (e) { /* no-op */ }
 
   // Days available in current filtered list (used by Day view navigation)
   const days = getTimelineDays(filteredItems);
@@ -2760,7 +2452,7 @@ function renderTimeline() {
   }
 
   if (!visibleItems.length) {
-    box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para mostrar.</div>`;
+    box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
     renderDailyNotes();
     return;
   }
@@ -2771,7 +2463,7 @@ function renderTimeline() {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
-    const icon = (jumpType === 'leg') ? legEmoji((legById.get(String(jumpId)) || {}).mode || legModeDefault()) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
+    const icon = (jumpType === 'leg') ? '🛫' : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
@@ -4275,32 +3967,20 @@ $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sec
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
-
-// v91: leg creation mode (Ida / 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
-  const mode = legModeDefault();
   const id = nowId();
-  sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-  __sectionExpanded.legs.add(String(id));
-  sortByDateTimeEmptyFirst(sc.legs);
-  sortByDateTimeEmptyFirst(sc.stays);
-  sortByDateTimeEmptyFirst(sc.activities);
-  saveState();
-  renderAll();
-  scrollAccordionIntoView("legs");
+  sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  __sectionExpanded.legs.add(id);
+  saveState(); renderLegs(); renderTimeline(); calcSummary();
+  scrollAccordionBodyToTop("legs");
 });
-
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
-  sortByDateTimeEmptyFirst(sc.legs);
-  sortByDateTimeEmptyFirst(sc.stays);
-  sortByDateTimeEmptyFirst(sc.activities);
-  saveState();
-  renderAll();
+  saveState(); renderStays(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
@@ -4308,11 +3988,7 @@ $("addAct").addEventListener("click", ()=>{
   const id = nowId();
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
-  sortByDateTimeEmptyFirst(sc.legs);
-  sortByDateTimeEmptyFirst(sc.stays);
-  sortByDateTimeEmptyFirst(sc.activities);
-  saveState();
-  renderAll();
+  saveState(); renderActivities(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("acts");
 });
 
@@ -4370,39 +4046,35 @@ $("btnCompare").addEventListener("click", ()=>{
   `;
 });
 
-/* Bottom nav jump (premium header landing) */
-function scrollToSectionHeader(accKey) {
-  const headerBtn = document.querySelector(`[data-acc="${accKey}"]`);
-  if (!headerBtn) return;
+/* View-based navigation (single active view) */
+const __views = ["timeline","legs","stays","meals","acts"];
 
-  // Ensure accordion is open so the landing makes sense visually
-  if (typeof openAccordionKey === "function") openAccordionKey(accKey);
+function setView(key){
+  const k = String(key||"");
+  __views.forEach(v=>{
+    const el = document.getElementById(`view-${v}`);
+    if (!el) return;
+    if (v === k) el.classList.remove("hidden");
+    else el.classList.add("hidden");
+  });
 
-  // Premium fine scroll: header sits just under Totals
-  setTimeout(() => {
-    scrollToElWithOffset(headerBtn, 10);
-  }, 0);
+  // Bottom nav active state
+  document.querySelectorAll('[data-jump]').forEach(btn=>{
+    const bk = btn.getAttribute("data-jump");
+    btn.classList.toggle("bg-slate-100", bk === k);
+    btn.classList.toggle("font-bold", bk === k);
+    btn.setAttribute("aria-current", bk === k ? "page" : "false");
+  });
 }
 
-/* Jump nav */
+/* Bottom nav: switch views (no scroll) */
 document.querySelectorAll('[data-jump]').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
-
-    const accBtn = document.querySelector(`[data-acc="${key}"]`);
-    if (!accBtn) return;
-
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (body && body.classList.contains('hidden')) accBtn.click();
-
-    requestAnimationFrame(() => {
-      scrollToElTopStack(accBtn, 4); // premium micro offset under Totals
-    });
+    setView(key);
   });
 });
-
-
 
 
 function syncHeaderHeightVar(){
@@ -4441,20 +4113,8 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
-  normalizeState();
-  console.log("BOOT scenarios:", Object.keys(state?.scenarios || {}));
-  console.log("BOOT currentScenarioId:", state?.currentScenarioId);
-  const scBoot = curScenario?.();
-  console.log("BOOT legs/stays/acts lens:", scBoot?.legs?.length, scBoot?.stays?.length, scBoot?.activities?.length);
-  console.log("BOOT tlView initial:", window.timelineViewMode || window.__tlView || "(unknown)");
-
-  // Hard reset timeline boot state (ignore any persisted view mode)
-  timelineViewMode = "global";
-  __tlLastActualKey = "";
-  activeDayISO = null;
-  __tlLastFilteredItems = [];
-
-  setupAccordion();
+  // setupAccordion disabled in view-based nav
+  // setupAccordion();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
