@@ -363,6 +363,12 @@ border-radius: 999px;
 <div class="px-5 pb-5 hidden" data-acc-body="legs">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
+<div class="flex items-center gap-2 ml-3">
+  <label class="flex items-center gap-2 text-xs text-slate-600 select-none">
+    <input id="addLegRoundtrip" type="checkbox" class="h-4 w-4">
+    Ida y vuelta
+  </label>
+</div>
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
@@ -1216,6 +1222,33 @@ function renderTabs() {
   $("mealCur").textContent = state.displayCurrency;
 }
 
+
+/* ---------------------- Transport helpers (v89) ---------------------- */
+const LEG_MODE_OPTIONS = [
+  { v: "plane", label: "Avión", emoji: "✈️", place: "Aeropuerto" },
+  { v: "ship",  label: "Barco", emoji: "🚢", place: "Puerto" },
+  { v: "train", label: "Tren",  emoji: "🚆", place: "Estación" },
+  { v: "bus",   label: "Autobús", emoji: "🚌", place: "Estación/Parada" },
+  { v: "car",   label: "Coche", emoji: "🚗", place: "Punto exacto / Dirección" },
+];
+
+function legModeDefault() { return "train"; }
+
+function legModeMeta(mode) {
+  const m = LEG_MODE_OPTIONS.find(x => x.v === mode);
+  return m || LEG_MODE_OPTIONS.find(x => x.v === legModeDefault()) || LEG_MODE_OPTIONS[2];
+}
+
+function legEmoji(mode) { return legModeMeta(mode).emoji; }
+function legPlaceLabel(mode) { return legModeMeta(mode).place; }
+
+function newDirectionGroupId() {
+  try {
+    if (crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {}
+  return "g_" + nowId() + "_" + Math.random().toString(16).slice(2);
+}
+
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
@@ -1231,7 +1264,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🛫 Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">${legEmoji(leg.mode || legModeDefault())} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
@@ -1241,15 +1274,28 @@ function legCard(leg) {
 
     <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-        <div class="sm:col-span-3">
+        
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Medio</label>
+          <select data-leg-mode="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white">
+            ${LEG_MODE_OPTIONS.map(o => `<option value="${o.v}" ${((leg.mode||legModeDefault())===o.v) ? "selected" : ""}>${o.label}</option>`).join("")}
+          </select>
+        </div>
+<div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Salida</label>
           <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
-          <div class="mt-1">${tzFrom}</div>
+          
+          <label class="text-xs text-slate-600 mt-2 block">${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))} (salida)</label>
+          <input data-leg-fromplace="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.fromPlace || "")}" placeholder="${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))}">
+<div class="mt-1">${tzFrom}</div>
         </div>
         <div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Llegada</label>
           <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
-          <div class="mt-1">${tzTo}</div>
+          
+          <label class="text-xs text-slate-600 mt-2 block">${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))} (llegada)</label>
+          <input data-leg-toplace="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.toPlace || "")}" placeholder="${escapeHtml(legPlaceLabel(leg.mode || legModeDefault()))}">
+<div class="mt-1">${tzTo}</div>
         </div>
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Fecha</label>
@@ -1323,6 +1369,32 @@ function renderLegs() {
     saveState(); renderAll();
     await updateTimezoneForLeg(id, "to");
   }));
+
+  // v89: mode + specific places
+  box.querySelectorAll("[data-leg-mode]").forEach(sel => sel.addEventListener("change", () => {
+    const id = sel.getAttribute("data-leg-mode");
+    const leg = sc.legs.find(x => x.id === id);
+    leg.mode = sel.value || legModeDefault();
+    saveState();
+    // re-render legs to update labels + icon, and timeline to reflect mode icon
+    const prevTop = box.scrollTop;
+    renderLegs();
+    box.scrollTop = prevTop;
+    renderTimeline();
+  }));
+  box.querySelectorAll("[data-leg-fromplace]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-leg-fromplace");
+    const leg = sc.legs.find(x => x.id === id);
+    leg.fromPlace = inp.value.trim();
+    saveState();
+  }));
+  box.querySelectorAll("[data-leg-toplace]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-leg-toplace");
+    const leg = sc.legs.find(x => x.id === id);
+    leg.toPlace = inp.value.trim();
+    saveState();
+  }));
+
   box.querySelectorAll("[data-leg-date]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-leg-date");
     const leg = sc.legs.find(x => x.id === id);
@@ -2448,7 +2520,7 @@ function renderTimeline() {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
-    const icon = (jumpType === 'leg') ? '🛫' : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
+    const icon = (jumpType === 'leg') ? legEmoji((legById.get(String(jumpId)) || {}).mode || legModeDefault()) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
@@ -3954,11 +4026,59 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
-  const id = nowId();
-  sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-  __sectionExpanded.legs.add(id);
+  const isRoundTrip = !!($("addLegRoundtrip") && $("addLegRoundtrip").checked);
+  const mode = legModeDefault();
+
+  if (!isRoundTrip) {
+    const id = nowId();
+    sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+    __sectionExpanded.legs.add(id);
+    saveState(); renderLegs(); renderTimeline(); calcSummary();
+    scrollAccordionIntoView("legs");
+    return;
+  }
+
+  // Ida y vuelta: crear 2 legs vinculados (outbound + return)
+  const groupId = newDirectionGroupId();
+  const outId = nowId();
+  const retId = nowId();
+
+  const outbound = {
+    id: outId,
+    mode,
+    from:"", to:"",
+    fromPlace:"", toPlace:"",
+    date:"", time:"",
+    cost:0,
+    tzFrom:null, tzTo:null,
+    directionGroupId: groupId,
+    directionRole: "outbound"
+  };
+
+  const ret = {
+    id: retId,
+    mode,
+    // invertido (vacíos al inicio; se mantendrá coherente si el usuario rellena después)
+    from: outbound.to,
+    to: outbound.from,
+    fromPlace: outbound.toPlace,
+    toPlace: outbound.fromPlace,
+    date:"", time:"",
+    cost:0,
+    tzFrom:null, tzTo:null,
+    directionGroupId: groupId,
+    directionRole: "return"
+  };
+
+  // Insertar: outbound arriba, return justo debajo
+  sc.legs.unshift(ret);
+  sc.legs.unshift(outbound);
+
+  __sectionExpanded.legs.add(outId);
+  __sectionExpanded.legs.add(retId);
+
   saveState(); renderLegs(); renderTimeline(); calcSummary();
-  scrollAccordionBodyToTop("legs");
+  scrollAccordionIntoView("legs");
 });
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
