@@ -1178,6 +1178,9 @@ function setDisplayCurrency(cur) {
   $("sumCur").textContent = cur;
   $("mealCur").textContent = cur;
   saveState();
+  // Render timeline filter chips before first render
+  try { renderTimelineFilterChips(); } catch (e) { /* no-op */ }
+
   renderAll();
   syncStickyTotalsHeightVar();
   }
@@ -1802,7 +1805,11 @@ let timelineViewMode = "global"; // "global" | "day"
 let activeDayISO = ""; // used only in day mode
 window.__tlControlsTemplateHTML = window.__tlControlsTemplateHTML || "";
 let __tlDays = []; // derived cache of available days in current filtered timeline
-let __tlLastFilteredItems = []; // cache of current filtered timeline items (in-memory only)
+let __tlLastFilteredItems = [];
+
+  // clear timeline category filters on boot
+  try { timelineFilterState.categories.clear(); } catch (e) { /* no-op */ }
+ // cache of current filtered timeline items (in-memory only)
 
 const timelineFilterState = {
   categories: new Set() // empty = show all
