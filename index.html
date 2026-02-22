@@ -184,6 +184,22 @@ border-radius: 999px;
 }
 #topStackSpacer{ height: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px)); }
 
+
+/* Timeline time badges (v88) */
+.tlTimeBadge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:11px;
+  line-height:1.2;
+  border:1px solid rgba(148,163,184,0.35);
+}
+.tlTimeToday{ background: rgba(16,185,129,0.14); color:#065f46; border-color: rgba(16,185,129,0.30); }
+.tlTimeFuture{ background: rgba(59,130,246,0.10); color:#1d4ed8; border-color: rgba(59,130,246,0.22); }
+.tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
+.tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -847,31 +863,53 @@ function scrollToNextAfterCurrent() {
   const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
   if (!items.length) { alert("No hay próximos eventos."); return; }
 
-  // Find current index: prefer last "Actual" key; fallback to next >= now in global ordering
-  let curIdx = -1;
+  const now = new Date();
+
+  const makeKey = (it) => {
+    return it.isNote ? `note:${String(it.date || "")}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
+  };
+
+  // If we have a current "Actual" that is truly in progress now, next = item after it.
+  let actualIdx = -1;
   if (__tlLastActualKey) {
-    curIdx = items.findIndex(it => {
-      const k = it.isNote ? `note:${it.date}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
-      return k === __tlLastActualKey;
-    });
+    actualIdx = items.findIndex(it => makeKey(it) === __tlLastActualKey);
+    if (actualIdx >= 0) {
+      const it = items[actualIdx];
+      const start = getEventStartDateTime(it);
+      if (!start) {
+        actualIdx = -1;
+      } else {
+        const durMin = getEstimatedDurationMinutes(it);
+        const end = new Date(start.getTime() + durMin * 60000);
+        if (!(start.getTime() <= now.getTime() && now.getTime() < end.getTime())) {
+          actualIdx = -1;
+        }
+      }
+    }
   }
 
-  if (curIdx < 0) {
-    const now = new Date();
-    const nowDate = todayYMD();
-    const nowMin = __tlNowMinutes();
-    curIdx = items.findIndex(it => {
+  let next = null;
+
+  if (actualIdx >= 0) {
+    next = items[actualIdx + 1] || null;
+  } else {
+    // First future item in global ordering (can be tomorrow; includes items without time as 23:59)
+    next = items.find(it => {
       const d = String(it.date || "");
       if (!d || d === "9999-99-99") return false;
-      if (d > nowDate) return true;
-      if (d < nowDate) return false;
-      return timeSortKey(it.time) >= nowMin;
+
+      const start = getEventStartDateTime(it);
+      if (start) {
+        return start.getTime() >= now.getTime();
+      }
+
+      // No valid time: treat as end-of-day 23:59
+      if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
+      const dt = new Date(d + "T23:59:00");
+      return dt.getTime() >= now.getTime();
     });
-    if (curIdx < 0) { alert("No hay próximos eventos."); return; }
   }
 
-  // next item after current
-  const next = items[curIdx + 1];
   if (!next) { alert("No hay próximos eventos."); return; }
 
   const dISO = String(next.date || "");
@@ -881,15 +919,13 @@ function scrollToNextAfterCurrent() {
   activeDayISO = dISO;
   renderTimeline();
 
-  const key = next.isNote ? `note:${dISO}` : `${next.actId ? "act" : (next.legId ? "leg" : (next.stayId ? "stay" : ""))}:${(next.actId || next.legId || next.stayId || "")}`;
+  const key = makeKey(next);
   __tlLastActualKey = key;
 
-  // If item isn't present due to UI state, just scroll to first item of that day
+  // Scroll to item (fallback to first item of that day)
   if (!__tlScrollToItemByKey(key)) {
-    const first = items.find(it => String(it.date||"") === dISO);
-    const firstKey = first ? (first.isNote ? `note:${dISO}` : `${first.actId ? "act" : (first.legId ? "leg" : (first.stayId ? "stay" : ""))}:${(first.actId || first.legId || first.stayId || "")}`) : "";
-    __tlLastActualKey = firstKey || key;
-    __tlScrollToItemByKey(firstKey);
+    const first = items.find(it => String(it.date || "") === dISO);
+    if (first) __tlScrollToItemByKey(makeKey(first));
   }
 }
 
@@ -2384,7 +2420,12 @@ function renderTimeline() {
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
     const datePart = (it.date === "9999-99-99" ? "Sin fecha" : String(it.date));
     const timePart = (it.time && String(it.time).trim()) ? String(it.time).trim() : "—";
-    const dateLine = `${datePart}  ${timePart}`;
+    const hasTime = (timePart !== "—");
+    const rel = (it.date === "9999-99-99" ? "" : (String(it.date) < today ? "past" : (String(it.date) > today ? "future" : "today")));
+    const timeCls = hasTime
+      ? `tlTimeBadge ${rel === "today" ? "tlTimeToday" : (rel === "future" ? "tlTimeFuture" : (rel === "past" ? "tlTimePast" : ""))}`
+      : "tlTimeBadge tlTimeNone";
+    const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
     // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
     const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
@@ -2473,7 +2514,7 @@ function renderTimeline() {
 
             <div class="min-w-0">
               <div class="font-semibold text-sm truncate">${escapeHtml(it.title)}</div>
-              <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dateLine)}</div>
+              <div class="text-xs text-slate-600 mt-0.5">${dateLineHTML}</div>
             </div>
           </div>
 
