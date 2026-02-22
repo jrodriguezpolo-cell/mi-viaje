@@ -1145,6 +1145,17 @@ function setupAccordion() {
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
       body.classList.toggle("hidden");
+
+    const isNowHidden = body.classList.contains("hidden");
+    if (isNowHidden) {
+      if (key === "legs") __sectionExpanded.legs.clear();
+      if (key === "stays") __sectionExpanded.stays.clear();
+      if (key === "acts") __sectionExpanded.activities.clear();
+    } else {
+      if (key === "legs") renderLegs();
+      if (key === "stays") renderStays();
+      if (key === "acts") renderActivities();
+    }
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
       updateFabVisibility();
@@ -1282,11 +1293,17 @@ function renderLegs() {
     box.scrollTop = prevTop;
   }));
 
-  box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", () => {
+  box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
     __sectionExpanded.legs.delete(id);
-    saveState(); renderTimeline(); calcSummary();
+
+    saveState();
+    renderTimeline();
+    calcSummary();
     renderLegs();
   }));
 
