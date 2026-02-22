@@ -201,9 +201,6 @@ border-radius: 999px;
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
 
-/* disable legacy mode screen */
-#entryScreen{display:none !important;}
-
 
 /* Views scroll container */
 html, body { height: 100%; }
@@ -213,15 +210,6 @@ body { overflow: hidden; }
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
-<!-- Entry Screen (App Mode) -->
-<div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
-
-<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
-<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
-<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
-</div>
-
-
 <!-- Top bar -->
 <header class="safe-t bg-white/90 backdrop-blur border-b border-slate-200" id="appHeader">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -501,120 +489,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-/* ----------------------------- App Mode (planning | travel) ----------------------------- */
-/*
-  Rules:
-  - UI show/hide ONLY via element.style.display (no Tailwind hidden toggles for app mode).
-  - Persist: localStorage key "trip_app_mode"
-*/
-let appMode = "planning"; // "planning" | "travel"
-const LS_APP_MODE = "miviaje.appMode";
-const LS_APP_MODE_LEGACY = "trip_app_mode";
-
-function getSavedAppMode() {
-  try {
-    const v1 = String(localStorage.getItem(LS_APP_MODE) || "").trim();
-    if (v1 === "planning" || v1 === "travel") return v1;
-    const v0 = String(localStorage.getItem(LS_APP_MODE_LEGACY) || "").trim();
-    if (v0 === "planning" || v0 === "travel") return v0;
-    return "";
-  } catch { return ""; }
-}
-
-function persistAppMode() {
-  try { localStorage.setItem(LS_APP_MODE, appMode); } catch {}
-}
-
-function setAppMode(mode, fromInside = false) {
-  const next = (mode === "travel") ? "travel" : "planning";
-  const prev = appMode;
-
-  if (fromInside && prev === "planning" && next === "travel") {
-    const ok = confirm("¿Estás de viaje?");
-    if (!ok) return;
-  }
-
-  appMode = next;
-  persistAppMode();
-
-  // Hide entry overlay once a mode is chosen
-  const entry = document.getElementById("entryScreen");
-  if (entry) entry.style.display = "none";
-
-  applyAppModeUI();
-}
-
-function toggleAppModeFromHeader() {
-  const ok = confirm("¿Quieres cambiar de modo?");
-  if (!ok) return;
-  const entry = document.getElementById("entryScreen");
-  if (entry) entry.style.display = "block";
-}
-
-function applyAppModeUI() {
-  const isTravel = (appMode === "travel");
-
-  // Header label
-  const lbl = document.getElementById("appModeLabel");
-  if (lbl) lbl.textContent = isTravel ? "Viaje" : "Planificación";
-
-  // Scenario bar (MI VIAJE / alternativo / moneda / plegar todo)
-  const curSel = document.getElementById("displayCurrency");
-  const scenarioBar = curSel && curSel.parentElement ? curSel.parentElement.parentElement : null;
-  if (scenarioBar) scenarioBar.style.display = isTravel ? "none" : "";
-
-  // Hide summary aside (already visually hidden by CSS, but remove layout column in travel)
-  const summaryCard = document.getElementById("summary");
-  const aside = summaryCard ? summaryCard.closest("aside") : null;
-  if (aside) aside.style.display = isTravel ? "none" : "";
-
-  // Hide planning sections (UI only) in travel mode
-  const hideAcc = (key, hide) => {
-    const btn = document.querySelector(`[data-acc="${key}"]`);
-    const wrap = btn ? btn.parentElement : null;
-    if (!wrap) return;
-    wrap.style.display = hide ? "none" : "";
-  };
-
-  hideAcc("legs", isTravel);
-  hideAcc("stays", isTravel);
-  hideAcc("meals", isTravel);
-  hideAcc("acts", isTravel);
-  hideAcc("ai", isTravel);
-
-  // Bottom bar: in travel mode keep it out to avoid jumping to hidden sections
-  const bottomNav = document.querySelector("nav.safe-b");
-  if (bottomNav) bottomNav.style.display = isTravel ? "none" : "";
-
-  // In travel mode, ensure Timeline is open
-  if (isTravel) {
-    const body = document.querySelector('[data-acc-body="timeline"]');
-    if (body && body.classList.contains("hidden")) {
-      const btn = document.querySelector('[data-acc="timeline"]');
-      if (btn) btn.click();
-    }
-  }
-}
-
-function initAppMode() {
-  const saved = getSavedAppMode();
-  const entry = document.getElementById("entryScreen");
-  if (saved) {
-    appMode = saved;
-    if (entry) entry.style.display = "none";
-    applyAppModeUI();
-    return;
-  }
-  // No saved mode: show entry overlay
-  if (entry) entry.style.display = "block";
-  // Ensure label reflects default mode while overlay is shown
-  applyAppModeUI();
-}
-/* --------------------------- /App Mode --------------------------- */
-
-
-
-/* ------------------------ Trip name (modal + export/import) ------------------------ */
+/* /* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName";
 
 function getTripName() {
@@ -759,7 +634,7 @@ function syncTopStackHeights() {
   syncMainScrollLayout();
 
 function syncMainScrollLayout() {
-  const root = document.documentElement;
+const root = document.documentElement;
   const cs = getComputedStyle(root);
   const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 0;
   const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
@@ -771,9 +646,14 @@ function syncMainScrollLayout() {
   const mainScroll = document.getElementById("mainScroll");
   if (!mainScroll) return;
 
-  const h = Math.max(100, window.innerHeight - topStackH - bottomNavH);
-  mainScroll.style.height = h + "px";
-  mainScroll.style.marginTop = topStackH + "px";
+  // Fixed scroll container between TopStack and BottomNav (no manual height)
+  mainScroll.style.position = "fixed";
+  mainScroll.style.top = topStackH + "px";
+  mainScroll.style.bottom = bottomNavH + "px";
+  mainScroll.style.left = "0";
+  mainScroll.style.right = "0";
+  mainScroll.style.overflowY = "auto";
+  mainScroll.style.webkitOverflowScrolling = "touch";
 }
 }
 
@@ -781,24 +661,24 @@ function syncMainScrollLayout() {
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
-function scrollToElWithOffset(el, extra = 0) {
-  if (!el) return;
-  const y = el.getBoundingClientRect().top + window.pageYOffset - (getStickyOffset() + (extra || 0));
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+/* ---------------- MainScroll utilities (V89e) ---------------- */
+function getMainScroll(){ return document.getElementById("mainScroll"); }
+
+function scrollMainToTop(){
+  const ms = getMainScroll();
+  if (ms) ms.scrollTop = 0;
 }
 
-function getTopStackOffset() {
-  const cs = getComputedStyle(document.documentElement);
-  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
-  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
-  return headerH + totalsH;
+function scrollMainToEl(el, pad=8){
+  const ms = getMainScroll();
+  if (!ms || !el) return;
+  const msRect = ms.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+  const delta = (elRect.top - msRect.top) - (pad || 0);
+  ms.scrollTop += delta;
 }
 
-function scrollToElTopStack(el, extra = 0) {
-  if (!el) return;
-  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-}
+
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
@@ -865,7 +745,7 @@ function __tlScrollToItemByKey(tlKey) {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
   if (!el) return false;
-  scrollToElWithOffset(el);
+  scrollMainToEl(el);
   return true;
 }
 
@@ -972,7 +852,7 @@ function scrollToTodayTimelineItem() {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
   if (todayEl) {
-    scrollToElWithOffset(todayEl);
+    scrollMainToEl(todayEl);
   } else {
     alert("No hay eventos para hoy.");
   }
@@ -994,7 +874,7 @@ function scrollToNextTimelineItem() {
   });
 
   if (next) {
-    scrollToElWithOffset(next);
+    scrollMainToEl(next);
   } else {
     alert("No hay próximos eventos con fecha a partir de hoy.");
   }
@@ -2051,30 +1931,28 @@ function jumpToItem(kind, id) {
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { view: "legs",  secToggle: "legs" },
-    stay: { view: "stays", secToggle: "stays" },
-    act:  { view: "acts",  secToggle: "activities" }
+    leg:  { view: "legs",  set: "__sectionExpanded.legs" },
+    stay: { view: "stays", set: "__sectionExpanded.stays" },
+    act:  { view: "acts",  set: "__sectionExpanded.activities" }
   };
   const cfg = map[k];
   if (!cfg) return;
 
-  // Switch to the target view
+  // Switch view without collapsing everything, we'll control expansion explicitly
   setView(cfg.view, { fromJump: true });
 
-  // Expand target item within section (v80b accordion)
-  if (k === "leg") { __sectionExpanded.legs.add(String(itemId)); renderLegs(); }
-  else if (k === "stay") { __sectionExpanded.stays.add(String(itemId)); renderStays(); }
-  else if (k === "act") { __sectionExpanded.activities.add(String(itemId)); renderActivities(); }
+  // Policy: entering from "Ir a" => only target item expanded
+  if (k === "leg") { __sectionExpanded.legs.clear(); __sectionExpanded.legs.add(itemId); renderLegs(); }
+  else if (k === "stay") { __sectionExpanded.stays.clear(); __sectionExpanded.stays.add(itemId); renderStays(); }
+  else if (k === "act") { __sectionExpanded.activities.clear(); __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  // After DOM settles, scroll item into view (minimal internal scroll)
-  setTimeout(() => {
+  // After DOM settles, scroll inside mainScroll (no window scroll / no scroll-into-view)
+  requestAnimationFrame(() => {
     const el = document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      try { el.focus({ preventScroll: true }); } catch {}
-    }
-  }, 60);
+    if (el) scrollMainToEl(el, 8);
+  });
 }
+
 
 
 
@@ -2223,7 +2101,7 @@ function openDailyNoteModal(dateKey) {
         } catch {}
         try {
           const sec = document.getElementById("dailyNotesSection");
-          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+          if (sec) scrollMainToEl(sec, 8);
         } catch {}
         try { renderDailyNotes(); } catch {}
         closeModal();
@@ -2339,7 +2217,7 @@ function setTimelineViewMode(mode) {
         const d = (el.getAttribute("data-date") || "").trim();
         if (d === activeDayISO) { first = el; break; }
       }
-      if (first) scrollToElWithOffset(first);
+      if (first) scrollMainToEl(first);
     });
   }
 }
@@ -4041,9 +3919,8 @@ function setView(key, opts){
     else el.classList.add("hidden");
   });
 
-  // Reset scroll of the central scroll container (not window)
-  const ms = document.getElementById("mainScroll");
-  if (ms) ms.scrollTop = 0;
+  // Reset scroll of the central scroll container
+  scrollMainToTop();
 
   // Ensure the view has freshly-rendered content before wiring item accordions
   try{
@@ -4055,7 +3932,7 @@ function setView(key, opts){
   } catch(e){ /* keep app resilient */ }
 
   // Re-wire per-item accordions (delegation; safe to call)
-  try{ setupItemAccordions(); } catch(e){}
+  try{ setupItemAccordionsDelegated(); } catch(e){}
 
   // Keep fixed top stack vars + main scroll layout in sync
   try{ syncTopStackHeights(); } catch(e){}
@@ -4073,7 +3950,7 @@ function setView(key, opts){
 
 
 /* ----------------------- Item accordions (per event) ----------------------- */
-function setupItemAccordions() {
+function setupItemAccordionsDelegated() {
   if (window.__itemAccordionsReady) return;
   window.__itemAccordionsReady = true;
 
@@ -4152,10 +4029,10 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
-    if (fab) fab.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (fab) fab.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else scrollMainToTop(); };
   
     const ca = document.getElementById("collapseAll");
-    if (ca) ca.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (ca) ca.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else scrollMainToTop(); };
   
     // Timeline view controls (Global / Day)
     const _tlG = document.getElementById("tlViewGlobal");
@@ -4170,7 +4047,7 @@ window.addEventListener('DOMContentLoaded', () => {
   
   renderAll();
   try{ syncTopStackHeights(); } catch(e){}
-  try{ setupItemAccordions(); } catch(e){}
+  try{ setupItemAccordionsDelegated(); } catch(e){}
   try{ setView('timeline'); } catch(e){}
 
   // Bottom nav: switch views (no window scroll)
@@ -4200,8 +4077,11 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-  initAppMode();
+
 });
+
+// Ensure top stack heights computed after all resources/layout (iOS-safe)
+window.addEventListener('load', () => { try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
 </script>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
