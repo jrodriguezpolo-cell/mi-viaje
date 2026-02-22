@@ -1156,6 +1156,18 @@ function collapseAllAccordions() {
   document.querySelectorAll("[data-acc-body]").forEach(body => body.classList.add("hidden"));
   document.querySelectorAll("[data-acc] .accIcon").forEach(icon => { icon.textContent = "▾"; });
   updateFabVisibility();
+
+  // v88b: also collapse per-item accordions (legs/stays/activities)
+  try {
+    __sectionExpanded.legs.clear();
+    __sectionExpanded.stays.clear();
+    __sectionExpanded.activities.clear();
+  } catch {}
+
+  // Re-render sections so items visually collapse
+  try { renderLegs(); } catch {}
+  try { renderStays(); } catch {}
+  try { renderActivities(); } catch {}
 }
 
 
@@ -1265,7 +1277,9 @@ function renderLegs() {
     if (!id) return;
     if (__sectionExpanded.legs.has(id)) __sectionExpanded.legs.delete(id);
     else __sectionExpanded.legs.add(id);
+    const prevTop = box.scrollTop;
     renderLegs();
+    box.scrollTop = prevTop;
   }));
 
   box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", () => {
@@ -1273,6 +1287,7 @@ function renderLegs() {
     sc.legs = sc.legs.filter(x => x.id !== id);
     __sectionExpanded.legs.delete(id);
     saveState(); renderTimeline(); calcSummary();
+    renderLegs();
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
@@ -1391,7 +1406,9 @@ function renderStays() {
     if (!id) return;
     if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
     else __sectionExpanded.stays.add(id);
+    const prevTop = box.scrollTop;
     renderStays();
+    box.scrollTop = prevTop;
   }));
 
   box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
@@ -1955,7 +1972,9 @@ function renderActivities() {
     if (!id) return;
     if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
     else __sectionExpanded.activities.add(id);
+    const prevTop = box.scrollTop;
     renderActivities();
+    box.scrollTop = prevTop;
   }));
 
   box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
