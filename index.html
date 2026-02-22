@@ -32,7 +32,7 @@
 
     /* Activities: done/skipped (minimal) */
     .done-item { opacity: 0.55; }
-    .done-text { text-decoration: line-through; }
+    .done-item .done-text, .skipped-item .done-text { text-decoration: line-through; }
     .skipped-item { opacity: 0.55; }
     .skipped-badge { color: #b91c1c; } /* red-700 */
     .auto-badge { color: #64748b; } /* slate-500 */
@@ -200,6 +200,33 @@ border-radius: 999px;
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
+
+
+/* Leg roundtrip badges (v90) */
+.legOutboundBadge{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(37,99,235,0.10);
+  border: 1px solid rgba(37,99,235,0.22);
+  color: #1d4ed8;
+  font-weight: 700;
+}
+.legReturnBadge{
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16,185,129,0.10);
+  border: 1px solid rgba(16,185,129,0.22);
+  color: #047857;
+  font-weight: 700;
+}
+.legOutboundCard{
+  border-color: rgba(37,99,235,0.30) !important;
+}
+.legReturnCard{
+  border-color: rgba(16,185,129,0.30) !important;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -363,12 +390,6 @@ border-radius: 999px;
 <div class="px-5 pb-5 hidden" data-acc-body="legs">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
-<div class="flex items-center gap-2 ml-3">
-  <label class="flex items-center gap-2 text-xs text-slate-600 select-none">
-    <input id="addLegRoundtrip" type="checkbox" class="h-4 w-4">
-    Ida y vuelta
-  </label>
-</div>
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
@@ -1259,15 +1280,27 @@ function legCard(leg) {
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
   const hasNotes = !!(leg.notes && String(leg.notes).trim());
+  const role = leg.directionRole || "";
+  const hasGroup = !!leg.directionGroupId;
+  const roleBadge = hasGroup ? (
+    role === "return"
+      ? `<span class="legReturnBadge">Vuelta</span>`
+      : `<span class="legOutboundBadge">Ida</span>`
+  ) : "";
+  const convertBtn = (!hasGroup) ? `<button class="tap text-xs font-semibold text-blue-700" data-leg-make-rt="${leg.id}">Convertir en ida y vuelta</button>` : "";
+  const roleCardClass = hasGroup ? (role === "return" ? "legReturnCard" : "legOutboundCard") : "";
+  const titleStrikeClass = (st.done || st.skipped) ? "done-text" : "";
 
   return `
-  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""} ${roleCardClass}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${legEmoji(leg.mode || legModeDefault())} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">${legEmoji(leg.mode || legModeDefault())} Transporte · <span class="${titleStrikeClass}">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${roleBadge}
+        ${convertBtn}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -1353,6 +1386,49 @@ function renderLegs() {
     renderLegs();
   }));
 
+  // v90: Convertir en ida y vuelta (per item)
+  box.querySelectorAll("[data-leg-make-rt]").forEach(btn => btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = btn.getAttribute("data-leg-make-rt");
+    if (!id) return;
+    const leg = sc.legs.find(x => String(x.id) === String(id));
+    if (!leg) return;
+    if (leg.directionGroupId) return;
+
+    const groupId = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : nowId();
+    leg.directionGroupId = groupId;
+    leg.directionRole = "outbound";
+
+    const returnId = nowId();
+    const ret = {
+      id: returnId,
+      mode: leg.mode || legModeDefault(),
+      from: leg.to || "",
+      to: leg.from || "",
+      fromPlace: leg.toPlace || "",
+      toPlace: leg.fromPlace || "",
+      date: "",
+      time: "",
+      cost: 0,
+      tzFrom: null,
+      tzTo: null,
+      directionGroupId: groupId,
+      directionRole: "return"
+    };
+
+    const idxLeg = sc.legs.findIndex(x => String(x.id) === String(id));
+    sc.legs.splice(idxLeg + 1, 0, ret);
+
+    __sectionExpanded.legs.add(String(id));
+    __sectionExpanded.legs.add(String(returnId));
+
+    saveState();
+    renderLegs();
+    renderTimeline();
+    calcSummary();
+  }));
+
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
     const id = inp.getAttribute("data-leg-from");
     const leg = sc.legs.find(x => x.id === id);
@@ -1430,15 +1506,18 @@ function stayCard(stay) {
   const name = (stay.name||"").trim() || "—";
   const dt = `${(stay.date||"").trim() || "—"} ${(stay.time||"").trim() || "—"}`;
   const hasNotes = !!(stay.notes && String(stay.notes).trim());
+  const titleStrikeClass = (st.done || st.skipped) ? "done-text" : "";
 
   return `
   <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
+        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="${titleStrikeClass}">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${roleBadge}
+        ${convertBtn}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -1584,7 +1663,33 @@ function isPast(dateKey) {
 }
 function isFuture(dateKey) {
   return cmpDate(String(dateKey || ""), todayKey()) > 0;
-}/* Timeline category filter (in-memory, no persistence) */
+}
+
+// Parse robusto para Safari: YYYY-MM-DD + HH:MM -> Date (local)
+function parseISODateTime(dateStr, timeStr, { endOfDayIfNoTime = false } = {}) {
+  const d = String(dateStr || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  let hh = 0, mm = 0;
+  const t = String(timeStr || "").trim();
+  if (t && /^\d{2}:\d{2}$/.test(t)) {
+    hh = parseInt(t.slice(0,2), 10);
+    mm = parseInt(t.slice(3,5), 10);
+  } else if (endOfDayIfNoTime) {
+    hh = 23; mm = 59;
+  }
+  const y = parseInt(d.slice(0,4), 10);
+  const mo = parseInt(d.slice(5,7), 10) - 1;
+  const da = parseInt(d.slice(8,10), 10);
+  const dt = new Date(y, mo, da, hh, mm, 0, 0);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function isPastDateTime(dateStr, timeStr) {
+  const dt = parseISODateTime(dateStr, timeStr, { endOfDayIfNoTime: true });
+  if (!dt) return false;
+  return dt.getTime() < Date.now();
+}
+/* Timeline category filter (in-memory, no persistence) */
 // Timeline view mode (UI only, not persisted)
 let timelineViewMode = "global"; // "global" | "day"
 let activeDayISO = ""; // used only in day mode
@@ -1849,10 +1954,12 @@ function handleActDoneToggle(id, targetChecked, el) {
 /* ---------------- Legs/Stays: smart done (v32+) ---------------- */
 // Estado visual genérico para elementos con fecha (legs) o sin fecha (stays)
 function computeDoneStateGeneric(item, dateKey) {
-  const dk = String(dateKey || "");
+  const dk = String((item && item.date) || dateKey || "");
+  const tk = String((item && item.time) || "");
   if (item?.doneManual === true) return { done: true, auto: false, skipped: false };
   if (item?.skipped === true) return { done: false, auto: false, skipped: true };
-  if (dk && isPast(dk)) return { done: true, auto: true, skipped: false };
+  // Auto-asumido SOLO si el evento ya está en el pasado real (fecha + hora; si no hay hora => fin del día)
+  if (dk && isPastDateTime(dk, tk)) return { done: true, auto: true, skipped: false };
   return { done: false, auto: false, skipped: false };
 }
 
@@ -2005,6 +2112,8 @@ function actCard(act) {
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${roleBadge}
+        ${convertBtn}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -4026,60 +4135,14 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
-  const isRoundTrip = !!($("addLegRoundtrip") && $("addLegRoundtrip").checked);
   const mode = legModeDefault();
-
-  if (!isRoundTrip) {
-    const id = nowId();
-    sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-    __sectionExpanded.legs.add(id);
-    saveState(); renderLegs(); renderTimeline(); calcSummary();
-    scrollAccordionIntoView("legs");
-    return;
-  }
-
-  // Ida y vuelta: crear 2 legs vinculados (outbound + return)
-  const groupId = newDirectionGroupId();
-  const outId = nowId();
-  const retId = nowId();
-
-  const outbound = {
-    id: outId,
-    mode,
-    from:"", to:"",
-    fromPlace:"", toPlace:"",
-    date:"", time:"",
-    cost:0,
-    tzFrom:null, tzTo:null,
-    directionGroupId: groupId,
-    directionRole: "outbound"
-  };
-
-  const ret = {
-    id: retId,
-    mode,
-    // invertido (vacíos al inicio; se mantendrá coherente si el usuario rellena después)
-    from: outbound.to,
-    to: outbound.from,
-    fromPlace: outbound.toPlace,
-    toPlace: outbound.fromPlace,
-    date:"", time:"",
-    cost:0,
-    tzFrom:null, tzTo:null,
-    directionGroupId: groupId,
-    directionRole: "return"
-  };
-
-  // Insertar: outbound arriba, return justo debajo
-  sc.legs.unshift(ret);
-  sc.legs.unshift(outbound);
-
-  __sectionExpanded.legs.add(outId);
-  __sectionExpanded.legs.add(retId);
-
+  const id = nowId();
+  sc.legs.unshift({ id, mode, from:"", to:"", fromPlace:"", toPlace:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   scrollAccordionIntoView("legs");
 });
+
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
