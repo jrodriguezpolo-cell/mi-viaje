@@ -351,6 +351,7 @@ border-radius: 999px;
 <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
 <button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
 </div>
+<div id="timelineNextHint" class="text-xs text-slate-500 mt-1"></div>
 </div>
 <div class="mb-3 -mx-1">
 <div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
@@ -2670,6 +2671,22 @@ function renderTimeline() {
   const filteredItems = getFilteredItems(items);
   __tlLastFilteredItems = filteredItems;
 
+  // Próximo (preview) on first render: show explicit UI when no future events remain
+  try {
+    const hintEl = document.getElementById("timelineNextHint");
+    if (hintEl) {
+      const now = new Date();
+      const next = (filteredItems || []).find(it => {
+        if (it && it.isNote) return false;
+        const d = String(it?.date || "");
+        if (!d || d === "9999-99-99") return false;
+        const dt = parseISODateTime(d, it?.time, { endOfDayIfNoTime: true });
+        return dt && dt.getTime() >= now.getTime();
+      });
+      hintEl.textContent = next ? "" : "No hay próximos eventos";
+    }
+  } catch (e) { /* no-op */ }
+
   // Days available in current filtered list (used by Day view navigation)
   const days = getTimelineDays(filteredItems);
   __tlDays = days;
@@ -4383,6 +4400,8 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
+  timelineViewMode = "global";
+  activeDayISO = "";
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
