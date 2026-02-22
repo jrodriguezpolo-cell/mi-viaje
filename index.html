@@ -2660,6 +2660,7 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
+  console.log("renderTimeline legs/stays/acts lens:", sc?.legs?.length, sc?.stays?.length, sc?.activities?.length);
   if (!box) return;
 
   if (!Array.isArray(sc.legs)) sc.legs = [];
@@ -2752,7 +2753,7 @@ function renderTimeline() {
   }
 
   if (!visibleItems.length) {
-    box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
+    box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para mostrar.</div>`;
     renderDailyNotes();
     return;
   }
@@ -4434,9 +4435,19 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   normalizeState();
-  setupAccordion();
+  console.log("BOOT scenarios:", Object.keys(state?.scenarios || {}));
+  console.log("BOOT currentScenarioId:", state?.currentScenarioId);
+  const scBoot = curScenario?.();
+  console.log("BOOT legs/stays/acts lens:", scBoot?.legs?.length, scBoot?.stays?.length, scBoot?.activities?.length);
+  console.log("BOOT tlView initial:", window.timelineViewMode || window.__tlView || "(unknown)");
+
+  // Hard reset timeline boot state (ignore any persisted view mode)
   timelineViewMode = "global";
-  activeDayISO = "";
+  __tlLastActualKey = "";
+  activeDayISO = null;
+  __tlLastFilteredItems = [];
+
+  setupAccordion();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
