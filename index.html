@@ -253,7 +253,7 @@ border-radius: 999px;
 </div>
 <div id="topStackSpacer"></div>
 <!-- Main -->
-<main class="max-w-6xl mx-auto px-4 py-6 pb-24">
+<main class="max-w-6xl mx-auto px-4 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -4023,6 +4023,21 @@ function setView(key){
     else el.classList.add("hidden");
   });
 
+  // Ensure the view has freshly-rendered content before wiring item accordions
+  try{
+    if (k === "timeline") renderTimeline();
+    else if (k === "legs") renderLegs();
+    else if (k === "stays") renderStays();
+    else if (k === "acts") renderActivities();
+    else if (k === "meals") renderMeals();
+  } catch(e){ /* keep app resilient */ }
+
+  // Re-wire per-item accordions (delegation; safe to call)
+  try{ setupItemAccordions(); } catch(e){}
+
+  // Keep fixed top stack spacer vars in sync (header/totals height may vary)
+  try{ syncTopStackHeights(); } catch(e){}
+
   // Bottom nav active state
   document.querySelectorAll('[data-jump]').forEach(btn=>{
     const bk = btn.getAttribute("data-jump");
@@ -4030,6 +4045,9 @@ function setView(key){
     btn.classList.toggle("font-bold", bk === k);
     btn.setAttribute("aria-current", bk === k ? "page" : "false");
   });
+
+  // UX: always start at top of the view (no offsets)
+  try{ window.scrollTo({ top: 0, behavior: "auto" }); } catch(e){}
 }
 
 
@@ -4110,7 +4128,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // setupAccordion disabled in view-based nav
   // setupAccordion();
   syncHeaderHeightVar();
-  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
+  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
     if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -4130,6 +4148,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  try{ syncTopStackHeights(); } catch(e){}
+  try{ setupItemAccordions(); } catch(e){}
+  try{ setView('timeline'); } catch(e){}
+
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
     const sentinel = document.getElementById("timelineControlsSentinel");
