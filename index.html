@@ -200,16 +200,15 @@ border-radius: 999px;
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
+
+/* disable legacy mode screen */
+#entryScreen{display:none !important;}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Entry Screen (App Mode) -->
-<div id="entryScreen" style="display:none; position:fixed; inset:0; z-index:9999; background:#ffffff;">
-<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px;">
-<div style="text-align:center; max-width:520px;">
-<div style="font-weight:800; font-size:22px; line-height:1.2; margin-bottom:6px;">¿Cómo quieres usar MI VIAJE?</div>
 <div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
 </div>
 <div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
@@ -237,7 +236,6 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
-<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnAppModeSwitch" onclick="toggleAppModeFromHeader()">Modo: <span id="appModeLabel">Planificación</span> ↔</button>
 </div>
 </div>
 </header>
@@ -310,7 +308,7 @@ border-radius: 999px;
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5 hidden" data-acc-body="timeline" style="overflow: visible;">
+<div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
   <div id="timelineControlsRow">
 <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
 <div class="flex items-center gap-2">
@@ -366,7 +364,7 @@ border-radius: 999px;
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5 hidden" data-acc-body="legs">
+<div class="px-5 pb-5" data-acc-body="legs">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
@@ -388,7 +386,7 @@ border-radius: 999px;
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5 hidden" data-acc-body="stays">
+<div class="px-5 pb-5" data-acc-body="stays">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
 </div>
@@ -410,7 +408,7 @@ border-radius: 999px;
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5 hidden" data-acc-body="meals">
+<div class="px-5 pb-5" data-acc-body="meals">
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 <div>
 <label class="text-xs text-slate-600">Gasto diario x persona</label>
@@ -447,7 +445,7 @@ border-radius: 999px;
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5 hidden" data-acc-body="acts">
+<div class="px-5 pb-5" data-acc-body="acts">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
 </div>
@@ -1155,6 +1153,9 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
+
+  try { setupItemAccordions(); } catch {}
+  setView("timeline");
   // Default view
   setView("timeline");
   syncStickyTotalsHeightVar();
@@ -1303,19 +1304,7 @@ function renderLegs() {
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
-  // v80b: accordion per item (legs)
-  box.querySelectorAll("[data-sec-toggle=\"legs\"]").forEach(h => h.addEventListener("click", (e) => {
-    if (e.target.closest("button, input, textarea, select, a, label")) return;
-    const id = h.getAttribute("data-sec-id");
-    if (!id) return;
-    if (__sectionExpanded.legs.has(id)) __sectionExpanded.legs.delete(id);
-    else __sectionExpanded.legs.add(id);
-    const prevTop = box.scrollTop;
-    renderLegs();
-    box.scrollTop = prevTop;
-  }));
-
-  box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", (e) => {
+box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -1438,19 +1427,7 @@ function renderStays() {
   sortByDateTimeEmptyFirst(sc.stays);
   box.innerHTML = sc.stays.length ? sc.stays.map(stayCard).join("") : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
 
-  // v80b: accordion per item (stays)
-  box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
-    if (e.target.closest("button, input, textarea, select, a, label")) return;
-    const id = h.getAttribute("data-sec-id");
-    if (!id) return;
-    if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
-    else __sectionExpanded.stays.add(id);
-    const prevTop = box.scrollTop;
-    renderStays();
-    box.scrollTop = prevTop;
-  }));
-
-  box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
+box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
     __sectionExpanded.stays.delete(id);
@@ -2004,19 +1981,7 @@ function renderActivities() {
   sortByDateTimeEmptyFirst(sc.activities);
   box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
-  // v80b: accordion per item (activities)
-  box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
-    if (e.target.closest("button, input, textarea, select, a, label")) return;
-    const id = h.getAttribute("data-sec-id");
-    if (!id) return;
-    if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
-    else __sectionExpanded.activities.add(id);
-    const prevTop = box.scrollTop;
-    renderActivities();
-    box.scrollTop = prevTop;
-  }));
-
-  box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
+box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
     __sectionExpanded.activities.delete(id);
@@ -4065,6 +4030,35 @@ function setView(key){
     btn.classList.toggle("font-bold", bk === k);
     btn.setAttribute("aria-current", bk === k ? "page" : "false");
   });
+}
+
+
+/* ----------------------- Item accordions (per event) ----------------------- */
+function setupItemAccordions() {
+  if (window.__itemAccordionsReady) return;
+  window.__itemAccordionsReady = true;
+
+  const bind = (listId, key, setRef, rerender) => {
+    const box = document.getElementById(listId);
+    if (!box) return;
+    box.addEventListener("click", (e) => {
+      const header = e.target.closest(`[data-sec-toggle="${key}"]`);
+      if (!header || !box.contains(header)) return;
+      if (e.target.closest("button, input, textarea, select, a, label")) return;
+      const id = header.getAttribute("data-sec-id");
+      if (!id) return;
+      if (setRef.has(id)) setRef.delete(id);
+      else setRef.add(id);
+
+      const prevTop = box.scrollTop;
+      rerender();
+      box.scrollTop = prevTop;
+    });
+  };
+
+  bind("legsList", "legs", __sectionExpanded.legs, () => renderLegs());
+  bind("staysList", "stays", __sectionExpanded.stays, () => renderStays());
+  bind("actsList", "activities", __sectionExpanded.activities, () => renderActivities());
 }
 
 /* Bottom nav: switch views (no scroll) */
