@@ -646,29 +646,46 @@ function getStickyOffset() {
 
 
 
+
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
   const spacer = document.getElementById("topStackSpacer");
+  const dock = document.getElementById("timelineControlsDock");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
 
+  // Timeline controls height only when visible (timeline view)
+  const dockVisible = !!(dock && !dock.classList.contains("hidden"));
+  const dockH = dockVisible ? dock.getBoundingClientRect().height : 0;
+
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
+  root.style.setProperty("--timeline-controls-h", dockH + "px");
 
+  // Spacer not used in view-based layout; keep it zeroed if present
   if (spacer) spacer.style.height = "0px";
 
   syncMainScrollLayout();
+}
 
 function syncMainScrollLayout() {
-const root = document.documentElement;
+  const root = document.documentElement;
   const cs = getComputedStyle(root);
   const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 0;
   const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
-  const dockH = parseFloat(cs.getPropertyValue("--timeline-controls-h")) || 0;
-  const topStackH = headerH + totalsH + dockH;
+
+  const view = String(window.__activeView || "timeline");
+  const dock = document.getElementById("timelineControlsDock");
+  const dockVisible = (view === "timeline") && dock && !dock.classList.contains("hidden");
+  const dockH = dockVisible ? (dock.getBoundingClientRect().height || 0) : 0;
+
+  // Keep the CSS var honest (helps iOS layout + debugging)
+  root.style.setProperty("--timeline-controls-h", dockH + "px");
+
+  const top = headerH + totalsH + (view === "timeline" ? dockH : 0);
 
   const bottomNav = document.getElementById("bottomNav");
   const bottomNavH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
@@ -676,16 +693,15 @@ const root = document.documentElement;
   const mainScroll = document.getElementById("mainScroll");
   if (!mainScroll) return;
 
-  // Fixed scroll container between TopStack and BottomNav (no manual height)
   mainScroll.style.position = "fixed";
-  mainScroll.style.top = topStackH + "px";
+  mainScroll.style.top = top + "px";
   mainScroll.style.bottom = bottomNavH + "px";
   mainScroll.style.left = "0";
   mainScroll.style.right = "0";
   mainScroll.style.overflowY = "auto";
   mainScroll.style.webkitOverflowScrolling = "touch";
 }
-}
+
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
@@ -3970,12 +3986,22 @@ function setView(key, opts){
   if (dock) {
     if (k === "timeline") dock.classList.remove("hidden");
     else dock.classList.add("hidden");
+  
+
+  // Update active view early for layout calculations
+  window.__activeView = k;
+}
+
+  // Recalculate layout after view switch (top depends on active view)
+  try{ syncMainScrollLayout(); } catch(e){}
+
+  // Reset scroll of the central scroll container (double pass for iOS)
+  const ms = getMainScroll();
+  if (ms) {
+    ms.scrollTop = 0;
+    requestAnimationFrame(() => { ms.scrollTop = 0; });
   }
-
-  // Reset scroll of the central scroll container
-  scrollMainToTop();
-
-  // Ensure the view has freshly-rendered content before wiring item accordions
+// Ensure the view has freshly-rendered content before wiring item accordions
   try{
     if (k === "timeline") renderTimeline();
     else if (k === "legs") renderLegs();
@@ -4004,8 +4030,6 @@ function setView(key, opts){
     btn.classList.toggle("font-bold", bk === k);
     btn.setAttribute("aria-current", bk === k ? "page" : "false");
   });
-
-  window.__activeView = k;
 }
 
 
