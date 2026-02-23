@@ -120,16 +120,6 @@ border-radius: 999px;
       -webkit-tap-highlight-color: transparent;
     }
     #fabCollapseAll:active{ transform: translateY(1px); }
-
-    #stickyTotalBar{
-      position: fixed;
-      left: 0;
-      right: 0;
-      top: 0; /* set by JS */
-      z-index: 950;
-    }
-
-
     /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
     #summary, #summaryDetail { display: none !important; }
     #stickySummaryDetailInner .row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
@@ -163,8 +153,8 @@ border-radius: 999px;
 
 /* Timeline controls sticky (single row, no clone) */
 #timelineControlsRow{
-  position: relative;
-  top: 0;
+  position: sticky;
+  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
   z-index: 60;
   background: rgba(255,255,255,0.97);
   backdrop-filter: blur(8px);
@@ -172,18 +162,6 @@ border-radius: 999px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
-
-
-/* --- v78: Fixed header + fixed totals + spacer --- */
-#appHeader{
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-}
-
-
 /* Timeline time badges (v88) */
 .tlTimeBadge{
   display:inline-block;
@@ -201,17 +179,8 @@ border-radius: 999px;
 
 
 
-/* Views scroll container */
-html, body { height: 100%; }
-body { overflow: hidden; }
-
-/* Timeline controls dock (fixed under totals, visible only in timeline view) */
-#timelineControlsDock{
-  position: fixed;
-  left: 0; right: 0;
-  top: 0; /* set by JS */
-  z-index: 940;
-}
+/* View navigation: avoid sticky topStack covering targets */
+[data-sec-toggle], #timelineList .timelineItem { scroll-margin-top: 110px; }
 
 </style>
 </head>
@@ -219,7 +188,8 @@ body { overflow: hidden; }
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Top bar -->
-<header class="safe-t bg-white/90 backdrop-blur border-b border-slate-200" id="appHeader">
+<div id="topStack" class="sticky top-0 z-[1000]">
+<header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
@@ -252,40 +222,14 @@ body { overflow: hidden; }
 </div>
 </div>
 </div>
-<div id="timelineControlsDock" class="hidden bg-white/95 backdrop-blur border-b border-slate-200">
-  <div class="max-w-6xl mx-auto px-4 py-2">
-<div id="timelineControlsRow">
-<div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-<div class="flex items-center gap-2">
-<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
-<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" id="tlViewDay">Día</button>
 </div>
-<div class="hidden flex items-center gap-2" id="timelineDayNav">
-<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayPrev">←</button>
-<div class="text-sm font-semibold text-slate-700" id="tlDayLabel">—</div>
-<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayNext">→</button>
-</div>
-<div class="flex gap-2 justify-end" id="timelineGlobalNav">
-<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
-<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
-</div>
-</div>
-<div class="mb-3 -mx-1">
-<div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
-<!-- chips injected by JS -->
-</div>
-</div>
-</div>
-  </div>
-</div>
-
 <!-- Main -->
-<div class="overflow-y-auto ios-scroll" id="mainScroll"><main class="max-w-6xl mx-auto px-4 pb-24">
+<main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
-<div class="inline-flex bg-white border border-slate-200 rounded-2xl p-0.5">
-<button class="tap px-3 py-1.5 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
-<button class="tap px-3 py-1.5 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
+<div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
+<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
+<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 </div>
 <div class="flex items-center gap-2">
@@ -323,7 +267,8 @@ body { overflow: hidden; }
 </aside>
 <section class="lg:col-span-8 space-y-4">
 <!-- TIMELINE -->
-<div class="view active" id="view-timeline">
+
+<div id="view-timeline">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
 <div class="flex items-center gap-3">
@@ -334,8 +279,31 @@ body { overflow: hidden; }
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-<div class="space-y-3" id="timelineList"></div>
+<div class="px-5 pb-5 hidden" data-acc-body="timeline" style="overflow: visible;">
+  <div id="timelineControlsRow">
+<div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
+<div class="flex items-center gap-2">
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
+<button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-inactive" id="tlViewDay">Día</button>
+</div>
+<div class="hidden flex items-center gap-2" id="timelineDayNav">
+<button aria-label="Día anterior" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayPrev">←</button>
+<div class="text-sm font-semibold text-slate-700" id="tlDayLabel">—</div>
+<button aria-label="Día siguiente" class="tap px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="tlDayNext">→</button>
+</div>
+<div class="flex gap-2 justify-end" id="timelineGlobalNav">
+<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
+<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
+</div>
+</div>
+<div class="mb-3 -mx-1">
+<div class="flex gap-2 overflow-x-auto no-scrollbar px-1 py-1" id="timelineFilterChips">
+<!-- chips injected by JS -->
+</div>
+</div>
+  </div>
+
+  <div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
 <div class="flex items-center gap-3">
@@ -351,12 +319,13 @@ body { overflow: hidden; }
 </div>
 </div>
 </div>
-</div>
-</div>
+</div></div>
+
+<div id="view-legs" class="hidden">
+
 <!-- LOGISTICA -->
-<div class="view hidden" id="view-legs">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs" id="legsHeader">
+<button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
 <div class="text-left">
@@ -365,18 +334,19 @@ body { overflow: hidden; }
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5" data-acc-body="legs">
+<div class="px-5 pb-5 hidden" data-acc-body="legs">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
-</div>
-</div>
+</div></div>
+
+<div id="view-stays" class="hidden">
+
 <!-- ALOJAMIENTO -->
-<div class="view hidden" id="view-stays">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays" id="staysHeader">
+<button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
 <div class="text-left">
@@ -385,16 +355,17 @@ body { overflow: hidden; }
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5" data-acc-body="stays">
+<div class="px-5 pb-5 hidden" data-acc-body="stays">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
 </div>
 <div class="space-y-3" id="staysList"></div>
 </div>
-</div>
-</div>
+</div></div>
+
+<div id="view-meals" class="hidden">
+
 <!-- COMIDAS -->
-<div class="view hidden" id="view-meals">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
 <div class="flex items-center gap-3">
@@ -405,7 +376,7 @@ body { overflow: hidden; }
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5" data-acc-body="meals">
+<div class="px-5 pb-5 hidden" data-acc-body="meals">
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 <div>
 <label class="text-xs text-slate-600">Gasto diario x persona</label>
@@ -426,12 +397,13 @@ body { overflow: hidden; }
 <span class="text-slate-500" id="mealCur">EUR</span>
 </div>
 </div>
-</div>
-</div>
+</div></div>
+
+<div id="view-acts" class="hidden">
+
 <!-- ACTIVIDADES -->
-<div class="view hidden" id="view-acts">
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts" id="actsHeader">
+<button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
@@ -440,12 +412,11 @@ body { overflow: hidden; }
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-5 pb-5" data-acc-body="acts">
+<div class="px-5 pb-5 hidden" data-acc-body="acts">
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
 </div>
 <div class="space-y-3" id="actsList"></div>
-</div>
 </div>
 </div>
 <!-- IA -->
@@ -470,17 +441,18 @@ body { overflow: hidden; }
 <div class="mt-4 space-y-4" id="aiResults"></div>
 </div>
 </div>
+</div>
+
 </section>
 <!-- Summary -->
 </div>
-</main></div>
+</main>
 <!-- Bottom bar for mobile -->
-<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200" id="bottomNav">
+<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="legs">🛫<div>Transporte</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="stays">🏨<div>Alojamiento</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
 <!-- Modals -->
@@ -501,7 +473,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-/* /* ------------------------ Trip name (modal + export/import) ------------------------ */
+/* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName";
 
 function getTripName() {
@@ -604,83 +576,11 @@ function todayYMD() {
 
 
 
-function getStickyOffset() {
-  // Used for "scroll to item" adjustments
-  let offset = 0;
-  try { offset = computeTopStackHeight(); } catch(e) {}
-  offset += 12; // margin
-  return offset;
-}
 
 
 
 
-function computeTopStackHeight() {
-  const header = document.getElementById("appHeader");
-  const totals = document.getElementById("stickyTotalBar");
-  const timelineControls = document.getElementById("timelineControlsRow");
-
-  let h = 0;
-  if (header) h += header.offsetHeight;
-  if (totals) h += totals.offsetHeight;
-
-  const isTimeline = currentView === "timeline";
-  if (isTimeline && timelineControls && timelineControls.offsetParent !== null) {
-    h += timelineControls.offsetHeight;
-  }
-  return h;
-}
-
-function syncMainScrollLayout() {
-  const ms = document.getElementById("mainScroll");
-  if (!ms) return;
-
-  const header = document.getElementById("appHeader");
-  const totals = document.getElementById("stickyTotalBar");
-  const dock = document.getElementById("timelineControlsDock");
-  const bottomNav = document.querySelector("nav");
-
-  const headerH = header ? header.offsetHeight : 0;
-  const totalsH = totals ? totals.offsetHeight : 0;
-
-  // Ensure fixed stack elements sit deterministically
-  if (totals) totals.style.top = headerH + "px";
-  if (dock) dock.style.top = (headerH + totalsH) + "px";
-
-  const top = computeTopStackHeight();
-  const bottom = bottomNav ? bottomNav.offsetHeight : 0;
-
-  ms.style.position = "fixed";
-  ms.style.top = top + "px";
-  ms.style.bottom = bottom + "px";
-  ms.style.left = "0";
-  ms.style.right = "0";
-  ms.style.overflowY = "auto";
-  ms.style.webkitOverflowScrolling = "touch";
-}
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
-window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
-window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
-
-/* ---------------- MainScroll utilities (V89e) ---------------- */
-function getMainScroll(){ return document.getElementById("mainScroll"); }
-
-function scrollMainToTop(){
-  const ms = getMainScroll();
-  if (ms) ms.scrollTop = 0;
-}
-
-function scrollMainToEl(el, pad=8){
-  const ms = getMainScroll();
-  if (!ms || !el) return;
-  const msRect = ms.getBoundingClientRect();
-  const elRect = el.getBoundingClientRect();
-  const delta = (elRect.top - msRect.top) - (pad || 0);
-  ms.scrollTop += delta;
-}
-
-
-
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
 function __tlNowMinutes() {
@@ -746,7 +646,7 @@ function __tlScrollToItemByKey(tlKey) {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
   if (!el) return false;
-  scrollMainToEl(el);
+  scrollToElWithOffset(el);
   return true;
 }
 
@@ -853,7 +753,7 @@ function scrollToTodayTimelineItem() {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
   if (todayEl) {
-    scrollMainToEl(todayEl);
+    scrollToElWithOffset(todayEl);
   } else {
     alert("No hay eventos para hoy.");
   }
@@ -875,7 +775,7 @@ function scrollToNextTimelineItem() {
   });
 
   if (next) {
-    scrollMainToEl(next);
+    scrollToElWithOffset(next);
   } else {
     alert("No hay próximos eventos con fecha a partir de hoy.");
   }
@@ -906,8 +806,6 @@ const __sectionExpanded = {
   stays: new Set(),
   activities: new Set()
 };
-
-
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
 /* --------------------------- Read-only mode -------------------------- */
@@ -1050,7 +948,8 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
-}
+  syncStickyTotalsHeightVar();
+  }
 
 /* ----------------------------- Accordion ----------------------------- */
 function setupAccordion() {
@@ -1195,13 +1094,25 @@ function renderLegs() {
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
-box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", (e) => {
+  // v80b: accordion per item (legs)
+  box.querySelectorAll("[data-sec-toggle=\"legs\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.legs.has(id)) __sectionExpanded.legs.delete(id);
+    else __sectionExpanded.legs.add(id);
+    const prevTop = box.scrollTop;
+    renderLegs();
+    box.scrollTop = prevTop;
+  }));
+
+  box.querySelectorAll("[data-leg-del]").forEach(b => b.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     const id = b.getAttribute("data-leg-del");
     sc.legs = sc.legs.filter(x => x.id !== id);
-    __sectionExpanded.legs.delete(String(id));
+    __sectionExpanded.legs.delete(id);
 
     saveState();
     renderTimeline();
@@ -1318,10 +1229,22 @@ function renderStays() {
   sortByDateTimeEmptyFirst(sc.stays);
   box.innerHTML = sc.stays.length ? sc.stays.map(stayCard).join("") : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
 
-box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
+  // v80b: accordion per item (stays)
+  box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
+    else __sectionExpanded.stays.add(id);
+    const prevTop = box.scrollTop;
+    renderStays();
+    box.scrollTop = prevTop;
+  }));
+
+  box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
-    __sectionExpanded.stays.delete(String(id));
+    __sectionExpanded.stays.delete(id);
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
@@ -1872,10 +1795,22 @@ function renderActivities() {
   sortByDateTimeEmptyFirst(sc.activities);
   box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
-box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
+  // v80b: accordion per item (activities)
+  box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
+    if (!id) return;
+    if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
+    else __sectionExpanded.activities.add(id);
+    const prevTop = box.scrollTop;
+    renderActivities();
+    box.scrollTop = prevTop;
+  }));
+
+  box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
-    __sectionExpanded.activities.delete(String(id));
+    __sectionExpanded.activities.delete(id);
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
@@ -1928,36 +1863,41 @@ function scrollAccordionBodyToTop(key) {
 }
 
 
+/* ---------------- Timeline: jump to item (views) ---------------- */
 function jumpToItem(kind, id) {
   const k = String(kind || "");
   const itemId = String(id || "");
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { view: "legs",  set: "__sectionExpanded.legs" },
-    stay: { view: "stays", set: "__sectionExpanded.stays" },
-    act:  { view: "acts",  set: "__sectionExpanded.activities" }
+    leg:  { view: "legs",  secSet: "__sectionExpanded.legs",  render: "renderLegs",  sel: `[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]` },
+    stay: { view: "stays", secSet: "__sectionExpanded.stays", render: "renderStays", sel: `[data-sec-toggle="stays"][data-sec-id="${CSS.escape(itemId)}"]` },
+    act:  { view: "acts",  secSet: "__sectionExpanded.activities", render: "renderActivities", sel: `[data-sec-toggle="activities"][data-sec-id="${CSS.escape(itemId)}"]` }
   };
   const cfg = map[k];
   if (!cfg) return;
 
-  // Switch view without collapsing everything, we'll control expansion explicitly
+  // 1) Switch to the correct view (no offsets, natural scroll)
   setView(cfg.view, { fromJump: true });
 
-  // Policy: entering from "Ir a" => only target item expanded
-  if (k === "leg") { __sectionExpanded.legs.clear(); __sectionExpanded.legs.add(itemId); renderLegs(); }
-  else if (k === "stay") { __sectionExpanded.stays.clear(); __sectionExpanded.stays.add(itemId); renderStays(); }
-  else if (k === "act") { __sectionExpanded.activities.clear(); __sectionExpanded.activities.add(itemId); renderActivities(); }
+  // 2) Expand the target item using existing per-item accordion state
+  if (k === "leg") __sectionExpanded.legs.add(itemId);
+  else if (k === "stay") __sectionExpanded.stays.add(itemId);
+  else if (k === "act") __sectionExpanded.activities.add(itemId);
 
-  // After DOM settles, scroll inside mainScroll (no window scroll / no scroll-into-view)
+  // 3) Re-render that section so the item exists in DOM
+  try {
+    if (k === "leg") renderLegs();
+    else if (k === "stay") renderStays();
+    else if (k === "act") renderActivities();
+  } catch {}
+
+  // 4) Scroll item into view (allowed). Sticky topStack may cover a bit; fixed via CSS scroll-margin-top.
   requestAnimationFrame(() => {
-    const el = document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
-    if (el) scrollMainToEl(el, 8);
+    const el = document.querySelector(cfg.sel);
+    if (el) el.scrollIntoView({ block: "start", behavior: "auto" });
   });
 }
-
-
-
 
 
 /* ---------------- Item notes (timeline CRUD) ---------------- */
@@ -2104,7 +2044,7 @@ function openDailyNoteModal(dateKey) {
         } catch {}
         try {
           const sec = document.getElementById("dailyNotesSection");
-          if (sec) scrollMainToEl(sec, 8);
+          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch {}
         try { renderDailyNotes(); } catch {}
         closeModal();
@@ -2220,7 +2160,7 @@ function setTimelineViewMode(mode) {
         const d = (el.getAttribute("data-date") || "").trim();
         if (d === activeDayISO) { first = el; break; }
       }
-      if (first) scrollMainToEl(first);
+      if (first) scrollToElWithOffset(first);
     });
   }
 }
@@ -3825,7 +3765,7 @@ $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
-  __sectionExpanded.legs.add(String(id));
+  __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("legs");
 });
@@ -3833,7 +3773,7 @@ $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
-  __sectionExpanded.stays.add(String(id));
+  __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("stays");
 });
@@ -3841,7 +3781,7 @@ $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
-  __sectionExpanded.activities.add(String(id));
+  __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   scrollAccordionBodyToTop("acts");
 });
@@ -3900,159 +3840,84 @@ $("btnCompare").addEventListener("click", ()=>{
   `;
 });
 
-/* View-based navigation (single active view) */
-const __views = ["timeline","legs","stays","meals","acts"];
+/* Bottom nav jump (premium header landing) */
+function scrollToSectionHeader(accKey) {
+  const headerBtn = document.querySelector(`[data-acc="${accKey}"]`);
+  if (!headerBtn) return;
+
+  // Ensure accordion is open so the landing makes sense visually
+  if (typeof openAccordionKey === "function") openAccordionKey(accKey);
+
+  // Premium fine scroll: header sits just under Totals
+  setTimeout(() => {
+    scrollToElWithOffset(headerBtn, 10);
+  }, 0);
+}
+
+/* Jump nav */
+document.querySelectorAll('[data-jump]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-jump');
+    if (!key) return;
+
+    const accBtn = document.querySelector(`[data-acc="${key}"]`);
+    if (!accBtn) return;
+
+    const body = document.querySelector(`[data-acc-body="${key}"]`);
+    if (body && body.classList.contains('hidden')) accBtn.click();
+
+    requestAnimationFrame(() => {
+      accBtn.scrollIntoView({ block:"start", behavior:"auto" });
+    });
+  });
+});
+
+
+
+
+/* ----------------------------- Views (simple) ----------------------------- */
+const __views = ["timeline","legs","stays","acts","meals"]; // meals kept internal (no bottom nav)
 
 let currentView = "timeline";
 
+function setView(viewKey, opts = {}) {
+  const key = String(viewKey || "timeline");
+  const allowed = new Set(__views);
+  const k = allowed.has(key) ? key : "timeline";
 
-function setView(viewKey, opts){
-  const k = String(viewKey||"");
-  const o = opts || {};
-  const fromJump = !!o.fromJump;
+  currentView = k;
 
-  // Collapse item-accordions by default when entering from bottom nav
-  if (!fromJump) {
-    if (k === "legs") __sectionExpanded.legs.clear();
-    if (k === "stays") __sectionExpanded.stays.clear();
-    if (k === "acts") __sectionExpanded.activities.clear();
-  }
-
-  // 1) Toggle visible view
-  __views.forEach(v=>{
+  __views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     if (!el) return;
     el.classList.toggle("hidden", v !== k);
   });
 
-  // Timeline controls dock only in timeline view
-  const dock = document.getElementById("timelineControlsDock");
-  if (dock) dock.classList.toggle("hidden", k !== "timeline");
-
-  // 2) Current view
-  currentView = k;
-
-  // Render the active view content (keeps app resilient)
-  try{
-    if (k === "timeline") renderTimeline();
-    else if (k === "legs") renderLegs();
-    else if (k === "stays") renderStays();
-    else if (k === "acts") renderActivities();
-    else if (k === "meals") renderMeals();
-  } catch(e){}
-
-  // 3) Layout + scroll reset (never window.scrollTo)
-  const ms = document.getElementById("mainScroll");
-  requestAnimationFrame(() => {
-    syncMainScrollLayout();
-    if (ms) ms.scrollTop = 0;
-  });
-}
-
-  // Recalculate layout after view switch (top depends on active view)
-  try{ syncMainScrollLayout(); } catch(e){}
-
-  // Reset scroll of the central scroll container (double pass for iOS)
-  const ms = getMainScroll();
-  if (ms) {
-    ms.scrollTop = 0;
-    requestAnimationFrame(() => { ms.scrollTop = 0; });
-  }
-// Ensure the view has freshly-rendered content before wiring item accordions
-  try{
-    if (k === "timeline") renderTimeline();
-    else if (k === "legs") renderLegs();
-    else if (k === "stays") renderStays();
-    else if (k === "acts") renderActivities();
-    else if (k === "meals") renderMeals();
-  } catch(e){ /* keep app resilient */ }
-
-  
-  // Apply view-level collapse UI after render (legs/stays/acts)
-  try{
-    if (k === "legs") ("legs");
-    if (k === "stays") ("stays");
-    if (k === "acts") ("acts");
-  } catch(e){}
-// Re-wire per-item accordions (delegation; safe to call)
-  try{ setupItemAccordionsDelegated(); } catch(e){}
-
-  // Keep fixed top stack vars + main scroll layout in sync
-  try{ syncMainScrollLayout(); } catch(e){}
-
   // Bottom nav active state
-  document.querySelectorAll('[data-jump]').forEach(btn=>{
-    const bk = btn.getAttribute("data-jump");
-    btn.classList.toggle("bg-slate-100", bk === k);
-    btn.classList.toggle("font-bold", bk === k);
-    btn.setAttribute("aria-current", bk === k ? "page" : "false");
+  document.querySelectorAll('nav [data-view]').forEach(btn => {
+    btn.classList.toggle("bg-slate-900", btn.getAttribute("data-view") === k);
+    btn.classList.toggle("text-white", btn.getAttribute("data-view") === k);
   });
+
+  // Always start at top (natural scroll is allowed)
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
-
-/* ----------------------- Item accordions (per event) ----------------------- */
-function setupItemAccordionsDelegated() {
-  if (window.__itemAccordionsReady) return;
-  window.__itemAccordionsReady = true;
-
-  const bind = (listId, key, setRef, rerender) => {
-    const box = document.getElementById(listId);
-    if (!box) return;
-    box.addEventListener("click", (e) => {
-      const header = e.target.closest(`[data-sec-toggle="${key}"]`);
-      if (!header || !box.contains(header)) return;
-      if (e.target.closest("button, input, textarea, select, a, label")) return;
-      const id = String(header.getAttribute("data-sec-id") || "");
-      if (!id) return;
-      if (setRef.has(id)) setRef.delete(id);
-      else setRef.add(id);
-
-      const prevTop = box.scrollTop;
-      rerender();
-      box.scrollTop = prevTop;
-    });
-  };
-
-  bind("legsList", "legs", __sectionExpanded.legs, () => renderLegs());
-  bind("staysList", "stays", __sectionExpanded.stays, () => renderStays());
-  bind("actsList", "activities", __sectionExpanded.activities, () => renderActivities());
-}
-
-/* Bottom nav: switch views (no scroll) */
-document.querySelectorAll('[data-jump]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const key = btn.getAttribute('data-jump');
-    if (!key) return;
-    setView(key);
+// Bottom nav -> views (no scrollTo sections)
+document.querySelectorAll('nav [data-view]').forEach(btn => {
+  btn.addEventListener("click", () => {
+    const k = btn.getAttribute("data-view") || "timeline";
+    setView(k);
   });
 });
+/* --------------------------- /Views (simple) --------------------------- */
 
-
-function syncHeaderHeightVar(){
-  const hdr = document.querySelector("header");
-  if (!hdr) return;
-  document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
-}
-
-
-// Layout sync (deterministic top stack)
-window.addEventListener("load", ()=>{ syncMainScrollLayout(); });
-window.addEventListener("resize", ()=>{ syncMainScrollLayout(); });
 /* ----------------------------- Init ----------------------------- */
 
 
-function syncStickyTotalsHeightVar(){
-  // v78: keep legacy callers working
-  syncMainScrollLayout();
-}
+function syncStickyTotalsHeightVar(){ /* no-op: views use natural scroll; no height measurements */ }
 
-function __tlGetTopOffsetPx(){
-  const cs = getComputedStyle(document.documentElement);
-  const h1 = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
-  const h2 = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
-  return h1 + h2;
-}
-
+function __tlGetTopOffsetPx(){ return 0; }
 function rebuildTimelineControlsFixed(){ /* removed */ }
 
 
@@ -4068,16 +3933,15 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
-  // setupAccordion disabled in view-based nav
-  // setupAccordion();
-  syncHeaderHeightVar();
-  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncMainScrollLayout(); } catch(e){} }, { passive: true });
+  setupAccordion();
+  
+  window.addEventListener('resize', () => {  syncStickyTotalsHeightVar(); }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
-    if (fab) fab.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else scrollMainToTop(); };
+    if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
     const ca = document.getElementById("collapseAll");
-    if (ca) ca.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else scrollMainToTop(); };
+    if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   
     // Timeline view controls (Global / Day)
     const _tlG = document.getElementById("tlViewGlobal");
@@ -4091,39 +3955,6 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
-  try{ syncMainScrollLayout(); } catch(e){}
-  try{ setupItemAccordionsDelegated(); } catch(e){}
-  try{ setView('timeline'); } catch(e){}
-
-  
-
-  // View-level collapse toggles (legs/stays/acts)
-  const ms = document.getElementById("mainScroll");
-  if (ms && !ms.__viewCollapseBound) {
-    ms.__viewCollapseBound = true;
-    ms.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-view-collapse]");
-      if (!btn) return;
-      e.preventDefault();
-      const vk = btn.getAttribute("data-view-collapse");
-      if (vk === "legs" || vk === "stays" || vk === "acts") {
-        [vk] = ![vk];
-        (vk);
-        try{ syncMainScrollLayout(); } catch(_){}
-      }
-    });
-  }
-
-// Bottom nav: switch views (no window scroll)
-  document.querySelectorAll('[data-jump]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const k = btn.getAttribute('data-jump');
-      if (!k) return;
-      setView(k);
-    });
-  });
-
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
     const sentinel = document.getElementById("timelineControlsSentinel");
@@ -4141,11 +3972,8 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-
+  
 });
-
-// Ensure top stack heights computed after all resources/layout (iOS-safe)
-window.addEventListener('load', () => { try{ syncMainScrollLayout(); } catch(e){} }, { passive: true });
 </script>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
