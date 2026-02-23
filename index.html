@@ -1182,8 +1182,12 @@ function setupAccordion() {
 
       const isNowHidden2 = body.classList.contains("hidden");
       const justOpened = wasHidden && !isNowHidden2;
+      // V88F: only auto-land on intentional opens (bottom nav / jump), never on manual toggles
       if (justOpened && (key === "legs" || key === "stays" || key === "acts" || key === "meals")) {
-        landUnderTotals(btn, 8);
+        if (window.__pendingLanding) {
+          window.__pendingLanding = false;
+          landUnderTotals(btn, 8);
+        }
       }
     });
   });
@@ -2130,17 +2134,15 @@ function jumpToItem(kind, id) {
   const accBtn = document.querySelector(`[data-acc="${cfg.acc}"]`);
   const itemEl = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`);
 
-  // 3) Scroll using TopStack (Header + Totals). Never include timeline controls here.
-  requestAnimationFrame(() => {
-    if (accBtn) scrollToElTopStack(accBtn, 8);
-  });
-
-  // 4) After DOM settles, scroll item into view
+  // 3) After DOM settles, land the target item under Totals (premium, 2-pass only if needed)
   setTimeout(() => {
     const el = itemEl || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
     if (el) {
-      scrollToElTopStack(el, 16);
+      landUnderTotals(el, 16);
       try { el.focus({ preventScroll: true }); } catch {}
+    } else if (accBtn) {
+      // Fallback: at least land the section header
+      landUnderTotals(accBtn, 8);
     }
   }, 120);
 }
@@ -4117,8 +4119,17 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     if (!accBtn) return;
 
     const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (body && body.classList.contains('hidden')) accBtn.click();
 
+    // V88F: mark this open as intentional (bottom nav) so the accordion handler can auto-land
+    if (body && body.classList.contains('hidden')) {
+      window.__pendingLanding = true;
+      accBtn.click();
+      // landing is handled by setupAccordion() when it opens
+      return;
+    }
+
+    // If already open, land directly (and clear any pending flag)
+    window.__pendingLanding = false;
     landUnderTotals(accBtn, 8);
   });
 });
