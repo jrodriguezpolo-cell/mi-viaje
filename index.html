@@ -20,8 +20,18 @@
     body.readonly-mode select[disabled],
     body.readonly-mode textarea[disabled]{
       opacity: .55;
-      cursor: not-allowed;
-    }
+  cursor: not-allowed;
+}
+
+/* Hard lock: prevent iOS date/time pickers even if something re-enables controls */
+body.readonly-mode input:not([type="file"]),
+body.readonly-mode select,
+body.readonly-mode textarea{
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 
   /* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
@@ -994,16 +1004,12 @@ function openToolsSheet() {
   const sheet = document.getElementById("toolsSheet");
   if (!overlay || !sheet) return;
 
-  // Safe & reversible body scroll lock (optional but premium)
-  try {
-    if (document.body.dataset.prevOverflow === undefined) {
-      document.body.dataset.prevOverflow = document.body.style.overflow || "";
-    }
-    document.body.style.overflow = "hidden";
-  } catch {}
-
   overlay.classList.remove("hidden");
   sheet.classList.remove("hidden");
+
+  // Keep top-stack vars fresh (Safari/iOS can lag after overlays)
+  try { syncTopStackHeights(); } catch {}
+  try { setTimeout(() => { try { syncTopStackHeights(); } catch {} }, 50); } catch {}
 }
 function closeToolsSheet() {
   const overlay = document.getElementById("toolsOverlay");
@@ -1011,12 +1017,11 @@ function closeToolsSheet() {
   if (overlay) overlay.classList.add("hidden");
   if (sheet) sheet.classList.add("hidden");
 
-  try {
-    const prev = document.body.dataset.prevOverflow;
-    if (prev !== undefined) document.body.style.overflow = prev;
-    delete document.body.dataset.prevOverflow;
-  } catch {}
+  // Keep top-stack vars fresh (Safari/iOS can lag after overlays)
+  try { syncTopStackHeights(); } catch {}
+  try { setTimeout(() => { try { syncTopStackHeights(); } catch {} }, 50); } catch {}
 }
+
 
 // Close on ESC (desktop)
 window.addEventListener("keydown", (e) => {
@@ -1079,6 +1084,7 @@ function setReadOnly(on) {
 
 function applyReadOnlyMode() {
   const on = isReadOnly();
+  try { installReadOnlyGuards(); } catch {}
 
   // body class
   document.body.classList.toggle("readonly-mode", on);
@@ -1093,7 +1099,9 @@ function applyReadOnlyMode() {
   // Disable all form controls (except file inputs for import/export modal)
   document.querySelectorAll("input, select, textarea").forEach(el => {
     if (el.type === "file") return; // allow import in modal
+    // iOS/Safari: disabled is the only reliable way to block date/time pickers
     el.disabled = on;
+    if ("readOnly" in el) el.readOnly = on;
   });
 
   // Disable only the buttons that modify data
@@ -1116,6 +1124,36 @@ function applyReadOnlyMode() {
   document.querySelectorAll("#aiResults button").forEach(b => {
     b.disabled = on;
   });
+}
+
+let __roGuardsInstalled = false;
+function installReadOnlyGuards() {
+  if (__roGuardsInstalled) return;
+  __roGuardsInstalled = true;
+
+  const isEditableControl = (el) => {
+    if (!el) return false;
+    if (el.closest && el.closest("#toolsSheet")) return false; // tools UI stays usable
+    const tag = (el.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea") return el.type !== "file";
+    return false;
+  };
+
+  // Capture focus/click/input early to block any late-enabled controls.
+  const guard = (e) => {
+    if (!isReadOnly()) return;
+    const t = e.target;
+    if (!isEditableControl(t)) return;
+    try { t.disabled = true; } catch {}
+    try { t.blur(); } catch {}
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  document.addEventListener("focusin", guard, true);
+  document.addEventListener("click", guard, true);
+  document.addEventListener("input", guard, true);
+  document.addEventListener("change", guard, true);
 }
 
 
@@ -4267,14 +4305,14 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
       requestAnimationFrame(step);
     };
 
-    const frames = (key === "stays") ? 3 : 2;
+    const frames = (key === "stays" || key === "acts") ? 3 : 2;
     const doLanding = () => {
       // First landing: smooth ONCE (bottom nav intent)
       if (key === "acts") {
-        // Activities: post-open settle needs an extra landing tick
-        requestAnimationFrame(() => requestAnimationFrame(() => {
+        // Activities: needs a bit more settle time (especially after tools/compact header)
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
           landUnderTotals(accBtn, 8, { smooth: true });
-        }));
+        })));
       } else {
         landUnderTotals(accBtn, 8, { smooth: true });
       }
@@ -4296,7 +4334,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
       };
 
       if (key === "acts") {
-        requestAnimationFrame(() => requestAnimationFrame(measureAndCorrect));
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(measureAndCorrect)));
       } else {
         requestAnimationFrame(measureAndCorrect);
       }
