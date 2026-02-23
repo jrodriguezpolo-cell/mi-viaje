@@ -13,6 +13,14 @@
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     .safe-t { padding-top: max(env(safe-area-inset-top), 12px); }
     .tap { -webkit-tap-highlight-color: transparent; }
+
+  :root{
+    --mv-scroll-mt: 140px; /* sticky top stack approx (CSS-only) */
+  }
+  /* Ensure "Ir a" and timeline jumps land below sticky top stack (CSS-only, no JS offsets) */
+  .timelineItem{ scroll-margin-top: var(--mv-scroll-mt); }
+  [data-sec-id]{ scroll-margin-top: var(--mv-scroll-mt); }
+
   
     /* Read-only mode */
     body.readonly-mode button[disabled],
@@ -120,7 +128,13 @@ border-radius: 999px;
       -webkit-tap-highlight-color: transparent;
     }
     #fabCollapseAll:active{ transform: translateY(1px); }
-    /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
+
+    #stickyTotalBar{
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+/* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
     #summary, #summaryDetail { display: none !important; }
     #stickySummaryDetailInner .row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
     #stickySummaryDetailInner .lbl { color: rgb(100 116 139); }
@@ -162,6 +176,8 @@ border-radius: 999px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
+
+
 /* Timeline time badges (v88) */
 .tlTimeBadge{
   display:inline-block;
@@ -176,11 +192,6 @@ border-radius: 999px;
 .tlTimeFuture{ background: rgba(59,130,246,0.10); color:#1d4ed8; border-color: rgba(59,130,246,0.22); }
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
-
-
-
-/* View navigation: avoid sticky topStack covering targets */
-[data-sec-toggle], #timelineList .timelineItem { scroll-margin-top: 110px; }
 
 </style>
 </head>
@@ -223,6 +234,8 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+
+<!-- Main -->
 <!-- Main -->
 <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
@@ -266,9 +279,10 @@ border-radius: 999px;
             </button></div>
 </aside>
 <section class="lg:col-span-8 space-y-4">
-<!-- TIMELINE -->
+</div>
 
-<div id="view-timeline">
+<div id="view-timeline" class="mv-view hidden">
+<!-- TIMELINE -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
 <div class="flex items-center gap-3">
@@ -319,10 +333,8 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-</div></div>
-
-<div id="view-legs" class="hidden">
-
+</div>
+<div id="view-legs" class="mv-view hidden">
 <!-- LOGISTICA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
@@ -340,10 +352,10 @@ border-radius: 999px;
 </div>
 <div class="space-y-3" id="legsList"></div>
 </div>
-</div></div>
+</div>
+</div>
 
-<div id="view-stays" class="hidden">
-
+<div id="view-stays" class="mv-view hidden">
 <!-- ALOJAMIENTO -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
@@ -361,12 +373,9 @@ border-radius: 999px;
 </div>
 <div class="space-y-3" id="staysList"></div>
 </div>
-</div></div>
-
-<div id="view-meals" class="hidden">
-
+</div>
 <!-- COMIDAS -->
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<div class="hidden bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
@@ -397,10 +406,10 @@ border-radius: 999px;
 <span class="text-slate-500" id="mealCur">EUR</span>
 </div>
 </div>
-</div></div>
+</div>
+</div>
 
-<div id="view-acts" class="hidden">
-
+<div id="view-acts" class="mv-view hidden">
 <!-- ACTIVIDADES -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
@@ -420,7 +429,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- IA -->
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<div class="hidden bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center">🤖</span>
@@ -441,8 +450,6 @@ border-radius: 999px;
 <div class="mt-4 space-y-4" id="aiResults"></div>
 </div>
 </div>
-</div>
-
 </section>
 <!-- Summary -->
 </div>
@@ -452,6 +459,7 @@ border-radius: 999px;
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="legs">🛫<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="stays">🏨<div>Alojamiento</div></button>
+<button class="hidden tap py-2 rounded-xl hover:bg-slate-50" data-view="meals">🍽️<div>Comida</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
@@ -471,6 +479,18 @@ border-radius: 999px;
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+
+
+/*
+  Rules:
+  - UI show/hide ONLY via element.style.display (no Tailwind hidden toggles for app mode).
+  - Persist: localStorage key "trip_app_mode"
+*/
+let appMode = "planning"; // "planning" | "travel"
+
+/* --------------------------- /App Mode --------------------------- */
+
 
 
 /* ------------------------ Trip name (modal + export/import) ------------------------ */
@@ -561,6 +581,18 @@ const parseMoney = (v) => {
 };
 const uniq = (arr) => Array.from(new Set(arr.map(x => String(x).trim()).filter(Boolean)));
 
+function mvScrollIntoView(el, smooth = true) {
+  if (!el) return;
+  try {
+    el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  } catch {
+    try { el.scrollIntoView(true); } catch {}
+  }
+}
+
+
+
+
 
 /* -------------------------- Timeline jump --------------------------- */
 function todayYMD() {
@@ -581,6 +613,10 @@ function todayYMD() {
 
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
+window.addEventListener("load", );
+
+
+
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
 function __tlNowMinutes() {
@@ -646,7 +682,7 @@ function __tlScrollToItemByKey(tlKey) {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
   if (!el) return false;
-  scrollToElWithOffset(el);
+  mvScrollIntoView(el, true);
   return true;
 }
 
@@ -753,7 +789,7 @@ function scrollToTodayTimelineItem() {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
   if (todayEl) {
-    scrollToElWithOffset(todayEl);
+    mvScrollIntoView(todayEl);
   } else {
     alert("No hay eventos para hoy.");
   }
@@ -775,7 +811,7 @@ function scrollToNextTimelineItem() {
   });
 
   if (next) {
-    scrollToElWithOffset(next);
+    mvScrollIntoView(next);
   } else {
     alert("No hay próximos eventos con fecha a partir de hoy.");
   }
@@ -948,7 +984,7 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
-  syncStickyTotalsHeightVar();
+  
   }
 
 /* ----------------------------- Accordion ----------------------------- */
@@ -1863,42 +1899,34 @@ function scrollAccordionBodyToTop(key) {
 }
 
 
-/* ---------------- Timeline: jump to item (views) ---------------- */
 function jumpToItem(kind, id) {
   const k = String(kind || "");
   const itemId = String(id || "");
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { view: "legs",  secSet: "__sectionExpanded.legs",  render: "renderLegs",  sel: `[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]` },
-    stay: { view: "stays", secSet: "__sectionExpanded.stays", render: "renderStays", sel: `[data-sec-toggle="stays"][data-sec-id="${CSS.escape(itemId)}"]` },
-    act:  { view: "acts",  secSet: "__sectionExpanded.activities", render: "renderActivities", sel: `[data-sec-toggle="activities"][data-sec-id="${CSS.escape(itemId)}"]` }
+    leg:  { view: "legs",  acc: "legs",  secToggle: "legs" },
+    stay: { view: "stays", acc: "stays", secToggle: "stays" },
+    act:  { view: "acts",  acc: "acts",  secToggle: "acts" }
   };
   const cfg = map[k];
   if (!cfg) return;
 
-  // 1) Switch to the correct view (no offsets, natural scroll)
-  setView(cfg.view, { fromJump: true });
+  // 1) Switch to the correct view (simple show/hide)
+  setView(cfg.view);
 
-  // 2) Expand the target item using existing per-item accordion state
-  if (k === "leg") __sectionExpanded.legs.add(itemId);
-  else if (k === "stay") __sectionExpanded.stays.add(itemId);
-  else if (k === "act") __sectionExpanded.activities.add(itemId);
+  // 2) Expand target item within section (v80b accordion) and re-render that section only
+  if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
+  else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
+  else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  // 3) Re-render that section so the item exists in DOM
-  try {
-    if (k === "leg") renderLegs();
-    else if (k === "stay") renderStays();
-    else if (k === "act") renderActivities();
-  } catch {}
-
-  // 4) Scroll item into view (allowed). Sticky topStack may cover a bit; fixed via CSS scroll-margin-top.
+  // 3) Scroll item into view after DOM settles (no JS offsets)
   requestAnimationFrame(() => {
-    const el = document.querySelector(cfg.sel);
-    if (el) el.scrollIntoView({ block: "start", behavior: "auto" });
+    const el = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`)
+      || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
+    if (el) mvScrollIntoView(el, true);
   });
 }
-
 
 /* ---------------- Item notes (timeline CRUD) ---------------- */
 
@@ -2160,7 +2188,7 @@ function setTimelineViewMode(mode) {
         const d = (el.getAttribute("data-date") || "").trim();
         if (d === activeDayISO) { first = el; break; }
       }
-      if (first) scrollToElWithOffset(first);
+      if (first) mvScrollIntoView(first);
     });
   }
 }
@@ -2865,7 +2893,7 @@ function renderAIResults(sections) {
     }
     saveState();
     renderAll();
-  syncStickyTotalsHeightVar();
+  
   $("aiStatus").textContent = added ? `Añadidas ${added} actividades.` : "No has seleccionado ninguna recomendación.";
   };
 
@@ -3082,7 +3110,7 @@ function restoreManualBackupById(id) {
   saveState();
   closeModal();
   renderAll();
-  syncStickyTotalsHeightVar();
+  
   alert("Backup restaurado.");
 }
 /* ----------------- /Manual Backups (list + restore) ------------------ */
@@ -3271,7 +3299,7 @@ ${label}`)) return;
       saveState();
       closeModal();
       renderAll();
-  syncStickyTotalsHeightVar();
+  
   alert("Backup restaurado.");
     };
 
@@ -3629,7 +3657,7 @@ async function importTrip(ev) {
     saveState();
     closeModal();
     renderAll();
-  syncStickyTotalsHeightVar();
+  
   const now = new Date().toISOString();
     setMeta({
       lastImportAt: now,
@@ -3734,7 +3762,7 @@ Tu iPhone: ${l}
 
     closeModal();
     renderAll();
-  syncStickyTotalsHeightVar();
+  
   });
 
   box.querySelectorAll("[data-trip-del]").forEach(btn => btn.onclick = () => {
@@ -3756,6 +3784,16 @@ Tu iPhone: ${l}
 
 
 /* ----------------------------- Events ----------------------------- */
+
+// Bottom nav: views only (no jump)
+document.querySelectorAll('nav [data-view]').forEach(b => {
+  b.addEventListener("click", () => {
+    const k = b.getAttribute("data-view");
+    if (k === "meals") return; // meals view not used
+    setView(k);
+  });
+});
+
 $("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 
@@ -3850,75 +3888,60 @@ function scrollToSectionHeader(accKey) {
 
   // Premium fine scroll: header sits just under Totals
   setTimeout(() => {
-    scrollToElWithOffset(headerBtn, 10);
+    mvScrollIntoView(headerBtn, 10);
   }, 0);
 }
 
-/* Jump nav */
-document.querySelectorAll('[data-jump]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const key = btn.getAttribute('data-jump');
-    if (!key) return;
 
-    const accBtn = document.querySelector(`[data-acc="${key}"]`);
-    if (!accBtn) return;
-
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (body && body.classList.contains('hidden')) accBtn.click();
-
-    requestAnimationFrame(() => {
-      accBtn.scrollIntoView({ block:"start", behavior:"auto" });
-    });
-  });
-});
+function syncHeaderHeightVar(){
+  const hdr = document.querySelector("header");
+  if (!hdr) return;
+  }
 
 
-
-
-/* ----------------------------- Views (simple) ----------------------------- */
-const __views = ["timeline","legs","stays","acts","meals"]; // meals kept internal (no bottom nav)
+/* ----------------------------- Views ----------------------------- */
+const __views = {
+  timeline: "view-timeline",
+  legs: "view-legs",
+  stays: "view-stays",
+  acts: "view-acts"
+};
 
 let currentView = "timeline";
 
-function setView(viewKey, opts = {}) {
+function setView(viewKey) {
   const key = String(viewKey || "timeline");
-  const allowed = new Set(__views);
-  const k = allowed.has(key) ? key : "timeline";
-
-  currentView = k;
-
-  __views.forEach(v => {
-    const el = document.getElementById(`view-${v}`);
-    if (!el) return;
-    el.classList.toggle("hidden", v !== k);
+  Object.values(__views).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
   });
 
-  // Bottom nav active state
-  document.querySelectorAll('nav [data-view]').forEach(btn => {
-    btn.classList.toggle("bg-slate-900", btn.getAttribute("data-view") === k);
-    btn.classList.toggle("text-white", btn.getAttribute("data-view") === k);
+  const targetId = __views[key] || __views.timeline;
+  const target = document.getElementById(targetId);
+  if (target) target.classList.remove("hidden");
+
+  // mark active in bottom nav
+  document.querySelectorAll('nav [data-view]').forEach(b => {
+    b.classList.toggle("bg-slate-900", b.getAttribute("data-view") === key);
+    b.classList.toggle("text-white", b.getAttribute("data-view") === key);
   });
 
-  // Always start at top (natural scroll is allowed)
+  currentView = key;
+
+  // Ensure the main accordion of the view is open (keeps UX simple)
+  const accMap = { timeline: "timeline", legs: "legs", stays: "stays", acts: "acts" };
+  const acc = accMap[key];
+  if (acc) openAccordionKey(acc);
+
   window.scrollTo({ top: 0, behavior: "auto" });
 }
-
-// Bottom nav -> views (no scrollTo sections)
-document.querySelectorAll('nav [data-view]').forEach(btn => {
-  btn.addEventListener("click", () => {
-    const k = btn.getAttribute("data-view") || "timeline";
-    setView(k);
-  });
-});
-/* --------------------------- /Views (simple) --------------------------- */
 
 /* ----------------------------- Init ----------------------------- */
 
 
-function syncStickyTotalsHeightVar(){ /* no-op: views use natural scroll; no height measurements */ }
 
-function __tlGetTopOffsetPx(){ return 0; }
-function rebuildTimelineControlsFixed(){ /* removed */ }
+
+function rebuildTimelineControlsFixed_removed(){ /* removed */ }
 
 
 /* removed anyTimelineAccordionOpen */
@@ -3934,8 +3957,8 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
-  
-  window.addEventListener('resize', () => {  syncStickyTotalsHeightVar(); }, { passive: true });
+  syncHeaderHeightVar();
+  window.addEventListener('resize', () => { syncHeaderHeightVar();  }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
     if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -3968,7 +3991,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* no-op */ }
 
-  syncStickyTotalsHeightVar();
+  
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
