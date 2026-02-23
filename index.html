@@ -137,7 +137,15 @@ border-radius: 999px;
       right: 0;
       top: var(--app-header-h, 56px);
       z-index: 950;
+    
+    #stickyCompareBar{
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
+      z-index: 940;
     }
+}
 
 
     /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
@@ -675,17 +683,23 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
+  const compareBar = document.getElementById("stickyCompareBar");
   const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
 
+  const compareVisible = !!(compareBar && !compareBar.classList.contains("hidden"));
+  const compareH = compareVisible ? (compareBar.getBoundingClientRect().height || 0) : 0;
+
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
+  root.style.setProperty("--sticky-compare-h", compareH + "px");
 
-  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+  if (spacer) spacer.style.height = (headerH + totalsH + compareH) + "px";
 }
+
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
@@ -3068,6 +3082,68 @@ function applySummaryFold() {
 
 /* -------------------- /Summary fold (no persistence) -------------------- */
 
+
+function __scenarioTotals(sc) {
+  const transport = (sc?.legs || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const stay = (sc?.stays || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const acts = (sc?.activities || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const meals = parseMoney(sc?.meals?.daily) * (parseInt(sc?.meals?.people||1,10)) * (parseInt(sc?.meals?.days||1,10));
+  const total = transport + stay + acts + meals;
+
+  const countMeals = meals > 0 ? 1 : 0;
+  const itemsCount = (sc?.legs?.length||0) + (sc?.stays?.length||0) + (sc?.activities?.length||0) + countMeals;
+
+  return { transport, stay, acts, meals, total, itemsCount };
+}
+
+function updateStickyCompareBar() {
+  const bar = document.getElementById("stickyCompareBar");
+  if (!bar) return;
+
+  const a = __scenarioTotals(state?.scenarios?.A || {});
+  const b = __scenarioTotals(state?.scenarios?.B || {});
+  const show = ((a.total > 0 && b.total > 0) || (a.itemsCount > 0 && b.itemsCount > 0));
+
+  if (!show) {
+    bar.classList.add("hidden");
+    syncTopStackHeights();
+    setTimeout(syncTopStackHeights, 50);
+    return;
+  }
+
+  const cur = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
+  const fmt = (n)=> `${Number(n||0).toFixed(2)}${cur ? " " + cur : ""}`;
+
+  document.getElementById("compareValA").textContent = fmt(a.total);
+  document.getElementById("compareValB").textContent = fmt(b.total);
+
+  const diff = b.total - a.total; // positive => B more expensive
+  const diffAbs = Math.abs(diff);
+  const sign = diff === 0 ? "" : (diff > 0 ? "+" : "−");
+  const diffText = `Diferencia: ${sign}${diffAbs.toFixed(2)}${cur ? " " + cur : ""}`;
+
+  const diffEl = document.getElementById("compareDiff");
+  diffEl.textContent = diffText;
+
+  // subtle color: A cheaper => green; A more expensive => red; equal => neutral
+  diffEl.classList.remove("text-emerald-700","text-rose-700","text-slate-600");
+  if (diff === 0) diffEl.classList.add("text-slate-600");
+  else if (a.total < b.total) diffEl.classList.add("text-emerald-700");
+  else diffEl.classList.add("text-rose-700");
+
+  const chipA = document.getElementById("compareChipA");
+  const chipB = document.getElementById("compareChipB");
+  const onA = (state?.scenario || "A") === "A";
+  chipA.className = "px-2 py-0.5 rounded-full border border-slate-200 " + (onA ? "bg-slate-900 text-white font-extrabold" : "bg-white text-slate-700");
+  chipB.className = "px-2 py-0.5 rounded-full border border-slate-200 " + (!onA ? "bg-slate-900 text-white font-extrabold" : "bg-white text-slate-700");
+
+  bar.classList.remove("hidden");
+
+  // Compare bar affects top stack height
+  syncTopStackHeights();
+  setTimeout(syncTopStackHeights, 50);
+}
+
 function calcSummary() {
   const sc = curScenario();
   const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
@@ -3087,6 +3163,7 @@ function calcSummary() {
   }
   // summary fold (no persistence)
   applySummaryFold();
+  updateStickyCompareBar();
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
