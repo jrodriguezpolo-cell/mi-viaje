@@ -125,7 +125,7 @@ border-radius: 999px;
       position: fixed;
       left: 0;
       right: 0;
-      top: var(--app-header-h, 56px);
+      top: 0; /* set by JS */
       z-index: 950;
     }
 
@@ -163,8 +163,8 @@ border-radius: 999px;
 
 /* Timeline controls sticky (single row, no clone) */
 #timelineControlsRow{
-  position: sticky;
-  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
+  position: relative;
+  top: 0;
   z-index: 60;
   background: rgba(255,255,255,0.97);
   backdrop-filter: blur(8px);
@@ -182,7 +182,6 @@ border-radius: 999px;
   right: 0;
   z-index: 1000;
 }
-#topStackSpacer{ height: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px)); }
 
 
 /* Timeline time badges (v88) */
@@ -210,7 +209,7 @@ body { overflow: hidden; }
 #timelineControlsDock{
   position: fixed;
   left: 0; right: 0;
-  top: calc(var(--app-header-h, 0px) + var(--sticky-totals-h, 0px));
+  top: 0; /* set by JS */
   z-index: 940;
 }
 
@@ -280,7 +279,6 @@ body { overflow: hidden; }
   </div>
 </div>
 
-<div id="topStackSpacer"></div>
 <!-- Main -->
 <div class="overflow-y-auto ios-scroll" id="mainScroll"><main class="max-w-6xl mx-auto px-4 pb-24">
 <!-- Scenario toggle -->
@@ -371,12 +369,7 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
 </div>
-<div class="flex items-center justify-end mt-2">
-  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="legs" id="btnCollapse_legs">Plegar</button>
-</div>
-<div id="legsListWrap">
-  <div class="space-y-3" id="legsList"></div>
-</div>
+<div class="space-y-3" id="legsList"></div>
 </div>
 </div>
 </div>
@@ -396,12 +389,7 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
 </div>
-<div class="flex items-center justify-end mt-2">
-  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="stays" id="btnCollapse_stays">Plegar</button>
-</div>
-<div id="staysListWrap">
-  <div class="space-y-3" id="staysList"></div>
-</div>
+<div class="space-y-3" id="staysList"></div>
 </div>
 </div>
 </div>
@@ -456,12 +444,7 @@ body { overflow: hidden; }
 <div class="flex justify-end mb-3">
 <button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
 </div>
-<div class="flex items-center justify-end mt-2">
-  <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold" data-view-collapse="acts" id="btnCollapse_acts">Plegar</button>
-</div>
-<div id="actsListWrap">
-  <div class="space-y-3" id="actsList"></div>
-</div>
+<div class="space-y-3" id="actsList"></div>
 </div>
 </div>
 </div>
@@ -622,24 +605,9 @@ function todayYMD() {
 
 
 function getStickyOffset() {
-  const header = document.getElementById("appHeader") || document.querySelector("header");
-  const totalBar = document.getElementById("stickyTotalBar");
-  const controls = document.getElementById("timelineControlsRow");
-
-  // Prefer measured vars (kept in sync by syncTopStackHeights)
-  const root = document.documentElement;
-  const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
-  const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
-
+  // Used for "scroll to item" adjustments
   let offset = 0;
-  offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
-  offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
-
-  // Controls row only matters when visible (timeline accordion open)
-  if (controls && !controls.classList.contains("hidden")) {
-    offset += controls.getBoundingClientRect().height;
-  }
-
+  try { offset = computeTopStackHeight(); } catch(e) {}
   offset += 12; // margin
   return offset;
 }
@@ -647,62 +615,49 @@ function getStickyOffset() {
 
 
 
-function syncTopStackHeights() {
-  const header = document.getElementById("appHeader") || document.querySelector("header");
-  const totalBar = document.getElementById("stickyTotalBar");
-  const spacer = document.getElementById("topStackSpacer");
-  const dock = document.getElementById("timelineControlsDock");
+function computeTopStackHeight() {
+  const header = document.getElementById("appHeader");
+  const totals = document.getElementById("stickyTotalBar");
+  const timelineControls = document.getElementById("timelineControlsRow");
 
-  const headerH = header ? header.getBoundingClientRect().height : 0;
-  const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
+  let h = 0;
+  if (header) h += header.offsetHeight;
+  if (totals) h += totals.offsetHeight;
 
-  // Timeline controls height only when visible (timeline view)
-  const dockVisible = !!(dock && !dock.classList.contains("hidden"));
-  const dockH = dockVisible ? dock.getBoundingClientRect().height : 0;
-
-  const root = document.documentElement;
-  root.style.setProperty("--app-header-h", headerH + "px");
-  root.style.setProperty("--sticky-totals-h", totalsH + "px");
-  root.style.setProperty("--timeline-controls-h", dockH + "px");
-
-  // Spacer not used in view-based layout; keep it zeroed if present
-  if (spacer) spacer.style.height = "0px";
-
-  syncMainScrollLayout();
+  const isTimeline = currentView === "timeline";
+  if (isTimeline && timelineControls && timelineControls.offsetParent !== null) {
+    h += timelineControls.offsetHeight;
+  }
+  return h;
 }
 
 function syncMainScrollLayout() {
-  const root = document.documentElement;
-  const cs = getComputedStyle(root);
-  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 0;
-  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  const ms = document.getElementById("mainScroll");
+  if (!ms) return;
 
-  const view = String(window.__activeView || "timeline");
+  const header = document.getElementById("appHeader");
+  const totals = document.getElementById("stickyTotalBar");
   const dock = document.getElementById("timelineControlsDock");
-  const dockVisible = (view === "timeline") && dock && !dock.classList.contains("hidden");
-  const dockH = dockVisible ? (dock.getBoundingClientRect().height || 0) : 0;
+  const bottomNav = document.querySelector("nav");
 
-  // Keep the CSS var honest (helps iOS layout + debugging)
-  root.style.setProperty("--timeline-controls-h", dockH + "px");
+  const headerH = header ? header.offsetHeight : 0;
+  const totalsH = totals ? totals.offsetHeight : 0;
 
-  const top = headerH + totalsH + (view === "timeline" ? dockH : 0);
+  // Ensure fixed stack elements sit deterministically
+  if (totals) totals.style.top = headerH + "px";
+  if (dock) dock.style.top = (headerH + totalsH) + "px";
 
-  const bottomNav = document.getElementById("bottomNav");
-  const bottomNavH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+  const top = computeTopStackHeight();
+  const bottom = bottomNav ? bottomNav.offsetHeight : 0;
 
-  const mainScroll = document.getElementById("mainScroll");
-  if (!mainScroll) return;
-
-  mainScroll.style.position = "fixed";
-  mainScroll.style.top = top + "px";
-  mainScroll.style.bottom = bottomNavH + "px";
-  mainScroll.style.left = "0";
-  mainScroll.style.right = "0";
-  mainScroll.style.overflowY = "auto";
-  mainScroll.style.webkitOverflowScrolling = "touch";
+  ms.style.position = "fixed";
+  ms.style.top = top + "px";
+  ms.style.bottom = bottom + "px";
+  ms.style.left = "0";
+  ms.style.right = "0";
+  ms.style.overflowY = "auto";
+  ms.style.webkitOverflowScrolling = "touch";
 }
-
-
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
@@ -952,20 +907,6 @@ const __sectionExpanded = {
   activities: new Set()
 };
 
-// View-level collapse state (v89e2)
-const __viewCollapsed = { legs:false, stays:false, acts:false };
-
-function applyViewCollapsedUI(viewKey){
-  const k = String(viewKey||"");
-  const map = { legs:{wrap:"legsListWrap", btn:"btnCollapse_legs"}, stays:{wrap:"staysListWrap", btn:"btnCollapse_stays"}, acts:{wrap:"actsListWrap", btn:"btnCollapse_acts"} };
-  const cfg = map[k];
-  if (!cfg) return;
-  const wrap = document.getElementById(cfg.wrap);
-  const btn = document.getElementById(cfg.btn);
-  const collapsed = !!__viewCollapsed[k];
-  if (wrap) wrap.classList.toggle("hidden", collapsed);
-  if (btn) btn.textContent = collapsed ? "Desplegar" : "Plegar";
-}
 
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
@@ -3962,34 +3903,50 @@ $("btnCompare").addEventListener("click", ()=>{
 /* View-based navigation (single active view) */
 const __views = ["timeline","legs","stays","meals","acts"];
 
-function setView(key, opts){
-  const k = String(key||"");
+let currentView = "timeline";
+
+
+function setView(viewKey, opts){
+  const k = String(viewKey||"");
   const o = opts || {};
   const fromJump = !!o.fromJump;
 
-  // Collapse items by default when entering from bottom nav
+  // Collapse item-accordions by default when entering from bottom nav
   if (!fromJump) {
     if (k === "legs") __sectionExpanded.legs.clear();
     if (k === "stays") __sectionExpanded.stays.clear();
     if (k === "acts") __sectionExpanded.activities.clear();
   }
 
+  // 1) Toggle visible view
   __views.forEach(v=>{
     const el = document.getElementById(`view-${v}`);
     if (!el) return;
-    if (v === k) el.classList.remove("hidden");
-    else el.classList.add("hidden");
+    el.classList.toggle("hidden", v !== k);
   });
 
-  // Show timeline controls dock only in timeline view
+  // Timeline controls dock only in timeline view
   const dock = document.getElementById("timelineControlsDock");
-  if (dock) {
-    if (k === "timeline") dock.classList.remove("hidden");
-    else dock.classList.add("hidden");
-  
+  if (dock) dock.classList.toggle("hidden", k !== "timeline");
 
-  // Update active view early for layout calculations
-  window.__activeView = k;
+  // 2) Current view
+  currentView = k;
+
+  // Render the active view content (keeps app resilient)
+  try{
+    if (k === "timeline") renderTimeline();
+    else if (k === "legs") renderLegs();
+    else if (k === "stays") renderStays();
+    else if (k === "acts") renderActivities();
+    else if (k === "meals") renderMeals();
+  } catch(e){}
+
+  // 3) Layout + scroll reset (never window.scrollTo)
+  const ms = document.getElementById("mainScroll");
+  requestAnimationFrame(() => {
+    syncMainScrollLayout();
+    if (ms) ms.scrollTop = 0;
+  });
 }
 
   // Recalculate layout after view switch (top depends on active view)
@@ -4013,15 +3970,15 @@ function setView(key, opts){
   
   // Apply view-level collapse UI after render (legs/stays/acts)
   try{
-    if (k === "legs") applyViewCollapsedUI("legs");
-    if (k === "stays") applyViewCollapsedUI("stays");
-    if (k === "acts") applyViewCollapsedUI("acts");
+    if (k === "legs") ("legs");
+    if (k === "stays") ("stays");
+    if (k === "acts") ("acts");
   } catch(e){}
 // Re-wire per-item accordions (delegation; safe to call)
   try{ setupItemAccordionsDelegated(); } catch(e){}
 
   // Keep fixed top stack vars + main scroll layout in sync
-  try{ syncTopStackHeights(); } catch(e){}
+  try{ syncMainScrollLayout(); } catch(e){}
 
   // Bottom nav active state
   document.querySelectorAll('[data-jump]').forEach(btn=>{
@@ -4077,12 +4034,16 @@ function syncHeaderHeightVar(){
   document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
 }
 
+
+// Layout sync (deterministic top stack)
+window.addEventListener("load", ()=>{ syncMainScrollLayout(); });
+window.addEventListener("resize", ()=>{ syncMainScrollLayout(); });
 /* ----------------------------- Init ----------------------------- */
 
 
 function syncStickyTotalsHeightVar(){
   // v78: keep legacy callers working
-  syncTopStackHeights();
+  syncMainScrollLayout();
 }
 
 function __tlGetTopOffsetPx(){
@@ -4110,7 +4071,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // setupAccordion disabled in view-based nav
   // setupAccordion();
   syncHeaderHeightVar();
-  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
+  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); try{ syncMainScrollLayout(); } catch(e){} }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
     if (fab) fab.onclick = () => { collapseAllAccordions(); const ms=document.getElementById('mainScroll'); if(ms) ms.scrollTop=0; else scrollMainToTop(); };
@@ -4130,7 +4091,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
-  try{ syncTopStackHeights(); } catch(e){}
+  try{ syncMainScrollLayout(); } catch(e){}
   try{ setupItemAccordionsDelegated(); } catch(e){}
   try{ setView('timeline'); } catch(e){}
 
@@ -4146,9 +4107,9 @@ window.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const vk = btn.getAttribute("data-view-collapse");
       if (vk === "legs" || vk === "stays" || vk === "acts") {
-        __viewCollapsed[vk] = !__viewCollapsed[vk];
-        applyViewCollapsedUI(vk);
-        try{ syncTopStackHeights(); } catch(_){}
+        [vk] = ![vk];
+        (vk);
+        try{ syncMainScrollLayout(); } catch(_){}
       }
     });
   }
@@ -4184,7 +4145,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Ensure top stack heights computed after all resources/layout (iOS-safe)
-window.addEventListener('load', () => { try{ syncTopStackHeights(); } catch(e){} }, { passive: true });
+window.addEventListener('load', () => { try{ syncMainScrollLayout(); } catch(e){} }, { passive: true });
 </script>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
