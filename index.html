@@ -205,6 +205,19 @@ border-radius: 999px;
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
+<!-- Entry Screen (App Mode) -->
+<div id="entryScreen" style="display:none; position:fixed; inset:0; z-index:9999; background:#ffffff;">
+<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px;">
+<div style="text-align:center; max-width:520px;">
+<div style="font-weight:800; font-size:22px; line-height:1.2; margin-bottom:6px;">¿Cómo quieres usar MI VIAJE?</div>
+<div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
+</div>
+<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
+<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
+<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
+</div>
+</div>
+</div>
 <!-- Top bar -->
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -224,6 +237,7 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
+<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnAppModeSwitch" onclick="toggleAppModeFromHeader()">Modo: <span id="appModeLabel">Planificación</span> ↔</button>
 </div>
 </div>
 </header>
@@ -475,7 +489,116 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
+/* ----------------------------- App Mode (planning | travel) ----------------------------- */
+/*
+  Rules:
+  - UI show/hide ONLY via element.style.display (no Tailwind hidden toggles for app mode).
+  - Persist: localStorage key "trip_app_mode"
+*/
+let appMode = "planning"; // "planning" | "travel"
+const LS_APP_MODE = "miviaje.appMode";
+const LS_APP_MODE_LEGACY = "trip_app_mode";
 
+function getSavedAppMode() {
+  try {
+    const v1 = String(localStorage.getItem(LS_APP_MODE) || "").trim();
+    if (v1 === "planning" || v1 === "travel") return v1;
+    const v0 = String(localStorage.getItem(LS_APP_MODE_LEGACY) || "").trim();
+    if (v0 === "planning" || v0 === "travel") return v0;
+    return "";
+  } catch { return ""; }
+}
+
+function persistAppMode() {
+  try { localStorage.setItem(LS_APP_MODE, appMode); } catch {}
+}
+
+function setAppMode(mode, fromInside = false) {
+  const next = (mode === "travel") ? "travel" : "planning";
+  const prev = appMode;
+
+  if (fromInside && prev === "planning" && next === "travel") {
+    const ok = confirm("¿Estás de viaje?");
+    if (!ok) return;
+  }
+
+  appMode = next;
+  persistAppMode();
+
+  // Hide entry overlay once a mode is chosen
+  const entry = document.getElementById("entryScreen");
+  if (entry) entry.style.display = "none";
+
+  applyAppModeUI();
+}
+
+function toggleAppModeFromHeader() {
+  const ok = confirm("¿Quieres cambiar de modo?");
+  if (!ok) return;
+  const entry = document.getElementById("entryScreen");
+  if (entry) entry.style.display = "block";
+}
+
+function applyAppModeUI() {
+  const isTravel = (appMode === "travel");
+
+  // Header label
+  const lbl = document.getElementById("appModeLabel");
+  if (lbl) lbl.textContent = isTravel ? "Viaje" : "Planificación";
+
+  // Scenario bar (MI VIAJE / alternativo / moneda / plegar todo)
+  const curSel = document.getElementById("displayCurrency");
+  const scenarioBar = curSel && curSel.parentElement ? curSel.parentElement.parentElement : null;
+  if (scenarioBar) scenarioBar.style.display = isTravel ? "none" : "";
+
+  // Hide summary aside (already visually hidden by CSS, but remove layout column in travel)
+  const summaryCard = document.getElementById("summary");
+  const aside = summaryCard ? summaryCard.closest("aside") : null;
+  if (aside) aside.style.display = isTravel ? "none" : "";
+
+  // Hide planning sections (UI only) in travel mode
+  const hideAcc = (key, hide) => {
+    const btn = document.querySelector(`[data-acc="${key}"]`);
+    const wrap = btn ? btn.parentElement : null;
+    if (!wrap) return;
+    wrap.style.display = hide ? "none" : "";
+  };
+
+  hideAcc("legs", isTravel);
+  hideAcc("stays", isTravel);
+  hideAcc("meals", isTravel);
+  hideAcc("acts", isTravel);
+  hideAcc("ai", isTravel);
+
+  // Bottom bar: in travel mode keep it out to avoid jumping to hidden sections
+  const bottomNav = document.querySelector("nav.safe-b");
+  if (bottomNav) bottomNav.style.display = isTravel ? "none" : "";
+
+  // In travel mode, ensure Timeline is open
+  if (isTravel) {
+    const body = document.querySelector('[data-acc-body="timeline"]');
+    if (body && body.classList.contains("hidden")) {
+      const btn = document.querySelector('[data-acc="timeline"]');
+      if (btn) btn.click();
+    }
+  }
+}
+
+function initAppMode() {
+  const saved = getSavedAppMode();
+  const entry = document.getElementById("entryScreen");
+  if (saved) {
+    appMode = saved;
+    if (entry) entry.style.display = "none";
+    applyAppModeUI();
+    return;
+  }
+  // No saved mode: show entry overlay
+  if (entry) entry.style.display = "block";
+  // Ensure label reflects default mode while overlay is shown
+  applyAppModeUI();
+}
+/* --------------------------- /App Mode --------------------------- */
 
 
 
@@ -643,6 +766,25 @@ function scrollToElTopStack(el, extra = 0) {
   if (!el) return;
   const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
+function landUnderTotals(el, extraPx = 8) {
+  if (!el) return;
+
+  try { syncHeaderHeightVar(); } catch {}
+  try { syncTopStackHeights(); } catch {}
+  try { syncStickyTotalsHeightVar(); } catch {}
+
+  requestAnimationFrame(() => {
+    try { scrollToElTopStack(el, extraPx); } catch {}
+  });
+
+  setTimeout(() => {
+    try { syncHeaderHeightVar(); } catch {}
+    try { syncTopStackHeights(); } catch {}
+    try { syncStickyTotalsHeightVar(); } catch {}
+    try { scrollToElTopStack(el, extraPx); } catch {}
+  }, 140);
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
@@ -1021,6 +1163,7 @@ function setupAccordion() {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
+      const wasHidden = body.classList.contains("hidden");
       body.classList.toggle("hidden");
 
     const isNowHidden = body.classList.contains("hidden");
@@ -1036,6 +1179,12 @@ function setupAccordion() {
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
       updateFabVisibility();
+
+      const isNowHidden2 = body.classList.contains("hidden");
+      const justOpened = wasHidden && !isNowHidden2;
+      if (justOpened && (key === "legs" || key === "stays" || key === "acts" || key === "meals")) {
+        landUnderTotals(btn, 8);
+      }
     });
   });
 }
@@ -1057,6 +1206,26 @@ function collapseAllAccordions() {
   try { renderStays(); } catch {}
   try { renderActivities(); } catch {}
 }
+
+/* ------------------------- Start state (V88D) ------------------------- */
+function forceStartStateTimelineProtagonist() {
+  // Ignore any persisted accordion openness: always start consistent.
+  try { collapseAllAccordions(); } catch {}
+
+  // Timeline open, other sections closed
+  try { openAccordionKey("timeline"); } catch {}
+
+  // Also collapse per-item accordions (so sections truly "start closed")
+  try {
+    __sectionExpanded.legs.clear();
+    __sectionExpanded.stays.clear();
+    __sectionExpanded.activities.clear();
+  } catch {}
+
+  // Always start at top of the page
+  try { window.scrollTo({ top: 0, behavior: "auto" }); } catch {}
+}
+
 
 
 function anyAccordionOpen() {
@@ -3950,9 +4119,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     const body = document.querySelector(`[data-acc-body="${key}"]`);
     if (body && body.classList.contains('hidden')) accBtn.click();
 
-    requestAnimationFrame(() => {
-      scrollToElTopStack(accBtn, 8); // micro offset under Totals
-    });
+    landUnderTotals(accBtn, 8);
   });
 });
 
@@ -3992,40 +4159,6 @@ function showHideTimelineControlsFixed(){ /* removed */ }
 function initTimelineControlsFixedObserver(){ /* removed */ }
 
 
-
-
-
-/* ----------------------- V88D: Start state (no AppMode) ----------------------- */
-function __setAccOpen(key, open) {
-  const body = document.querySelector(`[data-acc-body="${key}"]`);
-  const btn = document.querySelector(`[data-acc="${key}"]`);
-  if (!body || !btn) return;
-  const isOpen = !body.classList.contains("hidden");
-  if (open && !isOpen) btn.click();
-  if (!open && isOpen) btn.click();
-}
-function forceStartStateTimelineProtagonist() {
-  // Close everything first (consistent boot)
-  try { collapseAllAccordions(); } catch {}
-
-  // Ensure Timeline open, everything else closed (if they exist)
-  __setAccOpen("timeline", true);
-  __setAccOpen("legs", false);
-  __setAccOpen("stays", false);
-  __setAccOpen("acts", false);
-  __setAccOpen("meals", false);
-  __setAccOpen("ai", false);
-
-  // Reset per-item open sets (so sections start clean)
-  try {
-    __sectionExpanded.legs.clear();
-    __sectionExpanded.stays.clear();
-    __sectionExpanded.activities.clear();
-  } catch {}
-
-  try { window.scrollTo({ top: 0, behavior: "auto" }); } catch {}
-}
-/* --------------------- /V88D: Start state (no AppMode) --------------------- */
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
@@ -4069,8 +4202,7 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-  // AppMode removed
-
+  initAppMode();
 });
 </script>
 <!-- Floating FAB: Collapse all -->
