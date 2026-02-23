@@ -660,21 +660,51 @@ function scrollToElTopStack(el, extra = 0) {
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
-function landUnderTotals(el, extraPx = 8) {
+function landUnderTotals(el, extraPx = 8, opts = {}) {
   if (!el) return;
+
+  const smooth = !!(opts && opts.smooth);
 
   // Token to cancel pending landings when layout changes (e.g., user closes an accordion)
   window.__landingToken = (window.__landingToken || 0) + 1;
   const token = window.__landingToken;
 
-  try { syncHeaderHeightVar(); } catch {}
-  try { syncTopStackHeights(); } catch {}
-  try { syncStickyTotalsHeightVar(); } catch {}
+  const sync = () => {
+    try { syncHeaderHeightVar(); } catch {}
+    try { syncTopStackHeights(); } catch {}
+    try { syncStickyTotalsHeightVar(); } catch {}
+  };
 
+  const doScroll = (behavior) => {
+    if (!el) return;
+    const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + (extraPx || 0);
+    const y = el.getBoundingClientRect().top + window.pageYOffset - topStack;
+    window.scrollTo({ top: Math.max(0, y), behavior: behavior || "auto" });
+  };
+
+  sync();
+
+  // First pass
   requestAnimationFrame(() => {
     if ((window.__landingToken || 0) !== token) return;
-    try { scrollToElTopStack(el, extraPx); } catch {}
+    if (el.offsetParent === null) return; // not visible
+    try { doScroll(smooth ? "smooth" : "auto"); } catch {}
   });
+
+  // Second pass only if clearly off after settle (and always auto to avoid double smooth jump)
+  setTimeout(() => {
+    if ((window.__landingToken || 0) !== token) return;
+    if (el.offsetParent === null) return;
+
+    try {
+      const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + (extraPx || 0);
+      const err = el.getBoundingClientRect().top - topStack;
+      if (Math.abs(err) <= 12) return;
+
+      sync();
+      doScroll("auto");
+    } catch {}
+  }, 140);
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
@@ -4043,60 +4073,45 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
 
-    const __isActsJump = (key === 'acts');
-    const __landingThreshold = __isActsJump ? 6 : 10;
-    const __scheduleLanding = (fn) => {
-      if (__isActsJump) {
-        requestAnimationFrame(() => requestAnimationFrame(fn));
-      } else {
-        requestAnimationFrame(fn);
-      }
-    };
-
     const accBtn = document.querySelector(`[data-acc="${key}"]`);
     if (!accBtn) return;
 
     const body = document.querySelector(`[data-acc-body="${key}"]`);
 
-    // V88G2D: landing premium ONLY when opened from bottom nav
-    window.__pendingLanding = true;
+    // Bottom-nav driven landing only
+    window.__pendingLandingKey = key;
 
-    const doLanding = () => {
-      // First pass
-      landUnderTotals(accBtn, 8);
-
-      // Measure error after first pass; only do second pass if clearly off
-      requestAnimationFrame(() => {
-        try {
-          const topStack = getTopStackOffset() + 8; // header + totals + margin
-          const rect = accBtn.getBoundingClientRect();
-          const err = rect.top - topStack;
-
-          if (Math.abs(err) > __landingThreshold) {
-            setTimeout(() => {
-              // still only if this landing is pending
-              if (!window.__pendingLanding) return;
-              landUnderTotals(accBtn, 8);
-              window.__pendingLanding = false;
-            }, 120);
-          } else {
-            window.__pendingLanding = false;
-          }
-        } catch {
-          window.__pendingLanding = false;
-        }
-      });
+    const scheduleFrames = (n, fn) => {
+      let i = 0;
+      const step = () => {
+        i++;
+        if (i >= n) return fn();
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
     };
 
+    const frames = (key === "stays") ? 3 : 2;
+
+    const doLanding = () => {
+      // Smooth navigation from bottom nav
+      landUnderTotals(accBtn, 8, { smooth: true });
+
+      // Clear intent shortly after; landing itself is token-cancelled on close
+      setTimeout(() => {
+        if (window.__pendingLandingKey === key) window.__pendingLandingKey = "";
+      }, 180);
+    };
+
+    // Ensure target accordion is open, then land after settle frames
     if (body && body.classList.contains('hidden')) {
-      // Open first, then land on next frame (after reflow)
       accBtn.click();
-      __scheduleLanding(doLanding);
+      scheduleFrames(frames, doLanding);
       return;
     }
 
-    // Already open: land immediately
-    doLanding();
+    // Already open: still land for consistent alignment
+    scheduleFrames(2, doLanding);
   });
 });
 
