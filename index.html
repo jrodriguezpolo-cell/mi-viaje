@@ -205,19 +205,6 @@ border-radius: 999px;
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
-<!-- Entry Screen (App Mode) -->
-<div id="entryScreen" style="display:none; position:fixed; inset:0; z-index:9999; background:#ffffff;">
-<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px;">
-<div style="text-align:center; max-width:520px;">
-<div style="font-weight:800; font-size:22px; line-height:1.2; margin-bottom:6px;">¿Cómo quieres usar MI VIAJE?</div>
-<div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
-</div>
-<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
-<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
-<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
-</div>
-</div>
-</div>
 <!-- Top bar -->
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -237,7 +224,6 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
-<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnAppModeSwitch" onclick="toggleAppModeFromHeader()">Modo: <span id="appModeLabel">Planificación</span> ↔</button>
 </div>
 </div>
 </header>
@@ -489,119 +475,6 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-/* ----------------------------- App Mode (planning | travel) ----------------------------- */
-/*
-  Rules:
-  - UI show/hide ONLY via element.style.display (no Tailwind hidden toggles for app mode).
-  - Persist: localStorage key "trip_app_mode"
-*/
-let appMode = "planning"; // "planning" | "travel"
-const LS_APP_MODE = "miviaje.appMode";
-const LS_APP_MODE_LEGACY = "trip_app_mode";
-
-function getSavedAppMode() {
-  try {
-    const v1 = String(localStorage.getItem(LS_APP_MODE) || "").trim();
-    if (v1 === "planning" || v1 === "travel") return v1;
-    const v0 = String(localStorage.getItem(LS_APP_MODE_LEGACY) || "").trim();
-    if (v0 === "planning" || v0 === "travel") return v0;
-    return "";
-  } catch { return ""; }
-}
-
-function persistAppMode() {
-  try { localStorage.setItem(LS_APP_MODE, appMode); } catch {}
-}
-
-function setAppMode(mode, fromInside = false) {
-  const next = (mode === "travel") ? "travel" : "planning";
-  const prev = appMode;
-
-  if (fromInside && prev === "planning" && next === "travel") {
-    const ok = confirm("¿Estás de viaje?");
-    if (!ok) return;
-  }
-
-  appMode = next;
-  persistAppMode();
-
-  // Hide entry overlay once a mode is chosen
-  const entry = document.getElementById("entryScreen");
-  if (entry) entry.style.display = "none";
-
-  applyAppModeUI();
-}
-
-function toggleAppModeFromHeader() {
-  const ok = confirm("¿Quieres cambiar de modo?");
-  if (!ok) return;
-  const entry = document.getElementById("entryScreen");
-  if (entry) entry.style.display = "block";
-}
-
-function applyAppModeUI() {
-  const isTravel = (appMode === "travel");
-
-  // Header label
-  const lbl = document.getElementById("appModeLabel");
-  if (lbl) lbl.textContent = isTravel ? "Viaje" : "Planificación";
-
-  // Scenario bar (MI VIAJE / alternativo / moneda / plegar todo)
-  const curSel = document.getElementById("displayCurrency");
-  const scenarioBar = curSel && curSel.parentElement ? curSel.parentElement.parentElement : null;
-  if (scenarioBar) scenarioBar.style.display = isTravel ? "none" : "";
-
-  // Hide summary aside (already visually hidden by CSS, but remove layout column in travel)
-  const summaryCard = document.getElementById("summary");
-  const aside = summaryCard ? summaryCard.closest("aside") : null;
-  if (aside) aside.style.display = isTravel ? "none" : "";
-
-  // Hide planning sections (UI only) in travel mode
-  const hideAcc = (key, hide) => {
-    const btn = document.querySelector(`[data-acc="${key}"]`);
-    const wrap = btn ? btn.parentElement : null;
-    if (!wrap) return;
-    wrap.style.display = hide ? "none" : "";
-  };
-
-  hideAcc("legs", isTravel);
-  hideAcc("stays", isTravel);
-  hideAcc("meals", isTravel);
-  hideAcc("acts", isTravel);
-  hideAcc("ai", isTravel);
-
-  // Bottom bar: in travel mode keep it out to avoid jumping to hidden sections
-  const bottomNav = document.querySelector("nav.safe-b");
-  if (bottomNav) bottomNav.style.display = isTravel ? "none" : "";
-
-  // In travel mode, ensure Timeline is open
-  if (isTravel) {
-    const body = document.querySelector('[data-acc-body="timeline"]');
-    if (body && body.classList.contains("hidden")) {
-      const btn = document.querySelector('[data-acc="timeline"]');
-      if (btn) btn.click();
-    }
-  }
-}
-
-function initAppMode() {
-  const saved = getSavedAppMode();
-  const entry = document.getElementById("entryScreen");
-  if (saved) {
-    appMode = saved;
-    if (entry) entry.style.display = "none";
-    applyAppModeUI();
-    return;
-  }
-  // No saved mode: show entry overlay
-  if (entry) entry.style.display = "block";
-  // Ensure label reflects default mode while overlay is shown
-  applyAppModeUI();
-}
-/* --------------------------- /App Mode --------------------------- */
-
-
-
 /* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName";
 
@@ -787,7 +660,16 @@ function landUnderTotals(el, extraPx = 8) {
   }, 140);
 }
 
-let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
+
+// Timeline notices (V88G)
+let __tlNoticeText = "";
+function __tlSetNotice(msg) {
+  __tlNoticeText = String(msg || "").trim();
+}
+function __tlNoticeHTML() {
+  if (!__tlNoticeText) return "";
+  return `<div class="mb-3 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">${escapeHtml(__tlNoticeText)}</div>`;
+}
 
 function __tlNowMinutes() {
   const n = new Date();
@@ -803,7 +685,7 @@ function getEstimatedDurationMinutes(item) {
 }
 
 function getEventStartDateTime(item) {
-  // Returns a Date for today items with valid time, else null
+  // Returns a Date for items with valid date+time, else null
   const d = String(item?.date || "");
   const t = String(item?.time || "");
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return null;
@@ -812,29 +694,23 @@ function getEventStartDateTime(item) {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-function __tlPickCurrentItemForToday(items, todayISO) {
+function __tlPickCurrentItem(items, todayISO) {
   const nowMin = __tlNowMinutes();
-  const todays = (items || []).filter(it => String(it.date||"") === String(todayISO) && it.date !== "9999-99-99");
-  if (!todays.length) return null;
-
-  // Prefer real events over note markers when choosing "actual"
-  const main = todays.filter(it => !it.isNote);
-
-  // Only consider items with a valid time for "in progress"
-  const pool = (main.length ? main : todays).filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || "")));
-
+  const pool = (items || []).filter(it => {
+    if (it.isNote) return false;
+    if (String(it.date || "") !== String(todayISO)) return false;
+    return /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || ""));
+  });
   if (!pool.length) return null;
 
-  // In progress: start <= now < end (estimated duration)
   const inProgress = pool.filter(it => {
     const startMin = timeSortKey(it.time);
     const endMin = startMin + getEstimatedDurationMinutes(it);
     return startMin <= nowMin && nowMin < endMin;
   });
-
   if (!inProgress.length) return null;
 
-  // If several: pick the one that started most recently
+  // pick the one that started most recently
   inProgress.sort((a,b) => timeSortKey(b.time) - timeSortKey(a.time));
   return inProgress[0] || null;
 }
@@ -847,6 +723,14 @@ function __tlEnsureTimelineOpen() {
   }
 }
 
+function __tlKeyForItem(it) {
+  if (!it) return "";
+  if (it.isNote) return `note:${String(it.date || "")}`;
+  const kind = it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""));
+  const id = it.actId || it.legId || it.stayId || "";
+  return `${kind}:${id}`;
+}
+
 function __tlScrollToItemByKey(tlKey) {
   if (!tlKey) return false;
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
@@ -856,97 +740,87 @@ function __tlScrollToItemByKey(tlKey) {
   return true;
 }
 
+/* -------- Timeline: ACTUAL / PRÓXIMO (V88G) -------- */
+
 function scrollToCurrentTimelineItem() {
   __tlEnsureTimelineOpen();
 
-  const todayISO = todayYMD();
-  timelineViewMode = "day";
-  activeDayISO = todayISO;
+  // Refresh list using current filters/mode
   renderTimeline();
 
+  const todayISO = todayYMD();
   const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
-  const cur = __tlPickCurrentItemForToday(items, todayISO);
+  const cur = __tlPickCurrentItem(items, todayISO);
+
   if (!cur) {
-    alert("No hay eventos en curso ahora mismo");
+    __tlSetNotice("No hay eventos en curso ahora mismo");
+    renderTimeline(); // show notice, but NO auto-scroll
     return;
   }
 
-  const key = cur.isNote ? `note:${todayISO}` : `${cur.actId ? "act" : (cur.legId ? "leg" : (cur.stayId ? "stay" : ""))}:${(cur.actId || cur.legId || cur.stayId || "")}`;
-  __tlLastActualKey = key;
-  __tlScrollToItemByKey(key);
+  __tlSetNotice("");
+
+  // If Day mode is active but not on today, we must show today to be able to scroll to the current event.
+  if (timelineViewMode === "day" && String(activeDayISO || "") !== String(todayISO)) {
+    activeDayISO = todayISO;
+    renderTimeline();
+  }
+
+  __tlScrollToItemByKey(__tlKeyForItem(cur));
 }
 
 function scrollToNextAfterCurrent() {
   __tlEnsureTimelineOpen();
 
-  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
-  if (!items.length) { alert("No hay próximos eventos."); return; }
+  // Refresh list using current filters/mode
+  renderTimeline();
 
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
   const now = new Date();
 
-  const makeKey = (it) => {
-    return it.isNote ? `note:${String(it.date || "")}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
-  };
+  // First future item in GLOBAL ordering (can be tomorrow; items without time treated as end-of-day 23:59)
+  const next = (items || []).find(it => {
+    if (!it || it.isNote) return false;
+    const d = String(it.date || "");
+    if (!d || d === "9999-99-99") return false;
 
-  // If we have a current "Actual" that is truly in progress now, next = item after it.
-  let actualIdx = -1;
-  if (__tlLastActualKey) {
-    actualIdx = items.findIndex(it => makeKey(it) === __tlLastActualKey);
-    if (actualIdx >= 0) {
-      const it = items[actualIdx];
-      const start = getEventStartDateTime(it);
-      if (!start) {
-        actualIdx = -1;
-      } else {
-        const durMin = getEstimatedDurationMinutes(it);
-        const end = new Date(start.getTime() + durMin * 60000);
-        if (!(start.getTime() <= now.getTime() && now.getTime() < end.getTime())) {
-          actualIdx = -1;
-        }
-      }
-    }
+    const start = getEventStartDateTime(it);
+    if (start) return start.getTime() >= now.getTime();
+
+    // No valid time: treat as end-of-day 23:59
+    if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
+    const dt = new Date(d + "T23:59:00");
+    return dt.getTime() >= now.getTime();
+  }) || null;
+
+  if (!next) {
+    __tlSetNotice("No hay próximos eventos");
+    renderTimeline();
+    return;
   }
 
-  let next = null;
-
-  if (actualIdx >= 0) {
-    next = items[actualIdx + 1] || null;
-  } else {
-    // First future item in global ordering (can be tomorrow; includes items without time as 23:59)
-    next = items.find(it => {
-      const d = String(it.date || "");
-      if (!d || d === "9999-99-99") return false;
-
-      const start = getEventStartDateTime(it);
-      if (start) {
-        return start.getTime() >= now.getTime();
-      }
-
-      // No valid time: treat as end-of-day 23:59
-      if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
-      const dt = new Date(d + "T23:59:00");
-      return dt.getTime() >= now.getTime();
-    });
-  }
-
-  if (!next) { alert("No hay próximos eventos."); return; }
+  __tlSetNotice("");
 
   const dISO = String(next.date || "");
-  if (!dISO || dISO === "9999-99-99") { alert("No hay próximos eventos."); return; }
+  if (!dISO || dISO === "9999-99-99") {
+    __tlSetNotice("No hay próximos eventos");
+    renderTimeline();
+    return;
+  }
 
+  // Move to Day view for the event's day and scroll to the event
   timelineViewMode = "day";
   activeDayISO = dISO;
   renderTimeline();
 
-  const key = makeKey(next);
-  __tlLastActualKey = key;
-
-  // Scroll to item (fallback to first item of that day)
+  const key = __tlKeyForItem(next);
   if (!__tlScrollToItemByKey(key)) {
-    const first = items.find(it => String(it.date || "") === dISO);
-    if (first) __tlScrollToItemByKey(makeKey(first));
+    const first = (items || []).find(it => !it.isNote && String(it.date || "") === dISO);
+    if (first) __tlScrollToItemByKey(__tlKeyForItem(first));
   }
 }
+/* -------- /Timeline: ACTUAL / PRÓXIMO (V88G) -------- */
+
 
 function scrollToTodayTimelineItem() {
   // Ensure the timeline accordion is open so the scroll makes sense to the user
@@ -2427,7 +2301,9 @@ function moveActiveDay(delta) {
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
-  const sc = curScenario();
+  
+  const notice = (typeof __tlNoticeHTML==="function") ? __tlNoticeHTML() : "";
+const sc = curScenario();
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
@@ -2488,27 +2364,27 @@ function renderTimeline() {
 
   if (timelineViewMode === "day") {
     if (!activeDayISO) {
-      box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para estos filtros." : "No hay eventos todavía.")}</div>`;
+      box.innerHTML = notice + `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para estos filtros." : "No hay eventos todavía.")}</div>`;
       renderDailyNotes();
       return;
     }
     visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
     if (!visibleItems.length) {
-      box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
+      box.innerHTML = notice + `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
       return;
     }
   }
 
   if (!visibleItems.length) {
-    box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
+    box.innerHTML = notice + `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
     renderDailyNotes();
     return;
   }
 
   const showCost = (timelineViewMode === "global");
 
-  box.innerHTML = visibleItems.map(it => {
+  box.innerHTML = notice + visibleItems.map(it => {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
@@ -4213,8 +4089,7 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-  initAppMode();
-});
+  });
 </script>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
