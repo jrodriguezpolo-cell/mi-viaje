@@ -484,9 +484,9 @@ border-radius: 999px;
 </nav>
 
 <!-- Tools Bottom Sheet (V88I) -->
-<div id="toolsOverlay" class="hidden fixed inset-0 z-[5200] bg-black/40 backdrop-blur-[2px]"></div>
+<div id="toolsOverlay" class="hidden fixed inset-0 z-[5000] bg-black/40 backdrop-blur-[2px] pointer-events-auto"></div>
 
-<div id="toolsSheet" class="hidden fixed left-0 right-0 bottom-0 z-[90]">
+<div id="toolsSheet" class="hidden fixed left-0 right-0 bottom-0 z-[5100] pointer-events-auto">
   <div class="max-w-6xl mx-auto px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
     <div class="bg-white/95 backdrop-blur border border-slate-200 rounded-t-3xl shadow-2xl overflow-hidden">
       <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
@@ -1342,7 +1342,23 @@ function resetCurrentScenarioData() {
   } catch {}
 
   try { renderAll(); } catch {}
-  try { forceStartStateTimelineProtagonist(); } catch {}
+  try { forceStartStateTimelineProtagonist();
+  // V88L3: Totales "Ver detalle" — simple toggle (no reflow yet)
+  const stickyTotalToggle = document.getElementById('stickyTotalToggle');
+  const stickySummaryDetail = document.getElementById('stickySummaryDetail');
+  if (stickyTotalToggle && stickySummaryDetail && !stickyTotalToggle.__hasToggleListener) {
+    stickyTotalToggle.__hasToggleListener = true;
+    stickyTotalToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const willShow = stickySummaryDetail.classList.contains('hidden');
+      stickySummaryDetail.classList.toggle('hidden');
+      stickyTotalToggle.textContent = willShow ? 'Ocultar detalle ▴' : 'Ver detalle ▾';
+      // keep spacer heights correct without doing scroll reflow
+      try { requestAnimationFrame(() => { if (typeof syncTopStackHeights === 'function') syncTopStackHeights(); }); } catch {}
+    });
+  }
+ } catch {}
   try { syncTopStackHeights(); } catch {}
 }
 
@@ -3117,6 +3133,7 @@ function applySummaryFold() {
       summaryExpanded = !summaryExpanded;
       applySummaryFold();
       requestAnimationFrame(() => {
+        try { if (typeof syncTopStackHeights === 'function') syncTopStackHeights(); } catch {}
         try { syncTopStackHeights(); } catch {}
         const newStack = getTopStackOffset();
         const dy = newStack - oldStack;
@@ -4403,13 +4420,20 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     const frames = (key === "stays" || key === "acts") ? 3 : 2;
     const doLanding = () => {
       // First landing (bottom nav intent): smooth ONCE
-      landUnderTotals(accBtn, 8, { smooth: true });
+      const runFirstLanding = () => {
+        try { if (typeof syncTopStackHeights === "function") syncTopStackHeights(); } catch {}
+        landUnderTotals(accBtn, 8, { smooth: true });
+      };
+      // Stays/Activities: settle frames + double RAF to avoid "half-screen" landings
+      if (key === "stays" || key === "acts") {
+        requestAnimationFrame(() => requestAnimationFrame(runFirstLanding));
+      } else {
+        runFirstLanding();
+      }
 
       const threshold = (key === "acts") ? 6 : 8;
 
       const getErr = () => {
-        try { syncHeaderHeightVar(); } catch {}
-        try { syncTopStackHeights(); } catch {}
         const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
         return accBtn.getBoundingClientRect().top - topStack;
       };
@@ -4417,8 +4441,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
       const correctAuto = (delayMs) => {
         setTimeout(() => {
           if (window.__pendingLandingKey !== key) return;
-          try { syncHeaderHeightVar(); } catch {}
-          try { syncTopStackHeights(); } catch {}
+          try { if (typeof syncTopStackHeights === 'function') syncTopStackHeights(); } catch {}
           landUnderTotals(accBtn, 8, { smooth: false }); // auto correction (no smooth)
         }, delayMs);
       };
@@ -4436,8 +4459,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
                 if (window.__pendingLandingKey !== key) return;
                 const err2 = getErr();
                 if (Math.abs(err2) > threshold) {
-                  try { syncHeaderHeightVar(); } catch {}
-                  try { syncTopStackHeights(); } catch {}
+                  try { if (typeof syncTopStackHeights === 'function') syncTopStackHeights(); } catch {}
                   landUnderTotals(accBtn, 8, { smooth: false }); // 3rd correction (auto)
                 }
               }, 220);
