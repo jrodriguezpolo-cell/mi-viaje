@@ -4307,43 +4307,51 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
 
     const frames = (key === "stays" || key === "acts") ? 3 : 2;
     const doLanding = () => {
-      // First landing: smooth ONCE (bottom nav intent)
-      if (key === "acts") {
-        // Activities: needs a bit more settle time (especially after tools/compact header)
-        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
-          landUnderTotals(accBtn, 8, { smooth: true });
-        })));
-      } else {
-        landUnderTotals(accBtn, 8, { smooth: true });
-      }
+      // First landing (bottom nav intent): smooth ONCE
+      landUnderTotals(accBtn, 8, { smooth: true });
 
-      // Measure real error after landing; correct only if necessary
-      const measureAndCorrect = () => {
-        try {
-          const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
-          const err = accBtn.getBoundingClientRect().top - topStack;
+      const threshold = (key === "acts") ? 6 : 8;
 
-          if (Math.abs(err) > 8) {
-            setTimeout(() => {
-              if (window.__pendingLandingKey !== key) return;
-              // Corrective pass: auto (no smooth) to avoid micro-salts
-              landUnderTotals(accBtn, 8, { smooth: false });
-            }, 120);
-          }
-        } catch {}
+      const getErr = () => {
+        const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
+        return accBtn.getBoundingClientRect().top - topStack;
       };
 
-      if (key === "acts") {
-        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(measureAndCorrect)));
-      } else {
-        requestAnimationFrame(measureAndCorrect);
-      }
+      const correctAuto = (delayMs) => {
+        setTimeout(() => {
+          if (window.__pendingLandingKey !== key) return;
+          landUnderTotals(accBtn, 8, { smooth: false }); // auto correction (no smooth)
+        }, delayMs);
+      };
+
+      // Measure error after the first landing; correct only if real drift exists
+      requestAnimationFrame(() => {
+        try {
+          const err1 = getErr();
+          if (Math.abs(err1) > threshold) {
+            correctAuto(120);
+
+            // Activities: deterministic extra correction window (only if still off)
+            if (key === "acts") {
+              setTimeout(() => {
+                if (window.__pendingLandingKey !== key) return;
+                const err2 = getErr();
+                if (Math.abs(err2) > threshold) {
+                  landUnderTotals(accBtn, 8, { smooth: false }); // 3rd correction (auto)
+                }
+              }, 220);
+            }
+          }
+        } catch {}
+      });
 
       // Clear intent after correction window
+      const clearAfter = (key === "acts") ? 380 : 260;
       setTimeout(() => {
         if (window.__pendingLandingKey === key) window.__pendingLandingKey = "";
-      }, 240);
+      }, clearAfter);
     };
+
 
 
     // Ensure target accordion is open, then land after settle frames
