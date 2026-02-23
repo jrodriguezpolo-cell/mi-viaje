@@ -205,6 +205,12 @@ border-radius: 999px;
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
+<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
+<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
+<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
+</div>
+</div>
+</div>
 <!-- Top bar -->
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -318,6 +324,7 @@ border-radius: 999px;
 </div>
   </div>
 
+  <div id="timelineNotice" class="hidden mb-3 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700"></div>
   <div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
@@ -660,16 +667,7 @@ function landUnderTotals(el, extraPx = 8) {
   }, 140);
 }
 
-
-// Timeline notices (V88G)
-let __tlNoticeText = "";
-function __tlSetNotice(msg) {
-  __tlNoticeText = String(msg || "").trim();
-}
-function __tlNoticeHTML() {
-  if (!__tlNoticeText) return "";
-  return `<div class="mb-3 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-700">${escapeHtml(__tlNoticeText)}</div>`;
-}
+let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
 function __tlNowMinutes() {
   const n = new Date();
@@ -685,7 +683,7 @@ function getEstimatedDurationMinutes(item) {
 }
 
 function getEventStartDateTime(item) {
-  // Returns a Date for items with valid date+time, else null
+  // Returns a Date for today items with valid time, else null
   const d = String(item?.date || "");
   const t = String(item?.time || "");
   if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return null;
@@ -694,23 +692,29 @@ function getEventStartDateTime(item) {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-function __tlPickCurrentItem(items, todayISO) {
+function __tlPickCurrentItemForToday(items, todayISO) {
   const nowMin = __tlNowMinutes();
-  const pool = (items || []).filter(it => {
-    if (it.isNote) return false;
-    if (String(it.date || "") !== String(todayISO)) return false;
-    return /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || ""));
-  });
+  const todays = (items || []).filter(it => String(it.date||"") === String(todayISO) && it.date !== "9999-99-99");
+  if (!todays.length) return null;
+
+  // Prefer real events over note markers when choosing "actual"
+  const main = todays.filter(it => !it.isNote);
+
+  // Only consider items with a valid time for "in progress"
+  const pool = (main.length ? main : todays).filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || "")));
+
   if (!pool.length) return null;
 
+  // In progress: start <= now < end (estimated duration)
   const inProgress = pool.filter(it => {
     const startMin = timeSortKey(it.time);
     const endMin = startMin + getEstimatedDurationMinutes(it);
     return startMin <= nowMin && nowMin < endMin;
   });
+
   if (!inProgress.length) return null;
 
-  // pick the one that started most recently
+  // If several: pick the one that started most recently
   inProgress.sort((a,b) => timeSortKey(b.time) - timeSortKey(a.time));
   return inProgress[0] || null;
 }
@@ -723,14 +727,6 @@ function __tlEnsureTimelineOpen() {
   }
 }
 
-function __tlKeyForItem(it) {
-  if (!it) return "";
-  if (it.isNote) return `note:${String(it.date || "")}`;
-  const kind = it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""));
-  const id = it.actId || it.legId || it.stayId || "";
-  return `${kind}:${id}`;
-}
-
 function __tlScrollToItemByKey(tlKey) {
   if (!tlKey) return false;
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
@@ -740,87 +736,104 @@ function __tlScrollToItemByKey(tlKey) {
   return true;
 }
 
-/* -------- Timeline: ACTUAL / PRÓXIMO (V88G) -------- */
+function __tlSetNotice(msg){
+  const box = document.getElementById("timelineNotice");
+  if (!box) return;
+  const t = String(msg || "").trim();
+  if (!t){
+    box.textContent = "";
+    box.classList.add("hidden");
+    return;
+  }
+  box.textContent = t;
+  box.classList.remove("hidden");
+}
+function __tlClearNotice(){ __tlSetNotice(""); }
 
 function scrollToCurrentTimelineItem() {
   __tlEnsureTimelineOpen();
+  // Keep current view/day; "Actual" should not force a day switch.
+  try { __tlClearNotice(); } catch {}
 
-  // Refresh list using current filters/mode
-  renderTimeline();
+  // Ensure items reflect current mode (global/day) before picking.
+  try { renderTimeline(); } catch {}
 
   const todayISO = todayYMD();
   const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
-  const cur = __tlPickCurrentItem(items, todayISO);
+  const cur = __tlPickCurrentItemForToday(items, todayISO);
 
   if (!cur) {
     __tlSetNotice("No hay eventos en curso ahora mismo");
-    renderTimeline(); // show notice, but NO auto-scroll
     return;
   }
 
-  __tlSetNotice("");
-
-  // If Day mode is active but not on today, we must show today to be able to scroll to the current event.
-  if (timelineViewMode === "day" && String(activeDayISO || "") !== String(todayISO)) {
-    activeDayISO = todayISO;
-    renderTimeline();
-  }
-
-  __tlScrollToItemByKey(__tlKeyForItem(cur));
+  const key = cur.isNote ? `note:${todayISO}` : `${cur.actId ? "act" : (cur.legId ? "leg" : (cur.stayId ? "stay" : ""))}:${(cur.actId || cur.legId || cur.stayId || "")}`;
+  __tlScrollToItemByKey(key);
 }
 
 function scrollToNextAfterCurrent() {
   __tlEnsureTimelineOpen();
+  try { __tlClearNotice(); } catch {}
 
-  // Refresh list using current filters/mode
+  // Work from a global ordering to find the next future event deterministically.
+  const prevMode = (typeof timelineViewMode !== "undefined") ? timelineViewMode : "global";
+  const prevDay  = (typeof activeDayISO !== "undefined") ? activeDayISO : "";
+
+  timelineViewMode = "global";
   renderTimeline();
 
   const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  if (!items.length) { __tlSetNotice("No hay próximos eventos"); timelineViewMode = prevMode; activeDayISO = prevDay; renderTimeline(); return; }
+
   const now = new Date();
 
-  // First future item in GLOBAL ordering (can be tomorrow; items without time treated as end-of-day 23:59)
-  const next = (items || []).find(it => {
-    if (!it || it.isNote) return false;
+  const makeKey = (it) => {
+    return it.isNote ? `note:${String(it.date || "")}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
+  };
+
+  const isFutureOrNow = (it) => {
     const d = String(it.date || "");
     if (!d || d === "9999-99-99") return false;
 
     const start = getEventStartDateTime(it);
     if (start) return start.getTime() >= now.getTime();
 
-    // No valid time: treat as end-of-day 23:59
     if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
     const dt = new Date(d + "T23:59:00");
     return dt.getTime() >= now.getTime();
-  }) || null;
+  };
+
+  const next = items.find(isFutureOrNow) || null;
 
   if (!next) {
     __tlSetNotice("No hay próximos eventos");
+    // Restore previous view
+    timelineViewMode = prevMode;
+    activeDayISO = prevDay;
     renderTimeline();
     return;
   }
-
-  __tlSetNotice("");
 
   const dISO = String(next.date || "");
   if (!dISO || dISO === "9999-99-99") {
     __tlSetNotice("No hay próximos eventos");
+    timelineViewMode = prevMode;
+    activeDayISO = prevDay;
     renderTimeline();
     return;
   }
 
-  // Move to Day view for the event's day and scroll to the event
   timelineViewMode = "day";
   activeDayISO = dISO;
   renderTimeline();
 
-  const key = __tlKeyForItem(next);
+  const key = makeKey(next);
+  // Scroll to item (fallback: first item of that day)
   if (!__tlScrollToItemByKey(key)) {
-    const first = (items || []).find(it => !it.isNote && String(it.date || "") === dISO);
-    if (first) __tlScrollToItemByKey(__tlKeyForItem(first));
+    const first = items.find(it => String(it.date || "") === dISO);
+    if (first) __tlScrollToItemByKey(makeKey(first));
   }
 }
-/* -------- /Timeline: ACTUAL / PRÓXIMO (V88G) -------- */
-
 
 function scrollToTodayTimelineItem() {
   // Ensure the timeline accordion is open so the scroll makes sense to the user
@@ -2301,9 +2314,7 @@ function moveActiveDay(delta) {
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
-  
-  const notice = (typeof __tlNoticeHTML==="function") ? __tlNoticeHTML() : "";
-const sc = curScenario();
+  const sc = curScenario();
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
@@ -2364,27 +2375,27 @@ const sc = curScenario();
 
   if (timelineViewMode === "day") {
     if (!activeDayISO) {
-      box.innerHTML = notice + `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para estos filtros." : "No hay eventos todavía.")}</div>`;
+      box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para estos filtros." : "No hay eventos todavía.")}</div>`;
       renderDailyNotes();
       return;
     }
     visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
     if (!visibleItems.length) {
-      box.innerHTML = notice + `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
+      box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
       return;
     }
   }
 
   if (!visibleItems.length) {
-    box.innerHTML = notice + `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
+    box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
     renderDailyNotes();
     return;
   }
 
   const showCost = (timelineViewMode === "global");
 
-  box.innerHTML = notice + visibleItems.map(it => {
+  box.innerHTML = visibleItems.map(it => {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
@@ -4089,7 +4100,7 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-  });
+});
 </script>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
