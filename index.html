@@ -1181,6 +1181,26 @@ function collapseAllAccordions() {
   try { renderActivities(); } catch {}
 }
 
+/* ------------------------- Start state (V88D) ------------------------- */
+function forceStartStateTimelineProtagonist() {
+  // Ignore any persisted accordion openness: always start consistent.
+  try { collapseAllAccordions(); } catch {}
+
+  // Timeline open, other sections closed
+  try { openAccordionKey("timeline"); } catch {}
+
+  // Also collapse per-item accordions (so sections truly "start closed")
+  try {
+    __sectionExpanded.legs.clear();
+    __sectionExpanded.stays.clear();
+    __sectionExpanded.activities.clear();
+  } catch {}
+
+  // Always start at top of the page
+  try { window.scrollTo({ top: 0, behavior: "auto" }); } catch {}
+}
+
+
 
 function anyAccordionOpen() {
   return !!document.querySelector('[data-acc-body]:not(.hidden)');
@@ -4074,7 +4094,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     if (body && body.classList.contains('hidden')) accBtn.click();
 
     requestAnimationFrame(() => {
-      scrollToElTopStack(accBtn, 4); // premium micro offset under Totals
+      scrollToElTopStack(accBtn, 8); // micro offset under Totals (V88D)
     });
   });
 });
@@ -4119,6 +4139,7 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
+  forceStartStateTimelineProtagonist();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
