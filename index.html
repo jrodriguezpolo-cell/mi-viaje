@@ -137,18 +137,24 @@ border-radius: 999px;
       right: 0;
       top: var(--app-header-h, 56px);
       z-index: 950;
-    
-    #stickyCompareBar{
-      position: fixed;
-      left: 0;
-      right: 0;
-      top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
-      z-index: 940;
     }
+
+
+    
+
+/* V88J/V88I: Compare A/B bar under totals (always visible) */
+#stickyCompareBar{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
+  z-index: 945;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15,23,42,0.08);
 }
 
-
-    /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
+/* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
     #summary, #summaryDetail { display: none !important; }
     #stickySummaryDetailInner .row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
     #stickySummaryDetailInner .lbl { color: rgb(100 116 139); }
@@ -182,7 +188,7 @@ border-radius: 999px;
 /* Timeline controls sticky (single row, no clone) */
 #timelineControlsRow{
   position: sticky;
-  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
+  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px) + var(--sticky-compare-h, 0px));
   z-index: 60;
   background: rgba(255,255,255,0.97);
   backdrop-filter: blur(8px);
@@ -270,15 +276,7 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-red-200 bg-white hover:bg-red-50 text-red-700 hidden" id="btnResetTrip" title="Borrar todos los datos del viaje actual">Reiniciar este viaje</button>
 </div>
-<div class="flex items-center gap-2">
-<label class="sr-only">Moneda</label>
-<select class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" id="displayCurrency">
-<option value="EUR">€ EUR</option>
-<option value="USD">$ USD</option>
-<option value="GBP">£ GBP</option>
-<option value="JPY">¥ JPY</option>
-</select>
-</div>
+
 </div>
 </div>
 </header>
@@ -286,6 +284,12 @@ border-radius: 999px;
 <div class="bg-white/95 backdrop-blur border-b border-slate-200" id="stickyTotalBar">
 <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
 <div class="text-sm font-semibold text-slate-900" id="stickyTotalValue">TOTAL: —</div>
+<select class="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-sm" id="displayCurrency" aria-label="Moneda">
+  <option value="EUR">€ EUR</option>
+  <option value="USD">$ USD</option>
+  <option value="GBP">£ GBP</option>
+  <option value="JPY">¥ JPY</option>
+</select>
 <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="stickyTotalToggle">Ver detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
@@ -293,6 +297,21 @@ border-radius: 999px;
 <div class="text-sm" id="stickySummaryDetailInner"></div>
 </div>
 </div>
+</div>
+<!-- Sticky compare bar (A/B) under totals -->
+<div id="stickyCompareBar">
+  <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <button id="compareTabA" class="tap px-3 py-1.5 rounded-xl text-xs font-extrabold border border-slate-200 bg-slate-900 text-white">A</button>
+      <button id="compareTabB" class="tap px-3 py-1.5 rounded-xl text-xs font-extrabold border border-slate-200 bg-white text-slate-900">B</button>
+      <button id="compareTabPlus" class="tap px-3 py-1.5 rounded-xl text-xs font-extrabold border border-slate-200 bg-white text-slate-400 opacity-60" disabled title="Próximamente">＋</button>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="text-xs font-semibold text-slate-700 whitespace-nowrap" id="compareTotalsLine">A: — | B: —</div>
+      <div class="text-xs font-semibold whitespace-nowrap" id="compareDiffLine">Diferencia: —</div>
+      <button id="compareResetBtn" class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm" title="Reiniciar este viaje" aria-label="Reiniciar este viaje">♻️</button>
+    </div>
+  </div>
 </div>
 <div id="topStackSpacer"></div>
 <!-- Main -->
@@ -664,10 +683,14 @@ function getStickyOffset() {
   const root = document.documentElement;
   const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
   const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
+  const varCompare = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-compare-h")) || 0;
 
   let offset = 0;
   offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
   offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
+
+  // Compare bar (always visible)
+  offset += varCompare;
 
   // Controls row only matters when visible (timeline accordion open)
   if (controls && !controls.classList.contains("hidden")) {
@@ -683,14 +706,13 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-  const compareBar = document.getElementById("stickyCompareBar");
   const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
 
-  const compareVisible = !!(compareBar && !compareBar.classList.contains("hidden"));
-  const compareH = compareVisible ? (compareBar.getBoundingClientRect().height || 0) : 0;
+  const compareBar = document.getElementById("stickyCompareBar");
+  const compareH = (compareBar && compareBar.offsetParent !== null) ? compareBar.getBoundingClientRect().height : 0;
 
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
@@ -699,7 +721,6 @@ function syncTopStackHeights() {
 
   if (spacer) spacer.style.height = (headerH + totalsH + compareH) + "px";
 }
-
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
@@ -715,7 +736,8 @@ function getTopStackOffset() {
   const cs = getComputedStyle(document.documentElement);
   const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
   const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
-  return headerH + totalsH;
+  const compareH = parseFloat(cs.getPropertyValue("--sticky-compare-h")) || 0;
+  return headerH + totalsH + compareH;
 }
 
 function scrollToElTopStack(el, extra = 0) {
@@ -1450,6 +1472,15 @@ function renderTabs() {
   $("displayCurrency").value = state.displayCurrency;
   $("sumCur").textContent = state.displayCurrency;
   $("mealCur").textContent = state.displayCurrency;
+
+
+// Sticky compare bar buttons (A/B)
+const cA = document.getElementById("compareTabA");
+const cB = document.getElementById("compareTabB");
+if (cA && cB) {
+  cA.className = "tap px-3 py-1.5 rounded-xl text-xs font-extrabold border " + (onA ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900");
+  cB.className = "tap px-3 py-1.5 rounded-xl text-xs font-extrabold border " + (!onA ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-900");
+}
 }
 
 function legCard(leg) {
@@ -3082,68 +3113,6 @@ function applySummaryFold() {
 
 /* -------------------- /Summary fold (no persistence) -------------------- */
 
-
-function __scenarioTotals(sc) {
-  const transport = (sc?.legs || []).reduce((a,x)=>a+parseMoney(x.cost),0);
-  const stay = (sc?.stays || []).reduce((a,x)=>a+parseMoney(x.cost),0);
-  const acts = (sc?.activities || []).reduce((a,x)=>a+parseMoney(x.cost),0);
-  const meals = parseMoney(sc?.meals?.daily) * (parseInt(sc?.meals?.people||1,10)) * (parseInt(sc?.meals?.days||1,10));
-  const total = transport + stay + acts + meals;
-
-  const countMeals = meals > 0 ? 1 : 0;
-  const itemsCount = (sc?.legs?.length||0) + (sc?.stays?.length||0) + (sc?.activities?.length||0) + countMeals;
-
-  return { transport, stay, acts, meals, total, itemsCount };
-}
-
-function updateStickyCompareBar() {
-  const bar = document.getElementById("stickyCompareBar");
-  if (!bar) return;
-
-  const a = __scenarioTotals(state?.scenarios?.A || {});
-  const b = __scenarioTotals(state?.scenarios?.B || {});
-  const show = ((a.total > 0 && b.total > 0) || (a.itemsCount > 0 && b.itemsCount > 0));
-
-  if (!show) {
-    bar.classList.add("hidden");
-    syncTopStackHeights();
-    setTimeout(syncTopStackHeights, 50);
-    return;
-  }
-
-  const cur = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
-  const fmt = (n)=> `${Number(n||0).toFixed(2)}${cur ? " " + cur : ""}`;
-
-  document.getElementById("compareValA").textContent = fmt(a.total);
-  document.getElementById("compareValB").textContent = fmt(b.total);
-
-  const diff = b.total - a.total; // positive => B more expensive
-  const diffAbs = Math.abs(diff);
-  const sign = diff === 0 ? "" : (diff > 0 ? "+" : "−");
-  const diffText = `Diferencia: ${sign}${diffAbs.toFixed(2)}${cur ? " " + cur : ""}`;
-
-  const diffEl = document.getElementById("compareDiff");
-  diffEl.textContent = diffText;
-
-  // subtle color: A cheaper => green; A more expensive => red; equal => neutral
-  diffEl.classList.remove("text-emerald-700","text-rose-700","text-slate-600");
-  if (diff === 0) diffEl.classList.add("text-slate-600");
-  else if (a.total < b.total) diffEl.classList.add("text-emerald-700");
-  else diffEl.classList.add("text-rose-700");
-
-  const chipA = document.getElementById("compareChipA");
-  const chipB = document.getElementById("compareChipB");
-  const onA = (state?.scenario || "A") === "A";
-  chipA.className = "px-2 py-0.5 rounded-full border border-slate-200 " + (onA ? "bg-slate-900 text-white font-extrabold" : "bg-white text-slate-700");
-  chipB.className = "px-2 py-0.5 rounded-full border border-slate-200 " + (!onA ? "bg-slate-900 text-white font-extrabold" : "bg-white text-slate-700");
-
-  bar.classList.remove("hidden");
-
-  // Compare bar affects top stack height
-  syncTopStackHeights();
-  setTimeout(syncTopStackHeights, 50);
-}
-
 function calcSummary() {
   const sc = curScenario();
   const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
@@ -3163,8 +3132,42 @@ function calcSummary() {
   }
   // summary fold (no persistence)
   applySummaryFold();
-  updateStickyCompareBar();
+  updateCompareBar();
 }
+
+// --- Compare bar helpers (A/B) ---
+function calcScenarioTotal(sc) {
+  if (!sc) return 0;
+  const transport = (sc.legs || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const stay = (sc.stays || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const acts = (sc.activities || []).reduce((a,x)=>a+parseMoney(x.cost),0);
+  const meals = sc.meals ? (parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10))) : 0;
+  return transport + stay + acts + meals;
+}
+function fmtMoney(n) {
+  const v = Number(n || 0);
+  return isFinite(v) ? v.toFixed(2) : "0.00";
+}
+function updateCompareBar() {
+  const bar = document.getElementById("stickyCompareBar");
+  if (!bar) return;
+  const totalA = calcScenarioTotal(state?.scenarios?.A);
+  const totalB = calcScenarioTotal(state?.scenarios?.B);
+  const curTxt = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
+  const line = document.getElementById("compareTotalsLine");
+  const diffEl = document.getElementById("compareDiffLine");
+  if (line) line.textContent = `A: ${fmtMoney(totalA)}${curTxt ? " " + curTxt : ""} | B: ${fmtMoney(totalB)}${curTxt ? " " + curTxt : ""}`;
+  if (diffEl) {
+    const d = (totalB - totalA);
+    const sign = d > 0 ? "+" : (d < 0 ? "-" : "");
+    diffEl.textContent = `Diferencia: ${sign}${fmtMoney(Math.abs(d))}${curTxt ? " " + curTxt : ""}`;
+    diffEl.classList.remove("text-emerald-700","text-rose-700","text-slate-600");
+    if (d > 0) diffEl.classList.add("text-emerald-700");
+    else if (d < 0) diffEl.classList.add("text-rose-700");
+    else diffEl.classList.add("text-slate-600");
+  }
+}
+
 
 /* --------------------------- Gemini helpers -------------------------- */
 function getGeminiKey() {
