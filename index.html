@@ -225,23 +225,21 @@ border-radius: 999px;
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Top bar -->
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
-<div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+<div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
-<img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight">
-<div class="font-extrabold tracking-tight text-lg">MI VIAJE</div>
-</div>
+<img alt="MI VIAJE" class="w-8 h-8 rounded-2xl" src="icon.png"/>
+
 </div>
 <div class="flex items-center gap-2">
-<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnTrips">
-          Guardar / Cargar
-        </button>
-<button aria-pressed="false" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnReadOnly">
-          🔒 Modo lectura
-        </button>
-<button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
-          Cambiar clave
-        </button>
+  <!-- Tools launcher -->
+  <button class="tap w-10 h-10 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" aria-label="Herramientas" title="Herramientas">⚙️</button>
+
+  <!-- Read-only toggle (icon only) -->
+  <button aria-pressed="false" class="tap w-10 h-10 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnReadOnly" title="Modo lectura" aria-label="Modo lectura">🔒</button>
+
+  <!-- Keep legacy buttons in DOM (hidden) so we reuse existing handlers without duplicating lógica -->
+  <button class="hidden" id="btnTrips" aria-hidden="true" tabindex="-1">Guardar / Cargar</button>
+  <button class="hidden" id="btnKey" aria-hidden="true" tabindex="-1">Cambiar clave</button>
 </div>
 </div>
 
@@ -252,10 +250,10 @@ border-radius: 999px;
 <button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
 <button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
-<button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-red-200 bg-white hover:bg-red-50 text-red-700" id="btnResetTrip" title="Borrar todos los datos del viaje actual">Reiniciar este viaje</button>
+<button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-red-200 bg-white hover:bg-red-50 text-red-700 hidden" id="btnResetTrip" title="Borrar todos los datos del viaje actual">Reiniciar este viaje</button>
 </div>
 <div class="flex items-center gap-2">
-<label class="text-sm text-slate-600">Moneda</label>
+<label class="sr-only">Moneda</label>
 <select class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" id="displayCurrency">
 <option value="EUR">€ EUR</option>
 <option value="USD">$ USD</option>
@@ -273,7 +271,7 @@ border-radius: 999px;
 <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="stickyTotalToggle">Ver detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
-<div class="max-w-6xl mx-auto px-4 py-3">
+<div class="max-w-6xl mx-auto px-4 py-2">
 <div class="text-sm" id="stickySummaryDetailInner"></div>
 </div>
 </div>
@@ -340,7 +338,7 @@ border-radius: 999px;
 </div>
   </div>
 
-  <div id="timelineNotice" class="hidden mb-3 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700"></div>
+  <div id="timelineNotice" class="hidden mb-3 px-4 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-sm text-slate-700"></div>
   <div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
@@ -480,6 +478,44 @@ border-radius: 999px;
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
+
+<!-- Tools Bottom Sheet (V88I) -->
+<div id="toolsOverlay" class="hidden fixed inset-0 z-[80] bg-black/40 backdrop-blur-[2px]"></div>
+
+<div id="toolsSheet" class="hidden fixed left-0 right-0 bottom-0 z-[90]">
+  <div class="max-w-6xl mx-auto px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
+    <div class="bg-white/95 backdrop-blur border border-slate-200 rounded-t-3xl shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+        <div class="font-extrabold">Herramientas</div>
+        <button id="btnToolsClose" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="p-5 space-y-2">
+        <button id="toolTrips" class="w-full tap flex items-center justify-between px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">
+          <span class="flex items-center gap-3"><span class="text-lg">💾</span><span>Guardar / Cargar</span></span>
+          <span class="text-slate-400">›</span>
+        </button>
+
+        <button id="toolKey" class="w-full tap flex items-center justify-between px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">
+          <span class="flex items-center gap-3"><span class="text-lg">🔑</span><span>Cambiar clave</span></span>
+          <span class="text-slate-400">›</span>
+        </button>
+
+        <button id="toolResetTrip" class="w-full tap flex items-center justify-between px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-sm font-semibold text-rose-700">
+          <span class="flex items-center gap-3"><span class="text-lg">🧨</span><span>Reiniciar este viaje</span></span>
+          <span class="text-rose-400">›</span>
+        </button>
+
+        <div class="pt-2">
+          <button id="btnToolsCloseBottom" class="w-full tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modals -->
 <div class="hidden fixed inset-0 z-[60] bg-black/40" id="modalBackdrop"></div>
 <div class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4" id="modalBox">
@@ -952,6 +988,75 @@ function closeModal() {
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
+/* -------------------------- Tools Bottom Sheet (V88I) -------------------------- */
+function openToolsSheet() {
+  const overlay = document.getElementById("toolsOverlay");
+  const sheet = document.getElementById("toolsSheet");
+  if (!overlay || !sheet) return;
+
+  // Safe & reversible body scroll lock (optional but premium)
+  try {
+    if (document.body.dataset.prevOverflow === undefined) {
+      document.body.dataset.prevOverflow = document.body.style.overflow || "";
+    }
+    document.body.style.overflow = "hidden";
+  } catch {}
+
+  overlay.classList.remove("hidden");
+  sheet.classList.remove("hidden");
+}
+function closeToolsSheet() {
+  const overlay = document.getElementById("toolsOverlay");
+  const sheet = document.getElementById("toolsSheet");
+  if (overlay) overlay.classList.add("hidden");
+  if (sheet) sheet.classList.add("hidden");
+
+  try {
+    const prev = document.body.dataset.prevOverflow;
+    if (prev !== undefined) document.body.style.overflow = prev;
+    delete document.body.dataset.prevOverflow;
+  } catch {}
+}
+
+// Close on ESC (desktop)
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeToolsSheet();
+});
+
+function setupToolsSheet() {
+  const btnTools = document.getElementById("btnTools");
+  const overlay = document.getElementById("toolsOverlay");
+  const closeA = document.getElementById("btnToolsClose");
+  const closeB = document.getElementById("btnToolsCloseBottom");
+
+  if (btnTools) btnTools.addEventListener("click", openToolsSheet);
+  if (overlay) overlay.addEventListener("click", closeToolsSheet);
+  if (closeA) closeA.addEventListener("click", closeToolsSheet);
+  if (closeB) closeB.addEventListener("click", closeToolsSheet);
+
+  // Actions: call existing handlers (no re-implementation)
+  const toolTrips = document.getElementById("toolTrips");
+  const toolKey = document.getElementById("toolKey");
+  const toolReset = document.getElementById("toolResetTrip");
+
+  if (toolTrips) toolTrips.addEventListener("click", () => {
+    closeToolsSheet();
+    const btn = document.getElementById("btnTrips");
+    if (btn) btn.click();
+  });
+
+  if (toolKey) toolKey.addEventListener("click", () => {
+    closeToolsSheet();
+    const btn = document.getElementById("btnKey");
+    if (btn) btn.click();
+  });
+
+  if (toolReset) toolReset.addEventListener("click", () => {
+    closeToolsSheet();
+    if (typeof openResetTripConfirmModal === "function") openResetTripConfirmModal();
+  });
+}
+/* ------------------------ /Tools Bottom Sheet (V88I) ------------------------ */
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
 
@@ -981,7 +1086,7 @@ function applyReadOnlyMode() {
   // Toggle button label
   const btn = $("btnReadOnly");
   if (btn) {
-    btn.textContent = on ? "🔓 Editar" : "🔒 Modo lectura";
+    btn.textContent = on ? "🔓" : "🔒";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
   }
 
@@ -3402,15 +3507,15 @@ function openTripsModal() {
       </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button id="doExport" class="tap px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
+        <button id="doExport" class="tap px-4 py-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold">
           Guardar (descargar .json)
         </button>
 
-        <button id="doExportMilestone" class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">
+        <button id="doExportMilestone" class="tap px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">
           Exportar hito
         </button>
 
-        <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer sm:col-span-2">
+        <label class="tap px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer sm:col-span-2">
           Cargar (importar .json)
           <input id="doImport" type="file" accept="application/json" class="hidden">
         </label>
@@ -3446,7 +3551,7 @@ function openTripsModal() {
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <button id="doBackupNow" class="tap px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
+        <button id="doBackupNow" class="tap px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold">
           Crear backup ahora
         </button>
 
@@ -4252,6 +4357,7 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  try { setupToolsSheet(); } catch {}
   // V88G2b: deterministic timeline start (Global, no filters)
   try { timelineViewMode = 'global'; } catch {}
   try { if (typeof activeDayISO !== 'undefined') activeDayISO = ''; } catch {}
