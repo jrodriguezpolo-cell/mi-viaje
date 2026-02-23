@@ -205,12 +205,6 @@ border-radius: 999px;
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
-<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
-<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
-<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
-</div>
-</div>
-</div>
 <!-- Top bar -->
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -4060,6 +4054,11 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  // V88G2b: deterministic timeline start (Global, no filters)
+  try { timelineViewMode = 'global'; } catch {}
+  try { if (typeof activeDayISO !== 'undefined') activeDayISO = ''; } catch {}
+  try { if (typeof timelineFilterState !== 'undefined' && timelineFilterState.categories) timelineFilterState.categories.clear(); } catch {}
+
   setupAccordion();
   forceStartStateTimelineProtagonist();
   syncHeaderHeightVar();
