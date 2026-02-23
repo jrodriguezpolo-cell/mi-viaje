@@ -484,7 +484,7 @@ border-radius: 999px;
 </nav>
 
 <!-- Tools Bottom Sheet (V88I) -->
-<div id="toolsOverlay" class="hidden fixed inset-0 z-[80] bg-black/40 backdrop-blur-[2px]"></div>
+<div id="toolsOverlay" class="hidden fixed inset-0 z-[5200] bg-black/40 backdrop-blur-[2px]"></div>
 
 <div id="toolsSheet" class="hidden fixed left-0 right-0 bottom-0 z-[90]">
   <div class="max-w-6xl mx-auto px-4 pb-[max(env(safe-area-inset-bottom),16px)]">
@@ -4408,6 +4408,8 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
       const threshold = (key === "acts") ? 6 : 8;
 
       const getErr = () => {
+        try { syncHeaderHeightVar(); } catch {}
+        try { syncTopStackHeights(); } catch {}
         const topStack = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
         return accBtn.getBoundingClientRect().top - topStack;
       };
@@ -4415,6 +4417,8 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
       const correctAuto = (delayMs) => {
         setTimeout(() => {
           if (window.__pendingLandingKey !== key) return;
+          try { syncHeaderHeightVar(); } catch {}
+          try { syncTopStackHeights(); } catch {}
           landUnderTotals(accBtn, 8, { smooth: false }); // auto correction (no smooth)
         }, delayMs);
       };
@@ -4432,6 +4436,8 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
                 if (window.__pendingLandingKey !== key) return;
                 const err2 = getErr();
                 if (Math.abs(err2) > threshold) {
+                  try { syncHeaderHeightVar(); } catch {}
+                  try { syncTopStackHeights(); } catch {}
                   landUnderTotals(accBtn, 8, { smooth: false }); // 3rd correction (auto)
                 }
               }, 220);
