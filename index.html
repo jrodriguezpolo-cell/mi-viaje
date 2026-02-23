@@ -1101,7 +1101,7 @@ function applyReadOnlyMode() {
   // Disable only the buttons that modify data
   const idsToDisable = [
     "addLeg", "addStay", "addAct",
-    "tabA", "tabB",
+    "chipA", "chipB",
     "aiPick", "aiGenerate"
   ];
   idsToDisable.forEach(id => {
@@ -4276,8 +4276,10 @@ Tu iPhone: ${l}
 
 
 /* ----------------------------- Events ----------------------------- */
-$("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
-$("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
+const __chipA = document.getElementById("chipA");
+if (__chipA) __chipA.addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
+const __chipB = document.getElementById("chipB");
+if (__chipB) __chipB.addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
