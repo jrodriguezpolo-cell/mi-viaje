@@ -13,14 +13,6 @@
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     .safe-t { padding-top: max(env(safe-area-inset-top), 12px); }
     .tap { -webkit-tap-highlight-color: transparent; }
-
-  :root{
-    --mv-scroll-mt: 140px; /* sticky top stack approx (CSS-only) */
-  }
-  /* Ensure "Ir a" and timeline jumps land below sticky top stack (CSS-only, no JS offsets) */
-  .timelineItem{ scroll-margin-top: var(--mv-scroll-mt); }
-  [data-sec-id]{ scroll-margin-top: var(--mv-scroll-mt); }
-
   
     /* Read-only mode */
     body.readonly-mode button[disabled],
@@ -130,11 +122,15 @@ border-radius: 999px;
     #fabCollapseAll:active{ transform: translateY(1px); }
 
     #stickyTotalBar{
-  position: sticky;
-  top: 0;
-  z-index: 900;
-}
-/* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: var(--app-header-h, 56px);
+      z-index: 950;
+    }
+
+
+    /* --- v50 UX: Sticky summary detail panel + hide legacy summary card --- */
     #summary, #summaryDetail { display: none !important; }
     #stickySummaryDetailInner .row { display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
     #stickySummaryDetailInner .lbl { color: rgb(100 116 139); }
@@ -178,6 +174,17 @@ border-radius: 999px;
 }
 
 
+/* --- v78: Fixed header + fixed totals + spacer --- */
+#appHeader{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+#topStackSpacer{ height: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px)); }
+
+
 /* Timeline time badges (v88) */
 .tlTimeBadge{
   display:inline-block;
@@ -198,8 +205,20 @@ border-radius: 999px;
 <body class="bg-slate-50 text-slate-900">
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
+<!-- Entry Screen (App Mode) -->
+<div id="entryScreen" style="display:none; position:fixed; inset:0; z-index:9999; background:#ffffff;">
+<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:18px;">
+<div style="text-align:center; max-width:520px;">
+<div style="font-weight:800; font-size:22px; line-height:1.2; margin-bottom:6px;">¿Cómo quieres usar MI VIAJE?</div>
+<div style="color:#64748b; font-size:14px;">Puedes cambiar de modo cuando quieras.</div>
+</div>
+<div style="width:100%; max-width:420px; display:flex; flex-direction:column; gap:12px;">
+<button id="btnModePlanning" onclick="setAppMode('planning')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#0f172a; color:#ffffff; font-weight:800; font-size:15px; touch-action:manipulation;">Planifica tu viaje</button>
+<button id="btnModeTravel" onclick="setAppMode('travel')" style="width:100%; padding:14px 16px; border-radius:16px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; font-weight:800; font-size:15px; touch-action:manipulation;">Estoy viajando</button>
+</div>
+</div>
+</div>
 <!-- Top bar -->
-<div id="topStack" class="sticky top-0 z-[1000]">
 <header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
@@ -218,6 +237,7 @@ border-radius: 999px;
 <button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
           Cambiar clave
         </button>
+<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnAppModeSwitch" onclick="toggleAppModeFromHeader()">Modo: <span id="appModeLabel">Planificación</span> ↔</button>
 </div>
 </div>
 </header>
@@ -233,9 +253,7 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-</div>
-
-<!-- Main -->
+<div id="topStackSpacer"></div>
 <!-- Main -->
 <main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
@@ -279,9 +297,6 @@ border-radius: 999px;
             </button></div>
 </aside>
 <section class="lg:col-span-8 space-y-4">
-</div>
-
-<div id="view-timeline" class="mv-view hidden">
 <!-- TIMELINE -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
@@ -334,7 +349,6 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-<div id="view-legs" class="mv-view hidden">
 <!-- LOGISTICA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
@@ -353,9 +367,6 @@ border-radius: 999px;
 <div class="space-y-3" id="legsList"></div>
 </div>
 </div>
-</div>
-
-<div id="view-stays" class="mv-view hidden">
 <!-- ALOJAMIENTO -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
@@ -375,7 +386,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- COMIDAS -->
-<div class="hidden bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
@@ -407,9 +418,6 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-</div>
-
-<div id="view-acts" class="mv-view hidden">
 <!-- ACTIVIDADES -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
@@ -429,7 +437,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- IA -->
-<div class="hidden bg-white border border-slate-200 rounded-3xl overflow-hidden">
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center">🤖</span>
@@ -457,10 +465,10 @@ border-radius: 999px;
 <!-- Bottom bar for mobile -->
 <nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="legs">🛫<div>Transporte</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="stays">🏨<div>Alojamiento</div></button>
-<button class="hidden tap py-2 rounded-xl hover:bg-slate-50" data-view="meals">🍽️<div>Comida</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-view="acts">🎯<div>Actividades</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
 <!-- Modals -->
@@ -481,14 +489,115 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-
+/* ----------------------------- App Mode (planning | travel) ----------------------------- */
 /*
   Rules:
   - UI show/hide ONLY via element.style.display (no Tailwind hidden toggles for app mode).
   - Persist: localStorage key "trip_app_mode"
 */
 let appMode = "planning"; // "planning" | "travel"
+const LS_APP_MODE = "miviaje.appMode";
+const LS_APP_MODE_LEGACY = "trip_app_mode";
 
+function getSavedAppMode() {
+  try {
+    const v1 = String(localStorage.getItem(LS_APP_MODE) || "").trim();
+    if (v1 === "planning" || v1 === "travel") return v1;
+    const v0 = String(localStorage.getItem(LS_APP_MODE_LEGACY) || "").trim();
+    if (v0 === "planning" || v0 === "travel") return v0;
+    return "";
+  } catch { return ""; }
+}
+
+function persistAppMode() {
+  try { localStorage.setItem(LS_APP_MODE, appMode); } catch {}
+}
+
+function setAppMode(mode, fromInside = false) {
+  const next = (mode === "travel") ? "travel" : "planning";
+  const prev = appMode;
+
+  if (fromInside && prev === "planning" && next === "travel") {
+    const ok = confirm("¿Estás de viaje?");
+    if (!ok) return;
+  }
+
+  appMode = next;
+  persistAppMode();
+
+  // Hide entry overlay once a mode is chosen
+  const entry = document.getElementById("entryScreen");
+  if (entry) entry.style.display = "none";
+
+  applyAppModeUI();
+}
+
+function toggleAppModeFromHeader() {
+  const ok = confirm("¿Quieres cambiar de modo?");
+  if (!ok) return;
+  const entry = document.getElementById("entryScreen");
+  if (entry) entry.style.display = "block";
+}
+
+function applyAppModeUI() {
+  const isTravel = (appMode === "travel");
+
+  // Header label
+  const lbl = document.getElementById("appModeLabel");
+  if (lbl) lbl.textContent = isTravel ? "Viaje" : "Planificación";
+
+  // Scenario bar (MI VIAJE / alternativo / moneda / plegar todo)
+  const curSel = document.getElementById("displayCurrency");
+  const scenarioBar = curSel && curSel.parentElement ? curSel.parentElement.parentElement : null;
+  if (scenarioBar) scenarioBar.style.display = isTravel ? "none" : "";
+
+  // Hide summary aside (already visually hidden by CSS, but remove layout column in travel)
+  const summaryCard = document.getElementById("summary");
+  const aside = summaryCard ? summaryCard.closest("aside") : null;
+  if (aside) aside.style.display = isTravel ? "none" : "";
+
+  // Hide planning sections (UI only) in travel mode
+  const hideAcc = (key, hide) => {
+    const btn = document.querySelector(`[data-acc="${key}"]`);
+    const wrap = btn ? btn.parentElement : null;
+    if (!wrap) return;
+    wrap.style.display = hide ? "none" : "";
+  };
+
+  hideAcc("legs", isTravel);
+  hideAcc("stays", isTravel);
+  hideAcc("meals", isTravel);
+  hideAcc("acts", isTravel);
+  hideAcc("ai", isTravel);
+
+  // Bottom bar: in travel mode keep it out to avoid jumping to hidden sections
+  const bottomNav = document.querySelector("nav.safe-b");
+  if (bottomNav) bottomNav.style.display = isTravel ? "none" : "";
+
+  // In travel mode, ensure Timeline is open
+  if (isTravel) {
+    const body = document.querySelector('[data-acc-body="timeline"]');
+    if (body && body.classList.contains("hidden")) {
+      const btn = document.querySelector('[data-acc="timeline"]');
+      if (btn) btn.click();
+    }
+  }
+}
+
+function initAppMode() {
+  const saved = getSavedAppMode();
+  const entry = document.getElementById("entryScreen");
+  if (saved) {
+    appMode = saved;
+    if (entry) entry.style.display = "none";
+    applyAppModeUI();
+    return;
+  }
+  // No saved mode: show entry overlay
+  if (entry) entry.style.display = "block";
+  // Ensure label reflects default mode while overlay is shown
+  applyAppModeUI();
+}
 /* --------------------------- /App Mode --------------------------- */
 
 
@@ -581,18 +690,6 @@ const parseMoney = (v) => {
 };
 const uniq = (arr) => Array.from(new Set(arr.map(x => String(x).trim()).filter(Boolean)));
 
-function mvScrollIntoView(el, smooth = true) {
-  if (!el) return;
-  try {
-    el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
-  } catch {
-    try { el.scrollIntoView(true); } catch {}
-  }
-}
-
-
-
-
 
 /* -------------------------- Timeline jump --------------------------- */
 function todayYMD() {
@@ -608,14 +705,68 @@ function todayYMD() {
 
 
 
+function getStickyOffset() {
+  const header = document.getElementById("appHeader") || document.querySelector("header");
+  const totalBar = document.getElementById("stickyTotalBar");
+  const controls = document.getElementById("timelineControlsRow");
+
+  // Prefer measured vars (kept in sync by syncTopStackHeights)
+  const root = document.documentElement;
+  const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
+  const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
+
+  let offset = 0;
+  offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
+  offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
+
+  // Controls row only matters when visible (timeline accordion open)
+  if (controls && !controls.classList.contains("hidden")) {
+    offset += controls.getBoundingClientRect().height;
+  }
+
+  offset += 12; // margin
+  return offset;
+}
 
 
 
+function syncTopStackHeights() {
+  const header = document.getElementById("appHeader") || document.querySelector("header");
+  const totalBar = document.getElementById("stickyTotalBar");
+  const spacer = document.getElementById("topStackSpacer");
+
+  const headerH = header ? header.getBoundingClientRect().height : 0;
+  const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
+
+  const root = document.documentElement;
+  root.style.setProperty("--app-header-h", headerH + "px");
+  root.style.setProperty("--sticky-totals-h", totalsH + "px");
+
+  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+}
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
-window.addEventListener("load", );
+window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
+window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
+function scrollToElWithOffset(el, extra = 0) {
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.pageYOffset - (getStickyOffset() + (extra || 0));
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
 
+function getTopStackOffset() {
+  const cs = getComputedStyle(document.documentElement);
+  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return headerH + totalsH;
+}
+
+function scrollToElTopStack(el, extra = 0) {
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
 
@@ -682,7 +833,7 @@ function __tlScrollToItemByKey(tlKey) {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
   if (!el) return false;
-  mvScrollIntoView(el, true);
+  scrollToElWithOffset(el);
   return true;
 }
 
@@ -789,7 +940,7 @@ function scrollToTodayTimelineItem() {
   const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
   const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
   if (todayEl) {
-    mvScrollIntoView(todayEl);
+    scrollToElWithOffset(todayEl);
   } else {
     alert("No hay eventos para hoy.");
   }
@@ -811,7 +962,7 @@ function scrollToNextTimelineItem() {
   });
 
   if (next) {
-    mvScrollIntoView(next);
+    scrollToElWithOffset(next);
   } else {
     alert("No hay próximos eventos con fecha a partir de hoy.");
   }
@@ -984,7 +1135,7 @@ function setDisplayCurrency(cur) {
   $("mealCur").textContent = cur;
   saveState();
   renderAll();
-  
+  syncStickyTotalsHeightVar();
   }
 
 /* ----------------------------- Accordion ----------------------------- */
@@ -1373,6 +1524,15 @@ const timelineFilterState = {
   categories: new Set() // empty = show all
 };
 
+function sanitizeTimelineFilterState() {
+  // Meals is NOT an event category. If old localStorage contains it, drop it safely.
+  const allowed = new Set(["Transporte", "Alojamiento", "Actividades"]);
+  const cats = timelineFilterState.categories;
+  if (!cats || typeof cats.forEach !== "function") return;
+  Array.from(cats).forEach(v => { if (!allowed.has(v)) cats.delete(v); });
+}
+
+
 function timelineItemCategory(item) {
   const t = String(item?.type || "").toLowerCase();
   if (t.includes("trayecto") || t.includes("transporte")) return "Transporte";
@@ -1392,6 +1552,7 @@ function getFilteredItems(allItems) {
 }
 
 function renderTimelineFilterChips() {
+  sanitizeTimelineFilterState();
   const host = document.getElementById("timelineFilterChips");
   if (!host) return;
 
@@ -1905,28 +2066,40 @@ function jumpToItem(kind, id) {
   if (!k || !itemId) return;
 
   const map = {
-    leg:  { view: "legs",  acc: "legs",  secToggle: "legs" },
-    stay: { view: "stays", acc: "stays", secToggle: "stays" },
-    act:  { view: "acts",  acc: "acts",  secToggle: "acts" }
+    leg:  { acc: "legs",  secToggle: "legs" },
+    stay: { acc: "stays", secToggle: "stays" },
+    act:  { acc: "acts",  secToggle: "activities" }
   };
   const cfg = map[k];
   if (!cfg) return;
 
-  // 1) Switch to the correct view (simple show/hide)
-  setView(cfg.view);
+  // 1) Open target accordion section
+  openAccordionKey(cfg.acc);
 
-  // 2) Expand target item within section (v80b accordion) and re-render that section only
+  // 2) Expand target item within section (v80b accordion)
   if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
   else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
   else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
 
-  // 3) Scroll item into view after DOM settles (no JS offsets)
+  const accBtn = document.querySelector(`[data-acc="${cfg.acc}"]`);
+  const itemEl = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`);
+
+  // 3) Scroll using TopStack (Header + Totals). Never include timeline controls here.
   requestAnimationFrame(() => {
-    const el = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`)
-      || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
-    if (el) mvScrollIntoView(el, true);
+    if (accBtn) scrollToElTopStack(accBtn, 8);
   });
+
+  // 4) After DOM settles, scroll item into view
+  setTimeout(() => {
+    const el = itemEl || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
+    if (el) {
+      scrollToElTopStack(el, 16);
+      try { el.focus({ preventScroll: true }); } catch {}
+    }
+  }, 120);
 }
+
+
 
 /* ---------------- Item notes (timeline CRUD) ---------------- */
 
@@ -2188,7 +2361,7 @@ function setTimelineViewMode(mode) {
         const d = (el.getAttribute("data-date") || "").trim();
         if (d === activeDayISO) { first = el; break; }
       }
-      if (first) mvScrollIntoView(first);
+      if (first) scrollToElWithOffset(first);
     });
   }
 }
@@ -2231,6 +2404,12 @@ function renderTimeline() {
     if (!d || !txt) return;
     items.push({ date: d, type:"Nota", title: "Notas del día", cost: null, isNote: true, uid: `note:${d}` });
   });
+
+  // Meals is a budget line, not a timeline event. Drop any legacy meal items safely.
+  for (let i = items.length - 1; i >= 0; i--) {
+    const t = String(items[i]?.type || "").toLowerCase();
+    if (t.includes("comida") || t.includes("meal")) items.splice(i, 1);
+  }
 
   items.sort((a,b)=>{
     if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
@@ -2893,7 +3072,7 @@ function renderAIResults(sections) {
     }
     saveState();
     renderAll();
-  
+  syncStickyTotalsHeightVar();
   $("aiStatus").textContent = added ? `Añadidas ${added} actividades.` : "No has seleccionado ninguna recomendación.";
   };
 
@@ -3110,7 +3289,7 @@ function restoreManualBackupById(id) {
   saveState();
   closeModal();
   renderAll();
-  
+  syncStickyTotalsHeightVar();
   alert("Backup restaurado.");
 }
 /* ----------------- /Manual Backups (list + restore) ------------------ */
@@ -3299,7 +3478,7 @@ ${label}`)) return;
       saveState();
       closeModal();
       renderAll();
-  
+  syncStickyTotalsHeightVar();
   alert("Backup restaurado.");
     };
 
@@ -3657,7 +3836,7 @@ async function importTrip(ev) {
     saveState();
     closeModal();
     renderAll();
-  
+  syncStickyTotalsHeightVar();
   const now = new Date().toISOString();
     setMeta({
       lastImportAt: now,
@@ -3762,7 +3941,7 @@ Tu iPhone: ${l}
 
     closeModal();
     renderAll();
-  
+  syncStickyTotalsHeightVar();
   });
 
   box.querySelectorAll("[data-trip-del]").forEach(btn => btn.onclick = () => {
@@ -3784,16 +3963,6 @@ Tu iPhone: ${l}
 
 
 /* ----------------------------- Events ----------------------------- */
-
-// Bottom nav: views only (no jump)
-document.querySelectorAll('nav [data-view]').forEach(b => {
-  b.addEventListener("click", () => {
-    const k = b.getAttribute("data-view");
-    if (k === "meals") return; // meals view not used
-    setView(k);
-  });
-});
-
 $("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 
@@ -3888,60 +4057,53 @@ function scrollToSectionHeader(accKey) {
 
   // Premium fine scroll: header sits just under Totals
   setTimeout(() => {
-    mvScrollIntoView(headerBtn, 10);
+    scrollToElWithOffset(headerBtn, 10);
   }, 0);
 }
+
+/* Jump nav */
+document.querySelectorAll('[data-jump]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-jump');
+    if (!key) return;
+
+    const accBtn = document.querySelector(`[data-acc="${key}"]`);
+    if (!accBtn) return;
+
+    const body = document.querySelector(`[data-acc-body="${key}"]`);
+    if (body && body.classList.contains('hidden')) accBtn.click();
+
+    requestAnimationFrame(() => {
+      scrollToElTopStack(accBtn, 4); // premium micro offset under Totals
+    });
+  });
+});
+
+
 
 
 function syncHeaderHeightVar(){
   const hdr = document.querySelector("header");
   if (!hdr) return;
-  }
-
-
-/* ----------------------------- Views ----------------------------- */
-const __views = {
-  timeline: "view-timeline",
-  legs: "view-legs",
-  stays: "view-stays",
-  acts: "view-acts"
-};
-
-let currentView = "timeline";
-
-function setView(viewKey) {
-  const key = String(viewKey || "timeline");
-  Object.values(__views).forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add("hidden");
-  });
-
-  const targetId = __views[key] || __views.timeline;
-  const target = document.getElementById(targetId);
-  if (target) target.classList.remove("hidden");
-
-  // mark active in bottom nav
-  document.querySelectorAll('nav [data-view]').forEach(b => {
-    b.classList.toggle("bg-slate-900", b.getAttribute("data-view") === key);
-    b.classList.toggle("text-white", b.getAttribute("data-view") === key);
-  });
-
-  currentView = key;
-
-  // Ensure the main accordion of the view is open (keeps UX simple)
-  const accMap = { timeline: "timeline", legs: "legs", stays: "stays", acts: "acts" };
-  const acc = accMap[key];
-  if (acc) openAccordionKey(acc);
-
-  window.scrollTo({ top: 0, behavior: "auto" });
+  document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
 }
 
 /* ----------------------------- Init ----------------------------- */
 
 
+function syncStickyTotalsHeightVar(){
+  // v78: keep legacy callers working
+  syncTopStackHeights();
+}
 
+function __tlGetTopOffsetPx(){
+  const cs = getComputedStyle(document.documentElement);
+  const h1 = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const h2 = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return h1 + h2;
+}
 
-function rebuildTimelineControlsFixed_removed(){ /* removed */ }
+function rebuildTimelineControlsFixed(){ /* removed */ }
 
 
 /* removed anyTimelineAccordionOpen */
@@ -3958,7 +4120,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
   syncHeaderHeightVar();
-  window.addEventListener('resize', () => { syncHeaderHeightVar();  }, { passive: true });
+  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
     if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -3991,11 +4153,11 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } catch (e) { /* no-op */ }
 
-  
+  syncStickyTotalsHeightVar();
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
-  
+  initAppMode();
 });
 </script>
 <!-- Floating FAB: Collapse all -->
