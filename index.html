@@ -200,6 +200,24 @@ border-radius: 999px;
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
+
+
+/* V88G2D: Timeline notice toast (non-blocking) */
+#timelineNotice{
+  position: sticky;
+  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px) + 8px);
+  z-index: 65;
+  margin: 8px 0 10px 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(8px);
+  font-weight: 700;
+  color: #0f172a;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.10);
+}
+#timelineNotice.hidden{ display:none; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -645,20 +663,18 @@ function scrollToElTopStack(el, extra = 0) {
 function landUnderTotals(el, extraPx = 8) {
   if (!el) return;
 
+  // Token to cancel pending landings when layout changes (e.g., user closes an accordion)
+  window.__landingToken = (window.__landingToken || 0) + 1;
+  const token = window.__landingToken;
+
   try { syncHeaderHeightVar(); } catch {}
   try { syncTopStackHeights(); } catch {}
   try { syncStickyTotalsHeightVar(); } catch {}
 
   requestAnimationFrame(() => {
+    if ((window.__landingToken || 0) !== token) return;
     try { scrollToElTopStack(el, extraPx); } catch {}
   });
-
-  setTimeout(() => {
-    try { syncHeaderHeightVar(); } catch {}
-    try { syncTopStackHeights(); } catch {}
-    try { syncStickyTotalsHeightVar(); } catch {}
-    try { scrollToElTopStack(el, extraPx); } catch {}
-  }, 140);
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
@@ -730,19 +746,51 @@ function __tlScrollToItemByKey(tlKey) {
   return true;
 }
 
-function __tlSetNotice(msg){
-  const box = document.getElementById("timelineNotice");
-  if (!box) return;
-  const t = String(msg || "").trim();
-  if (!t){
+
+function showTimelineNotice(text, autoHideMs = 2500) {
+  const t = String(text || "").trim();
+
+  // Ensure notice element exists inside timeline (above the list)
+  let box = document.getElementById("timelineNotice");
+  if (!box) {
+    const timelineBody = document.querySelector('[data-acc-body="timeline"]');
+    const list = document.getElementById("timelineList");
+    if (!timelineBody || !list) return;
+
+    box = document.createElement("div");
+    box.id = "timelineNotice";
+    box.setAttribute("role", "status");
+    box.className = "hidden";
+    // Insert right above the list so it remains even when the list re-renders
+    timelineBody.insertBefore(box, list);
+  }
+
+  // Clear any pending auto-hide
+  try {
+    if (window.__tlNoticeTimer) clearTimeout(window.__tlNoticeTimer);
+  } catch {}
+  window.__tlNoticeTimer = null;
+
+  if (!t) {
     box.textContent = "";
     box.classList.add("hidden");
     return;
   }
+
   box.textContent = t;
   box.classList.remove("hidden");
+
+  // Auto-hide (non-blocking toast)
+  const ms = Number(autoHideMs);
+  if (Number.isFinite(ms) && ms > 0) {
+    window.__tlNoticeTimer = setTimeout(() => {
+      try { showTimelineNotice(""); } catch {}
+    }, ms);
+  }
 }
-function __tlClearNotice(){ __tlSetNotice(""); }
+
+function __tlSetNotice(text) { showTimelineNotice(text); }
+function __tlClearNotice() { showTimelineNotice(""); }
 
 function scrollToCurrentTimelineItem() {
   __tlEnsureTimelineOpen();
@@ -757,7 +805,7 @@ function scrollToCurrentTimelineItem() {
   const cur = __tlPickCurrentItemForToday(items, todayISO);
 
   if (!cur) {
-    __tlSetNotice("No hay eventos en curso ahora mismo");
+    showTimelineNotice("No hay eventos en curso ahora mismo");
     return;
   }
 
@@ -1063,12 +1111,11 @@ function setupAccordion() {
 
       const isNowHidden2 = body.classList.contains("hidden");
       const justOpened = wasHidden && !isNowHidden2;
-      // V88F: only auto-land on intentional opens (bottom nav / jump), never on manual toggles
-      if (justOpened && (key === "legs" || key === "stays" || key === "acts" || key === "meals")) {
-        if (window.__pendingLanding) {
-          window.__pendingLanding = false;
-          landUnderTotals(btn, 8);
-        }
+      const justClosed = (!wasHidden) && isNowHidden2;
+      if (justClosed) {
+        // V88G2C: never auto-scroll on close; cancel any pending re-landing pass
+        window.__pendingLanding = false;
+        window.__landingToken = (window.__landingToken || 0) + 1;
       }
     });
   });
@@ -4001,21 +4048,47 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
 
     const body = document.querySelector(`[data-acc-body="${key}"]`);
 
-    // V88F: mark this open as intentional (bottom nav) so the accordion handler can auto-land
+    // V88G2D: landing premium ONLY when opened from bottom nav
+    window.__pendingLanding = true;
+
+    const doLanding = () => {
+      // First pass
+      landUnderTotals(accBtn, 8);
+
+      // Measure error after first pass; only do second pass if clearly off
+      requestAnimationFrame(() => {
+        try {
+          const topStack = getTopStackOffset() + 8; // header + totals + margin
+          const rect = accBtn.getBoundingClientRect();
+          const err = rect.top - topStack;
+
+          if (Math.abs(err) > 10) {
+            setTimeout(() => {
+              // still only if this landing is pending
+              if (!window.__pendingLanding) return;
+              landUnderTotals(accBtn, 8);
+              window.__pendingLanding = false;
+            }, 120);
+          } else {
+            window.__pendingLanding = false;
+          }
+        } catch {
+          window.__pendingLanding = false;
+        }
+      });
+    };
+
     if (body && body.classList.contains('hidden')) {
-      window.__pendingLanding = true;
+      // Open first, then land on next frame (after reflow)
       accBtn.click();
-      // landing is handled by setupAccordion() when it opens
+      requestAnimationFrame(doLanding);
       return;
     }
 
-    // If already open, land directly (and clear any pending flag)
-    window.__pendingLanding = false;
-    landUnderTotals(accBtn, 8);
+    // Already open: land immediately
+    doLanding();
   });
 });
-
-
 
 
 function syncHeaderHeightVar(){
