@@ -4043,6 +4043,16 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
 
+    const __isActsJump = (key === 'acts');
+    const __landingThreshold = __isActsJump ? 6 : 10;
+    const __scheduleLanding = (fn) => {
+      if (__isActsJump) {
+        requestAnimationFrame(() => requestAnimationFrame(fn));
+      } else {
+        requestAnimationFrame(fn);
+      }
+    };
+
     const accBtn = document.querySelector(`[data-acc="${key}"]`);
     if (!accBtn) return;
 
@@ -4062,7 +4072,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
           const rect = accBtn.getBoundingClientRect();
           const err = rect.top - topStack;
 
-          if (Math.abs(err) > 10) {
+          if (Math.abs(err) > __landingThreshold) {
             setTimeout(() => {
               // still only if this landing is pending
               if (!window.__pendingLanding) return;
@@ -4081,7 +4091,7 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     if (body && body.classList.contains('hidden')) {
       // Open first, then land on next frame (after reflow)
       accBtn.click();
-      requestAnimationFrame(doLanding);
+      __scheduleLanding(doLanding);
       return;
     }
 
