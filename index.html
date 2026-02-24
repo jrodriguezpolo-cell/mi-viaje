@@ -244,15 +244,20 @@ border-radius: 999px;
 </header>
 <!-- Sticky mini total bar -->
 <div class="bg-white/95 backdrop-blur border-b border-slate-200" id="stickyTotalBar">
-<div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
-<div class="text-sm font-semibold text-slate-900" id="stickyTotalValue">TOTAL: —</div>
-<button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="stickyTotalToggle">Ver detalle ▾</button>
-<select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
-<option value="EUR">€</option>
-<option value="USD">$</option>
-<option value="GBP">£</option>
-<option value="JPY">¥</option>
-</select></div>
+<div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3">
+  <div class="flex items-baseline gap-2 min-w-0">
+    <span class="text-xs font-extrabold tracking-wide text-slate-500">TOTAL</span>
+    <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
+  </div>
+  <span class="flex-1"></span>
+  <select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency" aria-label="Moneda">
+    <option value="EUR">€</option>
+    <option value="USD">$</option>
+    <option value="GBP">£</option>
+    <option value="JPY">¥</option>
+  </select>
+  <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
+</div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
 <div class="text-sm" id="stickySummaryDetailInner"></div>
@@ -469,12 +474,12 @@ border-radius: 999px;
 </div>
 </nav>
 <!-- Modals -->
-<div class="hidden fixed inset-0 z-[60] bg-black/40" id="modalBackdrop"></div>
-<div class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4" id="modalBox">
+<div class="hidden fixed inset-0 z-[6000] bg-black/40" id="modalBackdrop"></div>
+<div class="hidden fixed inset-0 z-[6100] flex items-center justify-center p-4" id="modalBox">
 <div class="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-xl max-h-[85vh] overflow-y-auto ios-scroll">
-<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200 sticky top-0 bg-white z-[6200]">
 <div class="font-extrabold" id="modalTitle">Modal</div>
-<button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="modalClose">✕</button>
+<button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="modalClose" style="position:relative; z-index:6200;">✕</button>
 </div>
 <div class="p-5" id="modalBody"></div>
 <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
@@ -485,7 +490,7 @@ border-radius: 999px;
 <div aria-label="Tools" aria-modal="true" class="fixed left-0 right-0 bottom-0 z-[1210]" id="toolsSheet" role="dialog">
 <div class="max-w-6xl mx-auto px-0 sm:px-4">
 <div class="bg-white rounded-t-3xl border border-slate-200 shadow-2xl overflow-hidden">
-<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200 sticky top-0 bg-white z-[6200]">
 <div class="font-extrabold">Tools</div>
 <button aria-label="Cerrar" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="toolsClose">✕</button>
 </div>
@@ -661,6 +666,8 @@ function syncTopStackHeights() {
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
 
   if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+
+  return headerH + totalsH;
 }
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
@@ -684,6 +691,14 @@ function scrollToElTopStack(el, extra = 0) {
   if (!el) return;
   const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
   window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
+
+function landUnderTotals(el, extra = 8, opts = { smooth: true }) {
+  if (!el) return;
+  const behavior = (opts && opts.smooth) ? "smooth" : "auto";
+  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
+  window.scrollTo({ top: Math.max(0, y), behavior });
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
@@ -2748,7 +2763,7 @@ function applySummaryFold() {
   const d = document.getElementById("stickySummaryDetail");
   const inner = document.getElementById("stickySummaryDetailInner");
 
-  if (t) t.textContent = summaryExpanded ? "Ocultar detalle ▴" : "Ver detalle ▾";
+  if (t) t.textContent = summaryExpanded ? "Ocultar ▴" : "Detalle ▾";
   if (d) d.classList.toggle("hidden", !summaryExpanded);
 
   // Re-render sticky detail (cheap + keeps it fresh even if calcSummary runs often)
@@ -2768,6 +2783,16 @@ function applySummaryFold() {
     const aS = sumFor(state.scenarios.A || emptyScenario());
     const bS = sumFor(state.scenarios.B || emptyScenario());
     const bHasData = (bS.total > 0.00001) || (state.scenarios.B?.legs?.length) || (state.scenarios.B?.stays?.length) || (state.scenarios.B?.activities?.length) || (parseMoney(state.scenarios.B?.meals?.daily) > 0);
+
+    // Sticky bar: best scenario quick hint
+    const bestEl = document.getElementById("stickyBestAB");
+    if (bestEl) {
+      if (!bHasData) {
+        bestEl.textContent = "Mejor A";
+      } else {
+        bestEl.textContent = `Mejor ${aS.total <= bS.total ? "A" : "B"}`;
+      }
+    }
 
     const fmt = (n) => (Number(n)||0).toFixed(2);
     const difTxt = (n) => {
@@ -2869,7 +2894,7 @@ function calcSummary() {
   if (stickyVal) {
     const curCode = (document.getElementById("displayCurrency")?.value) || (document.getElementById("sumCur")?.textContent) || "";
     const curSym = currencySymbol(curCode);
-    stickyVal.textContent = `TOTAL: ${$("sumTotal").textContent}${curSym ? " " + curSym : ""}`;
+    stickyVal.textContent = `${$("sumTotal").textContent}`;
   }
   // summary fold (no persistence)
   applySummaryFold();
@@ -4144,14 +4169,32 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
 
-    const accBtn = document.querySelector(`[data-acc="${key}"]`);
-    if (!accBtn) return;
+    const headerBtn = document.querySelector(`[data-acc="${key}"]`);
+    if (!headerBtn) return;
 
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (body && body.classList.contains('hidden')) accBtn.click();
+    // Ensure accordion is open
+    try {
+      if (typeof openAccordionKey === "function") openAccordionKey(key);
+      else {
+        const body = document.querySelector(`[data-acc-body="${key}"]`);
+        if (body && body.classList.contains("hidden")) headerBtn.click();
+      }
+    } catch {}
 
+    // Recommended landing sequence: open -> double rAF -> sync -> land under totals -> one-shot correction
     requestAnimationFrame(() => {
-      scrollToElTopStack(accBtn, 4); // premium micro offset under Totals
+      requestAnimationFrame(() => {
+        try { syncTopStackHeights(); } catch {}
+        try { landUnderTotals(headerBtn, 8, { smooth: true }); } catch {}
+
+        const wantedTop = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
+        setTimeout(() => {
+          try {
+            const err = headerBtn.getBoundingClientRect().top - wantedTop;
+            if (Math.abs(err) > 6) window.scrollBy({ top: err, behavior: "auto" });
+          } catch {}
+        }, 120);
+      });
     });
   });
 });
