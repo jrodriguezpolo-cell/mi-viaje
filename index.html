@@ -165,7 +165,7 @@ border-radius: 999px;
 #timelineControlsRow{
   position: sticky;
   /* mainScroll already starts below the top stack; keep controls glued under Totales */
-  top: var(--top-stack-h, 0px);
+  top: 0px;
   z-index: 950;
   background: #ffffff;
   border-bottom: 1px solid rgba(15,23,42,0.08);
@@ -279,7 +279,7 @@ border-radius: 999px;
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89C2E - 2026-02-24 17:39</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89C2F - 2026-02-24 18:07</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -312,7 +312,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- Main -->
-<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-2 pb-24">
+<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-0 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -624,6 +624,8 @@ function setView(viewName){
   const targetId = map[viewName] || map.timeline;
   const allIds = Object.values(map);
 
+  const prevView = activeView;
+
   // 1) show/hide views
   allIds.forEach(id => {
     const el = document.getElementById(id);
@@ -637,14 +639,13 @@ function setView(viewName){
   // 2) resync top-stack after layout changes (iOS-friendly)
   try { scheduleSyncTopStackHeights(); } catch {}
 
-  // 3) reset scroll AFTER top-stack settles (no offsets, no window scroll)
-  requestAnimationFrame(() => {
-    const ms = document.getElementById("mainScroll");
-    if (ms) {
-      ms.scrollTop = 0;
-      requestAnimationFrame(() => { ms.scrollTop = 0; });
-    }
-  });
+  // 3) reset scroll ONCE, only when changing views, after the next frame
+  if (prevView !== activeView) {
+    requestAnimationFrame(() => {
+      const ms = document.getElementById("mainScroll");
+      if (ms) ms.scrollTop = 0;
+    });
+  }
 
   // 4) update FAB visibility + handler
   updateFabForView(activeView);
@@ -652,16 +653,58 @@ function setView(viewName){
 
 
 function triggerAddForView(view){
-  const clickId = (id) => { const el = document.getElementById(id); if (el) { el.click(); return true; } return false; };
-  if (view === "legs") return clickId("addLeg");
-  if (view === "stays") return clickId("addStay");
-  if (view === "acts") return clickId("addAct");
-  if (view === "meals") {
-    // No dedicated add button in meals; focus daily input as the primary action
-    const el = document.getElementById("mealDaily");
-    if (el) { try { el.focus(); } catch {} return true; }
-    return false;
-  }
+  if (view === "timeline") return;
+
+  const ms = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+
+  const go = (sectionKey, btnId, listPrefix, expandedSetName, renderFnName) => {
+    try { openAccordionKey(sectionKey); } catch {}
+    const btn = document.getElementById(btnId);
+    if (!btn) return false;
+
+    // Click the existing add button (keeps business logic intact)
+    btn.click();
+
+    // Best-effort: newly created item is at the start (unshift) in the current scenario
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    let newId = null;
+    try {
+      if (!sc) throw 0;
+      if (sectionKey === "legs" && sc.legs && sc.legs[0]) newId = sc.legs[0].id;
+      if (sectionKey === "stays" && sc.stays && sc.stays[0]) newId = sc.stays[0].id;
+      if (sectionKey === "acts" && sc.activities && sc.activities[0]) newId = sc.activities[0].id;
+    } catch {}
+
+    // Ensure per-item accordion is expanded for the new id (renderer may already do it, but safe)
+    if (newId && window.__sectionExpanded && window.__sectionExpanded[expandedSetName] && window.__sectionExpanded[expandedSetName].add) {
+      window.__sectionExpanded[expandedSetName].add(newId);
+    }
+
+    // Re-render the section (safe) so the expanded state is applied
+    try {
+      const fn = window[renderFnName];
+      if (typeof fn === "function") fn();
+    } catch {}
+
+    // Land the new item under Totales (offset uses current top-stack + controls if any)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!newId) return;
+      const el = document.getElementById(listPrefix + newId);
+      if (!el) return;
+      try {
+        if (typeof landUnderTotals === "function") landUnderTotals(el, 8, { smooth: true });
+        else if (typeof scrollToElWithOffset === "function") scrollToElWithOffset(el, 8, true);
+        else el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch {}
+    }));
+    return true;
+  };
+
+  if (view === "legs") return go("legs", "addLeg", "leg-", "legs", "renderLegs");
+  if (view === "stays") return go("stays", "addStay", "stay-", "stays", "renderStays");
+  if (view === "acts") return go("acts", "addAct", "act-", "activities", "renderActivities");
+
+  // meals: no add button in this version → keep FAB hidden by updateFabForView
   return false;
 }
 function updateFabForView(view){
@@ -670,7 +713,7 @@ function updateFabForView(view){
   const show = (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
   fab.classList.toggle("hidden", !show);
   if (!show) { fab.onclick = null; return; }
-  fab.onclick = () => { if (!triggerAddForView(view)) alert("No se pudo añadir"); };
+  fab.onclick = () => triggerAddForView(view);
 }
 
 
@@ -844,6 +887,7 @@ let __initialScrollFixDone = false;
 function scheduleSyncTopStackHeights(){
   requestAnimationFrame(() => requestAnimationFrame(() => {
     try { syncTopStackHeights(); } catch {}
+
     // First-load guard: if the scroll container starts displaced, snap it back once.
     if (!__initialScrollFixDone) {
       requestAnimationFrame(() => {
@@ -4522,5 +4566,16 @@ window.addEventListener('DOMContentLoaded', () => {
 <button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
+
+<!--
+QA checklist (manual):
+- Carga inicial: Cronograma pegado bajo Totales (sin gap)
+- Bottom nav cambia entre vistas sin “bajar” el contenido
+- Timeline controls (Global/Día/Actual/Próximo) quedan sticky bajo Totales al hacer scroll
+- FAB + en Transporte/Alojamiento/Actividades crea item, lo expande y aterriza visible bajo Totales
+- CRUD (añadir/editar/borrar) sigue funcionando
+- Sin errores en consola
+-->
+
 </body>
 </html>
