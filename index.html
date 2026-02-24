@@ -247,15 +247,18 @@ border-radius: 999px;
 <div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3">
   <div class="flex items-baseline gap-2 min-w-0">
     <span class="text-xs font-extrabold tracking-wide text-slate-500">TOTAL</span>
-    <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
+    <div class="inline-flex items-baseline gap-2 min-w-0">
+      <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
+      <select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency" aria-label="Moneda">
+        <option value="EUR">€</option>
+        <option value="USD">$</option>
+        <option value="GBP">£</option>
+        <option value="JPY">¥</option>
+      </select>
+    </div>
   </div>
   <span class="flex-1"></span>
-  <select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency" aria-label="Moneda">
-    <option value="EUR">€</option>
-    <option value="USD">$</option>
-    <option value="GBP">£</option>
-    <option value="JPY">¥</option>
-  </select>
+  <span class="text-sm font-semibold text-slate-700 whitespace-nowrap" id="stickyBestAB">Mejor A</span>
   <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
@@ -502,7 +505,13 @@ border-radius: 999px;
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsLoad">
             Cargar
           </button>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsCopyAtoB">
+            Copiar A → B
+          </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsCopyBtoA">
+            Copiar B → A
+          </button>
+<button>
             Cambiar clave
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
@@ -3863,12 +3872,60 @@ async function importTrip(ev) {
     // Safety backup before overwrite
     pushBackup("before_import", { fromFileName: file.name, fromSavedAt: payload.savedAt || null, fromDevice: payload.deviceName || null });
 
-    state = payload.state;
+    // --- V88C3c: Importar SIEMPRE al escenario ACTIVO (A/B) ---
+    const activeKey = (state && (state.scenario === "B")) ? "B" : "A";
+
+    function normalizeScenarioData(raw){
+      if (!raw || typeof raw !== "object") return null;
+
+      const legs = Array.isArray(raw.legs) ? raw.legs : [];
+      const stays = Array.isArray(raw.stays) ? raw.stays : [];
+      const meals = (raw.meals && typeof raw.meals === "object") ? raw.meals : { daily: 0, people: "", days: "" };
+
+      // compat: "acts" (old) -> "activities"
+      const actsArr = Array.isArray(raw.activities) ? raw.activities : (Array.isArray(raw.acts) ? raw.acts : []);
+      const dailyNotes = (raw.dailyNotes && typeof raw.dailyNotes === "object") ? raw.dailyNotes : {};
+
+      return { legs, stays, meals, activities: actsArr, dailyNotes };
+    }
+
+    // a) extract scenario data from file (supports old & new formats)
+    let rawScenario = null;
+    if (payload && payload.state) {
+      // New format: payload.state.scenarios
+      if (payload.state.scenarios && typeof payload.state.scenarios === "object") {
+        rawScenario = payload.state.scenarios[activeKey] || payload.state.scenarios.A || payload.state.scenarios.B || null;
+      } else {
+        // Old-ish format: payload.state is already a scenario object
+        rawScenario = payload.state;
+      }
+    } else {
+      // Very old: top-level keys
+      rawScenario = payload;
+    }
+
+    const normalized = normalizeScenarioData(rawScenario);
+    const hasMinimum =
+      normalized &&
+      Array.isArray(normalized.legs) &&
+      Array.isArray(normalized.stays) &&
+      normalized.meals && typeof normalized.meals === "object" &&
+      Array.isArray(normalized.activities);
+
+    if (!hasMinimum) {
+      throw new Error("Formato no válido. Se esperan: legs, stays, meals, activities/acts.");
+    }
+
+    // d) assign into real app state (not local var)
+    if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = { A: emptyScenario(), B: emptyScenario() };
+    state.scenarios[activeKey] = normalized;
+
+    // e) persist + render
     saveState();
     closeModal();
     renderAll();
-  syncStickyTotalsHeightVar();
-  const now = new Date().toISOString();
+    syncStickyTotalsHeightVar();
+    const now = new Date().toISOString();
     setMeta({
       lastImportAt: now,
       lastSyncAt: now,
@@ -3878,7 +3935,7 @@ async function importTrip(ev) {
       lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
     });
 
-    alert("Viaje cargado.");
+    alert("Viaje importado en escenario " + ((state && state.scenario==="B") ? "B" : "A") + ".");
   } catch(e) {
     alert("No se pudo cargar: " + e.message);
   } finally {
@@ -4088,7 +4145,10 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const loadBtn = $("toolsLoad");
   const resetBtn = $("toolsReset");
 
-  function openTripsAndFocus(targetId){
+    const copyAtoBBtn = $("toolsCopyAtoB");
+  const copyBtoABtn = $("toolsCopyBtoA");
+
+function openTripsAndFocus(targetId){
     closeTools();
     openTripsModal();
     // focus target inside modal once mounted
@@ -4103,6 +4163,29 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
   if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
+
+
+  function deepClone(obj){
+    try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
+  }
+
+  function copyScenario(fromKey, toKey){
+    const from = state?.scenarios?.[fromKey];
+    if (!from) { alert("No hay datos en el escenario " + fromKey + "."); return; }
+    const ok = confirm("Esto sobrescribirá el viaje destino. ¿Continuar?");
+    if (!ok) return;
+    const cloned = deepClone(from);
+    if (!cloned) { alert("No se pudo copiar (datos inválidos)."); return; }
+    if (!state.scenarios) state.scenarios = { A: emptyScenario(), B: emptyScenario() };
+    state.scenarios[toKey] = cloned;
+    saveState();
+    closeTools();
+    renderAll();
+    try { syncStickyTotalsHeightVar(); } catch {}
+  }
+
+  if (copyAtoBBtn) copyAtoBBtn.addEventListener("click", () => copyScenario("A","B"));
+  if (copyBtoABtn) copyBtoABtn.addEventListener("click", () => copyScenario("B","A"));
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
     closeTools();
