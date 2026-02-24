@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3C - 2026-02-24 21:14</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3D - 2026-02-24 23:54</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1201,6 +1201,9 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
   const mainScroll = document.getElementById("mainScroll");
   if (!overlay || !sheet || !titleEl || !body) return;
 
+  // Reset any previous sheet-only UI fragments
+  try { body.__chipsHost = null; } catch {}
+
   // Close any previous instance safely
   try { closeEventSheet({ silent: true }); } catch {}
 
@@ -1314,6 +1317,7 @@ function renderLegModeChips(container, leg, onSelect){
   const parent = node.parentNode;
   const next = node.nextSibling;
   __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+  window.__sheetCtx = { kind: k, id: itemId };
 
   body.innerHTML = "";
   try { if (body.__chipsHost) body.appendChild(body.__chipsHost); } catch {}
@@ -1389,6 +1393,39 @@ function __initEventSheetBindings(){
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+// Sheet delete (robust even with move-node approach)
+(() => {
+  const sheetBody = document.getElementById("eventSheetBody");
+  if (!sheetBody) return;
+
+  sheetBody.addEventListener("click", (e) => {
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+
+    const btn = t.closest("[data-leg-del],[data-stay-del],[data-act-del]");
+    if (!btn) return;
+
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+
+    const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
+    if (!ctx || !ctx.kind || !ctx.id) return;
+
+    if (!confirm("¿Eliminar este evento?")) return;
+
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if (!sc) return;
+
+    const id = String(ctx.id);
+    if (ctx.kind === "leg") sc.legs = (sc.legs || []).filter(x => String(x.id) !== id);
+    if (ctx.kind === "stay") sc.stays = (sc.stays || []).filter(x => String(x.id) !== id);
+    if (ctx.kind === "act") sc.activities = (sc.activities || []).filter(x => String(x.id) !== id);
+
+    try { if (typeof saveState === "function") saveState(); } catch {}
+    try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+    try { if (typeof renderAll === "function") renderAll(); } catch {}
+  });
+})();
+
   if (overlay) overlay.addEventListener("click", (e) => {
     // click outside sheet closes
     if (sheet && sheet.contains(e.target)) return;
