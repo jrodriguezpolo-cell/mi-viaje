@@ -309,7 +309,7 @@ border-radius: 999px;
 </div>
 </div>
 <!-- Main -->
-<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-3 pb-24">
+<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-2 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -631,8 +631,13 @@ function setView(viewName){
 
   activeView = (viewName in map) ? viewName : "timeline";
 
-  // Scroll main container to top (no offsets, no top-stack recalcs)
-  scrollMainToTop();
+  // Ensure deterministic top-stack measurements, then reset scroll
+  if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
+  const ms = document.getElementById("mainScroll");
+  requestAnimationFrame(() => {
+    if (ms) ms.scrollTop = 0;
+    requestAnimationFrame(() => { if (ms) ms.scrollTop = 0; });
+  });
   updateFabForView(activeView);
 }
 
@@ -1287,6 +1292,7 @@ function setupAccordion() {
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
       updateFabVisibility();
+      if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
     });
   });
 }
@@ -4279,7 +4285,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
     requestAnimationFrame(() => {
       backdrop.classList.add("open");
       sheet.classList.add("open");
-      requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} });
+      if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
     });
     // prevent background scroll (keep window locked; pause main scroll)
     const ms = document.getElementById("mainScroll");
