@@ -299,6 +299,12 @@ border-radius: 999px; border: 1px solid rgba(148,163,184,.6); background: rgba(2
 <script>
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
+
+function on(id, evt, fn){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(evt, fn);
+}
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); /* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName"; function getTripName() { const v = localStorage.getItem(TRIP_NAME_KEY) || ""; return String(v || "").trim();
 } function setTripName(v) { localStorage.setItem(TRIP_NAME_KEY, String(v || "").trim());
@@ -363,8 +369,8 @@ function __tlClearNotice() { showTimelineNotice(""); } function scrollToCurrentT
 }
 function closeModal() { $("modalBackdrop").classList.add("hidden"); $("modalBox").classList.add("hidden");
 }
-$("modalClose").addEventListener("click", closeModal);
-$("modalBackdrop").addEventListener("click", closeModal); /* -------------------------- Tools Bottom Sheet (V88I) -------------------------- */
+on("modalClose","click", closeModal);
+on("modalBackdrop","click", closeModal); /* -------------------------- Tools Bottom Sheet (V88I) -------------------------- */
 function openToolsSheet() { const overlay = document.getElementById("toolsOverlay"); const sheet = document.getElementById("toolsSheet"); if (!overlay || !sheet) return; overlay.classList.remove("hidden"); sheet.classList.remove("hidden"); // Keep top-stack vars fresh (Safari/iOS can lag after overlays) try { syncTopStackHeights(); } catch {} try { setTimeout(() => { try { syncTopStackHeights(); } catch {} }, 50); } catch {}
 }
 function closeToolsSheet() { const overlay = document.getElementById("toolsOverlay"); const sheet = document.getElementById("toolsSheet"); if (overlay) overlay.classList.add("hidden"); if (sheet) sheet.classList.add("hidden"); // Keep top-stack vars fresh (Safari/iOS can lag after overlays) try { syncTopStackHeights(); } catch {} try { setTimeout(() => { try { syncTopStackHeights(); } catch {} }, 50); } catch {}
@@ -554,20 +560,20 @@ Tu iPhone: ${l} ¿Quieres continuar?`); if (!ok) return; } pushBackup("before_lo
 const __chipA = document.getElementById("chipA");
 if (__chipA) __chipA.addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 const __chipB = document.getElementById("chipB");
-if (__chipB) __chipB.addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); }); $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value)); $("addLeg").addEventListener("click", ()=>{ const sc = curScenario(); const id = nowId(); sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null }); __sectionExpanded.legs.add(id); saveState(); renderLegs(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("legs");
+if (__chipB) __chipB.addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); }); on("displayCurrency","change", (e)=> setDisplayCurrency(e.target.value)); on("addLeg","click", ()=>{ const sc = curScenario(); const id = nowId(); sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null }); __sectionExpanded.legs.add(id); saveState(); renderLegs(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("legs");
 });
-$("addStay").addEventListener("click", ()=>{ const sc = curScenario(); const id = nowId(); sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 }); __sectionExpanded.stays.add(id); saveState(); renderStays(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("stays");
+on("addStay","click", ()=>{ const sc = curScenario(); const id = nowId(); sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 }); __sectionExpanded.stays.add(id); saveState(); renderStays(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("stays");
 });
-$("addAct").addEventListener("click", ()=>{ const sc = curScenario(); const id = nowId(); sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false }); __sectionExpanded.activities.add(id); saveState(); renderActivities(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("acts");
+on("addAct","click", ()=>{ const sc = curScenario(); const id = nowId(); sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false }); __sectionExpanded.activities.add(id); saveState(); renderActivities(); renderTimeline(); calcSummary(); scrollAccordionBodyToTop("acts");
 }); ["mealDaily","mealPeople","mealDays"].forEach(id=>{ $(id).addEventListener("input", ()=>{ const sc = curScenario(); sc.meals.daily = parseMoney($("mealDaily").value); const rawP = $("mealPeople").value; const rawD = $("mealDays").value; sc.meals.people = (String(rawP).trim() === "") ? "" : Math.max(1, parseInt(rawP || "1",10)); sc.meals.days = (String(rawD).trim() === "") ? "" : Math.max(1, parseInt(rawD || "1",10)); saveState(); renderMeals(); calcSummary(); });
-}); $("btnKey").addEventListener("click", ()=>{ const cur = getGeminiKey(); const key = prompt("Pega tu API Key de Gemini (AIza…):", cur ? "AIza..." : ""); if (key && key.trim()) { setGeminiKey(key.trim()); alert("Clave guardada en este dispositivo."); }
-}); $("aiPick").addEventListener("click", openAIPickModal);
-$("aiGenerate").addEventListener("click", generateAIGuide); $("btnTrips").addEventListener("click", openTripsModal);
+}); on("btnKey","click", ()=>{ const cur = getGeminiKey(); const key = prompt("Pega tu API Key de Gemini (AIza…):", cur ? "AIza..." : ""); if (key && key.trim()) { setGeminiKey(key.trim()); alert("Clave guardada en este dispositivo."); }
+}); on("aiPick","click", openAIPickModal);
+on("aiGenerate","click", generateAIGuide); on("btnTrips","click", openTripsModal);
 const __tn = $("timelineNext");
 if (__tn) __tn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToNextAfterCurrent(); }); const __tt = $("timelineToday");
-if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); }); $("btnReadOnly").addEventListener("click", () => { setReadOnly(!isReadOnly());
+if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); }); on("btnReadOnly","click", () => { setReadOnly(!isReadOnly());
 });
-$("btnCompare").addEventListener("click", ()=>{ const a = state.scenarios.A; const b = state.scenarios.B; const tot = (sc) => sc.legs.reduce((x,y)=>x+parseMoney(y.cost),0) + sc.stays.reduce((x,y)=>x+parseMoney(y.cost),0) + sc.activities.reduce((x,y)=>x+parseMoney(y.cost),0) + parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10)); const ta = tot(a), tb = tot(b); $("compareBox").classList.remove("hidden"); $("compareBox").innerHTML = ` <div class="font-extrabold">Comparativa (simple)</div> <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${ta.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div> <div class="flex justify-between"><span>B</span><span class="font-semibold">${tb.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div> <div class="mt-2 text-sm ${ta<=tb ? "text-emerald-700" : "text-emerald-700"}"> Mejor: <b>${ta<=tb ? "A" : "B"}</b> (${Math.abs(ta-tb).toFixed(2)} de diferencia) </div> `;
+on("btnCompare","click", ()=>{ const a = state.scenarios.A; const b = state.scenarios.B; const tot = (sc) => sc.legs.reduce((x,y)=>x+parseMoney(y.cost),0) + sc.stays.reduce((x,y)=>x+parseMoney(y.cost),0) + sc.activities.reduce((x,y)=>x+parseMoney(y.cost),0) + parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10)); const ta = tot(a), tb = tot(b); $("compareBox").classList.remove("hidden"); $("compareBox").innerHTML = ` <div class="font-extrabold">Comparativa (simple)</div> <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${ta.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div> <div class="flex justify-between"><span>B</span><span class="font-semibold">${tb.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div> <div class="mt-2 text-sm ${ta<=tb ? "text-emerald-700" : "text-emerald-700"}"> Mejor: <b>${ta<=tb ? "A" : "B"}</b> (${Math.abs(ta-tb).toFixed(2)} de diferencia) </div> `;
 }); /* Bottom nav jump (premium header landing) */
 function scrollToSectionHeader(accKey) { const headerBtn = document.querySelector(`[data-acc="${accKey}"]`); if (!headerBtn) return; // Ensure accordion is open so the landing makes sense visually if (typeof openAccordionKey === "function") openAccordionKey(accKey); // Premium fine scroll: header sits just under Totals setTimeout(() => { scrollToElWithOffset(headerBtn, 10); }, 0);
 } 
