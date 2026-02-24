@@ -238,32 +238,33 @@ border-radius: 999px;
     }
 
 
-/* V89C2b hotfix: avoid double offset gap */
+/* V89C2b: Fix initial gap (single top-stack compensation) */
 #topStackSpacer{ display:none !important; height:0 !important; }
+
 /* Bottom nav must always be visible and outside scroll container */
-#bottomNav{ position:fixed; bottom:0; left:0; right:0; z-index:3000; }
+#bottomNav{ position: fixed; bottom:0; left:0; right:0; z-index:3000; }
+
 /* Ensure scroll container never overlays bottom nav */
 #mainScroll{ z-index:0; }
 
-
 /* FAB add per-view */
-#fabAddItem{
-  position:fixed;
-  right:16px;
-  bottom:calc(var(--bottom-nav-h, 64px) + 16px);
-  width:56px;
-  height:56px;
-  border-radius:999px;
-  border:none;
-  font-size:28px;
-  line-height:56px;
-  font-weight:900;
-  background:#2563eb;
-  color:#fff;
-  box-shadow:0 10px 25px rgba(2,6,23,0.22);
-  z-index:2800;
+#fabAdd{
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--bottom-nav-h, 64px) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  font-size: 30px;
+  line-height: 56px;
+  font-weight: 900;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(2,6,23,0.22);
+  z-index: 2500;
 }
-#fabAddItem:active{ transform: scale(0.98); }
+#fabAdd:active{ transform: scale(0.98); }
 
 </style>
 </head>
@@ -523,7 +524,6 @@ border-radius: 999px;
 </div>
 </main>
 </div>
-
 <!-- Bottom bar for mobile -->
 <nav id="bottomNav" class="safe-b fixed bottom-0 left-0 right-0 z-[2000] lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
@@ -634,8 +634,32 @@ function setView(viewName){
 
   // Scroll main container to top (no offsets, no top-stack recalcs)
   scrollMainToTop();
-  try { updateAddFabVisibility(); } catch {}
+  updateFabForView(activeView);
 }
+
+
+function triggerAddForView(view){
+  const clickId = (id) => { const el = document.getElementById(id); if (el) { el.click(); return true; } return false; };
+  if (view === "legs") return clickId("addLeg");
+  if (view === "stays") return clickId("addStay");
+  if (view === "acts") return clickId("addAct");
+  if (view === "meals") {
+    // No dedicated add button in meals; focus daily input as the primary action
+    const el = document.getElementById("mealDaily");
+    if (el) { try { el.focus(); } catch {} return true; }
+    return false;
+  }
+  return false;
+}
+function updateFabForView(view){
+  const fab = document.getElementById("fabAdd");
+  if (!fab) return;
+  const show = (view === "legs" || view === "stays" || view === "meals" || view === "acts");
+  fab.classList.toggle("hidden", !show);
+  if (!show) { fab.onclick = null; return; }
+  fab.onclick = () => { if (!triggerAddForView(view)) alert("No se pudo añadir"); };
+}
+
 
 /* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName";
@@ -768,24 +792,21 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-  const detail = document.getElementById("stickySummaryDetail");
-  const bottomNav = document.getElementById("bottomNav");
+    const bottomNav = document.getElementById("bottomNav");
   const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
-  const detailH = (detail && !detail.classList.contains("hidden")) ? detail.getBoundingClientRect().height : 0;
-  const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+    const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
 
-  const topStackH = headerH + totalsH + detailH;
+  const topStackH = headerH + totalsH;
 
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
   root.style.setProperty("--top-stack-h", topStackH + "px");
   root.style.setProperty("--bottom-nav-h", navH + "px");
-
-  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
+  if (spacer) spacer.style.height = "0px";
 
   const mainScroll = document.getElementById("mainScroll");
   if (mainScroll) {
@@ -796,10 +817,13 @@ function syncTopStackHeights() {
   return topStackH;
 }
 
-// Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
-document.addEventListener("DOMContentLoaded", () => setTimeout(syncTopStackHeights, 0));
-window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
-window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
+// Keep heights in sync on load and when viewport changes (iOS-friendly)
+function scheduleSyncTopStackHeights(){
+  requestAnimationFrame(() => requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} }));
+}
+document.addEventListener("DOMContentLoaded", scheduleSyncTopStackHeights);
+window.addEventListener("load", scheduleSyncTopStackHeights);
+window.addEventListener("resize", scheduleSyncTopStackHeights);
 
 
 
@@ -1284,13 +1308,6 @@ function updateFabVisibility() {
   const fab = document.getElementById('fabCollapseAll');
   if (!fab) return;
   fab.classList.toggle('hidden', !anyAccordionOpen());
-}
-
-function updateAddFabVisibility(){
-  const fab = document.getElementById('fabAddItem');
-  if (!fab) return;
-  const show = (window.activeView && window.activeView !== 'timeline');
-  fab.classList.toggle('hidden', !show);
 }
 
 
@@ -4466,40 +4483,10 @@ window.addEventListener('DOMContentLoaded', () => {
   syncStickyTotalsHeightVar();
   summaryExpanded = false;
   applySummaryFold();
-  // Bind per-view add FAB (safe)
-  const __fabAdd = document.getElementById('fabAddItem');
-  if (__fabAdd) __fabAdd.addEventListener('click', () => {
-    const v = window.activeView || 'timeline';
-    try {
-      if (v === 'legs') {
-        const b = document.getElementById('addLeg');
-        if (b) b.click(); else alert('No se encontró el botón de añadir');
-      } else if (v === 'stays') {
-        const b = document.getElementById('addStay');
-        if (b) b.click(); else alert('No se encontró el botón de añadir');
-      } else if (v === 'acts') {
-        const b = document.getElementById('addAct');
-        if (b) b.click(); else alert('No se encontró el botón de añadir');
-      } else if (v === 'meals') {
-        // Meals has no add button: open section + focus first input
-        const accBtn = document.querySelector('[data-acc="meals"]');
-        const body = document.querySelector('[data-acc-body="meals"]');
-        if (accBtn && body && body.classList.contains('hidden')) accBtn.click();
-        const input = document.getElementById('mealDaily');
-        if (input) input.focus();
-      }
-    } catch (e) {
-      alert('No se pudo añadir');
-    }
-  });
-
-  try { updateAddFabVisibility(); } catch {}
   updateFabVisibility();
 });
 </script>
-
-<!-- Floating FAB: Add item (per view) -->
-<button aria-label="Añadir" id="fabAddItem" class="hidden" title="Añadir">＋</button>
+<button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
 </body>
