@@ -248,15 +248,14 @@ border-radius: 999px;
   <div class="flex items-baseline gap-2 min-w-0">
     <span class="text-xs font-extrabold tracking-wide text-slate-500">TOTAL</span>
     <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
-    <select class="ml-1 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency" aria-label="Moneda">
-      <option value="EUR">€</option>
-      <option value="USD">$</option>
-      <option value="GBP">£</option>
-      <option value="JPY">¥</option>
-    </select>
   </div>
   <span class="flex-1"></span>
-  <span class="text-sm font-semibold text-slate-700 whitespace-nowrap" id="stickyBestAB">Mejor A</span>
+  <select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency" aria-label="Moneda">
+    <option value="EUR">€</option>
+    <option value="USD">$</option>
+    <option value="GBP">£</option>
+    <option value="JPY">¥</option>
+  </select>
   <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
@@ -2308,23 +2307,6 @@ function setTimelineViewMode(mode) {
   // When entering day view, active day will be auto-selected in renderTimeline()
   renderTimeline();
 
-  // Entering Global from Day: ensure the first event is visible (no scroll required).
-  if (timelineViewMode === "global" && prev !== "global") {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        try { syncTopStackHeights(); } catch {}
-        const first = document.querySelector(".timelineItem");
-        if (first) {
-          try { landUnderTotals(first, 8, { smooth: true }); } catch { try { scrollToElWithOffset(first, 8); } catch {} }
-        } else {
-          // When empty, bring the timeline area into view (message is rendered by renderTimeline()).
-          const list = document.getElementById("timelineList");
-          if (list) { try { landUnderTotals(list, 8, { smooth: true }); } catch {} }
-        }
-      });
-    });
-  }
-
   // Entering Day from Global: ensure the first event isn't hidden under the fixed controls bar.
   if (timelineViewMode === "day" && prev !== "day") {
     requestAnimationFrame(() => {
@@ -2337,6 +2319,21 @@ function setTimelineViewMode(mode) {
       if (first) scrollToElWithOffset(first);
     });
   }
+  // Entering Global from Day: ensure the timeline is visible under the sticky totals bar.
+  if (timelineViewMode === "global" && prev === "day") {
+    requestAnimationFrame(() => {
+      const first = document.querySelector(".timelineItem");
+      const list = document.getElementById("timelineList");
+      if (first) {
+        scrollToElWithOffset(first, 0);
+      } else if (list) {
+        scrollToElWithOffset(list, 0);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+  }
+
 }
 
 
@@ -2878,57 +2875,28 @@ function applySummaryFold() {
   // Stable binding with reflow correction (prevents content jump/covering)
   if (t) {
     t.onclick = () => {
-      // Premium reflow: keep an anchor just under Totals when opening/closing Detail
-      let anchor = null;
-
-      try {
-        const tlBody = document.querySelector('[data-acc-body="timeline"]');
-        const tlOpen = !!(tlBody && !tlBody.classList.contains("hidden"));
-        if (tlOpen) {
-          anchor = document.getElementById("timelineControlsRow") || document.querySelector('[data-acc="timeline"]');
-        }
-      } catch {}
-
-      if (!anchor) {
-        try {
-          const openBody = document.querySelector('[data-acc-body]:not(.hidden)');
-          if (openBody) {
-            const key = openBody.getAttribute("data-acc-body");
-            anchor = document.querySelector(`[data-acc="${key}"]`) || openBody;
-          }
-        } catch {}
-      }
-
-      if (!anchor) {
-        // Fallback: anchor based on viewport point just below top stack
-        try {
-          const wantedTop = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
-          const el = document.elementFromPoint(16, wantedTop + 8);
-          anchor = el ? (el.closest('[data-acc]') || el.closest('[data-acc-body]') || el) : null;
-        } catch {}
-      }
-
+      const topOffset = __tlGetTopOffsetPx();
+      const anchorEl = document.elementFromPoint(16, topOffset + 8);
+      const anchor = anchorEl ? (anchorEl.closest('[data-acc-body]') || anchorEl.closest('[data-acc]') || anchorEl) : null;
       const beforeTop = anchor ? anchor.getBoundingClientRect().top : null;
 
       summaryExpanded = !summaryExpanded;
       applySummaryFold();
 
-      // Re-measure and correct scroll so anchor stays right under Totals
+      // sync heights then correct scroll so the same anchor stays in place
+      try { syncStickyTotalsHeightVar(); } catch {}
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          try { syncTopStackHeights(); } catch {}
-          try { syncStickyTotalsHeightVar(); } catch {}
-          if (!anchor || beforeTop === null) return;
-
-          const wantedTop = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
+        try { syncStickyTotalsHeightVar(); } catch {}
+        if (anchor && beforeTop !== null) {
           const afterTop = anchor.getBoundingClientRect().top;
-          const err = afterTop - wantedTop;
-
-          if (Math.abs(err) > 1) window.scrollBy({ top: err, left: 0, behavior: "auto" });
-        });
+          const diff = afterTop - beforeTop;
+          if (Math.abs(diff) > 1) window.scrollBy({ top: diff, left: 0, behavior: "auto" });
+        }
       });
     };
   }
+}
+
 /* -------------------- /Summary fold (no persistence) -------------------- */
 
 function calcSummary() {
@@ -4167,19 +4135,10 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
     closeTools();
-    const k = (state && state.scenario) ? state.scenario : "A";
-    if (!confirm(`¿Reiniciar viaje? Esto borrará SOLO el escenario ${k} en este dispositivo para este viaje.`)) return;
-    try {
-      // Mantener modelo: solo vaciar arrays del escenario activo
-      state.scenarios[k] = emptyScenario();
-      saveState();
-      renderAll();
-      try { syncTopStackHeights(); } catch {}
-      try { syncStickyTotalsHeightVar(); } catch {}
-      alert(`Escenario ${k} reiniciado.`);
-    } catch {
-      alert("No se pudo reiniciar (error interno).");
-    }
+    if (!confirm("¿Reiniciar viaje? Esto borrará los datos guardados en este dispositivo para este viaje.")) return;
+    try { localStorage.removeItem(LS_KEY); } catch {}
+    // No tocar claves/ajustes; solo el estado principal
+    location.reload();
   });
 
   // Escape to close
@@ -4238,13 +4197,6 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
-
-    // For determinism (especially Stays/Activities): collapse others so landing is stable
-    try {
-      if (key === "stays" || key === "acts") {
-        if (typeof collapseAllAccordions === "function") collapseAllAccordions();
-      }
-    } catch {}
 
     const headerBtn = document.querySelector(`[data-acc="${key}"]`);
     if (!headerBtn) return;
