@@ -308,9 +308,8 @@ border-radius: 999px;
 </div>
 </div>
 </div>
-<div id="topStackSpacer"></div>
 <!-- Main -->
-<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 py-6 pb-24">
+<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-3 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -654,7 +653,7 @@ function triggerAddForView(view){
 function updateFabForView(view){
   const fab = document.getElementById("fabAdd");
   if (!fab) return;
-  const show = (view === "legs" || view === "stays" || view === "meals" || view === "acts");
+  const show = (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
   fab.classList.toggle("hidden", !show);
   if (!show) { fab.onclick = null; return; }
   fab.onclick = () => { if (!triggerAddForView(view)) alert("No se pudo añadir"); };
@@ -818,8 +817,19 @@ function syncTopStackHeights() {
 }
 
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
+let __initialScrollFixDone = false;
 function scheduleSyncTopStackHeights(){
-  requestAnimationFrame(() => requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} }));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try { syncTopStackHeights(); } catch {}
+    // First-load guard: if the scroll container starts displaced, snap it back once.
+    if (!__initialScrollFixDone) {
+      requestAnimationFrame(() => {
+        const ms = document.getElementById("mainScroll");
+        if (ms && ms.scrollTop > 4) ms.scrollTop = 0;
+        __initialScrollFixDone = true;
+      });
+    }
+  }));
 }
 document.addEventListener("DOMContentLoaded", scheduleSyncTopStackHeights);
 window.addEventListener("load", scheduleSyncTopStackHeights);
