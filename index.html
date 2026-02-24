@@ -276,7 +276,7 @@ border-radius: 999px;
   left: 0; right: 0;
   bottom: var(--bottom-nav-h, 0px);
   background: rgba(0,0,0,0.35);
-  z-index: 5200;
+  z-index: 7000;
 }
 #eventSheetOverlay.hidden{ display:none; }
 #eventSheet{
@@ -306,6 +306,8 @@ border-radius: 999px;
   justify-content: space-between;
   gap: 12px;
 }
+
+#eventSheetClose{ position: relative; z-index: 3; }
 #eventSheetBody{
   padding: 12px 14px;
   overflow: auto;
@@ -324,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D - 2026-02-24 18:29</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D1 - 2026-02-24 19:03</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1159,6 +1161,130 @@ const __sectionExpanded = {
   stays: new Set(),
   activities: new Set()
 };
+
+/* ---------------- Event Detail Sheet (V89D1) ---------------- */
+let __eventSheetCtx = null;
+
+function __normKind(k){
+  const raw = String(k||"").toLowerCase().trim();
+  if (raw === "transport") return "leg";
+  if (raw === "lodging") return "stay";
+  if (raw === "activity") return "act";
+  if (raw === "activities") return "act";
+  return raw;
+}
+
+function openEventSheet({ kind, id, mode } = {}) {
+  const k = __normKind(kind);
+  const itemId = String(id||"").trim();
+  const m = (mode === "view") ? "view" : "edit";
+  if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
+
+  const overlay = document.getElementById("eventSheetOverlay");
+  const sheet = document.getElementById("eventSheet");
+  const titleEl = document.getElementById("eventSheetTitle");
+  const body = document.getElementById("eventSheetBody");
+  const mainScroll = document.getElementById("mainScroll");
+  if (!overlay || !sheet || !titleEl || !body) return;
+
+  // Close any previous instance safely
+  try { closeEventSheet({ silent: true }); } catch {}
+
+  // Ensure expanded sets + rerender so editor node exists
+  try {
+    if (k === "leg") { __sectionExpanded?.legs?.add(itemId); if (typeof renderLegs === "function") renderLegs(); }
+    if (k === "stay") { __sectionExpanded?.stays?.add(itemId); if (typeof renderStays === "function") renderStays(); }
+    if (k === "act") { __sectionExpanded?.activities?.add(itemId); if (typeof renderActivities === "function") renderActivities(); }
+  } catch {}
+
+  // Find the real editor node (move-node approach: avoid duplicate IDs)
+  const sel = (k === "leg") ? `[data-sec-body="legs"][data-sec-id="${CSS.escape(itemId)}"]`
+            : (k === "stay") ? `[data-sec-body="stays"][data-sec-id="${CSS.escape(itemId)}"]`
+            : `[data-sec-body="activities"][data-sec-id="${CSS.escape(itemId)}"]`;
+  const node = document.querySelector(sel);
+  if (!node) { alert("No se encontró el evento"); return; }
+
+  // Build a nice title
+  try {
+    const it = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(k, itemId) : null;
+    let label = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    let detail = "";
+    if (it && k === "leg") detail = `${it.from||""} → ${it.to||""}`.trim();
+    if (it && k === "stay") detail = `${it.name||it.place||""}`.trim();
+    if (it && k === "act") detail = `${it.title||it.name||""}`.trim();
+    titleEl.textContent = detail ? `${label} · ${detail}` : `${label}`;
+  } catch { titleEl.textContent = "Evento"; }
+
+  // Move node into sheet body
+  const parent = node.parentNode;
+  const next = node.nextSibling;
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+
+  body.innerHTML = "";
+  try { node.classList.remove("hidden"); } catch {}
+  body.appendChild(node);
+
+  overlay.classList.remove("hidden");
+  document.body.classList.add("sheet-open");
+}
+
+function closeEventSheet({ silent } = {}) {
+  const overlay = document.getElementById("eventSheetOverlay");
+  const body = document.getElementById("eventSheetBody");
+  const mainScroll = document.getElementById("mainScroll");
+  if (overlay) overlay.classList.add("hidden");
+  document.body.classList.remove("sheet-open");
+
+  // Restore moved node if any
+  if (__eventSheetCtx && __eventSheetCtx.node && __eventSheetCtx.parent) {
+    try {
+      const { node, parent, next } = __eventSheetCtx;
+      if (next && next.parentNode === parent) parent.insertBefore(node, next);
+      else parent.appendChild(node);
+    } catch {}
+  }
+
+  if (body) body.innerHTML = "";
+  const ctx = __eventSheetCtx;
+  __eventSheetCtx = null;
+
+  // Re-render to reflect any edits
+  try {
+    if (typeof renderTimeline === "function") renderTimeline();
+    if (ctx?.kind === "leg" && typeof renderLegs === "function") renderLegs();
+    if (ctx?.kind === "stay" && typeof renderStays === "function") renderStays();
+    if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
+  } catch {}
+
+  // Restore scroll position (no aggressive jumps)
+  try {
+    if (mainScroll && typeof ctx?.prevScrollTop === "number") mainScroll.scrollTop = ctx.prevScrollTop;
+  } catch {}
+
+  if (!silent) {
+    try { /* noop */ } catch {}
+  }
+}
+
+function __initEventSheetBindings(){
+  const overlay = document.getElementById("eventSheetOverlay");
+  const closeBtn = document.getElementById("eventSheetClose");
+  const sheet = document.getElementById("eventSheet");
+  if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+  if (overlay) overlay.addEventListener("click", (e) => {
+    // click outside sheet closes
+    if (sheet && sheet.contains(e.target)) return;
+    closeEventSheet();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !overlay?.classList.contains("hidden")) closeEventSheet();
+  });
+}
+try{
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __initEventSheetBindings, { once:true });
+  else __initEventSheetBindings();
+}catch{}
+
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
 /* --------------------------- Read-only mode -------------------------- */
@@ -2247,6 +2373,9 @@ function jumpToItem(kind, id) {
   const itemId = String(id || "").trim();
   if (!rawKind || !itemId) return;
 
+  // Sheet-first behavior (V89D1)
+  try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "edit" }); return; } } catch {}
+
   // 1) kind -> view mapping (timeline "Ir" button)
   const kindMap = {
     leg: "legs",
@@ -2851,6 +2980,10 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
     const key = row.getAttribute("data-tl-key") || "";
     if (!key) return;
 
+    const __k = row.getAttribute("data-tl-jump-type");
+    const __id = row.getAttribute("data-tl-jump-id");
+    if (__k && __id) { try { openEventSheet({ kind: __k, id: __id, mode: "edit" }); } catch {} return; }
+
     if (__tlExpanded.has(key)) __tlExpanded.delete(key);
     else __tlExpanded.add(key);
 
@@ -2866,7 +2999,7 @@ box.querySelectorAll("[data-tl-go]").forEach(btn => {
     if (!row) return;
     const kind = row.getAttribute("data-tl-jump-type");
     const id = row.getAttribute("data-tl-jump-id");
-    if (kind && id) jumpToItem(kind, id);
+    if (kind && id) { try { openEventSheet({ kind, id, mode: "edit" }); } catch {} }
   });
 });
 
@@ -4558,5 +4691,16 @@ window.addEventListener('DOMContentLoaded', () => {
       <div id="eventSheetBody"></div>
     </div>
   </div>
+
+<!--
+QA checklist (V89D1):
+- [ ] Abrir evento desde cronograma (tap en card): abre sheet y se puede editar; cerrar restaura.
+- [ ] Botón ↗ Ir abre sheet del evento correcto (sin cambiar vistas).
+- [ ] Tap en item de Transporte/Alojamiento/Actividades abre sheet (CRUD sigue funcionando).
+- [ ] Cerrar con ✕ / tap fuera / ESC funciona y no deja overlays activos.
+- [ ] Bottom nav visible; Totales no tapa el sheet; sin IDs duplicados en DOM (move-node).
+- [ ] Global/Día/Actual/Próximo siguen funcionando sin errores en consola.
+-->
+
 </body>
 </html>
