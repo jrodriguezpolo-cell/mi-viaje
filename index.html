@@ -200,6 +200,28 @@ border-radius: 999px;
 .tlTimePast{ background: rgba(100,116,139,0.10); color:#334155; border-color: rgba(100,116,139,0.22); }
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
+
+/* --- v88c2: Tools bottom sheet (iOS-style) --- */
+#toolsBackdrop{
+  opacity: 0;
+  transition: opacity .22s ease;
+  pointer-events: none;
+}
+#toolsBackdrop.open{
+  opacity: 1;
+  pointer-events: auto;
+}
+#toolsSheet{
+  pointer-events: none;
+  transform: translateY(105%);
+  transition: transform .28s cubic-bezier(.2,.8,.2,1);
+  will-change: transform;
+}
+#toolsSheet.open{
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -216,14 +238,11 @@ border-radius: 999px;
 </div>
 </div>
 <div class="flex items-center gap-2">
-<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnTrips">
-          Guardar / Cargar
-        </button>
 <button aria-pressed="false" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnReadOnly">
           🔒 Modo lectura
         </button>
-<button class="tap px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold" id="btnKey">
-          Cambiar clave
+<button class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" aria-label="Tools">
+          ⚙️
         </button>
 </div>
 </div>
@@ -470,6 +489,47 @@ border-radius: 999px;
 <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
 </div>
 </div>
+
+<!-- Tools bottom sheet -->
+<div class="hidden fixed inset-0 z-[1200] bg-black/50" id="toolsBackdrop"></div>
+<div class="fixed left-0 right-0 bottom-0 z-[1210]" id="toolsSheet" role="dialog" aria-modal="true" aria-label="Tools">
+  <div class="max-w-6xl mx-auto px-0 sm:px-4">
+    <div class="bg-white rounded-t-3xl border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+        <div class="font-extrabold">Tools</div>
+        <button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="toolsClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="p-5 max-h-[72vh] overflow-y-auto overscroll-contain ios-scroll">
+        <div class="space-y-3">
+          <button class="tap w-full px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" id="toolsSave">
+            Guardar
+          </button>
+
+          <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsLoad">
+            Cargar
+          </button>
+
+          <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
+            Cambiar clave
+          </button>
+
+          <button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
+            Reiniciar viaje
+          </button>
+
+          <!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
+          <button id="btnTrips" class="hidden"></button>
+        </div>
+
+        <div class="mt-4 text-xs text-slate-500">
+          Nota: “Guardar” y “Cargar” abren el panel de archivos (incluye backups).
+        </div>
+      </div>
+      <div class="safe-b"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
@@ -3890,6 +3950,77 @@ $("aiPick").addEventListener("click", openAIPickModal);
 $("aiGenerate").addEventListener("click", generateAIGuide);
 
 $("btnTrips").addEventListener("click", openTripsModal);
+/* -------------------------- Tools bottom sheet -------------------------- */
+(function(){
+  const backdrop = $("toolsBackdrop");
+  const sheet = $("toolsSheet");
+  const btnOpen = $("btnTools");
+  const btnClose = $("toolsClose");
+
+  function openTools(){
+    if (!backdrop || !sheet) return;
+    backdrop.classList.remove("hidden");
+    // allow transition
+    requestAnimationFrame(() => {
+      backdrop.classList.add("open");
+      sheet.classList.add("open");
+    });
+    // prevent background scroll
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeTools(){
+    if (!backdrop || !sheet) return;
+    backdrop.classList.remove("open");
+    sheet.classList.remove("open");
+    // restore scroll after transition
+    setTimeout(() => {
+      backdrop.classList.add("hidden");
+      document.body.style.overflow = "";
+    }, 280);
+  }
+
+  if (btnOpen) btnOpen.addEventListener("click", openTools);
+  if (btnClose) btnClose.addEventListener("click", closeTools);
+  if (backdrop) backdrop.addEventListener("click", closeTools);
+
+  // stop tap-through
+  if (sheet) sheet.addEventListener("click", (e)=>{ e.stopPropagation(); });
+
+  const saveBtn = $("toolsSave");
+  const loadBtn = $("toolsLoad");
+  const resetBtn = $("toolsReset");
+
+  function openTripsAndFocus(targetId){
+    closeTools();
+    openTripsModal();
+    // focus target inside modal once mounted
+    setTimeout(() => {
+      const el = $(targetId);
+      if (el) {
+        try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch { el.scrollIntoView(); }
+        try { el.focus({ preventScroll: true }); } catch {}
+      }
+    }, 30);
+  }
+
+  if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
+  if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
+
+  if (resetBtn) resetBtn.addEventListener("click", () => {
+    closeTools();
+    if (!confirm("¿Reiniciar viaje? Esto borrará los datos guardados en este dispositivo para este viaje.")) return;
+    try { localStorage.removeItem(LS_KEY); } catch {}
+    // No tocar claves/ajustes; solo el estado principal
+    location.reload();
+  });
+
+  // Escape to close
+  document.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape" && backdrop && !backdrop.classList.contains("hidden")) closeTools();
+  });
+})();
+
 const __tn = $("timelineNext");
 if (__tn) __tn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToNextAfterCurrent(); });
 
