@@ -2067,42 +2067,74 @@ function scrollAccordionBodyToTop(key) {
 
 
 function jumpToItem(kind, id) {
-  const k = String(kind || "");
-  const itemId = String(id || "");
-  if (!k || !itemId) return;
+  const rawKind = String(kind || "").toLowerCase().trim();
+  const itemId = String(id || "").trim();
+  if (!rawKind || !itemId) return;
 
-  const map = {
-    leg:  { acc: "legs",  secToggle: "legs" },
-    stay: { acc: "stays", secToggle: "stays" },
-    act:  { acc: "acts",  secToggle: "activities" }
+  // 1) kind -> view mapping (timeline "Ir" button)
+  const kindMap = {
+    leg: "legs",
+    transport: "legs",
+    stay: "stays",
+    lodging: "stays",
+    act: "acts",
+    activity: "acts",
+    meal: "meals",
+    meals: "meals"
   };
-  const cfg = map[k];
-  if (!cfg) return;
+  const view = kindMap[rawKind];
+  if (!view) return;
 
-  // 1) Open target accordion section
-  openAccordionKey(cfg.acc);
+  // 2) Switch to target view
+  try { if (typeof setView === "function") setView(view); } catch {}
 
-  // 2) Expand target item within section (v80b accordion)
-  if (k === "leg") { __sectionExpanded.legs.add(itemId); renderLegs(); }
-  else if (k === "stay") { __sectionExpanded.stays.add(itemId); renderStays(); }
-  else if (k === "act") { __sectionExpanded.activities.add(itemId); renderActivities(); }
+  // 3) Ensure the section accordion is open (if accordion shell exists)
+  try {
+    const accKey = (view === "acts") ? "acts" : view; // keys used by openAccordionKey
+    if (typeof openAccordionKey === "function") openAccordionKey(accKey);
+  } catch {}
 
-  const accBtn = document.querySelector(`[data-acc="${cfg.acc}"]`);
-  const itemEl = document.querySelector(`[data-sec-toggle="${cfg.secToggle}"][data-sec-id="${CSS.escape(itemId)}"]`);
-
-  // 3) Scroll using TopStack (Header + Totals). Never include timeline controls here.
-  requestAnimationFrame(() => {
-    if (accBtn) scrollToElTopStack(accBtn, 8);
-  });
-
-  // 4) After DOM settles, scroll item into view
-  setTimeout(() => {
-    const el = itemEl || document.querySelector(`[data-sec-id="${CSS.escape(itemId)}"]`);
-    if (el) {
-      scrollToElTopStack(el, 16);
-      try { el.focus({ preventScroll: true }); } catch {}
+  // 4) Expand target item (if applicable) + rerender that section
+  try {
+    if (rawKind === "leg" || rawKind === "transport") {
+      if (__sectionExpanded?.legs) __sectionExpanded.legs.add(itemId);
+      if (typeof renderLegs === "function") renderLegs();
+    } else if (rawKind === "stay" || rawKind === "lodging") {
+      if (__sectionExpanded?.stays) __sectionExpanded.stays.add(itemId);
+      if (typeof renderStays === "function") renderStays();
+    } else if (rawKind === "act" || rawKind === "activity") {
+      if (__sectionExpanded?.activities) __sectionExpanded.activities.add(itemId);
+      if (typeof renderActivities === "function") renderActivities();
+    } else {
+      // meals are not timeline items in current model; keep safe fallback
+      if (typeof renderMeals === "function") renderMeals();
     }
-  }, 120);
+  } catch {}
+
+  // 5) Scroll to the item (minimal; no offsets, no window.scrollTo)
+  const findTargetEl = () => {
+    try {
+      if (view === "legs") return document.querySelector(`[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]`);
+      if (view === "stays") return document.querySelector(`[data-sec-toggle="stays"][data-sec-id="${CSS.escape(itemId)}"]`);
+      if (view === "acts") return document.querySelector(`[data-sec-toggle="activities"][data-sec-id="${CSS.escape(itemId)}"]`);
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Wait for DOM paint after rerender
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const el = findTargetEl();
+      if (el && typeof el.scrollIntoView === "function") {
+        try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { el.scrollIntoView(); }
+        try { el.focus({ preventScroll: true }); } catch {}
+      } else {
+        alert("No se encontró el evento");
+      }
+    });
+  });
 }
 
 
