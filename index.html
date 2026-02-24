@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D1 - 2026-02-24 19:03</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D2 - 2026-02-24 19:18</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1174,7 +1174,7 @@ function __normKind(k){
   return raw;
 }
 
-function openEventSheet({ kind, id, mode } = {}) {
+function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
   const m = (mode === "view") ? "view" : "edit";
@@ -1212,7 +1212,8 @@ function openEventSheet({ kind, id, mode } = {}) {
     if (it && k === "leg") detail = `${it.from||""} → ${it.to||""}`.trim();
     if (it && k === "stay") detail = `${it.name||it.place||""}`.trim();
     if (it && k === "act") detail = `${it.title||it.name||""}`.trim();
-    titleEl.textContent = detail ? `${label} · ${detail}` : `${label}`;
+    titleEl.textContent = (isNew ? ("Nuevo " + label) : label);
+    if (detail) titleEl.textContent = `${titleEl.textContent} · ${detail}`;
   } catch { titleEl.textContent = "Evento"; }
 
   // Move node into sheet body
@@ -1226,6 +1227,17 @@ function openEventSheet({ kind, id, mode } = {}) {
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
+
+  // Focus first input for quick edit
+  try {
+    if (m === "edit") {
+      requestAnimationFrame(() => {
+        const first = body.querySelector("input,textarea,select,button");
+        if (first && typeof first.focus === "function") first.focus({ preventScroll: true });
+      });
+    }
+  } catch {}
+
 }
 
 function closeEventSheet({ silent } = {}) {
@@ -4404,6 +4416,7 @@ $("addLeg").addEventListener("click", ()=>{
   sc.legs.unshift({ id, from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("legs");
 });
 $("addStay").addEventListener("click", ()=>{
@@ -4412,6 +4425,7 @@ $("addStay").addEventListener("click", ()=>{
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
@@ -4420,6 +4434,7 @@ $("addAct").addEventListener("click", ()=>{
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("acts");
 });
 
