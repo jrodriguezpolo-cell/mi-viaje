@@ -300,6 +300,7 @@ border-radius: 999px;
             </button></div>
 </aside>
 <section class="lg:col-span-8 space-y-4">
+<div id="view-timeline">
 <!-- TIMELINE -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-visible">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
@@ -351,6 +352,9 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+</div>
+<!-- end view-timeline -->
+<div id="view-legs" class="hidden">
 <!-- LOGISTICA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs" id="legsHeader">
@@ -369,6 +373,9 @@ border-radius: 999px;
 <div class="space-y-3" id="legsList"></div>
 </div>
 </div>
+</div>
+<!-- end view-legs -->
+<div id="view-stays" class="hidden">
 <!-- ALOJAMIENTO -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays" id="staysHeader">
@@ -387,6 +394,9 @@ border-radius: 999px;
 <div class="space-y-3" id="staysList"></div>
 </div>
 </div>
+</div>
+<!-- end view-stays -->
+<div id="view-meals" class="hidden">
 <!-- COMIDAS -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="meals">
@@ -420,6 +430,9 @@ border-radius: 999px;
 </div>
 </div>
 </div>
+</div>
+<!-- end view-meals -->
+<div id="view-acts" class="hidden">
 <!-- ACTIVIDADES -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts" id="actsHeader">
@@ -460,6 +473,8 @@ border-radius: 999px;
 <div class="mt-4 space-y-4" id="aiResults"></div>
 </div>
 </div>
+</div>
+<!-- end view-acts -->
 </section>
 <!-- Summary -->
 </div>
@@ -530,6 +545,42 @@ border-radius: 999px;
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
+
+
+/* ----------------------------- Views (v89a) ----------------------------- */
+let activeView = "timeline";
+
+function scrollMainToTop(){
+  // No window.scrollTo; just reset the scrolling element.
+  const se = document.scrollingElement || document.documentElement;
+  try { se.scrollTop = 0; } catch {}
+  try { document.body.scrollTop = 0; } catch {}
+}
+
+function setView(viewName){
+  const map = {
+    timeline: "view-timeline",
+    legs: "view-legs",
+    stays: "view-stays",
+    meals: "view-meals",
+    acts: "view-acts",
+  };
+  const targetId = map[viewName] || map.timeline;
+  const allIds = Object.values(map);
+
+  allIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+
+  const target = document.getElementById(targetId);
+  if (target) target.classList.remove("hidden");
+
+  activeView = (viewName in map) ? viewName : "timeline";
+
+  // Scroll main container to top (no offsets, no top-stack recalcs)
+  scrollMainToTop();
+}
 
 /* ------------------------ Trip name (modal + export/import) ------------------------ */
 const TRIP_NAME_KEY = "miviaje.tripName";
@@ -4178,53 +4229,12 @@ $("btnCompare").addEventListener("click", ()=>{
   `;
 });
 
-/* Bottom nav jump (premium header landing) */
-function scrollToSectionHeader(accKey) {
-  const headerBtn = document.querySelector(`[data-acc="${accKey}"]`);
-  if (!headerBtn) return;
-
-  // Ensure accordion is open so the landing makes sense visually
-  if (typeof openAccordionKey === "function") openAccordionKey(accKey);
-
-  // Premium fine scroll: header sits just under Totals
-  setTimeout(() => {
-    scrollToElWithOffset(headerBtn, 10);
-  }, 0);
-}
-
-/* Jump nav */
+/* Bottom nav: switch views (v89a) */
 document.querySelectorAll('[data-jump]').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.getAttribute('data-jump');
     if (!key) return;
-
-    const headerBtn = document.querySelector(`[data-acc="${key}"]`);
-    if (!headerBtn) return;
-
-    // Ensure accordion is open
-    try {
-      if (typeof openAccordionKey === "function") openAccordionKey(key);
-      else {
-        const body = document.querySelector(`[data-acc-body="${key}"]`);
-        if (body && body.classList.contains("hidden")) headerBtn.click();
-      }
-    } catch {}
-
-    // Recommended landing sequence: open -> double rAF -> sync -> land under totals -> one-shot correction
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        try { syncTopStackHeights(); } catch {}
-        try { landUnderTotals(headerBtn, 8, { smooth: true }); } catch {}
-
-        const wantedTop = (typeof getTopStackOffset === "function" ? getTopStackOffset() : 0) + 8;
-        setTimeout(() => {
-          try {
-            const err = headerBtn.getBoundingClientRect().top - wantedTop;
-            if (Math.abs(err) > 6) window.scrollBy({ top: err, behavior: "auto" });
-          } catch {}
-        }, 120);
-      });
-    });
+    try { setView(key); } catch {}
   });
 });
 
@@ -4289,6 +4299,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
     const sentinel = document.getElementById("timelineControlsSentinel");
