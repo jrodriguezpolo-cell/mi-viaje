@@ -182,7 +182,7 @@ border-radius: 999px;
   right: 0;
   z-index: 1000;
 }
-#topStackSpacer{ height: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px)); }
+#topStackSpacer{ height: 0 !important; display:none !important; }
 
 
 /* Timeline time badges (v88) */
@@ -227,6 +227,7 @@ border-radius: 999px;
     html, body { height: 100%; overflow: hidden; }
     #mainScroll{
       position: fixed;
+      z-index: 0;
       left: 0; right: 0;
       top: var(--top-stack-h, 0px);
       bottom: var(--bottom-nav-h, 0px);
@@ -236,6 +237,8 @@ border-radius: 999px;
       padding-bottom: var(--bottom-nav-h, 0px);
       box-sizing: border-box;
     }
+    #bottomNav{ position: fixed; bottom: 0; left: 0; right: 0; z-index: 3000; }
+
 
 </style>
 </head>
@@ -737,24 +740,20 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-  const detail = document.getElementById("stickySummaryDetail");
   const bottomNav = document.getElementById("bottomNav");
-  const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
+  // stickyTotalBar already contains the detail panel; its height is the source of truth.
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
-  const detailH = (detail && !detail.classList.contains("hidden")) ? detail.getBoundingClientRect().height : 0;
   const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
 
-  const topStackH = headerH + totalsH + detailH;
+  const topStackH = headerH + totalsH;
 
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
   root.style.setProperty("--top-stack-h", topStackH + "px");
   root.style.setProperty("--bottom-nav-h", navH + "px");
-
-  if (spacer) spacer.style.height = (headerH + totalsH) + "px";
 
   const mainScroll = document.getElementById("mainScroll");
   if (mainScroll) {
@@ -765,10 +764,18 @@ function syncTopStackHeights() {
   return topStackH;
 }
 
+
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
-document.addEventListener("DOMContentLoaded", () => setTimeout(syncTopStackHeights, 0));
-window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
-window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
+document.addEventListener("DOMContentLoaded", () => {
+  // After initial layout + fonts: double RAF for deterministic measurements on mobile.
+  requestAnimationFrame(() => requestAnimationFrame(syncTopStackHeights));
+});
+window.addEventListener("load", () => {
+  requestAnimationFrame(() => requestAnimationFrame(syncTopStackHeights));
+});
+window.addEventListener("resize", () => {
+  requestAnimationFrame(() => requestAnimationFrame(syncTopStackHeights));
+});
 
 
 
