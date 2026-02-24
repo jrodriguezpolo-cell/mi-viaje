@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3 - 2026-02-24 19:41</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3B - 2026-02-24 20:02</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -452,7 +452,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs" id="legsHeader">
 <div class="flex items-center gap-3">
-<span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">${legModeIcon(leg.mode)}</span>
+<span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">✈️</span>
 <div class="text-left">
 <div class="font-extrabold">Transporte</div>
 </div>
@@ -576,7 +576,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <!-- Bottom bar for mobile -->
 <nav id="bottomNav" class="safe-b fixed bottom-0 left-0 right-0 z-[2000] lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">${legModeIcon(leg.mode)}<div>Transporte</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">✈️<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
@@ -1224,11 +1224,16 @@ function renderLegModeChips(container, leg, onSelect){
       if (!leg || !v) return;
       leg.mode = legModeDefault(v);
       try { if (typeof saveState === "function") saveState(); } catch {}
-      try { if (typeof renderLegs === "function") renderLegs(); } catch {}
+      const sheetOpen = document.body.classList.contains("sheet-open");
+      const sameLegInSheet = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && __eventSheetCtx.kind === "leg" && String(__eventSheetCtx.id) === String(leg.id));
+      // While sheet is open, avoid rerendering the legs list (it would remove/move nodes and kick the user out)
+      if (!sheetOpen || !sameLegInSheet) {
+        try { if (typeof renderLegs === "function") renderLegs(); } catch {}
+      }
       try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
       try { if (typeof calcSummary === "function") calcSummary(); } catch {}
       if (typeof onSelect === "function") onSelect(leg.mode);
-      // re-render chips to update active state
+      // re-render chips to update active state (in-sheet only)
       renderLegModeChips(container, leg, onSelect);
     });
   });
@@ -1624,7 +1629,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${legModeIcon(leg.mode)} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">✈️ Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
