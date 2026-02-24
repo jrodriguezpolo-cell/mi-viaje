@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3B - 2026-02-24 20:02</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3C - 2026-02-24 21:14</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1185,6 +1185,9 @@ function legModeLabel(m){
   return (v==="plane") ? "Avión" : (v==="train") ? "Tren" : (v==="bus") ? "Bus" : (v==="car") ? "Coche" : "Barco";
 }
 
+let __dirtyTimeline = false;
+let __dirtySummary = false;
+
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
@@ -1218,22 +1221,36 @@ function renderLegModeChips(container, leg, onSelect){
       mk("car","🚗","Coche") +
       mk("boat","🚢","Barco") +
     `</div>`;
+
   container.querySelectorAll("[data-legmode]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
+    btn.addEventListener("click", (e)=> {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
       const v = btn.getAttribute("data-legmode");
       if (!leg || !v) return;
+
+      // Set selected mode (never overwrite an existing valid mode with default unless empty)
       leg.mode = legModeDefault(v);
+
       try { if (typeof saveState === "function") saveState(); } catch {}
+
       const sheetOpen = document.body.classList.contains("sheet-open");
       const sameLegInSheet = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && __eventSheetCtx.kind === "leg" && String(__eventSheetCtx.id) === String(leg.id));
-      // While sheet is open, avoid rerendering the legs list (it would remove/move nodes and kick the user out)
-      if (!sheetOpen || !sameLegInSheet) {
-        try { if (typeof renderLegs === "function") renderLegs(); } catch {}
+
+      // While sheet is open (move-node editor), avoid any rerenders that rebuild lists/sections.
+      if (sheetOpen && sameLegInSheet) {
+        __dirtyTimeline = true;
+        __dirtySummary = true;
+        if (typeof onSelect === "function") onSelect(leg.mode);
+        // Update only local chips UI
+        renderLegModeChips(container, leg, onSelect);
+        return;
       }
+
+      // If chips are ever used outside the sheet: safe refresh
+      try { if (typeof renderLegs === "function") renderLegs(); } catch {}
       try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
       try { if (typeof calcSummary === "function") calcSummary(); } catch {}
       if (typeof onSelect === "function") onSelect(leg.mode);
-      // re-render chips to update active state (in-sheet only)
       renderLegModeChips(container, leg, onSelect);
     });
   });
@@ -1324,6 +1341,17 @@ function closeEventSheet({ silent } = {}) {
   const mainScroll = document.getElementById("mainScroll");
   if (overlay) overlay.classList.add("hidden");
   document.body.classList.remove("sheet-open");
+
+  // Flush deferred renders (avoid breaking move-node while sheet open)
+  try {
+    if (__dirtyTimeline && typeof renderTimeline === "function") renderTimeline();
+  } catch {}
+  try {
+    if (__dirtySummary && typeof calcSummary === "function") calcSummary();
+  } catch {}
+  __dirtyTimeline = false;
+  __dirtySummary = false;
+
 
   // Restore moved node if any
   if (__eventSheetCtx && __eventSheetCtx.node && __eventSheetCtx.parent) {
