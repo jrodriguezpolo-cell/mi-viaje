@@ -505,6 +505,12 @@ border-radius: 999px;
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
           </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnCopyAtoB">
+            Copiar A → B
+          </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnCopyBtoA">
+            Copiar B → A
+          </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
             Reiniciar viaje
           </button>
@@ -3762,130 +3768,105 @@ function exportMilestone() {
 
 
 async function importTrip(ev) {
-  const input = ev.target;
+  const input = ev?.target;
   const file = input?.files?.[0];
   if (!file) return;
-  const txt = await file.text();
+
+  const readAsText = (f) => new Promise((resolve, reject) => {
+    try{
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result || ""));
+      fr.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      fr.readAsText(f);
+    }catch(err){ reject(err); }
+  });
+
+  const normalizeImport = (data) => {
+    // Accept: {state:{scenarios:{A,B}}}, {state:<scenario>}, <scenario>
+    let src = null;
+
+    // unwrap common envelopes
+    if (data && typeof data === "object") {
+      if (data.state && typeof data.state === "object") {
+        if (data.state.scenarios && typeof data.state.scenarios === "object") {
+          // Prefer scenario that matches current active scenario, fallback to A/B
+          const key = (state && (state.scenario === "B")) ? "B" : "A";
+          src = data.state.scenarios[key] || data.state.scenarios.A || data.state.scenarios.B || null;
+        } else {
+          src = data.state;
+        }
+      } else if (data.scenarios && typeof data.scenarios === "object") {
+        const key = (state && (state.scenario === "B")) ? "B" : "A";
+        src = data.scenarios[key] || data.scenarios.A || data.scenarios.B || null;
+      } else {
+        src = data;
+      }
+    }
+
+    if (!src || typeof src !== "object") throw new Error("Formato incorrecto (sin datos de viaje)");
+
+    // Map legacy keys
+    const mapped = { ...src };
+    if (!mapped.activities && Array.isArray(mapped.acts)) mapped.activities = mapped.acts;
+
+    // Ensure minimum structure
+    const normalized = { ...emptyScenario(), ...mapped };
+
+    if (!Array.isArray(normalized.legs)) normalized.legs = [];
+    if (!Array.isArray(normalized.stays)) normalized.stays = [];
+    if (!Array.isArray(normalized.activities)) normalized.activities = [];
+    if (!normalized.meals || typeof normalized.meals !== "object") normalized.meals = { daily: 0, people: "", days: "" };
+    normalized.meals = {
+      daily: normalized.meals.daily ?? 0,
+      people: normalized.meals.people ?? "",
+      days: normalized.meals.days ?? ""
+    };
+    if (!normalized.dailyNotes || typeof normalized.dailyNotes !== "object") normalized.dailyNotes = {};
+
+    const ensureId = (it) => {
+      if (!it || typeof it !== "object") return it;
+      if (!it.id) it.id = nowId();
+      return it;
+    };
+    normalized.legs = normalized.legs.map(ensureId);
+    normalized.stays = normalized.stays.map(ensureId);
+    normalized.activities = normalized.activities.map(ensureId);
+
+    return normalized;
+  };
 
   try {
+    const txt = await readAsText(file);
     const payload = JSON.parse(txt);
+
+    // Optional: import trip name if present
     if (payload && typeof payload.name === "string" && payload.name.trim()) {
       setTripName(payload.name.trim());
       const tn = $("tripNameInput");
       if (tn) tn.value = payload.name.trim();
     }
-    if (!payload || !payload.state) throw new Error("Formato no válido (falta state)");
 
-    const meta = getMeta();
-    const remoteAt = payload.savedAt ? Date.parse(payload.savedAt) : NaN;
-    const localAtRaw = meta.lastSavedAt || meta.lastSyncAt || "";
-    const localAt = localAtRaw ? Date.parse(localAtRaw) : NaN;
+    const normalizedScenario = normalizeImport(payload);
 
+    // Safety backup before overwrite (if available)
+    try { pushBackup("before_import", { fromFileName: file.name || null }); } catch {}
 
-    // --- PREVIEW (para confirmaciones de import) ---
-    const previewName = (payload?.name ? String(payload.name).trim() : "") || "Sin nombre";
-    const previewSavedAt = (!payload.savedAt || !Number.isFinite(remoteAt)) ? "Fecha desconocida" : new Date(payload.savedAt).toLocaleString();
-    const previewDevice = (payload?.deviceName ? String(payload.deviceName).trim() : "") || "Dispositivo desconocido";
-    const previewLocal = localAtRaw ? new Date(localAtRaw).toLocaleString() : "Desconocido";
+    const key = (state && state.scenario === "B") ? "B" : "A";
+    if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = { A: emptyScenario(), B: emptyScenario() };
 
-    const previewText =
-      "Vista previa del fichero:\n" +
-      `- Nombre: ${previewName}\n` +
-      `- Guardado: ${previewSavedAt}\n` +
-      `- Dispositivo: ${previewDevice}\n\n` +
-      "Tu versión local:\n" +
-      `- Últ. guardado: ${previewLocal}\n`
-
-    // --- BLOQUEO POR CONFLICTO: "mismo dispositivo" ---
-    const deviceLocal = getDeviceName(false);
-    const deviceFromFile = (payload?.deviceName ? String(payload.deviceName).trim() : "");
-
-    // Si el fichero parece exportado desde ESTE MISMO dispositivo, bloqueamos casos peligrosos
-    if (deviceFromFile && deviceFromFile === deviceLocal) {
-      // a) fecha desconocida -> BLOQUEAR
-      if (!payload.savedAt || !Number.isFinite(remoteAt)) {
-        alert(
-          "🚨 IMPORTACIÓN BLOQUEADA\n\n" +
-          "Este fichero parece exportado desde ESTE MISMO dispositivo y la fecha es desconocida.\n" +
-          "Importar podría sobrescribir tu versión actual.\n\n" +
-          previewText
-        );
-        input.value = "";
-        return;
-      }
-
-      // b) fecha válida, y NO es más nuevo que tu versión -> BLOQUEAR por defecto
-      if (Number.isFinite(localAt) && remoteAt <= localAt) {
-        const msg =
-          "🚨 IMPORTACIÓN BLOQUEADA (mismo dispositivo)\n\n" +
-          previewText +
-          "\n" +
-          `Tu versión: ${previewLocal}\n` +
-          `Fichero: ${previewSavedAt}\n\n` +
-          "Parece el mismo dispositivo y no es más nuevo.\n" +
-          "Para evitar sobrescrituras, la importación está bloqueada.";
-
-        const wantsForce = confirm(msg + "\n\n¿Quieres FORZAR la importación igualmente?");
-        if (!wantsForce) { input.value = ""; return; }
-
-        const confirm2 = prompt("Último paso: escribe IMPORTAR para confirmar la importación forzada:", "");
-        if (String(confirm2 || "").trim() !== "IMPORTAR") { input.value = ""; return; }
-        // Si pasa los 2 pasos, seguimos con la lógica normal
-      }
-    }
-    // --- FIN BLOQUEO POR CONFLICTO ---
-
-;
-
-    if (Number.isFinite(remoteAt) && Number.isFinite(localAt) && remoteAt < localAt) {
-      const r = new Date(payload.savedAt).toLocaleString();
-      const l = new Date(localAtRaw).toLocaleString();
-      const who = payload.deviceName ? `\n(Exportado por: ${payload.deviceName})` : "";
-      const ok = confirm(
-        "🚨 FICHERO MÁS ANTIGUO\n" +
-        "El fichero que vas a importar es MÁS ANTIGUO que tu versión actual. Puedes perder cambios.\n\n" +
-        `Tu versión: ${previewLocal}\n` +
-        `Fichero: ${previewSavedAt}\n\n` +
-        previewText +
-        "\n¿Importar igualmente?"
-      );
-      if (!ok) { input.value = ""; return; }
-    } else if (!payload.savedAt || !Number.isFinite(remoteAt)) {
-      const ok = confirm(
-        "⚠️ FECHA DESCONOCIDA\n" +
-        "El fichero no tiene savedAt válido. Podrías perder cambios si es más antiguo.\n\n" +
-        previewText +
-        "\n¿Importar igualmente?"
-      );
-      if (!ok) { input.value = ""; return; }
-    }
-
-    // Safety backup before overwrite
-    pushBackup("before_import", { fromFileName: file.name, fromSavedAt: payload.savedAt || null, fromDevice: payload.deviceName || null });
-
-    state = payload.state;
+    state.scenarios[key] = normalizedScenario; // <- ACTIVE scenario only
     saveState();
     closeModal();
     renderAll();
-  syncStickyTotalsHeightVar();
-  const now = new Date().toISOString();
-    setMeta({
-      lastImportAt: now,
-      lastSyncAt: now,
-      lastSyncedFromDevice: payload.deviceName || "Archivo",
-      lastImportFromDeviceName: (payload?.deviceName ? String(payload.deviceName).trim() : "") || null,
-      lastImportedSavedAt: payload.savedAt || null,
-      lastSavedAt: (Number.isFinite(remoteAt) ? new Date(remoteAt).toISOString() : now)
-    });
+    try { syncStickyTotalsHeightVar(); } catch {}
 
-    alert("Viaje cargado.");
-  } catch(e) {
-    alert("No se pudo cargar: " + e.message);
+    alert("Importado correctamente");
+  } catch (e) {
+    alert("Archivo no válido / formato incorrecto");
   } finally {
     if (input) input.value = "";
   }
 }
-
 
 function renderTripList(filterText = "") {
   const box = $("tripList");
@@ -4087,6 +4068,8 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const saveBtn = $("toolsSave");
   const loadBtn = $("toolsLoad");
   const resetBtn = $("toolsReset");
+  const copyAtoBBtn = $("btnCopyAtoB");
+  const copyBtoABtn = $("btnCopyBtoA");
 
   function openTripsAndFocus(targetId){
     closeTools();
@@ -4103,6 +4086,37 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
   if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
+
+  const __deepClone = (obj) => {
+    try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
+  };
+
+  if (copyAtoBBtn) copyAtoBBtn.addEventListener("click", () => {
+    closeTools();
+    const ok = confirm("Esto sobrescribirá el viaje destino. ¿Continuar?");
+    if (!ok) return;
+    const src = state?.scenarios?.A || emptyScenario();
+    const cloned = __deepClone(src);
+    if (!cloned) { alert("No se pudo copiar (error interno)."); return; }
+    state.scenarios.B = cloned;
+    saveState();
+    renderAll();
+    try { syncStickyTotalsHeightVar(); } catch {}
+  });
+
+  if (copyBtoABtn) copyBtoABtn.addEventListener("click", () => {
+    closeTools();
+    const ok = confirm("Esto sobrescribirá el viaje destino. ¿Continuar?");
+    if (!ok) return;
+    const src = state?.scenarios?.B || emptyScenario();
+    const cloned = __deepClone(src);
+    if (!cloned) { alert("No se pudo copiar (error interno)."); return; }
+    state.scenarios.A = cloned;
+    saveState();
+    renderAll();
+    try { syncStickyTotalsHeightVar(); } catch {}
+  });
+
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
     closeTools();
