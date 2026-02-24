@@ -165,7 +165,7 @@ border-radius: 999px;
 #timelineControlsRow{
   position: sticky;
   /* mainScroll already starts below the top stack; keep controls glued under Totales */
-  top: 0;
+  top: var(--top-stack-h, 0px);
   z-index: 950;
   background: #ffffff;
   border-bottom: 1px solid rgba(15,23,42,0.08);
@@ -228,11 +228,13 @@ border-radius: 999px;
     #mainScroll{
       position: fixed;
       left: 0; right: 0;
-      top: var(--top-stack-h, 0px);
-      bottom: var(--bottom-nav-h, 0px);
+      top: 0;
+      bottom: 0;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      /* Single source of truth for top-stack + bottom nav spacing */
+      padding-top: var(--top-stack-h, 0px);
       padding-bottom: var(--bottom-nav-h, 0px);
       box-sizing: border-box;
     }
@@ -250,7 +252,8 @@ border-radius: 999px;
 /* FAB add per-view */
 #fabAdd{
   position: fixed;
-  right: 16px;
+  left: 14px;
+  right: auto;
   bottom: calc(var(--bottom-nav-h, 64px) + 16px);
   width: 56px;
   height: 56px;
@@ -621,23 +624,29 @@ function setView(viewName){
   const targetId = map[viewName] || map.timeline;
   const allIds = Object.values(map);
 
+  // 1) show/hide views
   allIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
-
   const target = document.getElementById(targetId);
   if (target) target.classList.remove("hidden");
 
   activeView = (viewName in map) ? viewName : "timeline";
 
-  // Ensure deterministic top-stack measurements, then reset scroll
-  if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
-  const ms = document.getElementById("mainScroll");
+  // 2) resync top-stack after layout changes (iOS-friendly)
+  try { scheduleSyncTopStackHeights(); } catch {}
+
+  // 3) reset scroll AFTER top-stack settles (no offsets, no window scroll)
   requestAnimationFrame(() => {
-    if (ms) ms.scrollTop = 0;
-    requestAnimationFrame(() => { if (ms) ms.scrollTop = 0; });
+    const ms = document.getElementById("mainScroll");
+    if (ms) {
+      ms.scrollTop = 0;
+      requestAnimationFrame(() => { ms.scrollTop = 0; });
+    }
   });
+
+  // 4) update FAB visibility + handler
   updateFabForView(activeView);
 }
 
@@ -796,13 +805,14 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
-    const bottomNav = document.getElementById("bottomNav");
+  const bottomNav = document.getElementById("bottomNav");
   const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
-    const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+  const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
 
+  // Rule: top-stack is ONLY header + totals (do not include timeline controls)
   const topStackH = headerH + totalsH;
 
   const root = document.documentElement;
@@ -810,12 +820,20 @@ function syncTopStackHeights() {
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
   root.style.setProperty("--top-stack-h", topStackH + "px");
   root.style.setProperty("--bottom-nav-h", navH + "px");
-  if (spacer) spacer.style.height = "0px";
+
+  // Legacy spacer must never affect layout in views branch
+  if (spacer) {
+    spacer.style.display = "none";
+    spacer.style.height = "0px";
+    spacer.style.padding = "0";
+    spacer.style.margin = "0";
+  }
 
   const mainScroll = document.getElementById("mainScroll");
   if (mainScroll) {
-    mainScroll.style.top = "var(--top-stack-h)";
-    mainScroll.style.bottom = "var(--bottom-nav-h)";
+    // mainScroll is fixed fullscreen; padding defines the safe content area
+    mainScroll.style.paddingTop = "var(--top-stack-h)";
+    mainScroll.style.paddingBottom = "var(--bottom-nav-h)";
   }
 
   return topStackH;
@@ -1292,7 +1310,6 @@ function setupAccordion() {
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
       updateFabVisibility();
-      if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
     });
   });
 }
@@ -4285,7 +4302,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
     requestAnimationFrame(() => {
       backdrop.classList.add("open");
       sheet.classList.add("open");
-      if (typeof scheduleSyncTopStackHeights === "function") scheduleSyncTopStackHeights();
+      requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} });
     });
     // prevent background scroll (keep window locked; pause main scroll)
     const ms = document.getElementById("mainScroll");
