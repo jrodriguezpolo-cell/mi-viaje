@@ -228,23 +228,18 @@ border-radius: 999px;
 <!-- Tailwind safelist for classes toggled via JS -->
 <div class="hidden bg-slate-900 border-slate-900 bg-slate-900 border-slate-900 text-white text-slate-800 opacity-40"></div>
 <!-- Top bar -->
-<header id="appHeader" class="safe-t bg-white/90 backdrop-blur border-b border-slate-200">
+<header class="safe-t bg-white/90 backdrop-blur border-b border-slate-200" id="appHeader">
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight">
-<div class="font-extrabold tracking-tight text-lg">MI VIAJE</div>
-<div id="buildId" class="text-[11px] text-slate-500 font-semibold">Build: V88C1 - 2026-02-24 02:02</div>
-</div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V88C3 - 2026-02-24 01:25</div></div>
 </div>
 <div class="flex items-center gap-2">
-<button aria-pressed="false" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnReadOnly">
-          🔒 Modo lectura
-        </button>
-<button class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" aria-label="Tools">
+
+
+<button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
           ⚙️
-        </button>
-</div>
+        </button><button aria-label="Modo lectura" aria-pressed="false" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnReadOnly" title="Modo lectura">🔒</button></div>
 </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -252,7 +247,12 @@ border-radius: 999px;
 <div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
 <div class="text-sm font-semibold text-slate-900" id="stickyTotalValue">TOTAL: —</div>
 <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="stickyTotalToggle">Ver detalle ▾</button>
-</div>
+<select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
+<option value="EUR">€</option>
+<option value="USD">$</option>
+<option value="GBP">£</option>
+<option value="JPY">¥</option>
+</select></div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
 <div class="text-sm" id="stickySummaryDetailInner"></div>
@@ -265,19 +265,11 @@ border-radius: 999px;
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
-<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabA">MI VIAJE</button>
-<button class="tap px-4 py-2 rounded-2xl text-sm font-semibold" id="tabB">VIAJE ALTERNATIVO</button>
+
+
 <button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 </div>
-<div class="flex items-center gap-2">
-<label class="text-sm text-slate-600">Moneda</label>
-<select class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm" id="displayCurrency">
-<option value="EUR">€ EUR</option>
-<option value="USD">$ USD</option>
-<option value="GBP">£ GBP</option>
-<option value="JPY">¥ JPY</option>
-</select>
-</div>
+
 </div>
 <!-- Grid -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-4"><aside class="lg:col-span-4">
@@ -293,7 +285,7 @@ border-radius: 999px;
 <div class="flex justify-between"><span class="text-slate-600">Comidas</span><span class="font-semibold" id="sumMeals">0.00</span></div>
 <hr class="my-2"/>
 <div class="flex justify-between text-base"><span class="font-extrabold">TOTAL</span><span class="font-extrabold" id="sumTotal">0.00</span></div>
-<div class="text-xs text-slate-500">Moneda de visualización: <span id="sumCur">EUR</span></div>
+<div class="text-xs text-slate-500">Moneda de visualización: <span class="hidden" id="sumCur">EUR</span></div>
 </div>
 <div class="mt-4 flex gap-2">
 </div>
@@ -315,7 +307,7 @@ border-radius: 999px;
 <span class="accIcon text-slate-400 text-xl">▴</span>
 </button>
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-  <div id="timelineControlsRow">
+<div id="timelineControlsRow">
 <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
 <div class="flex items-center gap-2">
 <button class="tap px-3 py-1.5 rounded-lg text-sm font-semibold seg-btn seg-active" id="tlViewGlobal">Global</button>
@@ -336,9 +328,8 @@ border-radius: 999px;
 <!-- chips injected by JS -->
 </div>
 </div>
-  </div>
-
-  <div class="space-y-3" id="timelineList"></div>
+</div>
+<div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
 <div class="flex items-center gap-3">
@@ -357,7 +348,7 @@ border-radius: 999px;
 </div>
 <!-- LOGISTICA -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="legsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="legs" id="legsHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-blue-50 items-center justify-center">🛫</span>
 <div class="text-left">
@@ -375,7 +366,7 @@ border-radius: 999px;
 </div>
 <!-- ALOJAMIENTO -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="staysHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="stays" id="staysHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-emerald-50 items-center justify-center">🏨</span>
 <div class="text-left">
@@ -426,7 +417,7 @@ border-radius: 999px;
 </div>
 <!-- ACTIVIDADES -->
 <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button id="actsHeader" class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts">
+<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="acts" id="actsHeader">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
@@ -489,47 +480,40 @@ border-radius: 999px;
 <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
 </div>
 </div>
-
 <!-- Tools bottom sheet -->
 <div class="hidden fixed inset-0 z-[1200] bg-black/50" id="toolsBackdrop"></div>
-<div class="fixed left-0 right-0 bottom-0 z-[1210]" id="toolsSheet" role="dialog" aria-modal="true" aria-label="Tools">
-  <div class="max-w-6xl mx-auto px-0 sm:px-4">
-    <div class="bg-white rounded-t-3xl border border-slate-200 shadow-2xl overflow-hidden">
-      <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
-        <div class="font-extrabold">Tools</div>
-        <button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="toolsClose" aria-label="Cerrar">✕</button>
-      </div>
-      <div class="p-5 max-h-[72vh] overflow-y-auto overscroll-contain ios-scroll">
-        <div class="space-y-3">
-          <button class="tap w-full px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" id="toolsSave">
+<div aria-label="Tools" aria-modal="true" class="fixed left-0 right-0 bottom-0 z-[1210]" id="toolsSheet" role="dialog">
+<div class="max-w-6xl mx-auto px-0 sm:px-4">
+<div class="bg-white rounded-t-3xl border border-slate-200 shadow-2xl overflow-hidden">
+<div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+<div class="font-extrabold">Tools</div>
+<button aria-label="Cerrar" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="toolsClose">✕</button>
+</div>
+<div class="p-5 max-h-[72vh] overflow-y-auto overscroll-contain ios-scroll">
+<div class="space-y-3">
+<button class="tap w-full px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold" id="toolsSave">
             Guardar
           </button>
-
-          <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsLoad">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsLoad">
             Cargar
           </button>
-
-          <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
           </button>
-
-          <button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
             Reiniciar viaje
           </button>
-
-          <!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
-          <button id="btnTrips" class="hidden"></button>
-        </div>
-
-        <div class="mt-4 text-xs text-slate-500">
+<!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
+<button class="hidden" id="btnTrips"></button>
+</div>
+<div class="mt-4 text-xs text-slate-500">
           Nota: “Guardar” y “Cargar” abren el panel de archivos (incluye backups).
         </div>
-      </div>
-      <div class="safe-b"></div>
-    </div>
-  </div>
 </div>
-
+<div class="safe-b"></div>
+</div>
+</div>
+</div>
 <script>
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
@@ -947,7 +931,7 @@ function applyReadOnlyMode() {
   // Toggle button label
   const btn = $("btnReadOnly");
   if (btn) {
-    btn.textContent = on ? "🔓 Editar" : "🔒 Modo lectura";
+    btn.textContent = on ? "🔓" : "🔒";
     btn.setAttribute("aria-pressed", on ? "true" : "false");
   }
 
@@ -1061,6 +1045,16 @@ function saveState() {
 function curScenario() { return state.scenarios[state.scenario]; }
 
 /* -------------------------- Currency convert ------------------------- */
+function currencySymbol(code){
+  switch(String(code||"")){
+    case "EUR": return "€";
+    case "USD": return "$";
+    case "GBP": return "£";
+    case "JPY": return "¥";
+    default: return String(code||"");
+  }
+}
+
 /* Simple: no external API. Keeps values in display currency.
    You can later swap to real rates if needed. */
 function setDisplayCurrency(cur) {
@@ -1142,12 +1136,18 @@ function renderAll() {
 
 function renderTabs() {
   const a = $("tabA"), b = $("tabB");
-  const onA = state.scenario === "A";
-  a.className = "tap px-4 py-2 rounded-2xl text-sm font-semibold " + (onA ? "bg-indigo-600 text-white" : "text-slate-700");
-  b.className = "tap px-4 py-2 rounded-2xl text-sm font-semibold " + (!onA ? "bg-indigo-600 text-white" : "text-slate-700");
-  $("displayCurrency").value = state.displayCurrency;
-  $("sumCur").textContent = state.displayCurrency;
-  $("mealCur").textContent = state.displayCurrency;
+  if (a && b) {
+    const onA = state.scenario === "A";
+    // Compact segmented control for header
+    a.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (onA ? "bg-slate-900 text-white" : "text-slate-700");
+    b.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (!onA ? "bg-slate-900 text-white" : "text-slate-700");
+  }
+  const dc = document.getElementById("displayCurrency");
+  if (dc) dc.value = state.displayCurrency;
+  const sc = document.getElementById("sumCur");
+  if (sc) sc.textContent = state.displayCurrency;
+  const mc = document.getElementById("mealCur");
+  if (mc) mc.textContent = state.displayCurrency;
 }
 
 function legCard(leg) {
@@ -2753,29 +2753,100 @@ function applySummaryFold() {
 
   // Re-render sticky detail (cheap + keeps it fresh even if calcSummary runs often)
   if (inner) {
-    const curTxt = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
-    const tr = document.getElementById("sumTransport")?.textContent || "0.00";
-    const st = document.getElementById("sumStay")?.textContent || "0.00";
-    const ac = document.getElementById("sumActs")?.textContent || "0.00";
-    const me = document.getElementById("sumMeals")?.textContent || "0.00";
-    const tot = document.getElementById("sumTotal")?.textContent || "0.00";
-    const cur = curTxt ? ` <span class="text-xs text-slate-500">${curTxt}</span>` : "";
-    inner.innerHTML = `
-      <div class="row"><span class="lbl">Transporte</span><span class="val">${tr}</span></div>
-      <div class="row"><span class="lbl">Alojamiento</span><span class="val">${st}</span></div>
-      <div class="row"><span class="lbl">Actividades</span><span class="val">${ac}</span></div>
-      <div class="row"><span class="lbl">Comidas</span><span class="val">${me}</span></div>
-      <hr class="my-2 border-slate-200"/>
-      <div class="row"><span class="total">TOTAL</span><span class="total">${tot}</span></div>
-      <div class="mt-1">${cur}</div>
-    `;
+    const curCode = (document.getElementById("displayCurrency")?.value) || state.displayCurrency || "";
+    const curSym = currencySymbol(curCode);
+
+    const sumFor = (sc) => {
+      const transport = (sc.legs||[]).reduce((a,x)=>a+parseMoney(x.cost),0);
+      const stay = (sc.stays||[]).reduce((a,x)=>a+parseMoney(x.cost),0);
+      const acts = (sc.activities||[]).reduce((a,x)=>a+parseMoney(x.cost),0);
+      const meals = parseMoney(sc.meals?.daily) * (parseInt(sc.meals?.people||1,10)) * (parseInt(sc.meals?.days||1,10));
+      const total = transport + stay + acts + meals;
+      return { transport, stay, meals, acts, total };
+    };
+
+    const aS = sumFor(state.scenarios.A || emptyScenario());
+    const bS = sumFor(state.scenarios.B || emptyScenario());
+    const bHasData = (bS.total > 0.00001) || (state.scenarios.B?.legs?.length) || (state.scenarios.B?.stays?.length) || (state.scenarios.B?.activities?.length) || (parseMoney(state.scenarios.B?.meals?.daily) > 0);
+
+    const fmt = (n) => (Number(n)||0).toFixed(2);
+    const difTxt = (n) => {
+      const v = Number(n)||0;
+      const s = fmt(Math.abs(v));
+      return (v>0 ? "+" : v<0 ? "-" : "") + s;
+    };
+
+    const rows = [
+      ["Transporte", aS.transport, bS.transport],
+      ["Alojamiento", aS.stay, bS.stay],
+      ["Comida", aS.meals, bS.meals],
+      ["Actividades", aS.acts, bS.acts],
+      ["TOTAL", aS.total, bS.total]
+    ];
+
+    if (!bHasData) {
+      inner.innerHTML = `
+        <div class="row"><span class="lbl">Transporte</span><span class="val">${fmt(aS.transport)}</span></div>
+        <div class="row"><span class="lbl">Alojamiento</span><span class="val">${fmt(aS.stay)}</span></div>
+        <div class="row"><span class="lbl">Comida</span><span class="val">${fmt(aS.meals)}</span></div>
+        <div class="row"><span class="lbl">Actividades</span><span class="val">${fmt(aS.acts)}</span></div>
+        <hr class="my-2 border-slate-200"/>
+        <div class="row"><span class="total">TOTAL</span><span class="total">${fmt(aS.total)}</span></div>
+        <div class="mt-1 text-xs text-slate-500">${curSym ? curSym : ""}</div>
+      `;
+    } else {
+      inner.innerHTML = `
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-slate-500">
+                <th class="text-left font-semibold py-1">Concepto</th>
+                <th class="text-right font-semibold py-1">A</th>
+                <th class="text-right font-semibold py-1">B</th>
+                <th class="text-right font-semibold py-1">Dif</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r=>{
+                const dif = (r[2]||0) - (r[1]||0);
+                const isTot = r[0]==="TOTAL";
+                return `
+                  <tr class="${isTot ? "border-t border-slate-200" : ""}">
+                    <td class="py-1 ${isTot ? "font-extrabold" : "text-slate-600"}">${escapeHtml(r[0])}</td>
+                    <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${fmt(r[1])}</td>
+                    <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${fmt(r[2])}</td>
+                    <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${difTxt(dif)}</td>
+                  </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-1 text-xs text-slate-500">${curSym ? curSym : ""}</div>
+      `;
+    }
   }
 
-  // Stable binding (no scroll): toggle expands/collapses the sticky panel only.
+  // Stable binding with reflow correction (prevents content jump/covering)
   if (t) {
     t.onclick = () => {
+      const topOffset = __tlGetTopOffsetPx();
+      const anchorEl = document.elementFromPoint(16, topOffset + 8);
+      const anchor = anchorEl ? (anchorEl.closest('[data-acc-body]') || anchorEl.closest('[data-acc]') || anchorEl) : null;
+      const beforeTop = anchor ? anchor.getBoundingClientRect().top : null;
+
       summaryExpanded = !summaryExpanded;
       applySummaryFold();
+
+      // sync heights then correct scroll so the same anchor stays in place
+      try { syncStickyTotalsHeightVar(); } catch {}
+      requestAnimationFrame(() => {
+        try { syncStickyTotalsHeightVar(); } catch {}
+        if (anchor && beforeTop !== null) {
+          const afterTop = anchor.getBoundingClientRect().top;
+          const diff = afterTop - beforeTop;
+          if (Math.abs(diff) > 1) window.scrollBy({ top: diff, left: 0, behavior: "auto" });
+        }
+      });
     };
   }
 }
@@ -2796,8 +2867,9 @@ function calcSummary() {
   $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
   const stickyVal = document.getElementById("stickyTotalValue");
   if (stickyVal) {
-    const curTxt = (document.getElementById("sumCur")?.textContent) || (document.getElementById("displayCurrency")?.value || "");
-    stickyVal.textContent = `TOTAL: ${$("sumTotal").textContent}${curTxt ? " " + curTxt : ""}`;
+    const curCode = (document.getElementById("displayCurrency")?.value) || (document.getElementById("sumCur")?.textContent) || "";
+    const curSym = currencySymbol(curCode);
+    stickyVal.textContent = `TOTAL: ${$("sumTotal").textContent}${curSym ? " " + curSym : ""}`;
   }
   // summary fold (no persistence)
   applySummaryFold();
