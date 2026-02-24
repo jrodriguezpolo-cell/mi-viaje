@@ -164,10 +164,10 @@ border-radius: 999px;
 /* Timeline controls sticky (single row, no clone) */
 #timelineControlsRow{
   position: sticky;
-  top: calc(var(--app-header-h, 56px) + var(--sticky-totals-h, 0px));
-  z-index: 60;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(8px);
+  /* mainScroll already starts below the top stack; keep controls glued under Totales */
+  top: 0;
+  z-index: 950;
+  background: #ffffff;
   border-bottom: 1px solid rgba(15,23,42,0.08);
   padding-top: 8px;
   padding-bottom: 8px;
@@ -233,6 +233,8 @@ border-radius: 999px;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
+      padding-bottom: var(--bottom-nav-h, 0px);
+      box-sizing: border-box;
     }
 
 </style>
@@ -493,7 +495,7 @@ border-radius: 999px;
 </div>
 </main>
 <!-- Bottom bar for mobile -->
-<nav id="bottomNav" class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
+<nav id="bottomNav" class="safe-b fixed bottom-0 left-0 right-0 z-[2000] lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
@@ -764,6 +766,7 @@ function syncTopStackHeights() {
 }
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
+document.addEventListener("DOMContentLoaded", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
@@ -4226,6 +4229,10 @@ $("btnTrips").addEventListener("click", openTripsModal);
     setTimeout(() => {
       backdrop.classList.add("hidden");
       document.body.style.overflow = "";
+      // restore background scroll
+      const ms = document.getElementById("mainScroll");
+      if (ms) ms.style.overflow = "auto";
+      requestAnimationFrame(() => requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} }));
     }, 280);
   }
 
