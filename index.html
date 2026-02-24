@@ -222,6 +222,19 @@ border-radius: 999px;
   transform: translateY(0);
 }
 
+
+    /* Views stable scroll container */
+    html, body { height: 100%; overflow: hidden; }
+    #mainScroll{
+      position: fixed;
+      left: 0; right: 0;
+      top: var(--top-stack-h, 0px);
+      bottom: var(--bottom-nav-h, 0px);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -266,7 +279,7 @@ border-radius: 999px;
 </div>
 <div id="topStackSpacer"></div>
 <!-- Main -->
-<main class="max-w-6xl mx-auto px-4 py-6 pb-24">
+<div id="mainScroll"><main class="max-w-6xl mx-auto px-4 py-6 pb-24">
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-5">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
@@ -480,7 +493,7 @@ border-radius: 999px;
 </div>
 </main>
 <!-- Bottom bar for mobile -->
-<nav class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
+<nav id="bottomNav" class="safe-b fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white/95 backdrop-blur border-t border-slate-200">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">🛫<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
@@ -550,12 +563,21 @@ const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&l
 /* ----------------------------- Views (v89a) ----------------------------- */
 let activeView = "timeline";
 
-function scrollMainToTop(){
-  // No window.scrollTo; just reset the scrolling element.
-  const se = document.scrollingElement || document.documentElement;
-  try { se.scrollTop = 0; } catch {}
-  try { document.body.scrollTop = 0; } catch {}
+function getTopStackHeight(){
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
+  const n = parseFloat(v);
+  if (!isNaN(n)) return n;
+  try { return syncTopStackHeights() || 0; } catch { return 0; }
 }
+
+function scrollMainToTop(){
+  const ms = document.getElementById("mainScroll");
+  const sc = ms || document.scrollingElement || document.documentElement;
+  try { sc.scrollTop = 0; } catch {}
+  // iOS double pass
+  requestAnimationFrame(() => { try { sc.scrollTop = 0; } catch {} });
+}
+
 
 function setView(viewName){
   const map = {
@@ -713,28 +735,64 @@ function getStickyOffset() {
 function syncTopStackHeights() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
+  const detail = document.getElementById("stickySummaryDetail");
+  const bottomNav = document.getElementById("bottomNav");
   const spacer = document.getElementById("topStackSpacer");
 
   const headerH = header ? header.getBoundingClientRect().height : 0;
   const totalsH = totalBar ? totalBar.getBoundingClientRect().height : 0;
+  const detailH = (detail && !detail.classList.contains("hidden")) ? detail.getBoundingClientRect().height : 0;
+  const navH = bottomNav ? bottomNav.getBoundingClientRect().height : 0;
+
+  const topStackH = headerH + totalsH + detailH;
 
   const root = document.documentElement;
   root.style.setProperty("--app-header-h", headerH + "px");
   root.style.setProperty("--sticky-totals-h", totalsH + "px");
+  root.style.setProperty("--top-stack-h", topStackH + "px");
+  root.style.setProperty("--bottom-nav-h", navH + "px");
 
   if (spacer) spacer.style.height = (headerH + totalsH) + "px";
 
-  return headerH + totalsH;
+  const mainScroll = document.getElementById("mainScroll");
+  if (mainScroll) {
+    mainScroll.style.top = "var(--top-stack-h)";
+    mainScroll.style.bottom = "var(--bottom-nav-h)";
+  }
+
+  return topStackH;
 }
 
 // Keep heights in sync on load and when viewport changes (iOS address bar / rotation)
 window.addEventListener("load", () => setTimeout(syncTopStackHeights, 0));
 window.addEventListener("resize", () => setTimeout(syncTopStackHeights, 0));
 
-function scrollToElWithOffset(el, extra = 0) {
+
+
+function getScrollContainer(){
+  return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+}
+function getScrollTop(){
+  const sc = getScrollContainer();
+  return (sc === document.documentElement) ? (window["pageYOffset"] || 0) : (sc.scrollTop || 0);
+}
+function scrollToTopValue(top, behavior="smooth"){
+  const sc = getScrollContainer();
+  if (sc === document.documentElement){
+    // fallback only
+    window["scrollTo"]({ top, behavior });
+  } else {
+    sc.scrollTo({ top, behavior });
+  }
+}
+
+function scrollToElWithOffset(el, extra = 0, smooth = true) {
   if (!el) return;
-  const y = el.getBoundingClientRect().top + window.pageYOffset - (getStickyOffset() + (extra || 0));
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+  const sc = getScrollContainer();
+  const offset = getStickyOffset() + (extra || 0);
+  const curTop = (sc === document.documentElement) ? getScrollTop() : sc.scrollTop;
+  const y = el.getBoundingClientRect().top + curTop - offset;
+  sc.scrollTo({ top: Math.max(0, y), behavior: smooth ? "smooth" : "auto" });
 }
 
 function getTopStackOffset() {
@@ -744,18 +802,20 @@ function getTopStackOffset() {
   return headerH + totalsH;
 }
 
-function scrollToElTopStack(el, extra = 0) {
-  if (!el) return;
-  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+function scrollToElTopStack(el, extra = 0, smooth = true) {
+  // Keep name for compatibility; it uses current sticky offset (header + totals + timeline controls if visible).
+  return scrollToElWithOffset(el, extra, smooth);
 }
 
 
 function landUnderTotals(el, extra = 8, opts = { smooth: true }) {
   if (!el) return;
+  const sc = getScrollContainer();
   const behavior = (opts && opts.smooth) ? "smooth" : "auto";
-  const y = el.getBoundingClientRect().top + window.pageYOffset - (getTopStackOffset() + (extra || 0));
-  window.scrollTo({ top: Math.max(0, y), behavior });
+  const offset = getStickyOffset() + (extra || 0);
+  const curTop = (sc === document.documentElement) ? getScrollTop() : sc.scrollTop;
+  const y = el.getBoundingClientRect().top + curTop - offset;
+  sc.scrollTo({ top: Math.max(0, y), behavior });
 }
 
 let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
@@ -2111,7 +2171,7 @@ function jumpToItem(kind, id) {
     }
   } catch {}
 
-  // 5) Scroll to the item (minimal; no offsets, no window.scrollTo)
+  // 5) Scroll to the item (minimal; no offsets, no window["scrollTo"])
   const findTargetEl = () => {
     try {
       if (view === "legs") return document.querySelector(`[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]`);
@@ -2127,9 +2187,17 @@ function jumpToItem(kind, id) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       const el = findTargetEl();
-      if (el && typeof el.scrollIntoView === "function") {
-        try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { el.scrollIntoView(); }
-        try { el.focus({ preventScroll: true }); } catch {}
+      if (el) {
+        const ms = document.getElementById("mainScroll");
+        if (ms && typeof ms.scrollTo === "function") {
+          const topStack = getTopStackHeight();
+          const y = el.getBoundingClientRect().top + ms.scrollTop - topStack - 8;
+          try { ms.scrollTo({ top: Math.max(0, y), behavior: "smooth" }); } catch { ms.scrollTop = Math.max(0, y); }
+          try { el.focus({ preventScroll: true }); } catch {}
+        } else if (typeof el.scrollIntoView === "function") {
+          try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { el.scrollIntoView(); }
+          try { el.focus({ preventScroll: true }); } catch {}
+        }
       } else {
         alert("No se encontró el evento");
       }
@@ -2412,7 +2480,7 @@ function setTimelineViewMode(mode) {
       } else if (list) {
         scrollToElWithOffset(list, 0);
       } else {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        scrollToTopValue(0, "smooth");
       }
     });
   }
@@ -2869,6 +2937,9 @@ function applySummaryFold() {
 
   if (t) t.textContent = summaryExpanded ? "Ocultar ▴" : "Detalle ▾";
   if (d) d.classList.toggle("hidden", !summaryExpanded);
+
+  // Keep top stack measurements deterministic when detail opens/closes
+  requestAnimationFrame(() => requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} }));
 
   // Re-render sticky detail (cheap + keeps it fresh even if calcSummary runs often)
   if (inner) {
@@ -4140,9 +4211,11 @@ $("btnTrips").addEventListener("click", openTripsModal);
     requestAnimationFrame(() => {
       backdrop.classList.add("open");
       sheet.classList.add("open");
+      requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} });
     });
-    // prevent background scroll
-    document.body.style.overflow = "hidden";
+    // prevent background scroll (keep window locked; pause main scroll)
+    const ms = document.getElementById("mainScroll");
+    if (ms) ms.style.overflow = "hidden";
   }
 
   function closeTools(){
@@ -4314,10 +4387,10 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
     const fab = document.getElementById('fabCollapseAll');
-    if (fab) fab.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (fab) fab.onclick = () => { collapseAllAccordions(); scrollToTopValue(0, 'smooth'); };
   
     const ca = document.getElementById("collapseAll");
-    if (ca) ca.onclick = () => { collapseAllAccordions(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    if (ca) ca.onclick = () => { collapseAllAccordions(); scrollToTopValue(0, 'smooth'); };
   
     // Timeline view controls (Global / Day)
     const _tlG = document.getElementById("tlViewGlobal");
