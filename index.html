@@ -451,15 +451,6 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetBody .sheet-leg-editor [data-leg-del],
 #eventSheetBody .sheet-leg-editor [data-leg-done]{ display:none !important; }
 
-
-/* V89E6: transport sheet mobile compact, no overlap */
-#eventSheetBody .sheet-leg-editor input{
-  padding-top: 9px !important;
-  padding-bottom: 9px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid{ gap: 10px !important; }
-#eventSheetBody .sheet-leg-editor label{ font-size: 11px !important; }
-
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -470,7 +461,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E6 - 2026-02-25 08:17</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5 - 2026-02-25 07:48</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1047,18 +1038,6 @@ function getScrollContainer(){
     };
     esBody.addEventListener("input", tick);
     esBody.addEventListener("change", tick);
-  }
-
-  // Sheet header attach/note (placeholder)
-  const esAttach = document.getElementById("eventSheetAttach");
-  if (esAttach && !esAttach.__bound) {
-    esAttach.__bound = true;
-    esAttach.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); alert("Próximamente: Archivos"); });
-  }
-  const esNote = document.getElementById("eventSheetNote");
-  if (esNote && !esNote.__bound) {
-    esNote.__bound = true;
-    esNote.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); alert("Próximamente: Notas"); });
   }
 }
 function getScrollTop(){
@@ -2011,17 +1990,58 @@ function legCard(leg) {
           <label class="text-xs text-slate-600">Salida</label>
           <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad salida">
           <input data-leg-placeout="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeOut || "")}" placeholder="Lugar salida">
-          <div class="mt-2">
-            <label class="text-xs text-slate-600">Fecha salida</label>
-            <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
-          </div>
-          <div class="mt-2">
-            <label class="text-xs text-slate-600">Hora salida</label>
-            <div class="mt-1 flex items-center gap-2">
-              <input data-leg-time="${leg.id}" type="time" class="w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
-              <div class="text-[11px] text-slate-500 whitespace-nowrap">${tzFrom}</div>
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha salida</label>
+              <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora salida</label>
+              <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
             </div>
           </div>
+          <div class="mt-2">${tzFrom}</div>
+        </div>
+
+        <!-- LLEGADA -->
+        <div class="sm:col-span-6">
+          <label class="text-xs text-slate-600">Llegada</label>
+          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad llegada">
+          <input data-leg-placein="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeIn || "")}" placeholder="Lugar llegada">
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha llegada</label>
+              <input data-leg-arrive-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveDate || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora llegada</label>
+              <input data-leg-arrive-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveTime || "")}">
+            </div>
+          </div>
+          <div class="mt-2">${tzTo}</div>
+        </div>
+
+        <!-- COSTE -->
+        <div class="sm:col-span-8">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="sm:col-span-4 flex items-center justify-end gap-2">
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📎 Archivo</button>
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📝 Nota</button>
+        </div>
+
+        <div class="sm:col-span-12 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -5217,8 +5237,6 @@ window.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
         <div class="esHeadRight">
-          <button id="eventSheetAttach" class="tap esIconBtn" aria-label="Archivo" title="Archivo" disabled>📎</button>
-          <button id="eventSheetNote" class="tap esIconBtn" aria-label="Nota" title="Nota" disabled>📝</button>
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
