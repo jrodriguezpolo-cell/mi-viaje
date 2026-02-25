@@ -9,16 +9,6 @@
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-function safeCssEscape(v){
-  const s = String(v ?? "");
-  try {
-    if (window.CSS && typeof CSS.escape === "function") return CSS.escape(s);
-  } catch {}
-  // escape mínimo para usar dentro de selectores de atributos
-  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-</script>
-<script>
 // Data-based delete (global)
 function getActiveScenario() {
   // Active scenario (A/B)
@@ -400,31 +390,6 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetMoreDetails summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 #eventSheetMoreDetails summary::-webkit-details-marker{ display:none; }
 
-
-/* V89E1A fixes: ensure sheet footer visible */
-#eventSheetFooter{ display:flex !important; background:#fff; }
-#eventSheetSave{ display:block !important; }
-#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 88px) !important; }
-
-
-/* V89E2: ensure sheet save footer always visible */
-#eventSheetFooter{
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 9150 !important;
-  background: #fff !important;
-  padding-bottom: max(env(safe-area-inset-bottom), 10px) !important;
-}
-#eventSheet{
-  height: calc(100vh - var(--top-stack-h) - var(--bottom-nav-h)) !important;
-}
-#eventSheetBody{
-  padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 96px) !important;
-}
-
-
-/* V89E7C: ensure cost visible in transport sheet */
-#eventSheetBody .sheet-leg-editor [data-leg-cost]{ display:block !important; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -435,7 +400,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7G - 2026-02-25 10:06</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E1 - 2026-02-25 01:03</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -998,15 +963,6 @@ window.addEventListener("resize", scheduleSyncTopStackHeights);
 
 function getScrollContainer(){
   return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
-
-  // SHEET header live update (V89E7C)
-  const esBody = document.getElementById("eventSheetBody");
-  if (esBody && !esBody.__hdrBound) {
-    esBody.__hdrBound = true;
-    const tick = () => { try { if (document.body.classList.contains("sheet-open")) updateSheetHeader(); } catch {} };
-    esBody.addEventListener("input", tick);
-    esBody.addEventListener("change", tick);
-  }
 }
 function getScrollTop(){
   const sc = getScrollContainer();
@@ -1328,73 +1284,25 @@ function __buildSheetBlocks(body){
   };
 }
 
+function openEventSheet({ kind, id, mode, isNew } = {}) {
+  const k = __normKind(kind);
+  const itemId = String(id||"").trim();
+  const m = (mode === "view") ? "view" : "edit";
+  if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
-function updateSheetDynamicSummary(){
-  const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
-  if (!ctx || !ctx.kind || !ctx.id) return;
-  const body = document.getElementById("eventSheetBody");
-  const sheetBody = document.getElementById("sheetBody");
-  if (!body) return;
-
-  const routeEl = document.getElementById("sheetSummaryRoute");
-  const timeEl  = document.getElementById("sheetSummaryTime");
-  const costEl  = document.getElementById("sheetSummaryCost");
-  if (!routeEl || !timeEl || !costEl) return;
-
-  // Try to find relevant inputs inside the moved editor node
-  const q = (sel) => body.querySelector(sel);
-
-  const kind = String(ctx.kind);
-  const getVal = (el) => el ? String(el.value || "").trim() : "";
-
-  // Common ids in this app (fallbacks included)
-  let from="", to="", place="", date="", time="", cost="";
-
-  if (kind === "leg"){
-    from = getVal(q('input[id^="legFrom-"], input[name="from"], input[data-field="from"]')) || getVal(q('input[placeholder*="Origen"]'));
-    to   = getVal(q('input[id^="legTo-"], input[name="to"], input[data-field="to"]')) || getVal(q('input[placeholder*="Destino"]'));
-    date = getVal(q('input[id^="legDate-"], input[type="date"]'));
-    time = getVal(q('input[id^="legTime-"], input[type="time"]'));
-    cost = getVal(q('input[id^="legCost-"], input[name="cost"], input[data-field="cost"]'));
-    const r = (from && to) ? `${from} → ${to}` : "—";
-    routeEl.textContent = r;
-  } else {
-    place = getVal(q('input[id^="stayCity-"], input[id^="actCity-"], input[name="city"], input[data-field="city"]')) || getVal(q('input[placeholder*="Ciudad"], input[placeholder*="Lugar"]'));
-    date = getVal(q('input[type="date"]'));
-    time = getVal(q('input[type="time"]'));
-    cost = getVal(q('input[name="cost"], input[data-field="cost"], input[id*="Cost-"], input[id*="cost-"]'));
-    routeEl.textContent = place || "—";
-  }
-
-  timeEl.textContent = date ? `${date}${time ? (" · "+time) : ""}` : "—";
-  costEl.textContent = cost ? `${cost}` : "—";
-}
-
-function updateSheetHeader(){
-  const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
-  if (!ctx || ctx.kind !== "leg") return;
-  const id = String(ctx.id||"");
-  const sheetBody = document.getElementById("sheetBody");
-  if (!sheetBody) return;
-
-  const fromEl = sheetBody.querySelector(`[data-leg-from="${safeCssEscape(id)}"]`);
-  const toEl   = sheetBody.querySelector(`[data-leg-to="${safeCssEscape(id)}"]`);
-  const from = fromEl ? String(fromEl.value||"").trim() : "";
-  const to = toEl ? String(toEl.value||"").trim() : "";
-  const route = (from || to) ? `${from||"—"} → ${to||"—"}` : "Nuevo transporte";
-
+  const overlay = document.getElementById("eventSheetOverlay");
+  const sheet = document.getElementById("eventSheet");
   const titleEl = document.getElementById("eventSheetTitle");
-  const typeIconEl = document.getElementById("eventSheetTypeIcon");
-  const typeLabelEl = document.getElementById("eventSheetTypeLabel");
-  if (typeLabelEl) typeLabelEl.textContent = ""; // avoid duplicate label for leg
-  if (titleEl) titleEl.textContent = route;
+  const body = document.getElementById("eventSheetBody");
+  const mainScroll = document.getElementById("mainScroll");
+  if (!overlay || !sheet || !titleEl || !body) return;
 
-  try{
-    const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", id) : null;
-    const ico = (typeof legModeIcon==="function") ? legModeIcon(it && it.mode) : "✈️";
-    if (typeIconEl) typeIconEl.textContent = ico;
-  } catch {}
-}
+  // Reset any previous sheet-only UI fragments
+  try { body.__chipsHost = null; } catch {}
+
+  // Close any previous instance safely
+  try { closeEventSheet({ silent: true }); } catch {}
+
 function renderLegModeChips(container, leg, onSelect){
   if (!container) return;
   const cur = legModeDefault(leg && leg.mode);
@@ -1447,29 +1355,6 @@ function renderLegModeChips(container, leg, onSelect){
   });
 }
 
-function openEventSheet({ kind, id, mode, isNew } = {}) {
-  const k = __normKind(kind);
-  const itemId = String(id||"").trim();
-  const m = (mode === "view") ? "view" : "edit";
-  if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
-
-  const overlay = document.getElementById("eventSheetOverlay");
-  const sheet = document.getElementById("eventSheet");
-  const titleEl = document.getElementById("eventSheetTitle");
-  const body = document.getElementById("eventSheetBody");
-  const mainScroll = document.getElementById("mainScroll");
-  if (!overlay || !sheet || !titleEl || !body) return;
-  // SHEET_WARN openEventSheet
-  try { console.warn && console.warn("SHEET open", k, itemId); } catch {}
-
-  // Reset any previous sheet-only UI fragments
-  try { body.__chipsHost = null; } catch {}
-
-  // Close any previous instance safely
-  try { closeEventSheet({ silent: true }); } catch {}
-
-
-
 
   // Ensure expanded sets + rerender so editor node exists
   try {
@@ -1479,11 +1364,11 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
   } catch {}
 
   // Find the real editor node (move-node approach: avoid duplicate IDs)
-  const sel = (k === "leg") ? `[data-sec-body="legs"][data-sec-id="${safeCssEscape(itemId)}"]`
-            : (k === "stay") ? `[data-sec-body="stays"][data-sec-id="${safeCssEscape(itemId)}"]`
-            : `[data-sec-body="activities"][data-sec-id="${safeCssEscape(itemId)}"]`;
+  const sel = (k === "leg") ? `[data-sec-body="legs"][data-sec-id="${CSS.escape(itemId)}"]`
+            : (k === "stay") ? `[data-sec-body="stays"][data-sec-id="${CSS.escape(itemId)}"]`
+            : `[data-sec-body="activities"][data-sec-id="${CSS.escape(itemId)}"]`;
   const node = document.querySelector(sel);
-  if (!node) { console.error("SHEET openEventSheet: node not found"); alert("No se encontró el evento"); return; }
+  if (!node) { alert("No se encontró el evento"); return; }
 
   // Build a nice title
   try {
@@ -1542,23 +1427,11 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
     if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
   } catch {}
 
-  const blocks = __buildSheetBlocks(sheetBody);
+  const blocks = __buildSheetBlocks(body);
 
-  try { if (body.__chipsHost) {
-      if (k === "leg") {
-        const host = document.getElementById("legSheetFormHost");
-        if (host) host.appendChild(body.__chipsHost);
-      } else if (blocks && blocks.A) {
-        blocks.A.appendChild(body.__chipsHost);
-      }
-    } } catch {}
+  try { if (body.__chipsHost && blocks && blocks.A) blocks.A.appendChild(body.__chipsHost); } catch {}
   try { node.classList.remove("hidden"); } catch {}
-  try { if (k === "leg") {
-      const host = document.getElementById("legSheetFormHost");
-      if (host) host.appendChild(node); else sheetBody.appendChild(node);
-    } else {
-      if (blocks && blocks.E) blocks.E.appendChild(node); else sheetBody.appendChild(node);
-    } } catch { sheetBody.appendChild(node); }
+  try { if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node); } catch { body.appendChild(node); }
   try {
     if (blocks && blocks.E && !blocks.E.__phDone) {
       blocks.E.__phDone = true;
@@ -1573,16 +1446,6 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
-
-  // Dynamic summary wiring
-  try {
-    updateSheetDynamicSummary();
-    if (!body.__summaryBound) {
-      body.__summaryBound = true;
-      body.addEventListener("input", ()=> updateSheetDynamicSummary());
-      body.addEventListener("change", ()=> updateSheetDynamicSummary());
-    }
-  } catch {}
 
   // Focus first input for quick edit
   try {
@@ -1911,7 +1774,6 @@ function legCard(leg) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const isOpen = __sectionExpanded.legs.has(leg.id);
-  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
@@ -1921,7 +1783,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">✈️ Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
@@ -1967,7 +1829,6 @@ function legCard(leg) {
 
 function renderLegs() {
   const box = $("legsList");
-  try { console.log("RENDER section","legs","target=", box && box.id); } catch {}
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
@@ -2802,9 +2663,9 @@ function jumpToItem(kind, id) {
   // 5) Scroll to the item (minimal; no offsets, no window["scrollTo"])
   const findTargetEl = () => {
     try {
-      if (view === "legs") return document.querySelector(`[data-sec-toggle="legs"][data-sec-id="${safeCssEscape(itemId)}"]`);
-      if (view === "stays") return document.querySelector(`[data-sec-toggle="stays"][data-sec-id="${safeCssEscape(itemId)}"]`);
-      if (view === "acts") return document.querySelector(`[data-sec-toggle="activities"][data-sec-id="${safeCssEscape(itemId)}"]`);
+      if (view === "legs") return document.querySelector(`[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]`);
+      if (view === "stays") return document.querySelector(`[data-sec-toggle="stays"][data-sec-id="${CSS.escape(itemId)}"]`);
+      if (view === "acts") return document.querySelector(`[data-sec-toggle="activities"][data-sec-id="${CSS.escape(itemId)}"]`);
       return null;
     } catch {
       return null;
@@ -2827,7 +2688,7 @@ function jumpToItem(kind, id) {
           try { el.focus({ preventScroll: true }); } catch {}
         }
       } else {
-        console.error("SHEET openEventSheet: node not found"); alert("No se encontró el evento");
+        alert("No se encontró el evento");
       }
     });
   });
@@ -3328,7 +3189,8 @@ function renderTimeline() {
 
         <div class="mt-2 ${isExpanded ? "" : "hidden"}" data-tl-details="${escapeHtml(tlKey)}">
           <div class="text-xs text-slate-500">
-            ${hasNote ? "📝" : ""}
+            ${escapeHtml(metaLine)}
+            ${hasNote ? " 📝" : ""}
           </div>
           <div class="mt-1 flex items-center ${showCost ? "justify-between" : "justify-end"} gap-3">
             ${showCost ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
@@ -3362,6 +3224,10 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
 
     const key = row.getAttribute("data-tl-key") || "";
     if (!key) return;
+
+    const __k = row.getAttribute("data-tl-jump-type");
+    const __id = row.getAttribute("data-tl-jump-id");
+    if (__k && __id) { try { openEventSheet({ kind: __k, id: __id, mode: "edit" }); } catch {} return; }
 
     if (__tlExpanded.has(key)) __tlExpanded.delete(key);
     else __tlExpanded.add(key);
@@ -4783,8 +4649,7 @@ $("addLeg").addEventListener("click", ()=>{
   sc.legs.unshift({ id, mode:"plane", from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "leg", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
-        console.error(e); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("legs");
 });
 $("addStay").addEventListener("click", ()=>{
@@ -4793,8 +4658,7 @@ $("addStay").addEventListener("click", ()=>{
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "stay", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
-        console.error(e); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
@@ -4803,8 +4667,7 @@ $("addAct").addEventListener("click", ()=>{
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "act", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
-        console.error(e); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
   scrollAccordionBodyToTop("acts");
 });
 
@@ -5120,15 +4983,13 @@ window.addEventListener('DOMContentLoaded', () => {
             <span id="eventSheetTypeLabel">Evento</span>
           </div>
           <div class="esSubtitle" id="eventSheetTitle">Detalle</div>
-</div>
+        </div>
         <div class="esHeadRight">
-          <button id="eventSheetAttach" class="tap esIconBtn" aria-label="Archivo" title="Archivo" disabled>📎</button>
-          <button id="eventSheetNote" class="tap esIconBtn" aria-label="Nota" title="Nota" disabled>📝</button>
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
       </div>
-      <div id="eventSheetBody"><div id="sheetBody"></div>
+      <div id="eventSheetBody">
         <!-- blocks injected on open -->
       </div>
       <div id="eventSheetFooter">
