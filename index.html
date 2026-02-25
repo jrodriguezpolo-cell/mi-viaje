@@ -447,7 +447,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E3 - 2026-02-25 06:46</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E3B - 2026-02-25 07:05</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1010,6 +1010,21 @@ window.addEventListener("resize", scheduleSyncTopStackHeights);
 
 function getScrollContainer(){
   return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+
+  // LIVE SUMMARY delegated (V89E3B)
+  const esBody = document.getElementById("eventSheetBody");
+  if (esBody && !esBody.__liveBound) {
+    esBody.__liveBound = true;
+    const tick = () => {
+      try {
+        if (document.body.classList.contains("sheet-open") && typeof updateSheetDynamicSummary === "function") {
+          updateSheetDynamicSummary();
+        }
+      } catch {}
+    };
+    esBody.addEventListener("input", tick);
+    esBody.addEventListener("change", tick);
+  }
 }
 function getScrollTop(){
   const sc = getScrollContainer();
@@ -1505,6 +1520,7 @@ function renderLegModeChips(container, leg, onSelect){
       chipsHost.id = "legModeChipsHost";
       chipsHost.className = "mb-3";
       renderLegModeChips(chipsHost, legObj, (newMode)=>{
+        try { if (typeof updateSheetDynamicSummary === "function") updateSheetDynamicSummary(); } catch {}
         // Update sheet title to reflect icon change (optional)
         try {
           const label = "Transporte";
@@ -1533,6 +1549,7 @@ function renderLegModeChips(container, leg, onSelect){
 
   try { if (body.__chipsHost && blocks && blocks.A) blocks.A.appendChild(body.__chipsHost); } catch {}
   try { node.classList.remove("hidden"); } catch {}
+  try { if (k === "leg") node.classList.add("sheet-leg-editor"); else node.classList.remove("sheet-leg-editor"); } catch {}
   try { if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node); } catch { body.appendChild(node); }
   try {
     if (blocks && blocks.E && !blocks.E.__phDone) {
@@ -1600,6 +1617,8 @@ function closeEventSheet({ silent } = {}) {
 
   if (body) body.innerHTML = "";
   const ctx = __eventSheetCtx;
+
+  try { if (ctx && ctx.node) ctx.node.classList.remove("sheet-leg-editor"); } catch {}
   __eventSheetCtx = null;
 
   // Re-render to reflect any edits
