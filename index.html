@@ -437,6 +437,20 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 }
 #eventSheetBody .sheet-leg-editor [data-leg-del]{ display:none !important; } /* use sheet trash */
 
+
+/* V89E4: Transport sheet form-first layout */
+#eventSheetBody .sheet-leg-editor .grid{
+  display:grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+#eventSheetBody .sheet-leg-editor .grid > div{ width:auto !important; }
+#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-3,
+#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-2{ grid-column:auto !important; }
+#eventSheetBody .sheet-leg-editor .grid [data-leg-cost]{ grid-column: 1 / -1 !important; }
+#eventSheetBody .sheet-leg-editor [data-leg-del],
+#eventSheetBody .sheet-leg-editor [data-leg-done]{ display:none !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -447,7 +461,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E3B - 2026-02-25 07:05</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E4 - 2026-02-25 07:27</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1401,6 +1415,25 @@ function updateSheetDynamicSummary(){
   costEl.textContent = cost ? `${cost}` : "—";
 }
 
+
+function __legPlacePlaceholder(mode, which){
+  const m = (typeof legModeDefault === "function") ? legModeDefault(mode) : String(mode||"plane");
+  const w = (which === "to") ? "llegada" : "salida";
+  if (m === "plane") return `Aeropuerto ${w}`;
+  if (m === "train") return `Estación ${w}`;
+  if (m === "bus") return `Estación bus ${w}`;
+  if (m === "boat") return `Puerto ${w}`;
+  return `Punto ${w}`; // car default
+}
+function __applyLegPlaceholdersInSheet(id, mode){
+  const body = document.getElementById("eventSheetBody");
+  if (!body) return;
+  const from = body.querySelector(`[data-leg-from="${CSS.escape(String(id))}"]`);
+  const to   = body.querySelector(`[data-leg-to="${CSS.escape(String(id))}"]`);
+  if (from) from.placeholder = __legPlacePlaceholder(mode, "from");
+  if (to)   to.placeholder   = __legPlacePlaceholder(mode, "to");
+}
+
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
@@ -1521,6 +1554,7 @@ function renderLegModeChips(container, leg, onSelect){
       chipsHost.className = "mb-3";
       renderLegModeChips(chipsHost, legObj, (newMode)=>{
         try { if (typeof updateSheetDynamicSummary === "function") updateSheetDynamicSummary(); } catch {}
+        try { __applyLegPlaceholdersInSheet(itemId, newMode); } catch {}
         // Update sheet title to reflect icon change (optional)
         try {
           const label = "Transporte";
@@ -1545,12 +1579,34 @@ function renderLegModeChips(container, leg, onSelect){
     if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
   } catch {}
 
-  const blocks = __buildSheetBlocks(body);
+  const blocks = (k === "leg") ? null : __buildSheetBlocks(body);
+  // Transport form-first layout: no summary blocks
+  if (k === "leg") {
+    body.innerHTML = `<div id="legSheetFormHost"></div>`;
+  }
 
-  try { if (body.__chipsHost && blocks && blocks.A) blocks.A.appendChild(body.__chipsHost); } catch {}
+
+  try {
+    if (body.__chipsHost) {
+      if (k === "leg") {
+        const host = document.getElementById("legSheetFormHost");
+        if (host) host.appendChild(body.__chipsHost);
+      } else if (blocks && blocks.A) {
+        blocks.A.appendChild(body.__chipsHost);
+      }
+    }
+  } catch {}
   try { node.classList.remove("hidden"); } catch {}
   try { if (k === "leg") node.classList.add("sheet-leg-editor"); else node.classList.remove("sheet-leg-editor"); } catch {}
-  try { if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node); } catch { body.appendChild(node); }
+  try { if (k === "leg") { const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", itemId) : null; __applyLegPlaceholdersInSheet(itemId, it ? it.mode : "plane"); } } catch {}
+  try {
+    if (k === "leg") {
+      const host = document.getElementById("legSheetFormHost");
+      if (host) host.appendChild(node); else body.appendChild(node);
+    } else {
+      if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node);
+    }
+  } catch { body.appendChild(node); }
   try {
     if (blocks && blocks.E && !blocks.E.__phDone) {
       blocks.E.__phDone = true;
@@ -1565,6 +1621,8 @@ function renderLegModeChips(container, leg, onSelect){
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
+  // sheetSummaryLine hidden for leg
+  try { const sl = document.getElementById("eventSheetSummaryLine"); if (sl) sl.style.display = (k === "leg") ? "none" : ""; } catch {}
 
   // Dynamic summary wiring
   try {
@@ -1916,6 +1974,7 @@ function legCard(leg) {
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
@@ -1989,6 +2048,14 @@ function renderLegs() {
     renderTimeline();
     calcSummary();
     renderLegs();
+  }));
+
+  box.querySelectorAll("[data-leg-edit]").forEach(b => b.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = b.getAttribute("data-leg-edit");
+    if (!id) return;
+    try { openEventSheet({ kind: "leg", id, mode: "edit" }); } catch {}
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
