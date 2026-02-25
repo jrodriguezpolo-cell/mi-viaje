@@ -477,6 +477,21 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   font-size: 12px;
 }
 
+
+/* V89E5F: prevent date/time overlap in leg sheet (iOS Safari) */
+#eventSheetBody .sheet-leg-editor .grid > div{ min-width:0 !important; }
+#eventSheetBody .sheet-leg-editor input[type="date"],
+#eventSheetBody .sheet-leg-editor input[type="time"]{
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  height: 44px !important;
+  font-size: 16px !important;
+}
+#eventSheetBody .sheet-leg-editor .grid{ column-gap: 12px !important; row-gap: 10px !important; }
+#eventSheetBody .sheet-leg-editor .utcLabel{ white-space:nowrap; font-size:12px; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -487,7 +502,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E - 2026-02-25 12:59</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5F - 2026-02-25 15:24</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1065,6 +1080,20 @@ function getScrollContainer(){
     esBody.addEventListener("input", tick);
     esBody.addEventListener("change", tick);
   }
+
+  // Edit toggle (view->edit) for sheet
+  const btnEdit = document.getElementById("eventSheetEdit");
+  if (btnEdit && !btnEdit.__bound) {
+    btnEdit.__bound = true;
+    btnEdit.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      try {
+        const ctx = window.__sheetCtx;
+        if (!ctx) return;
+        openEventSheet({ kind: ctx.kind, id: ctx.id, mode: "edit" });
+      } catch (err) { console.error(err); }
+    });
+  }
 }
 function getScrollTop(){
   const sc = getScrollContainer();
@@ -1493,7 +1522,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
   wrap.className = "sheet-leg-editor";
   wrap.innerHTML = `
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
       <div class="sm:col-span-6">
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
         <label class="text-xs text-slate-600">Ciudad salida</label>
@@ -1501,11 +1530,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
-        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
+          <div class="utcLabel text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1516,11 +1545,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
-        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
+          <div class="utcLabel text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1537,6 +1566,9 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   `;
   wrap.prepend(chipsHost);
   body.appendChild(wrap);
+
+  // Normalize cost for new items (avoid default 0)
+  try { if (isNew && (legObj.cost === 0 || legObj.cost === "0")) legObj.cost = null; } catch {}
 
   // Fill values (map legacy fields)
   const v = (x) => (x == null ? "" : String(x));
@@ -1612,7 +1644,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   bind("timeOut", (val)=>{ legObj.time = val; });
   bind("dateIn", (val)=>{ legObj.arriveDate = val; });
   bind("timeIn", (val)=>{ legObj.arriveTime = val; });
-  bind("cost", (val)=>{ legObj.cost = parseMoney(val); });
+  bind("cost", (val)=>{ if (String(val||"").trim()==="") { legObj.cost = null; return; } legObj.cost = parseMoney(val); });
   return true;
 }
 
@@ -1637,6 +1669,7 @@ function __applyLegPlaceholdersInSheet(id, mode){
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
+  window.__sheetMode = (mode === "view") ? "view" : "edit";
   const m = (mode === "view") ? "view" : "edit";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
@@ -1762,6 +1795,12 @@ function renderLegModeChips(container, leg, onSelect){
 
     overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
+  try {
+    const btnEdit = document.getElementById("eventSheetEdit");
+    if (btnEdit) btnEdit.classList.toggle("hidden", window.__sheetMode !== "view");
+    const btnSave = document.getElementById("eventSheetSave");
+    if (btnSave) { btnSave.disabled = (window.__sheetMode === "view"); btnSave.classList.toggle("hidden", window.__sheetMode === "view"); }
+  } catch {}
     return;
   }
 
@@ -2312,6 +2351,13 @@ function renderLegs() {
     const id = b.getAttribute("data-leg-edit");
     if (!id) return;
     try { openEventSheet({ kind: "leg", id, mode: "edit" }); } catch {}
+  }));
+
+  box.querySelectorAll("[data-leg-view]").forEach(b => b.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const id = b.getAttribute("data-leg-view");
+    if (!id) return;
+    try { openEventSheet({ kind: "leg", id, mode: "view" }); } catch (err) { console.error(err); }
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
@@ -5477,6 +5523,7 @@ window.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
         <div class="esHeadRight">
+          <button id="eventSheetEdit" class="tap esIconBtn hidden" aria-label="Editar" title="Editar">✎</button>
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
