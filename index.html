@@ -412,6 +412,31 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 96px) !important;
 }
 
+
+/* V89E3: harden sheet footer visibility */
+#eventSheetFooter{ display:flex !important; position: sticky !important; bottom:0 !important; z-index: 9200 !important; background:#fff !important; }
+#eventSheetSave{ display:block !important; }
+#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 110px) !important; }
+
+
+/* V89E3: leg sheet 2-column layout using existing fields */
+#eventSheetBody .sheet-leg-editor .grid{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+#eventSheetBody .sheet-leg-editor .grid > div{ width: auto !important; }
+#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-3,
+#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-2{
+  grid-column: auto !important;
+}
+#eventSheetBody .sheet-leg-editor .grid [data-leg-date],
+#eventSheetBody .sheet-leg-editor .grid [data-leg-time],
+#eventSheetBody .sheet-leg-editor .grid [data-leg-cost]{
+  grid-column: span 2 !important; /* date/time/cost full width to avoid missing arrival fields */
+}
+#eventSheetBody .sheet-leg-editor [data-leg-del]{ display:none !important; } /* use sheet trash */
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -422,7 +447,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E2 - 2026-02-25 06:24</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E3 - 2026-02-25 06:46</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1310,6 +1335,7 @@ function __buildSheetBlocks(body){
 function updateSheetDynamicSummary(){
   const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
   if (!ctx || !ctx.kind || !ctx.id) return;
+
   const body = document.getElementById("eventSheetBody");
   if (!body) return;
 
@@ -1318,28 +1344,41 @@ function updateSheetDynamicSummary(){
   const costEl  = document.getElementById("sheetSummaryCost");
   if (!routeEl || !timeEl || !costEl) return;
 
-  // Try to find relevant inputs inside the moved editor node
-  const q = (sel) => body.querySelector(sel);
-
+  const id = String(ctx.id);
   const kind = String(ctx.kind);
-  const getVal = (el) => el ? String(el.value || "").trim() : "";
 
-  // Common ids in this app (fallbacks included)
-  let from="", to="", place="", date="", time="", cost="";
+  const qs = (sel) => body.querySelector(sel);
+  const val = (el) => el ? String(el.value || "").trim() : "";
+
+  let date = "", time = "", cost = "";
 
   if (kind === "leg"){
-    from = getVal(q('input[id^="legFrom-"], input[name="from"], input[data-field="from"]')) || getVal(q('input[placeholder*="Origen"]'));
-    to   = getVal(q('input[id^="legTo-"], input[name="to"], input[data-field="to"]')) || getVal(q('input[placeholder*="Destino"]'));
-    date = getVal(q('input[id^="legDate-"], input[type="date"]'));
-    time = getVal(q('input[id^="legTime-"], input[type="time"]'));
-    cost = getVal(q('input[id^="legCost-"], input[name="cost"], input[data-field="cost"]'));
-    const r = (from && to) ? `${from} → ${to}` : "—";
-    routeEl.textContent = r;
+    const fromEl = qs(`[data-leg-from="${CSS.escape(id)}"]`);
+    const toEl   = qs(`[data-leg-to="${CSS.escape(id)}"]`);
+    const dateEl = qs(`[data-leg-date="${CSS.escape(id)}"]`);
+    const timeElI = qs(`[data-leg-time="${CSS.escape(id)}"]`);
+    const costElI = qs(`[data-leg-cost="${CSS.escape(id)}"]`);
+
+    const from = val(fromEl);
+    const to = val(toEl);
+    date = val(dateEl);
+    time = val(timeElI);
+    cost = val(costElI);
+
+    routeEl.textContent = (from && to) ? `${from} → ${to}` : (from || to || "—");
   } else {
-    place = getVal(q('input[id^="stayCity-"], input[id^="actCity-"], input[name="city"], input[data-field="city"]')) || getVal(q('input[placeholder*="Ciudad"], input[placeholder*="Lugar"]'));
-    date = getVal(q('input[type="date"]'));
-    time = getVal(q('input[type="time"]'));
-    cost = getVal(q('input[name="cost"], input[data-field="cost"], input[id*="Cost-"], input[id*="cost-"]'));
+    // stays/acts: try common inputs inside moved editor
+    const placeEl = qs(`input[data-stay-city="${CSS.escape(id)}"], input[data-act-city="${CSS.escape(id)}"], input[name="city"], input[data-field="city"]`)
+                || qs(`input[placeholder*="Ciudad"], input[placeholder*="Lugar"]`);
+    const dateEl  = qs(`input[type="date"]`);
+    const timeElI = qs(`input[type="time"]`);
+    const costElI = qs(`input[name="cost"], input[data-field="cost"], input[type="number"]`);
+
+    const place = val(placeEl);
+    date = val(dateEl);
+    time = val(timeElI);
+    cost = val(costElI);
+
     routeEl.textContent = place || "—";
   }
 
