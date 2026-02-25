@@ -518,7 +518,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5G - 2026-02-25 15:59</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5G1 HOTFIX - 2026-02-25 16:30</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -868,6 +868,9 @@ function setView(viewName){
   });
 
   activeView = viewName;
+
+  // HOTFIX V89E5G1: ensure Transporte accordion is open when entering the view (prevents blank + dead button)
+  try { if (viewName === "legs" && typeof openAccordionKey === "function") openAccordionKey("legs"); } catch(e) { console.warn("[BOOTDBG] openAccordionKey(legs) failed", e); }
 
   scheduleSyncTopStackHeights();
 
@@ -2216,6 +2219,7 @@ function updateFabVisibility() {
 
 /* ------------------------------ Rendering ---------------------------- */
 function renderAll() {
+  console.warn("[BOOTDBG] renderAll()");
   renderTabs();
   renderLegs();
   renderStays();
@@ -2268,7 +2272,9 @@ function legCard(leg) {
 }
 
 function renderLegs() {
+  console.warn("[BOOTDBG] renderLegs()");
   const box = $("legsList");
+  if (!box) { console.warn("[BOOTDBG] legsList not found (null). Skipping renderLegs to avoid blocking boot."); return; }
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
@@ -5121,7 +5127,10 @@ $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sec
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
-$("addLeg").addEventListener("click", ()=>{
+const __btnAddLeg = $("addLeg");
+if (!__btnAddLeg) {
+  console.warn("[BOOTDBG] #addLeg not found at bind time.");
+} else __btnAddLeg.addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:0, tzFrom:null, tzTo:null });
@@ -5360,7 +5369,27 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  console.warn('[BOOTDBG] DOMContentLoaded');
   loadState();
+  // HOTFIX V89E5G1: ensure timeline renders on boot even if view mode is inconsistent
+  try {
+    const sc = (typeof curScenario === 'function') ? curScenario() : null;
+    const tmpItems = [];
+    if (sc) {
+      (sc.legs||[]).forEach(l=> tmpItems.push(String(l.date||'').trim() || ''));
+      (sc.stays||[]).forEach(s=> tmpItems.push(String(s.date||'').trim() || ''));
+      (sc.activities||[]).forEach(a=> tmpItems.push(String(a.date||'').trim() || ''));
+      const notes = sc.dailyNotes || {};
+      Object.keys(notes).forEach(d=>{ if(String(notes[d]||'').trim()) tmpItems.push(String(d||'').trim()); });
+    }
+    const hasAnyDated = tmpItems.some(d=>/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d));
+    if (typeof timelineViewMode !== 'undefined' && timelineViewMode === 'day' && (!activeDayISO || !hasAnyDated)) {
+      console.warn('[BOOTDBG] Forcing timelineViewMode=global on boot (day mode had no active day)');
+      timelineViewMode = 'global';
+      activeDayISO = '';
+    }
+  } catch(e) { console.warn('[BOOTDBG] timeline boot fix failed', e); }
+
   setupAccordion();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
@@ -5382,7 +5411,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlPrev) _tlPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(-1); };
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
-  renderAll();
+  try { renderAll(); } catch(e) { console.warn("[BOOTDBG] renderAll crashed", e); try { renderTimeline(); } catch{} }
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
