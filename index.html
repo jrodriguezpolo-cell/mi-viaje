@@ -518,7 +518,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5G1 HOTFIX - 2026-02-25 16:30</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5G2 VIEWS FIX - 2026-02-25 17:05</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -869,10 +869,12 @@ function setView(viewName){
 
   activeView = viewName;
 
-  // HOTFIX V89E5G1: ensure Transporte accordion is open when entering the view (prevents blank + dead button)
-  try { if (viewName === "legs" && typeof openAccordionKey === "function") openAccordionKey("legs"); } catch(e) { console.warn("[BOOTDBG] openAccordionKey(legs) failed", e); }
-
-  scheduleSyncTopStackHeights();
+  // V89E5G2: ensure section body is open when entering a view (prevents blank sections + dead add buttons)
+  try {
+    const sectionKey = (viewName === "acts") ? "acts" : viewName; // keys used by section accordions
+    if (typeof ensureSectionOpen === "function") ensureSectionOpen(sectionKey);
+  } catch(e) { console.warn("[BOOTDBG] ensureSectionOpen failed", e); }
+scheduleSyncTopStackHeights();
 
   const ms = $("mainScroll");
   if (ms){
@@ -2167,6 +2169,7 @@ function setupAccordion() {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
+      if (!body) return;
       body.classList.toggle("hidden");
 
     const isNowHidden = body.classList.contains("hidden");
@@ -3087,6 +3090,21 @@ function renderActivities() {
 
 
 /* ---------------- Timeline: jump to item ---------------- */
+
+function ensureSectionOpen(key){
+  const k = String(key || "").trim();
+  if (!k) return;
+  const body = document.querySelector(`[data-acc-body="${k}"]`);
+  if (body) body.classList.remove("hidden");
+  const btn = document.querySelector(`[data-acc="${k}"]`);
+  if (btn){
+    const icon = btn.querySelector(".accIcon");
+    if (icon) icon.textContent = "▴";
+    // Keep FAB visibility consistent if the project uses it
+    try { if (typeof updateFabVisibility === "function") updateFabVisibility(); } catch {}
+  }
+}
+
 function openAccordionKey(key) {
   const body = document.querySelector(`[data-acc-body="${key}"]`);
   const btn = document.querySelector(`[data-acc="${key}"]`);
@@ -3128,8 +3146,8 @@ function jumpToItem(kind, id) {
 
   // 3) Ensure the section accordion is open (if accordion shell exists)
   try {
-    const accKey = (view === "acts") ? "acts" : view; // keys used by openAccordionKey
-    if (typeof openAccordionKey === "function") openAccordionKey(accKey);
+    const accKey = (view === "acts") ? "acts" : view;
+    if (typeof ensureSectionOpen === "function") ensureSectionOpen(accKey);
   } catch {}
 
   // 4) Expand target item (if applicable) + rerender that section
