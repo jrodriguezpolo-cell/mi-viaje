@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3D - 2026-02-24 23:54</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3E - 2026-02-25 00:03</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1393,6 +1393,23 @@ function __initEventSheetBindings(){
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+// Data-based delete (single source of truth)
+function deleteItemById(kind, id) {
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if (!sc) return false;
+  const k = String(kind || "").trim();
+  const targetId = String(id || "").trim();
+  const arr = (k === "leg") ? (sc.legs || [])
+            : (k === "stay") ? (sc.stays || [])
+            : (k === "act") ? (sc.activities || [])
+            : null;
+  if (!arr) return false;
+  const idx = arr.findIndex(x => String(x && x.id) === targetId);
+  if (idx < 0) return false;
+  arr.splice(idx, 1);
+  return true;
+}
+
 // Sheet delete (robust even with move-node approach)
 (() => {
   const sheetBody = document.getElementById("eventSheetBody");
@@ -1410,15 +1427,27 @@ function __initEventSheetBindings(){
     const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
     if (!ctx || !ctx.kind || !ctx.id) return;
 
+    // DIAGNÓSTICO temporal
+    try { console.log("sheet delete ctx", ctx.kind, ctx.id); } catch {}
+
     if (!confirm("¿Eliminar este evento?")) return;
 
-    const sc = (typeof curScenario === "function") ? curScenario() : null;
-    if (!sc) return;
+    const ok = deleteItemById(ctx.kind, ctx.id);
 
-    const id = String(ctx.id);
-    if (ctx.kind === "leg") sc.legs = (sc.legs || []).filter(x => String(x.id) !== id);
-    if (ctx.kind === "stay") sc.stays = (sc.stays || []).filter(x => String(x.id) !== id);
-    if (ctx.kind === "act") sc.activities = (sc.activities || []).filter(x => String(x.id) !== id);
+    if (!ok) {
+      try {
+        const sc = (typeof curScenario === "function") ? curScenario() : null;
+        const k = String(ctx.kind || "").trim();
+        const arr = (!sc) ? null : (k === "leg") ? (sc.legs || [])
+                  : (k === "stay") ? (sc.stays || [])
+                  : (k === "act") ? (sc.activities || [])
+                  : null;
+        const sample = (arr || []).slice(0,3).map(x => x && x.id);
+        console.warn("delete failed; kind/id not found", { kind: ctx.kind, id: ctx.id, len: arr ? arr.length : null, sample });
+      } catch {}
+      alert("No se pudo borrar (id no encontrado)");
+      return;
+    }
 
     try { if (typeof saveState === "function") saveState(); } catch {}
     try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
