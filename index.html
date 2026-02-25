@@ -537,6 +537,38 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   line-height: 0.95 !important;
   font-size: 16px !important; /* keep iOS no-zoom */
 }
+
+
+/* Sheet mini-modals (UI only) */
+#sheetMiniOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  z-index: 5000;
+}
+.sheetMiniModal{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: 18%;
+  background: #fff;
+  border-radius: 16px;
+  z-index: 5100;
+  box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  overflow: hidden;
+}
+.sheetMiniHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.sheetMiniTitle{ font-weight: 700; }
+.sheetMiniClose{
+  width:36px;height:36px;border-radius:12px;
+}
+.sheetMiniBody{ padding: 12px 14px; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -547,7 +579,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E5 - SHEET HEADER ICONS UI ONLY - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E6 - SHEET MINI MODALS UI ONLY - 2026-02-25</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -5575,5 +5607,79 @@ QA checklist (V89D1):
 - [ ] Global/Día/Actual/Próximo siguen funcionando sin errores en consola.
 -->
 
+
+
+<!-- Sheet mini overlay + modals (UI only) -->
+<div id="sheetMiniOverlay" class="hidden"></div>
+
+<div id="sheetAttachModal" class="hidden sheetMiniModal">
+  <div class="sheetMiniHeader">
+    <div class="sheetMiniTitle">Adjuntar archivo</div>
+    <button type="button" id="sheetAttachClose" class="sheetMiniClose">✕</button>
+  </div>
+  <div class="sheetMiniBody">
+    <p style="opacity:.8">Próxima fase: aquí irá selección de archivo (PDF, imagen, etc.).</p>
+  </div>
+</div>
+
+<div id="sheetNotesModal" class="hidden sheetMiniModal">
+  <div class="sheetMiniHeader">
+    <div class="sheetMiniTitle">Notas del evento</div>
+    <button type="button" id="sheetNotesClose" class="sheetMiniClose">✕</button>
+  </div>
+  <div class="sheetMiniBody">
+    <textarea id="sheetNotesDraft" placeholder="Escribe una nota… (no se guarda aún)" style="width:100%;min-height:120px;"></textarea>
+    <p style="opacity:.6;font-size:12px;margin-top:8px;">(Fase actual: UI solamente, sin persistencia)</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+
+  function openSheetMiniModal(which){
+    var overlay = $("sheetMiniOverlay");
+    var attach  = $("sheetAttachModal");
+    var notes   = $("sheetNotesModal");
+    if(!overlay || !attach || !notes) return;
+
+    overlay.classList.remove("hidden");
+    attach.classList.add("hidden");
+    notes.classList.add("hidden");
+
+    if(which === "attach") attach.classList.remove("hidden");
+    if(which === "notes") notes.classList.remove("hidden");
+  }
+
+  function closeSheetMiniModals(){
+    var overlay = $("sheetMiniOverlay");
+    var attach  = $("sheetAttachModal");
+    var notes   = $("sheetNotesModal");
+    if(overlay) overlay.classList.add("hidden");
+    if(attach) attach.classList.add("hidden");
+    if(notes)  notes.classList.add("hidden");
+  }
+
+  // Bindings with guards
+  document.addEventListener("DOMContentLoaded", function(){
+    var btnAttach = $("eventSheetAttach");
+    var btnNotes  = $("eventSheetNotes");
+    var ov        = $("sheetMiniOverlay");
+    var cAttach   = $("sheetAttachClose");
+    var cNotes    = $("sheetNotesClose");
+
+    if(btnAttach) btnAttach.addEventListener("click", function(){ openSheetMiniModal("attach"); });
+    if(btnNotes)  btnNotes.addEventListener("click", function(){ openSheetMiniModal("notes");  });
+
+    if(ov)      ov.addEventListener("click", closeSheetMiniModals);
+    if(cAttach) cAttach.addEventListener("click", closeSheetMiniModals);
+    if(cNotes)  cNotes.addEventListener("click", closeSheetMiniModals);
+  });
+
+  // Expose helpers (optional, non-invasive)
+  window.openSheetMiniModal = openSheetMiniModal;
+  window.closeSheetMiniModals = closeSheetMiniModals;
+})();
+</script>
 </body>
 </html>
