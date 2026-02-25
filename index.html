@@ -451,6 +451,11 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetBody .sheet-leg-editor [data-leg-del],
 #eventSheetBody .sheet-leg-editor [data-leg-done]{ display:none !important; }
 
+
+/* V89E5D header cleanup */
+#eventSheetHeader .esTypeLine{ display:none !important; }
+#eventSheetSummaryLine{ display:none !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -461,7 +466,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5C - 2026-02-25 11:49</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5D - 2026-02-25 12:28</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1417,6 +1422,19 @@ function updateSheetDynamicSummary(){
 
 
 
+
+function __updateTransportSheetTitle(mode, from, to){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const ico = (typeof legModeIcon==="function") ? legModeIcon(mode) : "✈️";
+    const a = String(from||"").trim();
+    const b = String(to||"").trim();
+    const route = (a||b) ? `${a||"—"} → ${b||"—"}` : "Nuevo transporte";
+    t.textContent = `${ico} ${route}`.trim();
+  } catch {}
+}
+
 function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   if (!body || !legObj) return false;
   body.innerHTML = "";
@@ -1439,9 +1457,10 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       ${modes.map(m => `
         <button type="button"
           data-leg-mode="${m.key}"
-          class="legModeChip tap px-4 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold flex items-center gap-2">
-          <span>${m.icon}</span>
-          <span>${m.label}</span>
+          aria-label="${m.label}"
+        class="legModeChip tap px-4 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold flex items-center gap-2">
+          <span class="text-2xl leading-none">${m.icon}</span>
+          <span class="sr-only">${m.label}</span>
         </button>
       `).join("")}
     </div>
@@ -1460,11 +1479,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
-        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
+        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
-          <div class="text-[11px] text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1475,11 +1494,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
-        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
+        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
-          <div class="text-[11px] text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1542,6 +1561,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       updateChipUI(currentMode);
       // persist mode + update placeholders (no global rerender)
       try { legObj.mode = currentMode; } catch {}
+      try { __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); } catch {}
       try {
         qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from");
         qs("placeIn").placeholder  = __legPlacePlaceholder(currentMode, "to");
@@ -1600,6 +1620,13 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
   if (!overlay || !sheet || !titleEl || !body) return;
+  // V89E5D: bind sheet trash context
+  try {
+    const sheetTrash = document.getElementById("eventSheetTrash");
+    if (sheetTrash) { sheetTrash.dataset.kind = k; sheetTrash.dataset.id = itemId; }
+  } catch {}
+
+
 
   // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
