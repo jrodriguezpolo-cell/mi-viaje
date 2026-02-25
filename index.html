@@ -460,6 +460,24 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetBody .sheet-leg-editor .grid{ gap: 10px !important; }
 #eventSheetBody .sheet-leg-editor label{ font-size: 11px !important; }
 
+
+/* V89E7: stable 2-col transport sheet + no overlap */
+#eventSheetBody .sheet-leg-editor .grid{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:12px !important;
+}
+#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-6{
+  flex:1 1 0% !important;
+  min-width:0 !important;
+}
+#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-8,
+#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-4,
+#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-12{
+  flex: 1 0 100% !important;
+}
+#eventSheetBody .sheet-leg-editor input{ width:100% !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -470,7 +488,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E6 - 2026-02-25 08:17</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7 - 2026-02-25 08:30</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1541,32 +1559,39 @@ function renderLegModeChips(container, leg, onSelect){
   const node = document.querySelector(sel);
   if (!node) { alert("No se encontró el evento"); return; }
 
-  // Build a nice title
+  // Build a nice title (premium header)
   try {
     const it = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(k, itemId) : null;
-    let label = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
-    let detail = "";
-    let ico = "";
-    if (it && k === "leg") ico = legModeIcon(it.mode);
-    if (it && k === "stay") ico = "🏨";
-    if (it && k === "act") ico = "🎯";
-    if (it && k === "leg") detail = `${it.from||""} → ${it.to||""}`.trim();
-    if (it && k === "stay") detail = `${it.name||it.place||""}`.trim();
-    if (it && k === "act") detail = `${it.title||it.name||""}`.trim();
-    titleEl.textContent = (isNew ? ("Nuevo " + label) : label);
-    if (ico) titleEl.textContent = `${ico} ${titleEl.textContent}`;
-    if (detail) titleEl.textContent = `${titleEl.textContent} · ${detail}`;
+
+    if (k === "leg") {
+      const from = (it && it.from) ? String(it.from).trim() : "";
+      const to = (it && it.to) ? String(it.to).trim() : "";
+      const detail = (from && to) ? `${from} → ${to}` : "";
+      const icon = (typeof legModeIcon === "function") ? legModeIcon(it && it.mode) : "✈️";
+
+      const typeIconEl = document.getElementById("eventSheetTypeIcon");
+      const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+      if (typeLabelEl) typeLabelEl.textContent = "Transporte";
+      if (typeIconEl) typeIconEl.textContent = icon;
+
+      titleEl.textContent = detail ? detail : "Nuevo transporte";
+    } else {
+      // stays / acts keep simple
+      let label = (k === "stay") ? "Alojamiento" : "Actividad";
+      let detail = "";
+      let ico = (k === "stay") ? "🏨" : "🎯";
+      if (it && k === "stay") detail = `${it.city || "—"} • ${it.name || it.place || "Hotel"}`.trim();
+      if (it && k === "act") detail = `${it.city || "—"} • ${it.title || it.name || "Actividad"}`.trim();
+
+      const typeIconEl = document.getElementById("eventSheetTypeIcon");
+      const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+      if (typeLabelEl) typeLabelEl.textContent = label;
+      if (typeIconEl) typeIconEl.textContent = ico;
+
+      titleEl.textContent = detail || label;
+    }
   } catch { titleEl.textContent = "Evento"; }
-  // Header type + icon
-  try {
-    const typeIconEl = document.getElementById("eventSheetTypeIcon");
-    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
-    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
-    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
-  } catch {}
-
-
-  // If leg: inject mode chips just under title
+// If leg: inject mode chips just under title
   try {
     if (k === "leg") {
       const legObj = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", itemId) : null;
@@ -1576,6 +1601,7 @@ function renderLegModeChips(container, leg, onSelect){
       renderLegModeChips(chipsHost, legObj, (newMode)=>{
         try { if (typeof updateSheetDynamicSummary === "function") updateSheetDynamicSummary(); } catch {}
         try { __applyLegPlaceholdersInSheet(itemId, newMode); } catch {}
+        try { const ti=document.getElementById("eventSheetTypeIcon"); if (ti) ti.textContent = (typeof legModeIcon==="function") ? legModeIcon(newMode) : "✈️"; } catch {}
         // Update sheet title to reflect icon change (optional)
         try {
           const label = "Transporte";
@@ -5212,10 +5238,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <span id="eventSheetTypeLabel">Evento</span>
           </div>
           <div class="esSubtitle" id="eventSheetTitle">Detalle</div>
-          <div class="text-xs text-slate-600 mt-1" id="eventSheetSummaryLine">
-            <span id="sheetSummaryRoute">—</span> · <span id="sheetSummaryTime">—</span> · <span id="sheetSummaryCost">—</span>
-          </div>
-        </div>
+</div>
         <div class="esHeadRight">
           <button id="eventSheetAttach" class="tap esIconBtn" aria-label="Archivo" title="Archivo" disabled>📎</button>
           <button id="eventSheetNote" class="tap esIconBtn" aria-label="Nota" title="Nota" disabled>📝</button>
