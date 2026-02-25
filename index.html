@@ -547,7 +547,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E4D - SHEET DATE/TIME COMPACT XS OVERRIDE TINY - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E4E - COST BLANK ON NEW ONLY - 2026-02-25</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1550,7 +1550,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 
   // 2-column form
   const wrap = document.createElement("div");
-  const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
+    const costVal = (legObj.cost === null || legObj.cost === undefined || legObj.cost === "") ? "" : String(legObj.cost);
   wrap.className = "sheet-leg-editor";
   wrap.innerHTML = `
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
@@ -1610,7 +1610,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("timeOut").value = v(legObj.time || "");
   qs("dateIn").value = v(legObj.arriveDate || "");
   qs("timeIn").value = v(legObj.arriveTime || "");
-  qs("cost").value = (legObj.cost == null ? "" : String(legObj.cost));
+    qs("cost").value = (legObj.cost === null || legObj.cost === undefined || legObj.cost === "") ? "" : String(legObj.cost);
 
   // Placeholders based on mode
   try {
@@ -1672,7 +1672,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   bind("timeOut", (val)=>{ legObj.time = val; });
   bind("dateIn", (val)=>{ legObj.arriveDate = val; });
   bind("timeIn", (val)=>{ legObj.arriveTime = val; });
-  bind("cost", (val)=>{ legObj.cost = parseMoney(val); });
+    bind("cost", (val)=>{
+    const s = String(val ?? "").trim();
+    if (s === "") { legObj.cost = null; return; }
+    legObj.cost = parseMoney(s);
+  });
   return true;
 }
 
@@ -5184,7 +5188,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:0, tzFrom:null, tzTo:null });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
