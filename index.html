@@ -390,6 +390,12 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetMoreDetails summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 #eventSheetMoreDetails summary::-webkit-details-marker{ display:none; }
 
+
+/* V89E1A fixes: ensure sheet footer visible */
+#eventSheetFooter{ display:flex !important; background:#fff; }
+#eventSheetSave{ display:block !important; }
+#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 88px) !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -400,7 +406,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E1 - 2026-02-25 01:03</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E1A - 2026-02-25 01:22</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1774,6 +1780,7 @@ function legCard(leg) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const isOpen = __sectionExpanded.legs.has(leg.id);
+  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
@@ -1783,7 +1790,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">✈️ Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
@@ -3224,10 +3231,6 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
 
     const key = row.getAttribute("data-tl-key") || "";
     if (!key) return;
-
-    const __k = row.getAttribute("data-tl-jump-type");
-    const __id = row.getAttribute("data-tl-jump-id");
-    if (__k && __id) { try { openEventSheet({ kind: __k, id: __id, mode: "edit" }); } catch {} return; }
 
     if (__tlExpanded.has(key)) __tlExpanded.delete(key);
     else __tlExpanded.add(key);
