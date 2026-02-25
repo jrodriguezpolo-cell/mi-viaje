@@ -413,78 +413,8 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 }
 
 
-/* V89E3: harden sheet footer visibility */
-#eventSheetFooter{ display:flex !important; position: sticky !important; bottom:0 !important; z-index: 9200 !important; background:#fff !important; }
-#eventSheetSave{ display:block !important; }
-#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 110px) !important; }
-
-
-/* V89E3: leg sheet 2-column layout using existing fields */
-#eventSheetBody .sheet-leg-editor .grid{
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 10px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid > div{ width: auto !important; }
-#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-3,
-#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-2{
-  grid-column: auto !important;
-}
-#eventSheetBody .sheet-leg-editor .grid [data-leg-date],
-#eventSheetBody .sheet-leg-editor .grid [data-leg-time],
-#eventSheetBody .sheet-leg-editor .grid [data-leg-cost]{
-  grid-column: span 2 !important; /* date/time/cost full width to avoid missing arrival fields */
-}
-#eventSheetBody .sheet-leg-editor [data-leg-del]{ display:none !important; } /* use sheet trash */
-
-
-/* V89E4: Transport sheet form-first layout */
-#eventSheetBody .sheet-leg-editor .grid{
-  display:grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 10px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid > div{ width:auto !important; }
-#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-3,
-#eventSheetBody .sheet-leg-editor .grid .sm\:col-span-2{ grid-column:auto !important; }
-#eventSheetBody .sheet-leg-editor .grid [data-leg-cost]{ grid-column: 1 / -1 !important; }
-#eventSheetBody .sheet-leg-editor [data-leg-del],
-#eventSheetBody .sheet-leg-editor [data-leg-done]{ display:none !important; }
-
-
-/* V89E6: transport sheet mobile compact, no overlap */
-#eventSheetBody .sheet-leg-editor input{
-  padding-top: 9px !important;
-  padding-bottom: 9px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid{ gap: 10px !important; }
-#eventSheetBody .sheet-leg-editor label{ font-size: 11px !important; }
-
-
-/* V89E7: stable 2-col transport sheet + no overlap */
-#eventSheetBody .sheet-leg-editor .grid{
-  display:flex !important;
-  flex-wrap:wrap !important;
-  gap:12px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-6{
-  flex:1 1 0% !important;
-  min-width:0 !important;
-}
-#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-8,
-#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-4,
-#eventSheetBody .sheet-leg-editor .grid > div.sm\:col-span-12{
-  flex: 1 0 100% !important;
-}
-#eventSheetBody .sheet-leg-editor input{ width:100% !important; }
-
-
-/* V89E7B: sheet isolation + stable transport layout */
-#sheetBody{ width:100%; }
-#eventSheetBody{ overflow:auto; }
-#eventSheetBody .sheet-leg-editor .grid{ align-items: stretch !important; }
+/* V89E7C: ensure cost visible in transport sheet */
 #eventSheetBody .sheet-leg-editor [data-leg-cost]{ display:block !important; }
-
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -495,7 +425,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7B - 2026-02-25 08:50</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7C - 2026-02-25 09:04</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1059,32 +989,13 @@ window.addEventListener("resize", scheduleSyncTopStackHeights);
 function getScrollContainer(){
   return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
 
-  // LIVE SUMMARY delegated (V89E3B)
+  // SHEET header live update (V89E7C)
   const esBody = document.getElementById("eventSheetBody");
-  if (esBody && !esBody.__liveBound) {
-    esBody.__liveBound = true;
-    const tick = () => {
-      try {
-        if (document.body.classList.contains("sheet-open") && typeof updateSheetDynamicSummary === "function") {
-          updateSheetDynamicSummary();
-          try { if (typeof updateSheetHeader==="function") updateSheetHeader(); } catch {}
-        }
-      } catch {}
-    };
+  if (esBody && !esBody.__hdrBound) {
+    esBody.__hdrBound = true;
+    const tick = () => { try { if (document.body.classList.contains("sheet-open")) updateSheetHeader(); } catch {} };
     esBody.addEventListener("input", tick);
     esBody.addEventListener("change", tick);
-  }
-
-  // Sheet header attach/note (placeholder)
-  const esAttach = document.getElementById("eventSheetAttach");
-  if (esAttach && !esAttach.__bound) {
-    esAttach.__bound = true;
-    esAttach.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); alert("Próximamente: Archivos"); });
-  }
-  const esNote = document.getElementById("eventSheetNote");
-  if (esNote && !esNote.__bound) {
-    esNote.__bound = true;
-    esNote.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); alert("Próximamente: Notas"); });
   }
 }
 function getScrollTop(){
@@ -1411,7 +1322,6 @@ function __buildSheetBlocks(sheetBody){
 function updateSheetDynamicSummary(){
   const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
   if (!ctx || !ctx.kind || !ctx.id) return;
-
   const body = document.getElementById("eventSheetBody");
   const sheetBody = document.getElementById("sheetBody");
   if (!body) return;
@@ -1421,41 +1331,28 @@ function updateSheetDynamicSummary(){
   const costEl  = document.getElementById("sheetSummaryCost");
   if (!routeEl || !timeEl || !costEl) return;
 
-  const id = String(ctx.id);
+  // Try to find relevant inputs inside the moved editor node
+  const q = (sel) => body.querySelector(sel);
+
   const kind = String(ctx.kind);
+  const getVal = (el) => el ? String(el.value || "").trim() : "";
 
-  const qs = (sel) => body.querySelector(sel);
-  const val = (el) => el ? String(el.value || "").trim() : "";
-
-  let date = "", time = "", cost = "";
+  // Common ids in this app (fallbacks included)
+  let from="", to="", place="", date="", time="", cost="";
 
   if (kind === "leg"){
-    const fromEl = qs(`[data-leg-from="${CSS.escape(id)}"]`);
-    const toEl   = qs(`[data-leg-to="${CSS.escape(id)}"]`);
-    const dateEl = qs(`[data-leg-date="${CSS.escape(id)}"]`);
-    const timeElI = qs(`[data-leg-time="${CSS.escape(id)}"]`);
-    const costElI = qs(`[data-leg-cost="${CSS.escape(id)}"]`);
-
-    const from = val(fromEl);
-    const to = val(toEl);
-    date = val(dateEl);
-    time = val(timeElI);
-    cost = val(costElI);
-
-    routeEl.textContent = (from && to) ? `${from} → ${to}` : (from || to || "—");
+    from = getVal(q('input[id^="legFrom-"], input[name="from"], input[data-field="from"]')) || getVal(q('input[placeholder*="Origen"]'));
+    to   = getVal(q('input[id^="legTo-"], input[name="to"], input[data-field="to"]')) || getVal(q('input[placeholder*="Destino"]'));
+    date = getVal(q('input[id^="legDate-"], input[type="date"]'));
+    time = getVal(q('input[id^="legTime-"], input[type="time"]'));
+    cost = getVal(q('input[id^="legCost-"], input[name="cost"], input[data-field="cost"]'));
+    const r = (from && to) ? `${from} → ${to}` : "—";
+    routeEl.textContent = r;
   } else {
-    // stays/acts: try common inputs inside moved editor
-    const placeEl = qs(`input[data-stay-city="${CSS.escape(id)}"], input[data-act-city="${CSS.escape(id)}"], input[name="city"], input[data-field="city"]`)
-                || qs(`input[placeholder*="Ciudad"], input[placeholder*="Lugar"]`);
-    const dateEl  = qs(`input[type="date"]`);
-    const timeElI = qs(`input[type="time"]`);
-    const costElI = qs(`input[name="cost"], input[data-field="cost"], input[type="number"]`);
-
-    const place = val(placeEl);
-    date = val(dateEl);
-    time = val(timeElI);
-    cost = val(costElI);
-
+    place = getVal(q('input[id^="stayCity-"], input[id^="actCity-"], input[name="city"], input[data-field="city"]')) || getVal(q('input[placeholder*="Ciudad"], input[placeholder*="Lugar"]'));
+    date = getVal(q('input[type="date"]'));
+    time = getVal(q('input[type="time"]'));
+    cost = getVal(q('input[name="cost"], input[data-field="cost"], input[id*="Cost-"], input[id*="cost-"]'));
     routeEl.textContent = place || "—";
   }
 
@@ -1463,53 +1360,30 @@ function updateSheetDynamicSummary(){
   costEl.textContent = cost ? `${cost}` : "—";
 }
 
-
-function __legPlacePlaceholder(mode, which){
-  const m = (typeof legModeDefault === "function") ? legModeDefault(mode) : String(mode||"plane");
-  const w = (which === "to") ? "llegada" : "salida";
-  if (m === "plane") return `Aeropuerto ${w}`;
-  if (m === "train") return `Estación ${w}`;
-  if (m === "bus") return `Estación bus ${w}`;
-  if (m === "boat") return `Puerto ${w}`;
-  return `Punto ${w}`; // car default
-}
-function __applyLegPlaceholdersInSheet(id, mode){
-  const body = document.getElementById("eventSheetBody");
-  if (!body) return;
-  const out = body.querySelector(`[data-leg-placeout="${CSS.escape(String(id))}"]`);
-  const inn = body.querySelector(`[data-leg-placein="${CSS.escape(String(id))}"]`);
-  if (out) out.placeholder = __legPlacePlaceholder(mode, "from");
-  if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
-}
-
 function updateSheetHeader(){
   const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
-  if (!ctx || !ctx.kind || !ctx.id) return;
-  const k = String(ctx.kind);
-  if (k !== "leg") return;
+  if (!ctx || ctx.kind !== "leg") return;
+  const id = String(ctx.id||"");
+  const sheetBody = document.getElementById("sheetBody");
+  if (!sheetBody) return;
 
-  const id = String(ctx.id);
-  const sheet = document.getElementById("eventSheet");
-  const host = document.getElementById("sheetBody");
-  const titleEl = document.getElementById("eventSheetTitle");
-  const iconEl = document.getElementById("eventSheetTypeIcon");
-  if (!sheet || !host || !titleEl || !iconEl) return;
-
-  const fromEl = host.querySelector(`[data-leg-from="${CSS.escape(id)}"]`);
-  const toEl   = host.querySelector(`[data-leg-to="${CSS.escape(id)}"]`);
-
+  const fromEl = sheetBody.querySelector(`[data-leg-from="${CSS.escape(id)}"]`);
+  const toEl   = sheetBody.querySelector(`[data-leg-to="${CSS.escape(id)}"]`);
   const from = fromEl ? String(fromEl.value||"").trim() : "";
   const to = toEl ? String(toEl.value||"").trim() : "";
-  const route = (from && to) ? `${from} → ${to}` : (from || to);
+  const route = (from || to) ? `${from||"—"} → ${to||"—"}` : "Nuevo transporte";
 
-  // Mode icon from state object if available
-  try {
+  const titleEl = document.getElementById("eventSheetTitle");
+  const typeIconEl = document.getElementById("eventSheetTypeIcon");
+  const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+  if (typeLabelEl) typeLabelEl.textContent = ""; // avoid duplicate label for leg
+  if (titleEl) titleEl.textContent = route;
+
+  try{
     const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", id) : null;
     const ico = (typeof legModeIcon==="function") ? legModeIcon(it && it.mode) : "✈️";
-    iconEl.textContent = ico;
+    if (typeIconEl) typeIconEl.textContent = ico;
   } catch {}
-
-  titleEl.textContent = route ? route : "Nuevo transporte";
 }
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
@@ -1597,39 +1471,32 @@ function renderLegModeChips(container, leg, onSelect){
   const node = document.querySelector(sel);
   if (!node) { alert("No se encontró el evento"); return; }
 
-  // Build a nice title (premium header)
+  // Build a nice title
   try {
     const it = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(k, itemId) : null;
-
-    if (k === "leg") {
-      const from = (it && it.from) ? String(it.from).trim() : "";
-      const to = (it && it.to) ? String(it.to).trim() : "";
-      const detail = (from && to) ? `${from} → ${to}` : "";
-      const icon = (typeof legModeIcon === "function") ? legModeIcon(it && it.mode) : "✈️";
-
-      const typeIconEl = document.getElementById("eventSheetTypeIcon");
-      const typeLabelEl = document.getElementById("eventSheetTypeLabel");
-      if (typeLabelEl) typeLabelEl.textContent = "Transporte";
-      if (typeIconEl) typeIconEl.textContent = icon;
-
-      titleEl.textContent = detail ? detail : "Nuevo transporte";
-    } else {
-      // stays / acts keep simple
-      let label = (k === "stay") ? "Alojamiento" : "Actividad";
-      let detail = "";
-      let ico = (k === "stay") ? "🏨" : "🎯";
-      if (it && k === "stay") detail = `${it.city || "—"} • ${it.name || it.place || "Hotel"}`.trim();
-      if (it && k === "act") detail = `${it.city || "—"} • ${it.title || it.name || "Actividad"}`.trim();
-
-      const typeIconEl = document.getElementById("eventSheetTypeIcon");
-      const typeLabelEl = document.getElementById("eventSheetTypeLabel");
-      if (typeLabelEl) typeLabelEl.textContent = label;
-      if (typeIconEl) typeIconEl.textContent = ico;
-
-      titleEl.textContent = detail || label;
-    }
+    let label = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    let detail = "";
+    let ico = "";
+    if (it && k === "leg") ico = legModeIcon(it.mode);
+    if (it && k === "stay") ico = "🏨";
+    if (it && k === "act") ico = "🎯";
+    if (it && k === "leg") detail = `${it.from||""} → ${it.to||""}`.trim();
+    if (it && k === "stay") detail = `${it.name||it.place||""}`.trim();
+    if (it && k === "act") detail = `${it.title||it.name||""}`.trim();
+    titleEl.textContent = (isNew ? ("Nuevo " + label) : label);
+    if (ico) titleEl.textContent = `${ico} ${titleEl.textContent}`;
+    if (detail) titleEl.textContent = `${titleEl.textContent} · ${detail}`;
   } catch { titleEl.textContent = "Evento"; }
-// If leg: inject mode chips just under title
+  // Header type + icon
+  try {
+    const typeIconEl = document.getElementById("eventSheetTypeIcon");
+    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
+  } catch {}
+
+
+  // If leg: inject mode chips just under title
   try {
     if (k === "leg") {
       const legObj = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", itemId) : null;
@@ -1637,9 +1504,6 @@ function renderLegModeChips(container, leg, onSelect){
       chipsHost.id = "legModeChipsHost";
       chipsHost.className = "mb-3";
       renderLegModeChips(chipsHost, legObj, (newMode)=>{
-        try { if (typeof updateSheetDynamicSummary === "function") updateSheetDynamicSummary(); } catch {}
-        try { __applyLegPlaceholdersInSheet(itemId, newMode); } catch {}
-        try { const ti=document.getElementById("eventSheetTypeIcon"); if (ti) ti.textContent = (typeof legModeIcon==="function") ? legModeIcon(newMode) : "✈️"; } catch {}
         // Update sheet title to reflect icon change (optional)
         try {
           const label = "Transporte";
@@ -1664,34 +1528,23 @@ function renderLegModeChips(container, leg, onSelect){
     if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
   } catch {}
 
-  const blocks = (k === "leg") ? null : __buildSheetBlocks(body);
-  // Transport form-first layout: no summary blocks
-  if (k === "leg") {
-    sheetBody.innerHTML = `<div id="legSheetFormHost"></div>`;
-  }
+  const blocks = __buildSheetBlocks(sheetBody);
 
-
-  try {
-    if (body.__chipsHost) {
+  try { if (body.__chipsHost) {
       if (k === "leg") {
         const host = document.getElementById("legSheetFormHost");
         if (host) host.appendChild(body.__chipsHost);
       } else if (blocks && blocks.A) {
         blocks.A.appendChild(body.__chipsHost);
       }
-    }
-  } catch {}
+    } } catch {}
   try { node.classList.remove("hidden"); } catch {}
-  try { if (k === "leg") node.classList.add("sheet-leg-editor"); else node.classList.remove("sheet-leg-editor"); } catch {}
-  try { if (k === "leg") { const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", itemId) : null; __applyLegPlaceholdersInSheet(itemId, it ? it.mode : "plane"); } } catch {}
-  try {
-    if (k === "leg") {
+  try { if (k === "leg") {
       const host = document.getElementById("legSheetFormHost");
       if (host) host.appendChild(node); else sheetBody.appendChild(node);
     } else {
       if (blocks && blocks.E) blocks.E.appendChild(node); else sheetBody.appendChild(node);
-    }
-  } catch { sheetBody.appendChild(node); }
+    } } catch { sheetBody.appendChild(node); }
   try {
     if (blocks && blocks.E && !blocks.E.__phDone) {
       blocks.E.__phDone = true;
@@ -1706,10 +1559,6 @@ function renderLegModeChips(container, leg, onSelect){
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
-  try { if (typeof updateSheetHeader==="function") updateSheetHeader(); } catch {}
-  try { console.log("SHEET open", k, itemId, "target=", sheetBody); } catch {}
-  // sheetSummaryLine hidden for leg
-  try { const sl = document.getElementById("eventSheetSummaryLine"); if (sl) sl.style.display = (k === "leg") ? "none" : ""; } catch {}
 
   // Dynamic summary wiring
   try {
@@ -1762,8 +1611,6 @@ function closeEventSheet({ silent } = {}) {
 
   if (body) body.innerHTML = "";
   const ctx = __eventSheetCtx;
-
-  try { if (ctx && ctx.node) ctx.node.classList.remove("sheet-leg-editor"); } catch {}
   __eventSheetCtx = null;
 
   // Re-render to reflect any edits
@@ -2061,9 +1908,7 @@ function legCard(leg) {
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
-        <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
-        ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -2072,28 +1917,43 @@ function legCard(leg) {
 
     <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-        <!-- SALIDA -->
-        <div class="sm:col-span-6">
+        <div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Salida</label>
-          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad salida">
-          <input data-leg-placeout="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeOut || "")}" placeholder="Lugar salida">
-          <div class="mt-2">
-            <label class="text-xs text-slate-600">Fecha salida</label>
-            <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
-          </div>
-          <div class="mt-2">
-            <label class="text-xs text-slate-600">Hora salida</label>
-            <div class="mt-1 flex items-center gap-2">
-              <input data-leg-time="${leg.id}" type="time" class="w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
-              <div class="text-[11px] text-slate-500 whitespace-nowrap">${tzFrom}</div>
-            </div>
-          </div>
+          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
+          <div class="mt-1">${tzFrom}</div>
+        </div>
+        <div class="sm:col-span-3">
+          <label class="text-xs text-slate-600">Llegada</label>
+          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
+          <div class="mt-1">${tzTo}</div>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Fecha</label>
+          <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Hora (opcional)</label>
+          <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
+        </div>
+        <div class="sm:col-span-2 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
+      </div>
+    </div>
   </div>`;
 }
 
 function renderLegs() {
-  if (document.body.classList.contains("sheet-open")) return;
   const box = $("legsList");
+  try { console.log("RENDER section","legs","target=", box && box.id); } catch {}
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
@@ -2122,14 +1982,6 @@ function renderLegs() {
     renderTimeline();
     calcSummary();
     renderLegs();
-  }));
-
-  box.querySelectorAll("[data-leg-edit]").forEach(b => b.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const id = b.getAttribute("data-leg-edit");
-    if (!id) return;
-    try { openEventSheet({ kind: "leg", id, mode: "edit" }); } catch {}
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
@@ -2167,34 +2019,6 @@ function renderLegs() {
     const leg = sc.legs.find(x => x.id === id);
     leg.cost = parseMoney(inp.value);
     saveState(); calcSummary(); renderTimeline();
-  }));
-  box.querySelectorAll("[data-leg-placeout]").forEach(inp => inp.addEventListener("input", (e)=>{
-    const id = inp.getAttribute("data-leg-placeout");
-    const leg = sc.legs.find(l => String(l.id) === String(id));
-    if (!leg) return;
-    leg.placeOut = e.target.value;
-    saveState(); renderTimeline(); calcSummary();
-  }));
-  box.querySelectorAll("[data-leg-placein]").forEach(inp => inp.addEventListener("input", (e)=>{
-    const id = inp.getAttribute("data-leg-placein");
-    const leg = sc.legs.find(l => String(l.id) === String(id));
-    if (!leg) return;
-    leg.placeIn = e.target.value;
-    saveState(); renderTimeline(); calcSummary();
-  }));
-  box.querySelectorAll("[data-leg-arrive-date]").forEach(inp => inp.addEventListener("change", (e)=>{
-    const id = inp.getAttribute("data-leg-arrive-date");
-    const leg = sc.legs.find(l => String(l.id) === String(id));
-    if (!leg) return;
-    leg.arriveDate = e.target.value;
-    saveState(); renderTimeline(); calcSummary();
-  }));
-  box.querySelectorAll("[data-leg-arrive-time]").forEach(inp => inp.addEventListener("change", (e)=>{
-    const id = inp.getAttribute("data-leg-arrive-time");
-    const leg = sc.legs.find(l => String(l.id) === String(id));
-    if (!leg) return;
-    leg.arriveTime = e.target.value;
-    saveState(); renderTimeline(); calcSummary();
   }));
 
   box.querySelectorAll("[data-leg-done]").forEach(cb => cb.addEventListener("change", () => {
@@ -4942,7 +4766,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:0, tzFrom:null, tzTo:null });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
