@@ -456,6 +456,27 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetHeader .esTypeLine{ display:none !important; }
 #eventSheetSummaryLine{ display:none !important; }
 
+
+/* V89E5E: prevent date/time overlap in leg sheet (iOS Safari) */
+#eventSheetBody .sheet-leg-editor .grid > div{ min-width:0 !important; }
+#eventSheetBody .sheet-leg-editor input[type="date"],
+#eventSheetBody .sheet-leg-editor input[type="time"]{
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  height: 44px !important;
+  font-size: 16px !important; /* avoid iOS zoom */
+}
+#eventSheetBody .sheet-leg-editor .grid{
+  column-gap: 12px !important;
+  row-gap: 10px !important;
+}
+#eventSheetBody .sheet-leg-editor .utcLabel{
+  white-space: nowrap;
+  font-size: 12px;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -466,7 +487,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5D - 2026-02-25 12:28</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E - 2026-02-25 12:59</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1469,6 +1490,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 
   // 2-column form
   const wrap = document.createElement("div");
+  const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
   wrap.className = "sheet-leg-editor";
   wrap.innerHTML = `
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
@@ -1555,12 +1577,16 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   let currentMode = legModeDefault(legObj.mode);
   updateChipUI(currentMode);
 
+  try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
+
+
   chips.forEach(c=>{
     c.addEventListener("click", ()=>{
       currentMode = c.dataset.legMode;
       updateChipUI(currentMode);
       // persist mode + update placeholders (no global rerender)
       try { legObj.mode = currentMode; } catch {}
+      try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
       try { __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); } catch {}
       try {
         qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from");
@@ -1578,8 +1604,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     el.addEventListener("change", () => { try { fn(el.value); } catch {} });
   };
 
-  bind("from", (val)=>{ legObj.from = val; });
-  bind("to", (val)=>{ legObj.to = val; });
+  bind("from", (val)=>{ legObj.from = val; try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} });
+  bind("to", (val)=>{ legObj.to = val;   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} });
   bind("placeOut", (val)=>{ legObj.placeOut = val; });
   bind("placeIn", (val)=>{ legObj.placeIn = val; });
   bind("dateOut", (val)=>{ legObj.date = val; });
@@ -2176,7 +2202,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
         ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
