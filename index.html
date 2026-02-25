@@ -493,6 +493,11 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 /* Cost always visible */
 #eventSheetBody .sheet-leg-editor [data-leg-cost]{ display:block !important; }
 
+
+/* V89E6C defense: never show section summary/edit buttons inside sheet */
+#eventSheetBody [data-leg-edit],
+#eventSheetBody button[data-leg-edit]{ display:none !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -503,7 +508,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E6B - 2026-02-25 10:53</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E6C - 2026-02-25 11:05</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -2037,7 +2042,7 @@ function legCard(leg) {
       </div>
     </div>
 
-    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
+    <div class="mt-3 ${isOpen ? "" : "hidden"} sheet-leg-editor" data-sec-body="legs" data-sec-id="${leg.id}" data-sheet-editor="leg" data-sheet-id="${leg.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
         <!-- SALIDA -->
         <div class="sm:col-span-6">
