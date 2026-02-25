@@ -461,7 +461,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E4 - 2026-02-25 07:27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5 - 2026-02-25 07:48</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1428,10 +1428,10 @@ function __legPlacePlaceholder(mode, which){
 function __applyLegPlaceholdersInSheet(id, mode){
   const body = document.getElementById("eventSheetBody");
   if (!body) return;
-  const from = body.querySelector(`[data-leg-from="${CSS.escape(String(id))}"]`);
-  const to   = body.querySelector(`[data-leg-to="${CSS.escape(String(id))}"]`);
-  if (from) from.placeholder = __legPlacePlaceholder(mode, "from");
-  if (to)   to.placeholder   = __legPlacePlaceholder(mode, "to");
+  const out = body.querySelector(`[data-leg-placeout="${CSS.escape(String(id))}"]`);
+  const inn = body.querySelector(`[data-leg-placein="${CSS.escape(String(id))}"]`);
+  if (out) out.placeholder = __legPlacePlaceholder(mode, "from");
+  if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
 }
 
 function openEventSheet({ kind, id, mode, isNew } = {}) {
@@ -1976,6 +1976,7 @@ function legCard(leg) {
         <div class="text-sm font-semibold truncate">${modeIcon} Transporte · <span class="done-text">${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -1984,29 +1985,55 @@ function legCard(leg) {
 
     <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-        <div class="sm:col-span-3">
+        <!-- SALIDA -->
+        <div class="sm:col-span-6">
           <label class="text-xs text-slate-600">Salida</label>
-          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad origen">
-          <div class="mt-1">${tzFrom}</div>
+          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad salida">
+          <input data-leg-placeout="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeOut || "")}" placeholder="Lugar salida">
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha salida</label>
+              <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora salida</label>
+              <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
+            </div>
+          </div>
+          <div class="mt-2">${tzFrom}</div>
         </div>
-        <div class="sm:col-span-3">
+
+        <!-- LLEGADA -->
+        <div class="sm:col-span-6">
           <label class="text-xs text-slate-600">Llegada</label>
-          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad destino">
-          <div class="mt-1">${tzTo}</div>
+          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad llegada">
+          <input data-leg-placein="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeIn || "")}" placeholder="Lugar llegada">
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha llegada</label>
+              <input data-leg-arrive-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveDate || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora llegada</label>
+              <input data-leg-arrive-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveTime || "")}">
+            </div>
+          </div>
+          <div class="mt-2">${tzTo}</div>
         </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Fecha</label>
-          <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
-        </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Hora (opcional)</label>
-          <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
-        </div>
-        <div class="sm:col-span-2">
+
+        <!-- COSTE -->
+        <div class="sm:col-span-8">
           <label class="text-xs text-slate-600">Coste</label>
           <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
         </div>
-        <div class="sm:col-span-2 flex items-center justify-between gap-2">
+
+        <!-- ACCIONES -->
+        <div class="sm:col-span-4 flex items-center justify-end gap-2">
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📎 Archivo</button>
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📝 Nota</button>
+        </div>
+
+        <div class="sm:col-span-12 flex items-center justify-between gap-2">
           <label class="flex items-center gap-2 text-xs text-slate-600">
             <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
             Hecho
@@ -2093,6 +2120,34 @@ function renderLegs() {
     const leg = sc.legs.find(x => x.id === id);
     leg.cost = parseMoney(inp.value);
     saveState(); calcSummary(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-leg-placeout]").forEach(inp => inp.addEventListener("input", (e)=>{
+    const id = inp.getAttribute("data-leg-placeout");
+    const leg = sc.legs.find(l => String(l.id) === String(id));
+    if (!leg) return;
+    leg.placeOut = e.target.value;
+    saveState(); renderTimeline(); calcSummary();
+  }));
+  box.querySelectorAll("[data-leg-placein]").forEach(inp => inp.addEventListener("input", (e)=>{
+    const id = inp.getAttribute("data-leg-placein");
+    const leg = sc.legs.find(l => String(l.id) === String(id));
+    if (!leg) return;
+    leg.placeIn = e.target.value;
+    saveState(); renderTimeline(); calcSummary();
+  }));
+  box.querySelectorAll("[data-leg-arrive-date]").forEach(inp => inp.addEventListener("change", (e)=>{
+    const id = inp.getAttribute("data-leg-arrive-date");
+    const leg = sc.legs.find(l => String(l.id) === String(id));
+    if (!leg) return;
+    leg.arriveDate = e.target.value;
+    saveState(); renderTimeline(); calcSummary();
+  }));
+  box.querySelectorAll("[data-leg-arrive-time]").forEach(inp => inp.addEventListener("change", (e)=>{
+    const id = inp.getAttribute("data-leg-arrive-time");
+    const leg = sc.legs.find(l => String(l.id) === String(id));
+    if (!leg) return;
+    leg.arriveTime = e.target.value;
+    saveState(); renderTimeline(); calcSummary();
   }));
 
   box.querySelectorAll("[data-leg-done]").forEach(cb => cb.addEventListener("change", () => {
@@ -4840,7 +4895,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:0, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
