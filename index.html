@@ -7,16 +7,16 @@
 <title>MI VIAJE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
-<script src="https://cdn.tailwindcss.com">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
 function safeCssEscape(v){
   const s = String(v ?? "");
   try {
-    if (window.CSS && typeof CSS.escape === "function") return safeCssEscape(s);
+    if (window.CSS && typeof CSS.escape === "function") return CSS.escape(s);
   } catch {}
-  // Minimal escape for attribute selectors: backslash + quotes
-  return s.replace(/\/g, "\\").replace(/"/g, '\"');
+  // escape mínimo para usar dentro de selectores de atributos
+  return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
-
 </script>
 <script>
 // Data-based delete (global)
@@ -435,7 +435,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7F - 2026-02-25 09:43</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7G - 2026-02-25 10:06</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1483,7 +1483,7 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
             : (k === "stay") ? `[data-sec-body="stays"][data-sec-id="${safeCssEscape(itemId)}"]`
             : `[data-sec-body="activities"][data-sec-id="${safeCssEscape(itemId)}"]`;
   const node = document.querySelector(sel);
-  if (!node) { alert("No se encontró el evento"); return; }
+  if (!node) { console.error("SHEET openEventSheet: node not found"); alert("No se encontró el evento"); return; }
 
   // Build a nice title
   try {
@@ -2827,7 +2827,7 @@ function jumpToItem(kind, id) {
           try { el.focus({ preventScroll: true }); } catch {}
         }
       } else {
-        alert("No se encontró el evento");
+        console.error("SHEET openEventSheet: node not found"); alert("No se encontró el evento");
       }
     });
   });
@@ -4783,7 +4783,8 @@ $("addLeg").addEventListener("click", ()=>{
   sc.legs.unshift({ id, mode:"plane", from:"", to:"", date:"", time:"", cost:0, tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "leg", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "leg", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
+        console.error(e); alert("No se pudo abrir el editor"); } })()));
   scrollAccordionBodyToTop("legs");
 });
 $("addStay").addEventListener("click", ()=>{
@@ -4792,7 +4793,8 @@ $("addStay").addEventListener("click", ()=>{
   sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "stay", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "stay", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
+        console.error(e); alert("No se pudo abrir el editor"); } })()));
   scrollAccordionBodyToTop("stays");
 });
 $("addAct").addEventListener("click", ()=>{
@@ -4801,7 +4803,8 @@ $("addAct").addEventListener("click", ()=>{
   sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
-  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "act", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined); alert("No se pudo abrir el editor"); } })()));
+  requestAnimationFrame(() => requestAnimationFrame(() => (function(){ try { openEventSheet({ kind: "act", id, mode: "edit", isNew: true }); } catch (e) { console.warn("SHEET_WARN add open failed", e, (e && e.stack) ? e.stack : undefined);
+        console.error(e); alert("No se pudo abrir el editor"); } })()));
   scrollAccordionBodyToTop("acts");
 });
 
