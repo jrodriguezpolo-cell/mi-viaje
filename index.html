@@ -326,7 +326,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3E - 2026-02-25 00:03</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3F - 2026-02-25 00:12</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1394,6 +1394,33 @@ function __initEventSheetBindings(){
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
 // Data-based delete (single source of truth)
+function toast(msg){ try{ alert(msg); }catch{} }
+
+function onTrashClick(kind, id){
+  const k = String(kind||"").trim();
+  const itemId = String(id||"").trim();
+  if (!k || !itemId) return;
+  const msg = "¿Deseas eliminar este evento?";
+  if (!confirm(msg)) return;
+  const ok = deleteItemById(k, itemId);
+  if (ok){
+    try { if (typeof saveState === "function") saveState(); } catch {}
+    try {
+      if (document.body.classList.contains("sheet-open")) {
+        if (typeof closeEventSheet === "function") closeEventSheet();
+      }
+    } catch {}
+    try { if (typeof renderAll === "function") renderAll(); } catch {}
+  } else {
+    toast("No se pudo borrar (id no encontrado)");
+    try {
+      const sc = (typeof curScenario === "function") ? curScenario() : null;
+      const arr = (!sc) ? null : (k === "leg") ? (sc.legs||[]) : (k === "stay") ? (sc.stays||[]) : (k === "act") ? (sc.activities||[]) : null;
+      console.warn("delete failed; kind/id not found", { kind:k, id:itemId, len: arr?arr.length:null, sample:(arr||[]).slice(0,3).map(x=>x&&x.id) });
+    } catch {}
+  }
+}
+
 function deleteItemById(kind, id) {
   const sc = (typeof curScenario === "function") ? curScenario() : null;
   if (!sc) return false;
@@ -1430,28 +1457,7 @@ function deleteItemById(kind, id) {
     // DIAGNÓSTICO temporal
     try { console.log("sheet delete ctx", ctx.kind, ctx.id); } catch {}
 
-    if (!confirm("¿Eliminar este evento?")) return;
-
-    const ok = deleteItemById(ctx.kind, ctx.id);
-
-    if (!ok) {
-      try {
-        const sc = (typeof curScenario === "function") ? curScenario() : null;
-        const k = String(ctx.kind || "").trim();
-        const arr = (!sc) ? null : (k === "leg") ? (sc.legs || [])
-                  : (k === "stay") ? (sc.stays || [])
-                  : (k === "act") ? (sc.activities || [])
-                  : null;
-        const sample = (arr || []).slice(0,3).map(x => x && x.id);
-        console.warn("delete failed; kind/id not found", { kind: ctx.kind, id: ctx.id, len: arr ? arr.length : null, sample });
-      } catch {}
-      alert("No se pudo borrar (id no encontrado)");
-      return;
-    }
-
-    try { if (typeof saveState === "function") saveState(); } catch {}
-    try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
-    try { if (typeof renderAll === "function") renderAll(); } catch {}
+    onTrashClick(ctx.kind, ctx.id);
   });
 })();
 
