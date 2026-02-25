@@ -477,37 +477,6 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   font-size: 12px;
 }
 
-
-/* V89E5F: prevent date/time overlap in leg sheet (iOS Safari) */
-#eventSheetBody .sheet-leg-editor .grid > div{ min-width:0 !important; }
-#eventSheetBody .sheet-leg-editor input[type="date"],
-#eventSheetBody .sheet-leg-editor input[type="time"]{
-  width: 100% !important;
-  max-width: 100% !important;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-  height: 44px !important;
-  font-size: 16px !important;
-}
-#eventSheetBody .sheet-leg-editor .grid{ column-gap: 12px !important; row-gap: 10px !important; }
-#eventSheetBody .sheet-leg-editor .utcLabel{ white-space:nowrap; font-size:12px; }
-
-
-/* V89E5G: stronger anti-overlap for date/time in transport sheet */
-#eventSheetBody .sheet-leg-editor .grid{ gap: 14px !important; }
-#eventSheetBody .sheet-leg-editor .sm\:col-span-6{ min-width:0 !important; }
-#eventSheetBody .sheet-leg-editor input[type="date"],
-#eventSheetBody .sheet-leg-editor input[type="time"]{
-  box-sizing: border-box !important;
-  height: 40px !important;
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
-  font-size: 16px !important;
-}
-#eventSheetBody .sheet-leg-editor .mt-1.flex.items-center{ min-width:0 !important; }
-#eventSheetBody .sheet-leg-editor .mt-1.flex.items-center input[type="time"]{ min-width:0 !important; }
-#eventSheetBody .sheet-leg-editor .utcLabel{ font-size: 12px !important; white-space:nowrap !important; flex:0 0 auto !important; }
-
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -518,7 +487,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5G2 VIEWS FIX - 2026-02-25 17:05</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E - 2026-02-25 12:59</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -869,12 +838,7 @@ function setView(viewName){
 
   activeView = viewName;
 
-  // V89E5G2: ensure section body is open when entering a view (prevents blank sections + dead add buttons)
-  try {
-    const sectionKey = (viewName === "acts") ? "acts" : viewName; // keys used by section accordions
-    if (typeof ensureSectionOpen === "function") ensureSectionOpen(sectionKey);
-  } catch(e) { console.warn("[BOOTDBG] ensureSectionOpen failed", e); }
-scheduleSyncTopStackHeights();
+  scheduleSyncTopStackHeights();
 
   const ms = $("mainScroll");
   if (ms){
@@ -1100,21 +1064,6 @@ function getScrollContainer(){
     };
     esBody.addEventListener("input", tick);
     esBody.addEventListener("change", tick);
-  }
-
-  // Edit toggle (view->edit) for sheet
-  const btnEdit = document.getElementById("eventSheetEdit");
-  if (btnEdit && !btnEdit.__bound) {
-    btnEdit.__bound = true;
-    btnEdit.addEventListener("click", (e) => {
-      e.preventDefault(); e.stopPropagation();
-      try {
-        const ctx = window.__sheetCtx;
-        if (!ctx) return;
-        if (!confirm("¿Quieres editar este evento?")) return;
-        openEventSheet({ kind: ctx.kind, id: ctx.id, mode: "edit" });
-      } catch (err) { console.error(err); }
-    });
   }
 }
 function getScrollTop(){
@@ -1544,7 +1493,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
   wrap.className = "sheet-leg-editor";
   wrap.innerHTML = `
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
       <div class="sm:col-span-6">
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
         <label class="text-xs text-slate-600">Ciudad salida</label>
@@ -1552,11 +1501,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
-        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
+        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
-          <div class="utcLabel text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1567,11 +1516,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
-        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
+        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
         <div class="mt-1 flex items-center gap-1">
-          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-base rounded-xl border border-slate-200 h-10 text-center">
-          <div class="utcLabel text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
 
@@ -1588,9 +1537,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   `;
   wrap.prepend(chipsHost);
   body.appendChild(wrap);
-
-  // Normalize cost for new items (avoid default 0)
-  try { if (isNew && (legObj.cost === 0 || legObj.cost === "0")) legObj.cost = null; } catch {}
 
   // Fill values (map legacy fields)
   const v = (x) => (x == null ? "" : String(x));
@@ -1666,7 +1612,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   bind("timeOut", (val)=>{ legObj.time = val; });
   bind("dateIn", (val)=>{ legObj.arriveDate = val; });
   bind("timeIn", (val)=>{ legObj.arriveTime = val; });
-  bind("cost", (val)=>{ if (String(val||"").trim()==="") { legObj.cost = null; return; } legObj.cost = parseMoney(val); });
+  bind("cost", (val)=>{ legObj.cost = parseMoney(val); });
   return true;
 }
 
@@ -1691,7 +1637,6 @@ function __applyLegPlaceholdersInSheet(id, mode){
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
-  window.__sheetMode = (mode === "view") ? "view" : "edit";
   const m = (mode === "view") ? "view" : "edit";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
@@ -1817,12 +1762,6 @@ function renderLegModeChips(container, leg, onSelect){
 
     overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
-  try {
-    const btnEdit = document.getElementById("eventSheetEdit");
-    if (btnEdit) btnEdit.classList.toggle("hidden", window.__sheetMode !== "view");
-    const btnSave = document.getElementById("eventSheetSave");
-    if (btnSave) { btnSave.disabled = (window.__sheetMode === "view"); btnSave.classList.toggle("hidden", window.__sheetMode === "view"); }
-  } catch {}
     return;
   }
 
@@ -2169,7 +2108,6 @@ function setupAccordion() {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
-      if (!body) return;
       body.classList.toggle("hidden");
 
     const isNowHidden = body.classList.contains("hidden");
@@ -2222,7 +2160,6 @@ function updateFabVisibility() {
 
 /* ------------------------------ Rendering ---------------------------- */
 function renderAll() {
-  console.warn("[BOOTDBG] renderAll()");
   renderTabs();
   renderLegs();
   renderStays();
@@ -2250,34 +2187,95 @@ function renderTabs() {
 }
 
 function legCard(leg) {
-  const sc = curScenario();
-  const st = sc.meta?.done?.legs?.[leg.id] || { done: false };
-  const route = `${(leg.from || "—").trim()} → ${(leg.to || "—").trim()}`;
-  const dt = fmtLegDate(leg);
-  const modeIcon = (typeof legModeIcon === "function") ? legModeIcon(leg.mode) : "✈️";
-  const costTxt = (leg.cost == null || leg.cost === "" ) ? "" : fmtMoney(leg.cost);
-  const doneBadge = st.done ? `<span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Hecho</span>` : ``;
+  const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
+  const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
+  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.legs.has(leg.id);
+  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
+
+  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
+  const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
+  const hasNotes = !!(leg.notes && String(leg.notes).trim());
 
   return `
-  <div class="card p-3" data-leg-view="${leg.id}">
-    <div class="flex items-start justify-between gap-2">
+  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span>${doneBadge}</div>
-        <div class="text-xs text-slate-600 mt-0.5">
-          ${escapeHtml(dt)}${costTxt ? ` · ${escapeHtml(costTxt)}` : ``}
-        </div>
+        <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span></div>
+        <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
       </div>
-      <div class="flex items-center gap-2">
-        <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm" aria-label="Eliminar" title="Eliminar">🗑️</button>
+      <div class="shrink-0 flex items-center gap-2">
+        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
+      </div>
+    </div>
+
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
+      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+        <!-- SALIDA -->
+        <div class="sm:col-span-6">
+          <label class="text-xs text-slate-600">Salida</label>
+          <input data-leg-from="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.from)}" placeholder="Ciudad salida">
+          <input data-leg-placeout="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeOut || "")}" placeholder="Lugar salida">
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha salida</label>
+              <input data-leg-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.date || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora salida</label>
+              <input data-leg-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.time || "")}">
+            </div>
+          </div>
+          <div class="mt-2">${tzFrom}</div>
+        </div>
+
+        <!-- LLEGADA -->
+        <div class="sm:col-span-6">
+          <label class="text-xs text-slate-600">Llegada</label>
+          <input data-leg-to="${leg.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.to)}" placeholder="Ciudad llegada">
+          <input data-leg-placein="${leg.id}" class="mt-2 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.placeIn || "")}" placeholder="Lugar llegada">
+          <div class="mt-2 grid grid-cols-1 gap-2">
+            <div>
+              <label class="text-xs text-slate-600">Fecha llegada</label>
+              <input data-leg-arrive-date="${leg.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveDate || "")}">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600">Hora llegada</label>
+              <input data-leg-arrive-time="${leg.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.arriveTime || "")}">
+            </div>
+          </div>
+          <div class="mt-2">${tzTo}</div>
+        </div>
+
+        <!-- COSTE -->
+        <div class="sm:col-span-8">
+          <label class="text-xs text-slate-600">Coste</label>
+          <input data-leg-cost="${leg.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(leg.cost ?? "")}" placeholder="0.00">
+        </div>
+
+        <!-- ACCIONES -->
+        <div class="sm:col-span-4 flex items-center justify-end gap-2">
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📎 Archivo</button>
+          <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📝 Nota</button>
+        </div>
+
+        <div class="sm:col-span-12 flex items-center justify-between gap-2">
+          <label class="flex items-center gap-2 text-xs text-slate-600">
+            <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
+            Hecho
+          </label>
+          <button data-leg-del="${leg.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        </div>
       </div>
     </div>
   </div>`;
 }
 
 function renderLegs() {
-  console.warn("[BOOTDBG] renderLegs()");
   const box = $("legsList");
-  if (!box) { console.warn("[BOOTDBG] legsList not found (null). Skipping renderLegs to avoid blocking boot."); return; }
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length ? sc.legs.map(legCard).join("") : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
@@ -2314,13 +2312,6 @@ function renderLegs() {
     const id = b.getAttribute("data-leg-edit");
     if (!id) return;
     try { openEventSheet({ kind: "leg", id, mode: "edit" }); } catch {}
-  }));
-
-  box.querySelectorAll("[data-leg-view]").forEach(b => b.addEventListener("click", (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const id = b.getAttribute("data-leg-view");
-    if (!id) return;
-    try { openEventSheet({ kind: "leg", id, mode: "view" }); } catch (err) { console.error(err); }
   }));
 
   box.querySelectorAll("[data-leg-from]").forEach(inp => inp.addEventListener("change", async () => {
@@ -3090,21 +3081,6 @@ function renderActivities() {
 
 
 /* ---------------- Timeline: jump to item ---------------- */
-
-function ensureSectionOpen(key){
-  const k = String(key || "").trim();
-  if (!k) return;
-  const body = document.querySelector(`[data-acc-body="${k}"]`);
-  if (body) body.classList.remove("hidden");
-  const btn = document.querySelector(`[data-acc="${k}"]`);
-  if (btn){
-    const icon = btn.querySelector(".accIcon");
-    if (icon) icon.textContent = "▴";
-    // Keep FAB visibility consistent if the project uses it
-    try { if (typeof updateFabVisibility === "function") updateFabVisibility(); } catch {}
-  }
-}
-
 function openAccordionKey(key) {
   const body = document.querySelector(`[data-acc-body="${key}"]`);
   const btn = document.querySelector(`[data-acc="${key}"]`);
@@ -3146,8 +3122,8 @@ function jumpToItem(kind, id) {
 
   // 3) Ensure the section accordion is open (if accordion shell exists)
   try {
-    const accKey = (view === "acts") ? "acts" : view;
-    if (typeof ensureSectionOpen === "function") ensureSectionOpen(accKey);
+    const accKey = (view === "acts") ? "acts" : view; // keys used by openAccordionKey
+    if (typeof openAccordionKey === "function") openAccordionKey(accKey);
   } catch {}
 
   // 4) Expand target item (if applicable) + rerender that section
@@ -5145,10 +5121,7 @@ $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sec
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
 
-const __btnAddLeg = $("addLeg");
-if (!__btnAddLeg) {
-  console.warn("[BOOTDBG] #addLeg not found at bind time.");
-} else __btnAddLeg.addEventListener("click", ()=>{
+$("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
   sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:0, tzFrom:null, tzTo:null });
@@ -5387,27 +5360,7 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 
 window.addEventListener('DOMContentLoaded', () => {
-  console.warn('[BOOTDBG] DOMContentLoaded');
   loadState();
-  // HOTFIX V89E5G1: ensure timeline renders on boot even if view mode is inconsistent
-  try {
-    const sc = (typeof curScenario === 'function') ? curScenario() : null;
-    const tmpItems = [];
-    if (sc) {
-      (sc.legs||[]).forEach(l=> tmpItems.push(String(l.date||'').trim() || ''));
-      (sc.stays||[]).forEach(s=> tmpItems.push(String(s.date||'').trim() || ''));
-      (sc.activities||[]).forEach(a=> tmpItems.push(String(a.date||'').trim() || ''));
-      const notes = sc.dailyNotes || {};
-      Object.keys(notes).forEach(d=>{ if(String(notes[d]||'').trim()) tmpItems.push(String(d||'').trim()); });
-    }
-    const hasAnyDated = tmpItems.some(d=>/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d));
-    if (typeof timelineViewMode !== 'undefined' && timelineViewMode === 'day' && (!activeDayISO || !hasAnyDated)) {
-      console.warn('[BOOTDBG] Forcing timelineViewMode=global on boot (day mode had no active day)');
-      timelineViewMode = 'global';
-      activeDayISO = '';
-    }
-  } catch(e) { console.warn('[BOOTDBG] timeline boot fix failed', e); }
-
   setupAccordion();
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
@@ -5429,7 +5382,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlPrev) _tlPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(-1); };
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
-  try { renderAll(); } catch(e) { console.warn("[BOOTDBG] renderAll crashed", e); try { renderTimeline(); } catch{} }
+  renderAll();
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
@@ -5524,7 +5477,6 @@ window.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
         <div class="esHeadRight">
-          <button id="eventSheetEdit" class="tap esIconBtn hidden" aria-label="Editar" title="Editar">✎</button>
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
