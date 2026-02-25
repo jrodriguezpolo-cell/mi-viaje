@@ -344,6 +344,109 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetBody [data-stay-del],
 #eventSheetBody [data-act-del] { display:none !important; }
 
+
+/* -------- Event Sheet premium layout (V89E) -------- */
+#eventSheetOverlay{
+  position: fixed; inset: 0;
+  z-index: 7000;
+  background: rgba(0,0,0,.35);
+}
+#eventSheet{
+  position: fixed;
+  left: 0; right: 0;
+  top: var(--top-stack-h);
+  bottom: var(--bottom-nav-h);
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#eventSheetHeader{
+  position: sticky;
+  top: 0;
+  z-index: 9100;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+#eventSheetHeader .esHeadLeft{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+#eventSheetHeader .esTypeLine{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:#0f172a; letter-spacing:.02em; text-transform:uppercase;}
+#eventSheetHeader .esSubtitle{ font-weight:700; font-size:14px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#eventSheetHeader .esHeadRight{ display:flex; align-items:center; gap:8px; }
+#eventSheetHeader .esIconBtn{
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+#eventSheetBody{
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+}
+#eventSheetFooter{
+  position: sticky;
+  bottom: 0;
+  z-index: 9100;
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: max(env(safe-area-inset-bottom), 10px);
+}
+#eventSheetSave{
+  width: 100%;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 800;
+}
+#eventSheetSaveFeedback{
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.esBlock{
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+.esBlockTitle{
+  font-size: 11px;
+  font-weight: 800;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  margin-bottom: 8px;
+}
+.esMore details summary{ list-style:none; }
+#eventSheetMoreDetails summary{
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+#eventSheetMoreDetails summary::-webkit-details-marker{ display:none; }
+#eventSheetMoreDetails .esMoreChevron{ font-weight:900; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -354,7 +457,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3H2 - 2026-02-25 00:38</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E - 2026-02-25 00:55</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1216,6 +1319,29 @@ function legModeLabel(m){
 let __dirtyTimeline = false;
 let __dirtySummary = false;
 
+
+function __buildSheetBlocks(body, kind){
+  if (!body) return null;
+  body.innerHTML = `
+    <div class="esBlock" id="esBlockA"><div class="esBlockTitle">Identidad</div><div id="esA"></div></div>
+    <div class="esBlock" id="esBlockB"><div class="esBlockTitle">Ruta / Lugar</div><div id="esB"></div></div>
+    <div class="esBlock" id="esBlockC"><div class="esBlockTitle">Tiempo</div><div id="esC"></div></div>
+    <div class="esBlock" id="esBlockD"><div class="esBlockTitle">Coste</div><div id="esD"></div></div>
+    <details class="esBlock" id="eventSheetMoreDetails">
+      <summary><div class="esBlockTitle" style="margin:0;">Más detalles</div><div class="esMoreChevron">▾</div></summary>
+      <div id="esE" style="margin-top:10px;"></div>
+    </details>
+  `;
+  return {
+    A: body.querySelector("#esA"),
+    B: body.querySelector("#esB"),
+    C: body.querySelector("#esC"),
+    D: body.querySelector("#esD"),
+    E: body.querySelector("#esE"),
+    more: body.querySelector("#eventSheetMoreDetails")
+  };
+}
+
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
@@ -1231,6 +1357,17 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
 
   // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
+  // Premium sheet layout: build blocks skeleton
+  const blocks = __buildSheetBlocks(body, k);
+
+  // Header left: icon + type + subtitle
+  try {
+    const typeIconEl = document.getElementById("eventSheetTypeIcon");
+    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
+  } catch {}
+
 
   // Close any previous instance safely
   try { closeEventSheet({ silent: true }); } catch {}
@@ -1351,10 +1488,11 @@ function renderLegModeChips(container, leg, onSelect){
     if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
   } catch {}
 
-  body.innerHTML = "";
-  try { if (body.__chipsHost) body.appendChild(body.__chipsHost); } catch {}
+  // Place chips/editor into blocks
+  try { if (body.__chipsHost && blocks && blocks.A) blocks.A.appendChild(body.__chipsHost); } catch {}
   try { node.classList.remove("hidden"); } catch {}
-  body.appendChild(node);
+  try { if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node); } catch { body.appendChild(node); }
+
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
@@ -4858,6 +4996,28 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Sheet save (commit button)
+  const sheetSave = document.getElementById("eventSheetSave");
+  if (sheetSave && !sheetSave.__bound) {
+    sheetSave.__bound = true;
+    sheetSave.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try { __dirtyTimeline = true; __dirtySummary = true; } catch {}
+      try { if (typeof renderAll === "function") renderAll(); } catch {}
+      try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
+      try { if (typeof calcSummary === "function") calcSummary(); } catch {}
+      try {
+        const fb = document.getElementById("eventSheetSaveFeedback");
+        if (fb) {
+          fb.classList.remove("hidden");
+          setTimeout(() => fb.classList.add("hidden"), 1200);
+        }
+      } catch {}
+      try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+    });
+  }
+
 });
 </script>
 <button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
@@ -4868,11 +5028,27 @@ window.addEventListener('DOMContentLoaded', () => {
   <div id="eventSheetOverlay" class="hidden" aria-hidden="true">
     <div id="eventSheet" role="dialog" aria-modal="true" aria-label="Detalle del evento">
       <div id="eventSheetHeader">
-        <div class="font-semibold text-sm" id="eventSheetTitle">Detalle</div>
-        <button id="eventSheetTrash" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm mr-2" aria-label="Eliminar">🗑️</button>
-        <button id="eventSheetClose" class="px-3 py-2 rounded-xl border border-slate-200" aria-label="Cerrar">✕</button>
+        <div class="esHeadLeft">
+          <div class="esTypeLine">
+            <span id="eventSheetTypeIcon" aria-hidden="true">🧾</span>
+            <span id="eventSheetTypeLabel">Evento</span>
+          </div>
+          <div class="esSubtitle" id="eventSheetTitle">Detalle</div>
+        </div>
+        <div class="esHeadRight">
+          <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
+          <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
+        </div>
       </div>
-      <div id="eventSheetBody"></div>
+
+      <div id="eventSheetBody">
+        <!-- blocks injected at open -->
+      </div>
+
+      <div id="eventSheetFooter">
+        <div id="eventSheetSaveFeedback" class="hidden" aria-live="polite">Guardado ✓</div>
+        <button id="eventSheetSave" class="tap" type="button">Guardar</button>
+      </div>
     </div>
   </div>
 
