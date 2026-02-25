@@ -479,6 +479,54 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   font-size: 12px;
 }
 
+
+
+/* Premium spacing & compact inputs (Transport sheet only) */
+#eventSheetBody .sheet-leg-editor { 
+  font-size: 14px;
+}
+
+#eventSheetBody .sheet-leg-editor label{
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+#eventSheetBody .sheet-leg-editor .grid{
+  column-gap: 14px !important;
+  row-gap: 10px !important;
+}
+
+#eventSheetBody .sheet-leg-editor input,
+#eventSheetBody .sheet-leg-editor select,
+#eventSheetBody .sheet-leg-editor textarea{
+  height: 36px;
+  padding: 6px 10px;
+  border-radius: 14px;
+}
+
+#eventSheetBody .sheet-leg-editor textarea{
+  height: auto;
+  min-height: 72px;
+}
+
+#eventSheetBody .sheet-leg-editor input[type="date"],
+#eventSheetBody .sheet-leg-editor input[type="time"]{
+  height: 34px !important;
+  padding: 4px 8px !important;
+  font-size: 16px !important; /* evita zoom iOS */
+  line-height: 1.2 !important;
+}
+
+/* Make children shrink correctly in 2-col layout */
+#eventSheetBody .sheet-leg-editor .grid > * { min-width: 0 !important; }
+
+/* UTC label */
+#eventSheetBody .sheet-leg-editor .utcLabel{
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: .75;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -489,7 +537,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E3 - SHEET DATE/TIME COMPACT XS - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E4 - TRANSPORT SHEET PREMIUM SPACING - 2026-02-25</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1507,7 +1555,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <div class="text-xs text-slate-500 whitespace-nowrap utcLabel">UTC</div>
         </div>
       </div>
 
@@ -1522,7 +1570,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <div class="text-xs text-slate-500 whitespace-nowrap">UTC</div>
+          <div class="text-xs text-slate-500 whitespace-nowrap utcLabel">UTC</div>
         </div>
       </div>
 
