@@ -478,6 +478,13 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 }
 #eventSheetBody .sheet-leg-editor input{ width:100% !important; }
 
+
+/* V89E7B: sheet isolation + stable transport layout */
+#sheetBody{ width:100%; }
+#eventSheetBody{ overflow:auto; }
+#eventSheetBody .sheet-leg-editor .grid{ align-items: stretch !important; }
+#eventSheetBody .sheet-leg-editor [data-leg-cost]{ display:block !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -488,7 +495,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7 - 2026-02-25 08:30</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7B - 2026-02-25 08:50</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1060,6 +1067,7 @@ function getScrollContainer(){
       try {
         if (document.body.classList.contains("sheet-open") && typeof updateSheetDynamicSummary === "function") {
           updateSheetDynamicSummary();
+          try { if (typeof updateSheetHeader==="function") updateSheetHeader(); } catch {}
         }
       } catch {}
     };
@@ -1378,7 +1386,7 @@ let __dirtyTimeline = false;
 let __dirtySummary = false;
 
 
-function __buildSheetBlocks(body){
+function __buildSheetBlocks(sheetBody){
   if (!body) return null;
   body.innerHTML = `
     <div class="esBlock" id="esBlockA"><div class="esBlockTitle">Identidad</div><div id="esA"></div></div>
@@ -1405,6 +1413,7 @@ function updateSheetDynamicSummary(){
   if (!ctx || !ctx.kind || !ctx.id) return;
 
   const body = document.getElementById("eventSheetBody");
+  const sheetBody = document.getElementById("sheetBody");
   if (!body) return;
 
   const routeEl = document.getElementById("sheetSummaryRoute");
@@ -1473,6 +1482,35 @@ function __applyLegPlaceholdersInSheet(id, mode){
   if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
 }
 
+function updateSheetHeader(){
+  const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
+  if (!ctx || !ctx.kind || !ctx.id) return;
+  const k = String(ctx.kind);
+  if (k !== "leg") return;
+
+  const id = String(ctx.id);
+  const sheet = document.getElementById("eventSheet");
+  const host = document.getElementById("sheetBody");
+  const titleEl = document.getElementById("eventSheetTitle");
+  const iconEl = document.getElementById("eventSheetTypeIcon");
+  if (!sheet || !host || !titleEl || !iconEl) return;
+
+  const fromEl = host.querySelector(`[data-leg-from="${CSS.escape(id)}"]`);
+  const toEl   = host.querySelector(`[data-leg-to="${CSS.escape(id)}"]`);
+
+  const from = fromEl ? String(fromEl.value||"").trim() : "";
+  const to = toEl ? String(toEl.value||"").trim() : "";
+  const route = (from && to) ? `${from} → ${to}` : (from || to);
+
+  // Mode icon from state object if available
+  try {
+    const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", id) : null;
+    const ico = (typeof legModeIcon==="function") ? legModeIcon(it && it.mode) : "✈️";
+    iconEl.textContent = ico;
+  } catch {}
+
+  titleEl.textContent = route ? route : "Nuevo transporte";
+}
 function openEventSheet({ kind, id, mode, isNew } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
@@ -1484,7 +1522,7 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
   const titleEl = document.getElementById("eventSheetTitle");
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
-  if (!overlay || !sheet || !titleEl || !body) return;
+  if (!overlay || !sheet || !titleEl || !body || !sheetBody) return;
 
   // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
@@ -1629,7 +1667,7 @@ function renderLegModeChips(container, leg, onSelect){
   const blocks = (k === "leg") ? null : __buildSheetBlocks(body);
   // Transport form-first layout: no summary blocks
   if (k === "leg") {
-    body.innerHTML = `<div id="legSheetFormHost"></div>`;
+    sheetBody.innerHTML = `<div id="legSheetFormHost"></div>`;
   }
 
 
@@ -1649,11 +1687,11 @@ function renderLegModeChips(container, leg, onSelect){
   try {
     if (k === "leg") {
       const host = document.getElementById("legSheetFormHost");
-      if (host) host.appendChild(node); else body.appendChild(node);
+      if (host) host.appendChild(node); else sheetBody.appendChild(node);
     } else {
-      if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node);
+      if (blocks && blocks.E) blocks.E.appendChild(node); else sheetBody.appendChild(node);
     }
-  } catch { body.appendChild(node); }
+  } catch { sheetBody.appendChild(node); }
   try {
     if (blocks && blocks.E && !blocks.E.__phDone) {
       blocks.E.__phDone = true;
@@ -1668,6 +1706,8 @@ function renderLegModeChips(container, leg, onSelect){
 
   overlay.classList.remove("hidden");
   document.body.classList.add("sheet-open");
+  try { if (typeof updateSheetHeader==="function") updateSheetHeader(); } catch {}
+  try { console.log("SHEET open", k, itemId, "target=", sheetBody); } catch {}
   // sheetSummaryLine hidden for leg
   try { const sl = document.getElementById("eventSheetSummaryLine"); if (sl) sl.style.display = (k === "leg") ? "none" : ""; } catch {}
 
@@ -2052,6 +2092,7 @@ function legCard(leg) {
 }
 
 function renderLegs() {
+  if (document.body.classList.contains("sheet-open")) return;
   const box = $("legsList");
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.legs);
@@ -5246,7 +5287,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
       </div>
-      <div id="eventSheetBody">
+      <div id="eventSheetBody"><div id="sheetBody"></div>
         <!-- blocks injected on open -->
       </div>
       <div id="eventSheetFooter">
