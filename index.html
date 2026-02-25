@@ -461,7 +461,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5B - 2026-02-25 11:35</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5C - 2026-02-25 11:49</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1424,7 +1424,29 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   // Chips host
   const chipsHost = document.createElement("div");
   chipsHost.className = "mb-3";
-  body.appendChild(chipsHost);
+
+
+  const modes = [
+    { key: "plane", label: "Avión", icon: "✈️" },
+    { key: "train", label: "Tren", icon: "🚆" },
+    { key: "bus", label: "Bus", icon: "🚌" },
+    { key: "car", label: "Coche", icon: "🚗" },
+    { key: "boat", label: "Barco", icon: "🚢" }
+  ];
+
+  chipsHost.innerHTML = `
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      ${modes.map(m => `
+        <button type="button"
+          data-leg-mode="${m.key}"
+          class="legModeChip tap px-4 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold flex items-center gap-2">
+          <span>${m.icon}</span>
+          <span>${m.label}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+
 
   // 2-column form
   const wrap = document.createElement("div");
@@ -1438,10 +1460,10 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
-        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
+        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
-        <div class="mt-1 flex items-center gap-2">
-          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-2 rounded-xl border border-slate-200">
+        <div class="mt-1 flex items-center gap-1">
+          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
           <div class="text-[11px] text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
@@ -1453,10 +1475,10 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
-        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
+        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
-        <div class="mt-1 flex items-center gap-2">
-          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-2 rounded-xl border border-slate-200">
+        <div class="mt-1 flex items-center gap-1">
+          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200">
           <div class="text-[11px] text-slate-500 whitespace-nowrap">UTC</div>
         </div>
       </div>
@@ -1472,6 +1494,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       </div>
     </div>
   `;
+  wrap.prepend(chipsHost);
   body.appendChild(wrap);
 
   // Fill values (map legacy fields)
@@ -1495,6 +1518,38 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     qs("placeIn").placeholder  = __legPlacePlaceholder(mode, "to");
   } catch {}
 
+
+  const chips = wrap.querySelectorAll(".legModeChip");
+
+  function updateChipUI(selected){
+    chips.forEach(c => {
+      if (c.dataset.legMode === selected){
+        c.classList.remove("bg-white","border-slate-200");
+        c.classList.add("bg-slate-900","border-slate-900","text-white");
+      } else {
+        c.classList.remove("bg-slate-900","border-slate-900","text-white");
+        c.classList.add("bg-white","border-slate-200");
+      }
+    });
+  }
+
+  let currentMode = legModeDefault(legObj.mode);
+  updateChipUI(currentMode);
+
+  chips.forEach(c=>{
+    c.addEventListener("click", ()=>{
+      currentMode = c.dataset.legMode;
+      updateChipUI(currentMode);
+      // persist mode + update placeholders (no global rerender)
+      try { legObj.mode = currentMode; } catch {}
+      try {
+        qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from");
+        qs("placeIn").placeholder  = __legPlacePlaceholder(currentMode, "to");
+      } catch {}
+    });
+  });
+
+
   // Bindings (write directly to the same object reference)
   const bind = (key, fn) => {
     const el = qs(key);
@@ -1512,17 +1567,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   bind("dateIn", (val)=>{ legObj.arriveDate = val; });
   bind("timeIn", (val)=>{ legObj.arriveTime = val; });
   bind("cost", (val)=>{ legObj.cost = parseMoney(val); });
-
-  // Chips render (do not rerender globals while sheet-open)
-  try {
-    renderLegModeChips(chipsHost, legObj, (newMode)=>{
-      try {
-        qs("placeOut").placeholder = __legPlacePlaceholder(newMode, "from");
-        qs("placeIn").placeholder  = __legPlacePlaceholder(newMode, "to");
-      } catch {}
-    });
-  } catch {}
-
   return true;
 }
 
