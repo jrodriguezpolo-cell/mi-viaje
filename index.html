@@ -316,6 +316,12 @@ border-radius: 999px;
 }
 body.sheet-open #mainScroll{ overflow: hidden; }
 body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
+
+/* Sheet: hide legacy per-item trash buttons to enforce single trash */
+#eventSheetBody [data-leg-del],
+#eventSheetBody [data-stay-del],
+#eventSheetBody [data-act-del] { display:none !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -326,7 +332,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3F - 2026-02-25 00:12</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3G - 2026-02-25 00:20</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1318,6 +1324,10 @@ function renderLegModeChips(container, leg, onSelect){
   const next = node.nextSibling;
   __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
   window.__sheetCtx = { kind: k, id: itemId };
+  try {
+    const trash = document.getElementById("eventSheetTrash");
+    if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
+  } catch {}
 
   body.innerHTML = "";
   try { if (body.__chipsHost) body.appendChild(body.__chipsHost); } catch {}
@@ -1396,70 +1406,28 @@ function __initEventSheetBindings(){
 // Data-based delete (single source of truth)
 function toast(msg){ try{ alert(msg); }catch{} }
 
-function onTrashClick(kind, id){
-  const k = String(kind||"").trim();
-  const itemId = String(id||"").trim();
-  if (!k || !itemId) return;
-  const msg = "¿Deseas eliminar este evento?";
-  if (!confirm(msg)) return;
-  const ok = deleteItemById(k, itemId);
-  if (ok){
-    try { if (typeof saveState === "function") saveState(); } catch {}
-    try {
-      if (document.body.classList.contains("sheet-open")) {
-        if (typeof closeEventSheet === "function") closeEventSheet();
-      }
-    } catch {}
-    try { if (typeof renderAll === "function") renderAll(); } catch {}
-  } else {
-    toast("No se pudo borrar (id no encontrado)");
-    try {
-      const sc = (typeof curScenario === "function") ? curScenario() : null;
-      const arr = (!sc) ? null : (k === "leg") ? (sc.legs||[]) : (k === "stay") ? (sc.stays||[]) : (k === "act") ? (sc.activities||[]) : null;
-      console.warn("delete failed; kind/id not found", { kind:k, id:itemId, len: arr?arr.length:null, sample:(arr||[]).slice(0,3).map(x=>x&&x.id) });
-    } catch {}
-  }
-}
 
-function deleteItemById(kind, id) {
-  const sc = (typeof curScenario === "function") ? curScenario() : null;
+function deleteItemById(kind, id){
+  const sc = (typeof curScenario === "function") ? curScenario() : null; // active scenario (A/B)
   if (!sc) return false;
   const k = String(kind || "").trim();
-  const targetId = String(id || "").trim();
-  const arr = (k === "leg") ? (sc.legs || [])
-            : (k === "stay") ? (sc.stays || [])
-            : (k === "act") ? (sc.activities || [])
-            : null;
+  const targetId = String(id || "");
+  const arr =
+    (k === "leg") ? (sc.legs || []) :
+    (k === "stay") ? (sc.stays || []) :
+    (k === "act") ? (sc.activities || []) :
+    null;
   if (!arr) return false;
+
   const idx = arr.findIndex(x => String(x && x.id) === targetId);
-  if (idx < 0) return false;
+  if (idx < 0) {
+    try { console.log("DELETE NOT FOUND", k, targetId, arr.map(x=>x && x.id).slice(0,10)); } catch {}
+    return false;
+  }
   arr.splice(idx, 1);
   return true;
 }
 
-// Sheet delete (robust even with move-node approach)
-(() => {
-  const sheetBody = document.getElementById("eventSheetBody");
-  if (!sheetBody) return;
-
-  sheetBody.addEventListener("click", (e) => {
-    const t = e.target;
-    if (!(t instanceof Element)) return;
-
-    const btn = t.closest("[data-leg-del],[data-stay-del],[data-act-del]");
-    if (!btn) return;
-
-    try { e.preventDefault(); e.stopPropagation(); } catch {}
-
-    const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
-    if (!ctx || !ctx.kind || !ctx.id) return;
-
-    // DIAGNÓSTICO temporal
-    try { console.log("sheet delete ctx", ctx.kind, ctx.id); } catch {}
-
-    onTrashClick(ctx.kind, ctx.id);
-  });
-})();
 
   if (overlay) overlay.addEventListener("click", (e) => {
     // click outside sheet closes
@@ -4869,6 +4837,27 @@ window.addEventListener('DOMContentLoaded', () => {
   summaryExpanded = false;
   applySummaryFold();
   updateFabVisibility();
+
+  // Sheet trash (single source of truth)
+  const sheetTrash = document.getElementById("eventSheetTrash");
+  if (sheetTrash && !sheetTrash.__bound) {
+    sheetTrash.__bound = true;
+    sheetTrash.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const kind = sheetTrash.dataset.kind;
+      const id = sheetTrash.dataset.id;
+      if (!kind || !id) return;
+      if (!confirm("¿Deseas eliminar este evento?")) return;
+
+      const ok = deleteItemById(kind, id);
+      if (!ok) { toast("No se pudo borrar (id no encontrado)"); return; }
+
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+      try { if (typeof renderAll === "function") renderAll(); } catch {}
+    });
+  }
+
 });
 </script>
 <button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
@@ -4880,6 +4869,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div id="eventSheet" role="dialog" aria-modal="true" aria-label="Detalle del evento">
       <div id="eventSheetHeader">
         <div class="font-semibold text-sm" id="eventSheetTitle">Detalle</div>
+        <button id="eventSheetTrash" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm mr-2" aria-label="Eliminar">🗑️</button>
         <button id="eventSheetClose" class="px-3 py-2 rounded-xl border border-slate-200" aria-label="Cerrar">✕</button>
       </div>
       <div id="eventSheetBody"></div>
