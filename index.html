@@ -346,106 +346,49 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 
 
 /* -------- Event Sheet premium layout (V89E) -------- */
-#eventSheetOverlay{
-  position: fixed; inset: 0;
-  z-index: 7000;
-  background: rgba(0,0,0,.35);
-}
+#eventSheetOverlay{ position:fixed; inset:0; z-index:7000; background:rgba(0,0,0,.35); }
 #eventSheet{
-  position: fixed;
-  left: 0; right: 0;
+  position:fixed; left:0; right:0;
   top: var(--top-stack-h);
   bottom: var(--bottom-nav-h);
-  background: #fff;
-  border-radius: 16px 16px 0 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background:#fff;
+  border-radius:16px 16px 0 0;
+  display:flex; flex-direction:column;
+  overflow:hidden;
 }
 #eventSheetHeader{
-  position: sticky;
-  top: 0;
-  z-index: 9100;
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 10px 12px;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 10px;
+  position:sticky; top:0; z-index:9100;
+  background:#fff;
+  border-bottom:1px solid #e2e8f0;
+  padding:10px 12px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
 #eventSheetHeader .esHeadLeft{ min-width:0; display:flex; flex-direction:column; gap:2px; }
-#eventSheetHeader .esTypeLine{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:#0f172a; letter-spacing:.02em; text-transform:uppercase;}
+#eventSheetHeader .esTypeLine{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:#0f172a; text-transform:uppercase; letter-spacing:.02em; }
 #eventSheetHeader .esSubtitle{ font-weight:700; font-size:14px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #eventSheetHeader .esHeadRight{ display:flex; align-items:center; gap:8px; }
-#eventSheetHeader .esIconBtn{
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px 10px;
-  font-size: 14px;
-}
+#eventSheetHeader .esIconBtn{ border:1px solid #e2e8f0; background:#fff; border-radius:12px; padding:8px 10px; font-size:14px; }
 #eventSheetBody{
-  flex: 1;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 12px;
+  flex:1;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:12px;
+  padding-bottom: max(env(safe-area-inset-bottom), 16px);
 }
 #eventSheetFooter{
-  position: sticky;
-  bottom: 0;
-  z-index: 9100;
-  background: #fff;
-  border-top: 1px solid #e2e8f0;
-  padding: 10px 12px;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-bottom: max(env(safe-area-inset-bottom), 10px);
+  position:sticky; bottom:0; z-index:9100;
+  background:#fff;
+  border-top:1px solid #e2e8f0;
+  padding:10px 12px;
+  display:flex; align-items:center; gap:10px;
+  padding-bottom:max(env(safe-area-inset-bottom), 10px);
 }
-#eventSheetSave{
-  width: 100%;
-  background: #0f172a;
-  color: #fff;
-  border-radius: 14px;
-  padding: 12px 14px;
-  font-weight: 800;
-}
-#eventSheetSaveFeedback{
-  font-size: 12px;
-  font-weight: 700;
-  color: #0f172a;
-  background: #e2e8f0;
-  padding: 6px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.esBlock{
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: #fff;
-}
-.esBlockTitle{
-  font-size: 11px;
-  font-weight: 800;
-  color: #334155;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-  margin-bottom: 8px;
-}
-.esMore details summary{ list-style:none; }
-#eventSheetMoreDetails summary{
-  cursor: pointer;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 10px;
-}
+#eventSheetSave{ flex:1; background:#0f172a; color:#fff; border-radius:14px; padding:12px 14px; font-weight:900; }
+#eventSheetSaveFeedback{ font-size:12px; font-weight:800; color:#0f172a; background:#e2e8f0; padding:6px 10px; border-radius:999px; white-space:nowrap; }
+.esBlock{ border:1px solid #e2e8f0; border-radius:14px; padding:10px; margin-bottom:10px; background:#fff; }
+.esBlockTitle{ font-size:11px; font-weight:900; color:#334155; text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px; }
+#eventSheetMoreDetails summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 #eventSheetMoreDetails summary::-webkit-details-marker{ display:none; }
-#eventSheetMoreDetails .esMoreChevron{ font-weight:900; }
 
 </style>
 </head>
@@ -457,7 +400,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E - 2026-02-25 00:55</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E1 - 2026-02-25 01:03</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1320,7 +1263,7 @@ let __dirtyTimeline = false;
 let __dirtySummary = false;
 
 
-function __buildSheetBlocks(body, kind){
+function __buildSheetBlocks(body){
   if (!body) return null;
   body.innerHTML = `
     <div class="esBlock" id="esBlockA"><div class="esBlockTitle">Identidad</div><div id="esA"></div></div>
@@ -1328,7 +1271,7 @@ function __buildSheetBlocks(body, kind){
     <div class="esBlock" id="esBlockC"><div class="esBlockTitle">Tiempo</div><div id="esC"></div></div>
     <div class="esBlock" id="esBlockD"><div class="esBlockTitle">Coste</div><div id="esD"></div></div>
     <details class="esBlock" id="eventSheetMoreDetails">
-      <summary><div class="esBlockTitle" style="margin:0;">Más detalles</div><div class="esMoreChevron">▾</div></summary>
+      <summary><div class="esBlockTitle" style="margin:0;">Más detalles</div><div style="font-weight:900;">▾</div></summary>
       <div id="esE" style="margin-top:10px;"></div>
     </details>
   `;
@@ -1338,7 +1281,6 @@ function __buildSheetBlocks(body, kind){
     C: body.querySelector("#esC"),
     D: body.querySelector("#esD"),
     E: body.querySelector("#esE"),
-    more: body.querySelector("#eventSheetMoreDetails")
   };
 }
 
@@ -1357,17 +1299,6 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
 
   // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
-  // Premium sheet layout: build blocks skeleton
-  const blocks = __buildSheetBlocks(body, k);
-
-  // Header left: icon + type + subtitle
-  try {
-    const typeIconEl = document.getElementById("eventSheetTypeIcon");
-    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
-    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
-    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
-  } catch {}
-
 
   // Close any previous instance safely
   try { closeEventSheet({ silent: true }); } catch {}
@@ -1455,6 +1386,14 @@ function renderLegModeChips(container, leg, onSelect){
     if (ico) titleEl.textContent = `${ico} ${titleEl.textContent}`;
     if (detail) titleEl.textContent = `${titleEl.textContent} · ${detail}`;
   } catch { titleEl.textContent = "Evento"; }
+  // Header type + icon
+  try {
+    const typeIconEl = document.getElementById("eventSheetTypeIcon");
+    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
+  } catch {}
+
 
   // If leg: inject mode chips just under title
   try {
@@ -1488,10 +1427,21 @@ function renderLegModeChips(container, leg, onSelect){
     if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
   } catch {}
 
-  // Place chips/editor into blocks
+  const blocks = __buildSheetBlocks(body);
+
   try { if (body.__chipsHost && blocks && blocks.A) blocks.A.appendChild(body.__chipsHost); } catch {}
   try { node.classList.remove("hidden"); } catch {}
   try { if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node); } catch { body.appendChild(node); }
+  try {
+    if (blocks && blocks.E && !blocks.E.__phDone) {
+      blocks.E.__phDone = true;
+      // If no obvious notes field exists, add a small placeholder above editor
+      const ph = document.createElement("div");
+      ph.className = "text-sm text-slate-500 mb-2";
+      ph.textContent = "Notas y otros detalles";
+      blocks.E.prepend(ph);
+    }
+  } catch {}
 
 
   overlay.classList.remove("hidden");
@@ -5003,7 +4953,6 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       try { if (typeof saveState === "function") saveState(); } catch {}
-      try { __dirtyTimeline = true; __dirtySummary = true; } catch {}
       try { if (typeof renderAll === "function") renderAll(); } catch {}
       try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
       try { if (typeof calcSummary === "function") calcSummary(); } catch {}
@@ -5011,7 +4960,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const fb = document.getElementById("eventSheetSaveFeedback");
         if (fb) {
           fb.classList.remove("hidden");
-          setTimeout(() => fb.classList.add("hidden"), 1200);
+          setTimeout(() => fb.classList.add("hidden"), 900);
         }
       } catch {}
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
@@ -5040,14 +4989,12 @@ window.addEventListener('DOMContentLoaded', () => {
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
       </div>
-
       <div id="eventSheetBody">
-        <!-- blocks injected at open -->
+        <!-- blocks injected on open -->
       </div>
-
       <div id="eventSheetFooter">
         <div id="eventSheetSaveFeedback" class="hidden" aria-live="polite">Guardado ✓</div>
-        <button id="eventSheetSave" class="tap" type="button">Guardar</button>
+        <button id="eventSheetSave" class="tap" type="button">GUARDAR</button>
       </div>
     </div>
   </div>
