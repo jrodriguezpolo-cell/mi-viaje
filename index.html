@@ -425,7 +425,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7C - 2026-02-25 09:04</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E7D - 2026-02-25 09:14</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1297,7 +1297,7 @@ let __dirtyTimeline = false;
 let __dirtySummary = false;
 
 
-function __buildSheetBlocks(sheetBody){
+function __buildSheetBlocks(body){
   if (!body) return null;
   body.innerHTML = `
     <div class="esBlock" id="esBlockA"><div class="esBlockTitle">Identidad</div><div id="esA"></div></div>
@@ -1397,6 +1397,8 @@ function openEventSheet({ kind, id, mode, isNew } = {}) {
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
   if (!overlay || !sheet || !titleEl || !body || !sheetBody) return;
+  // SHEET_WARN openEventSheet
+  try { console.warn && console.warn("SHEET open", k, itemId); } catch {}
 
   // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
