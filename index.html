@@ -7,7 +7,29 @@
 <title>MI VIAJE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com">
+// Data-based delete (global)
+function getActiveScenario() {
+  // Active scenario (A/B)
+  if (typeof curScenario === "function") return curScenario();
+  if (typeof state !== "undefined" && state && state.scenarios && state.scenario) return state.scenarios[state.scenario];
+  return null;
+}
+function toast(msg){ try{ alert(msg); }catch{} }
+function deleteItemById(kind, id) {
+  const sc = getActiveScenario();
+  if (!sc) return false;
+  const k = String(kind || "").trim();
+  const targetId = String(id);
+  const arr = (k==="leg") ? sc.legs : (k==="stay") ? sc.stays : (k==="act") ? sc.activities : null;
+  if(!arr) return false;
+  const idx = arr.findIndex(x => String(x && x.id) === targetId);
+  if(idx < 0) return false;
+  arr.splice(idx,1);
+  return true;
+}
+
+</script>
 <style>
     /* iPhone safe-area helpers */
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
@@ -332,7 +354,7 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3G - 2026-02-25 00:20</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89D3H - 2026-02-25 00:30</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1403,30 +1425,6 @@ function __initEventSheetBindings(){
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
-// Data-based delete (single source of truth)
-function toast(msg){ try{ alert(msg); }catch{} }
-
-
-function deleteItemById(kind, id){
-  const sc = (typeof curScenario === "function") ? curScenario() : null; // active scenario (A/B)
-  if (!sc) return false;
-  const k = String(kind || "").trim();
-  const targetId = String(id || "");
-  const arr =
-    (k === "leg") ? (sc.legs || []) :
-    (k === "stay") ? (sc.stays || []) :
-    (k === "act") ? (sc.activities || []) :
-    null;
-  if (!arr) return false;
-
-  const idx = arr.findIndex(x => String(x && x.id) === targetId);
-  if (idx < 0) {
-    try { console.log("DELETE NOT FOUND", k, targetId, arr.map(x=>x && x.id).slice(0,10)); } catch {}
-    return false;
-  }
-  arr.splice(idx, 1);
-  return true;
-}
 
 
   if (overlay) overlay.addEventListener("click", (e) => {
