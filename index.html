@@ -457,87 +457,9 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetSummaryLine{ display:none !important; }
 
 
-/* V89E5E: prevent date/time overlap in leg sheet (iOS Safari) */
-#eventSheetBody .sheet-leg-editor .grid > div{ min-width:0 !important; }
-#eventSheetBody .sheet-leg-editor input[type="date"],
-#eventSheetBody .sheet-leg-editor input[type="time"]{
-  width: 100% !important;
-  max-width: 100% !important;
-  height: 28px !important;
-  padding: 1px 6px !important;
-  font-size: 16px !important; /* mantener para evitar zoom iOS */
-  line-height: 1.0 !important;
-}
-
-#eventSheetBody .sheet-leg-editor .grid{
-  column-gap: 16px !important;
-  row-gap: 12px !important;
-}
-
-#eventSheetBody .sheet-leg-editor .utcLabel{
-  white-space: nowrap;
-  font-size: 12px;
-}
-
-
-
-/* Premium spacing & compact inputs (Transport sheet only) */
-#eventSheetBody .sheet-leg-editor { 
-  font-size: 14px;
-}
-
-#eventSheetBody .sheet-leg-editor label{
-  font-size: 12px;
-  line-height: 1.1;
-}
-
-#eventSheetBody .sheet-leg-editor .grid{
-  column-gap: 14px !important;
-  row-gap: 10px !important;
-}
-
-#eventSheetBody .sheet-leg-editor input,
-#eventSheetBody .sheet-leg-editor select,
-#eventSheetBody .sheet-leg-editor textarea{
-  height: 36px;
-  padding: 6px 10px;
-  border-radius: 14px;
-}
-
-#eventSheetBody .sheet-leg-editor textarea{
-  height: auto;
-  min-height: 72px;
-}
-
-#eventSheetBody .sheet-leg-editor input[type="date"],
-#eventSheetBody .sheet-leg-editor input[type="time"]{
-  height: 34px !important;
-  padding: 4px 8px !important;
-  font-size: 16px !important; /* evita zoom iOS */
-  line-height: 1.2 !important;
-}
-
-/* Make children shrink correctly in 2-col layout */
-#eventSheetBody .sheet-leg-editor .grid > * { min-width: 0 !important; }
-
-/* UTC label */
-#eventSheetBody .sheet-leg-editor .utcLabel{
-  white-space: nowrap;
-  font-size: 12px;
-  opacity: .75;
-}
-
-
-
-/* FINAL OVERRIDE: match V89E5E3 compact XS (prevents overlap) */
-#eventSheetBody .sheet-leg-editor input[type="date"],
-#eventSheetBody .sheet-leg-editor input[type="time"]{
-  height: 24px !important;
-  padding: 0px 5px !important;
-  line-height: 0.95 !important;
-  font-size: 16px !important; /* keep iOS no-zoom */
-}
-
+/* V89E5E..V89E5E8 (historical leg-sheet duplicates) cleaned.
+   See FINAL: Sheet Transporte single source of truth (end of <style>).
+*/
 
 /* Sheet mini-modals (UI only) */
 #sheetMiniOverlay{
@@ -607,6 +529,61 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
   transform: translateZ(0);
 }
 
+
+/* FINAL: Sheet Transporte single source of truth */
+/* Keeps current appearance/behavior; consolidates leg-sheet rules that were duplicated historically. */
+#eventSheetBody .sheet-leg-editor{
+  font-size: 14px !important;
+}
+#eventSheetBody .sheet-leg-editor label{
+  font-size: 12px !important;
+  line-height: 1.1 !important;
+}
+
+/* Grid gaps (active values) */
+#eventSheetBody .sheet-leg-editor .grid{
+  column-gap: 14px !important;
+  row-gap: 10px !important;
+}
+
+/* Make children shrink correctly in 2-col layout */
+#eventSheetBody .sheet-leg-editor .grid > *,
+#eventSheetBody .sheet-leg-editor .grid > div{
+  min-width: 0 !important;
+}
+
+/* Uniform inputs (Transport sheet only) */
+#eventSheetBody .sheet-leg-editor input,
+#eventSheetBody .sheet-leg-editor select,
+#eventSheetBody .sheet-leg-editor textarea{
+  height: 36px !important;
+  padding: 6px 10px !important;
+  border-radius: 14px !important;
+}
+
+#eventSheetBody .sheet-leg-editor textarea{
+  height: auto !important;
+  min-height: 72px !important;
+}
+
+/* Date/Time compact XS (prevents overlap) */
+#eventSheetBody .sheet-leg-editor input[type="date"],
+#eventSheetBody .sheet-leg-editor input[type="time"]{
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 24px !important;
+  padding: 0px 5px !important;
+  line-height: 0.95 !important;
+  font-size: 16px !important; /* keep iOS no-zoom */
+}
+
+/* UTC label */
+#eventSheetBody .sheet-leg-editor .utcLabel{
+  white-space: nowrap !important;
+  font-size: 12px !important;
+  opacity: .75 !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -617,7 +594,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10B - COST BLANK DEFAULT (LEG SHEET) - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10C - CSS CLEANUP NO VISUAL CHANGE - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
