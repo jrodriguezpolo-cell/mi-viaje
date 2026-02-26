@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E17A</title>
+<title>V89E5E18A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -291,132 +291,115 @@ border-radius: 999px;
 #fabAdd:active{ transform: scale(0.98); }
 
 
-/* Event Detail Sheet (V89D) */
+/* ---------------- Event Sheet (CONSOLIDATED) ----------------
+   Baseline preserved from V89E5E17A:
+   - Full-screen overlay
+   - Sheet anchored between top stack (header+totals) and bottom nav
+   - Header + footer sticky
+   - iOS safe-area respected
+   - No change in open/close behavior (JS) or contextual return
+---------------------------------------------------------------- */
+
 #eventSheetOverlay{
   position: fixed;
-  top: var(--top-stack-h, 0px);
-  left: 0; right: 0;
-  bottom: var(--bottom-nav-h, 0px);
-  background: rgba(0,0,0,0.35);
+  inset: 0;
   z-index: 7000;
+  background: rgba(0,0,0,.35);
 }
 #eventSheetOverlay.hidden{ display:none; }
+
 #eventSheet{
-  position: absolute;
-  left: 0; right: 0;
-  bottom: 0;
-  height: 100%;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--top-stack-h);
+  bottom: var(--bottom-nav-h);
+  height: calc(100vh - var(--top-stack-h) - var(--bottom-nav-h));
   background: #fff;
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.15);
-  transform: translateY(12px);
-  transition: transform 180ms ease;
+  border-radius: 16px 16px 0 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
-#eventSheetOverlay:not(.hidden) #eventSheet{ transform: translateY(0); }
+
 #eventSheetHeader{
   position: sticky;
   top: 0;
+  z-index: 9100;
   background: #fff;
-  z-index: 1;
-  padding: 12px 14px;
-  border-bottom: 1px solid #e5e7eb;
-  display:flex;
-  align-items:center;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
-
 #eventSheetClose{ position: relative; z-index: 3; }
+
 #eventSheetBody{
-  padding: 12px 14px;
+  flex: 1;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  flex: 1;
+  padding: 12px;
+  /* Keep the validated space for sticky footer + safe area */
+  padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 110px) !important;
 }
+
+#eventSheetFooter{
+  display: flex !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 9200 !important;
+  background: #fff !important;
+  border-top: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: max(env(safe-area-inset-bottom), 10px) !important;
+}
+
+#eventSheetSave{
+  flex: 1;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 900;
+  display: block !important;
+}
+#eventSheetSaveFeedback{
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  background: #e2e8f0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Sheet open state: lock background scroll */
 body.sheet-open #mainScroll{ overflow: hidden; }
 body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 
-/* Sheet: hide legacy per-item trash buttons to enforce single trash */
+/* Hide legacy per-item trash buttons to enforce single trash */
 #eventSheetBody [data-leg-del],
 #eventSheetBody [data-stay-del],
-#eventSheetBody [data-act-del] { display:none !important; }
+#eventSheetBody [data-act-del]{ display:none !important; }
+
+/* Header cleanup (keep header clean, no redundant type/summary lines) */
+#eventSheetHeader .esTypeLine{ display:none !important; }
+#eventSheetSummaryLine{ display:none !important; }
 
 
-/* -------- Event Sheet premium layout (V89E) -------- */
-#eventSheetOverlay{ position:fixed; inset:0; z-index:7000; background:rgba(0,0,0,.35); }
-#eventSheet{
-  position:fixed; left:0; right:0;
-  top: var(--top-stack-h);
-  bottom: var(--bottom-nav-h);
-  background:#fff;
-  border-radius:16px 16px 0 0;
-  display:flex; flex-direction:column;
-  overflow:hidden;
-}
-#eventSheetHeader{
-  position:sticky; top:0; z-index:9100;
-  background:#fff;
-  border-bottom:1px solid #e2e8f0;
-  padding:10px 12px;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-}
-#eventSheetHeader .esHeadLeft{ min-width:0; display:flex; flex-direction:column; gap:2px; }
-#eventSheetHeader .esTypeLine{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; color:#0f172a; text-transform:uppercase; letter-spacing:.02em; }
-#eventSheetHeader .esSubtitle{ font-weight:700; font-size:14px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#eventSheetHeader .esHeadRight{ display:flex; align-items:center; gap:8px; }
-#eventSheetHeader .esIconBtn{ border:1px solid #e2e8f0; background:#fff; border-radius:12px; padding:8px 10px; font-size:14px; }
-#eventSheetBody{
-  flex:1;
-  overflow:auto;
-  -webkit-overflow-scrolling:touch;
-  padding:12px;
-  padding-bottom: max(env(safe-area-inset-bottom), 16px);
-}
-#eventSheetFooter{
-  position:sticky; bottom:0; z-index:9100;
-  background:#fff;
-  border-top:1px solid #e2e8f0;
-  padding:10px 12px;
-  display:flex; align-items:center; gap:10px;
-  padding-bottom:max(env(safe-area-inset-bottom), 10px);
-}
-#eventSheetSave{ flex:1; background:#0f172a; color:#fff; border-radius:14px; padding:12px 14px; font-weight:900; }
-#eventSheetSaveFeedback{ font-size:12px; font-weight:800; color:#0f172a; background:#e2e8f0; padding:6px 10px; border-radius:999px; white-space:nowrap; }
+
+
 .esBlock{ border:1px solid #e2e8f0; border-radius:14px; padding:10px; margin-bottom:10px; background:#fff; }
 .esBlockTitle{ font-size:11px; font-weight:900; color:#334155; text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px; }
 #eventSheetMoreDetails summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 #eventSheetMoreDetails summary::-webkit-details-marker{ display:none; }
 
 
-/* V89E1A fixes: ensure sheet footer visible */
-#eventSheetFooter{ display:flex !important; background:#fff; }
-#eventSheetSave{ display:block !important; }
-#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 88px) !important; }
-
-
-/* V89E2: ensure sheet save footer always visible */
-#eventSheetFooter{
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 9150 !important;
-  background: #fff !important;
-  padding-bottom: max(env(safe-area-inset-bottom), 10px) !important;
-}
-#eventSheet{
-  height: calc(100vh - var(--top-stack-h) - var(--bottom-nav-h)) !important;
-}
-#eventSheetBody{
-  padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 96px) !important;
-}
-
-
-/* V89E3: harden sheet footer visibility */
-#eventSheetFooter{ display:flex !important; position: sticky !important; bottom:0 !important; z-index: 9200 !important; background:#fff !important; }
-#eventSheetSave{ display:block !important; }
-#eventSheetBody{ padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 110px) !important; }
 
 
 /* V89E3: leg sheet 2-column layout using existing fields */
@@ -583,7 +566,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E17A - FIX VIEW START GAP STABLE (UNDER TOTALS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E18A - TECH CLEANUP (EVENT SHEET CSS CONSOLIDATION) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
