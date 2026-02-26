@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>MI VIAJE</title>
+<title>V89E5E15A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E14A - LAYOUT CLEANUP (TOP UNDER TOTALS + NO ADD BUTTONS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E15A - FIX VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -618,7 +618,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <!-- Main -->
 <div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-0 pb-24">
 <!-- Scenario toggle -->
-<div class="flex items-center justify-between gap-3 mb-5">
+<div class="flex items-center justify-between gap-3 mb-0">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
 
 
@@ -928,20 +928,12 @@ function setView(viewName){
 
   activeView = viewName;
 
+  // Keep sticky heights in sync (Totales can be expanded/collapsed)
   scheduleSyncTopStackHeights();
 
-  const ms = $("mainScroll");
-  if (ms){
-    requestAnimationFrame(()=>{
-      const viewEl = views[viewName];
-      if (viewEl) {
-        // Keep the active section header glued right under Totales (dynamic height)
-        landUnderTotals(viewEl, 8, { smooth: false });
-      } else {
-        ms.scrollTop = 0;
-      }
-    });
-  }
+  // Structural start of a view is always just below Totales:
+  // mainScroll already has padding-top = --top-stack-h, so scrollTop=0 is the correct anchor.
+  requestAnimationFrame(() => { try { scrollMainToTop(); } catch {} });
 
   if (typeof updateFabForView === "function") updateFabForView(viewName);
 }
@@ -4003,13 +3995,10 @@ function applySummaryFold() {
   // Keep top stack measurements deterministic when detail opens/closes
   requestAnimationFrame(() => requestAnimationFrame(() => {
     try { syncTopStackHeights(); } catch {}
-    // If user is at the top, keep the active section glued under Totales after expand/collapse
+    // If user is at the top, keep anchor at the top of content (under Totales)
     try {
       const ms = document.getElementById("mainScroll");
-      if (ms && ms.scrollTop < 4) {
-        const viewEl = document.getElementById("view-" + String(activeView || ""));
-        if (viewEl) landUnderTotals(viewEl, 8, { smooth: false });
-      }
+      if (ms && ms.scrollTop < 4) scrollMainToTop();
     } catch {}
   }));
 
