@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E20A</title>
+<title>V89E5E21A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E20A - SHEET DEFAULT VIEW + EXPLICIT EDIT - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E21A - SHEET DEFAULT VIEW + EXPLICIT EDIT (HARD LOCK) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1593,33 +1593,81 @@ function applyEventSheetMode(nextMode){
     const btnSave = document.getElementById("eventSheetSave");
     const btnEdit = document.getElementById("eventSheetEdit");
 
-    const isView = (ctx && ctx.mode === "view");
+    const isView = !!(ctx && ctx.mode === "view");
 
     // Save button: disabled in view mode (prevents accidental commits)
-    if (btnSave) btnSave.disabled = !!isView;
+    if (btnSave) btnSave.disabled = isView;
 
-    // Edit button: visible always; subtle emphasis when in view
+    // Edit button: always enabled when a ctx exists
     if (btnEdit){
-      btnEdit.disabled = !ctx; // should not happen, but defensive
+      btnEdit.disabled = !ctx;
       btnEdit.setAttribute("aria-pressed", (!isView) ? "true" : "false");
     }
 
     if (!body) return;
 
-    // Toggle controls inside the sheet body
+    // Toggle controls inside the sheet body (hard-lock in view mode)
     if (isView){
       body.classList.add("sheet-view");
-      body.querySelectorAll("input, select, textarea, button").forEach(el=>{
-        // don't touch already-disabled controls; only mark those we disable
-        if (el.disabled) return;
-        el.disabled = true;
-        el.setAttribute("data-disabled-by-view", "1");
+
+      // 1) Disable actionable controls (buttons/selects) and lock text fields (readonly)
+      body.querySelectorAll("input, textarea, select, button").forEach(el=>{
+        // Avoid double-tagging: only mark those we lock
+        const tag = el.getAttribute("data-locked-by-view");
+        if (tag === "1") return;
+
+        const tagAsLocked = () => el.setAttribute("data-locked-by-view","1");
+
+        // Keep already-disabled elements untouched (but still tag so we can restore correctly)
+        if (el.disabled){
+          tagAsLocked();
+          el.setAttribute("data-was-disabled","1");
+          return;
+        }
+
+        const t = (el.tagName||"").toLowerCase();
+        if (t === "input" || t === "textarea"){
+          // readonly is more reliable on iOS than disabled for "no accidental edits"
+          el.readOnly = true;
+          tagAsLocked();
+        } else {
+          el.disabled = true;
+          tagAsLocked();
+        }
       });
+
+      // 2) Safety: prevent contenteditable changes if any exist
+      body.querySelectorAll("[contenteditable='true']").forEach(el=>{
+        el.setAttribute("data-locked-by-view","1");
+        el.setAttribute("contenteditable","false");
+      });
+
     } else {
       body.classList.remove("sheet-view");
-      body.querySelectorAll('[data-disabled-by-view="1"]').forEach(el=>{
-        el.disabled = false;
-        el.removeAttribute("data-disabled-by-view");
+
+      // Restore only what we locked
+      body.querySelectorAll('[data-locked-by-view="1"]').forEach(el=>{
+        const t = (el.tagName||"").toLowerCase();
+
+        // Restore contenteditable
+        if (el.hasAttribute("contenteditable")){
+          // Only restore if it was originally true (we can't know reliably), so keep false unless explicitly set elsewhere
+          // (Conservative: do not flip to true automatically)
+        }
+
+        // Restore disabled state
+        if (t === "select" || t === "button"){
+          const wasDisabled = el.getAttribute("data-was-disabled")==="1";
+          el.disabled = wasDisabled;
+          el.removeAttribute("data-was-disabled");
+        }
+
+        // Restore readonly on text inputs
+        if (t === "input" || t === "textarea"){
+          el.readOnly = false;
+        }
+
+        el.removeAttribute("data-locked-by-view");
       });
     }
   } catch(e){
@@ -1627,7 +1675,6 @@ function applyEventSheetMode(nextMode){
     try{ console.warn(e); }catch{}
   }
 }
-
 
 function __normKind(k){
   const raw = String(k||"").toLowerCase().trim();
