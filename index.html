@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E17A</title>
+<title>V89E5E16A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E17A - FIX VIEW START GAP STABLE (UNDER TOTALS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A - FIX REAL VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1211,33 +1211,13 @@ function calibrateViewStartGap(){
   // Only calibrate when user is at the top (avoid messing with contextual scroll)
   if (ms.scrollTop > 2) return;
 
-  // IMPORTANT: measure the *baseline* gap (without any previously-applied fix),
-  // otherwise we create a feedback loop where the fix cancels itself.
-  const root = document.documentElement;
-
-  // Temporarily disable the fix for measurement
-  const prevFix = root.style.getPropertyValue("--view-gap-fix");
-  root.style.setProperty("--view-gap-fix", "0px");
-
-  // Force reflow so getBoundingClientRect reflects the temporary change
-  void ms.offsetHeight;
-
+  // Measure the real visual gap between Totales bottom and current view start
   const totalsBottom = totals.getBoundingClientRect().bottom;
   const viewTop = viewEl.getBoundingClientRect().top;
 
   const gap = Math.max(0, Math.round(viewTop - totalsBottom));
-
-  // Apply measured baseline gap as the stable fix
-  root.style.setProperty("--view-gap-fix", gap + "px");
-
-  // (Optional) keep previous value if measurement is 0 but we had a non-zero fix.
-  // This avoids edge cases during quick view switching while layout is still settling.
-  if (gap === 0 && prevFix && prevFix.trim() && prevFix.trim() !== "0px") {
-    // Restore previous non-zero fix if we likely measured too early.
-    root.style.setProperty("--view-gap-fix", prevFix.trim());
-  }
+  document.documentElement.style.setProperty("--view-gap-fix", gap + "px");
 }
-
 
 function syncTopStackHeights(){
   const hdr = $("appHeader");
