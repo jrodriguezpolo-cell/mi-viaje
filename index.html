@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E12A - TRANSPORT LIST VIEW MODE (UX 2.1) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E13A - CONTEXTUAL SHEET NAV (TRANSPORT+TIMELINE) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1842,10 +1842,11 @@ function __applyLegPlaceholdersInSheet(id, mode){
   if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
 }
 
-function openEventSheet({ kind, id, mode, isNew } = {}) {
+function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
   const m = (mode === "view") ? "view" : "edit";
+  const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
   const overlay = document.getElementById("eventSheetOverlay");
@@ -1964,7 +1965,7 @@ function renderLegModeChips(container, leg, onSelect){
 
   // LEG: render isolated editor HTML (no DOM move from section)
   if (k === "leg") {
-    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew };
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
     const ok = __renderLegEditorInSheet(body, legObj, itemId, !!isNew);
     if (!ok) { alert("No se pudo abrir el editor"); return; }
 
@@ -2009,7 +2010,7 @@ function renderLegModeChips(container, leg, onSelect){
   // Move node into sheet body
   const parent = node.parentNode;
   const next = node.nextSibling;
-  __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : "") };
   window.__sheetCtx = { kind: k, id: itemId };
   try {
     const trash = document.getElementById("eventSheetTrash");
@@ -2124,9 +2125,21 @@ function closeEventSheet({ silent } = {}) {
     if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
   } catch {}
 
-  // Restore scroll position (no aggressive jumps)
+  // Restore view context (only if changed while sheet open)
   try {
-    if (mainScroll && typeof ctx?.prevScrollTop === "number") mainScroll.scrollTop = ctx.prevScrollTop;
+    const src = ctx && ctx.sourceView ? String(ctx.sourceView) : "";
+    if (src && typeof setView === "function" && (typeof activeView !== "undefined") && String(activeView) !== src) {
+      setView(src);
+    }
+  } catch {}
+
+// Restore scroll position (no aggressive jumps)
+  try {
+    if (mainScroll && typeof ctx?.prevScrollTop === "number") {
+      const y = ctx.prevScrollTop;
+      try { mainScroll.scrollTop = y; } catch {}
+      try { requestAnimationFrame(() => { try { mainScroll.scrollTop = y; } catch {} }); } catch {}
+    }
   } catch {}
 
   if (!silent) {
@@ -2436,7 +2449,7 @@ function renderLegs() {
     try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = btn.getAttribute("data-leg-open");
     if (!id) return;
-    try { openEventSheet({ kind: "leg", id, mode: "view" }); } catch {}
+    try { openEventSheet({ kind: "leg", id, mode: "view", sourceView: "legs" }); } catch {}
   }));
 }
 
@@ -3774,20 +3787,18 @@ function renderTimeline() {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
 
-    // Tap en item: toggle real (plegar/desplegar)
-// - Click en checkbox/notas/Ir NO debe plegar/desplegar
+    // Tap en item: abrir Sheet directo (contextual)
+// - Click en checkbox/notas/Ir NO debe abrir el sheet
 box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
   row.addEventListener("click", (e) => {
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
     if (tag === "input" || tag === "label" || tag === "button" || tag === "textarea" || tag === "a") return;
 
-    const key = row.getAttribute("data-tl-key") || "";
-    if (!key) return;
+    const jt = row.getAttribute("data-tl-jump-type") || "";
+    const jid = row.getAttribute("data-tl-jump-id") || "";
+    if (!jt || !jid) return; // notes or non-jump rows
 
-    if (__tlExpanded.has(key)) __tlExpanded.delete(key);
-    else __tlExpanded.add(key);
-
-    renderTimeline();
+    try { openEventSheet({ kind: jt, id: jid, mode: "edit", sourceView: "timeline" }); } catch {}
   });
 });
 
