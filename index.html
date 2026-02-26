@@ -581,7 +581,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10D - CSS HYGIENE NO BEHAVIOR CHANGE - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11 - TRANSPORT TIMELINE DURATION ONLY - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -3662,6 +3662,46 @@ function renderTimeline() {
       : "tlTimeBadge tlTimeNone";
     const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
+    // V89E5E11: Transporte (leg) premium summary in timeline (times + duration). No date duplication.
+    let __title = it.title;
+    let __dateLineHTML = dateLineHTML;
+    if (jumpType === 'leg') {
+      const fromTxt = String(__leg?.from || '').trim() || '(origen)';
+      const toTxt = String(__leg?.to || '').trim() || '(destino)';
+      __title = `${fromTxt} → ${toTxt}`;
+
+      const hasStart = !!(String(__leg?.date || '').trim() && String(__leg?.time || '').trim());
+      const hasEnd = !!(String(__leg?.dateIn || '').trim() && String(__leg?.timeIn || '').trim());
+      const tStart = hasStart ? String(__leg.time).trim() : '';
+      const tEnd = hasEnd ? String(__leg.timeIn).trim() : '';
+
+      let line2 = '';
+      if (tStart && tEnd) line2 = `${tStart} – ${tEnd}`;
+      else if (tStart) line2 = tStart;
+      else if (tEnd) line2 = tEnd;
+
+      // Duration (only if start+end)
+      let durTxt = '';
+      if (tStart && tEnd) {
+        const sm = timeToMinutes(tStart);
+        const em = timeToMinutes(tEnd);
+        if (sm !== null && em !== null) {
+          let diff = em - sm;
+          if (diff < 0) diff += 1440; // crosses midnight
+          const h = Math.floor(diff / 60);
+          const m = diff % 60;
+          if (h > 0 && m > 0) durTxt = `${h}h ${m}m`;
+          else if (h > 0) durTxt = `${h}h`;
+          else if (m > 0) durTxt = `${m}m`;
+        }
+      }
+
+      if (line2 && durTxt) __dateLineHTML = `${escapeHtml(line2)}   ·   ${escapeHtml(durTxt)}`;
+      else if (line2) __dateLineHTML = `${escapeHtml(line2)}`;
+      else __dateLineHTML = ``;
+    }
+
+
     // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
     const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
     const isExpanded = __tlExpanded.has(tlKey);
@@ -3748,8 +3788,8 @@ function renderTimeline() {
             <div class="shrink-0 text-lg leading-none mt-[2px]">${escapeHtml(icon || (it.isNote ? "📝" : "•"))}</div>
 
             <div class="min-w-0">
-              <div class="font-semibold text-sm truncate">${escapeHtml(it.title)}</div>
-              <div class="text-xs text-slate-600 mt-0.5">${dateLineHTML}</div>
+              <div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div>
+              <div class="text-xs text-slate-600 mt-0.5">${__dateLineHTML}</div>
             </div>
           </div>
 
