@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16A_ESVIEW_TLBAR_FIX6</title>
+<title>V89E5E16A_ESVIEW_TLBAR_FIX7</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -592,7 +592,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX6 - Timeline start-gap stabilized (topStackH via totals.bottom) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX7 - Structural start + defaults - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -938,6 +938,22 @@ function setView(viewName){
   requestAnimationFrame(() => { try { scrollMainToTop(); } catch {} });
 
   if (typeof updateFabForView === "function") updateFabForView(viewName);
+
+  // Defaults (vFIX7): focus next item and expand key sections
+  try {
+    if (viewName === "timeline") {
+      requestAnimationFrame(() => { try { scrollToNextTimelineItem(); } catch {} });
+    }
+    if (viewName === "legs") {
+      requestAnimationFrame(() => { __ensureAccordionOpen("legs"); __focusNextInSection("legs"); });
+    }
+    if (viewName === "stays") {
+      requestAnimationFrame(() => { __ensureAccordionOpen("stays"); __focusNextInSection("stays"); });
+    }
+    if (viewName === "acts") {
+      requestAnimationFrame(() => { __ensureAccordionOpen("acts"); __focusNextInSection("acts"); });
+    }
+  } catch {}
 }
 
 
@@ -1252,8 +1268,6 @@ function syncTopStackHeights(){
     if (h > 0) root.style.setProperty("--timeline-controls-h", h + "px");
   }
 
-  // After updating stack heights, calibrate any inherited gap at the top.
-  requestAnimationFrame(calibrateViewStartGap);
 }
 
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
@@ -2891,6 +2905,54 @@ function sortByDateTimeEmptyFirst(list) {
   });
   return list;
 }
+
+/* ---------------- Upcoming focus helpers (vFIX7) ---------------- */
+function __nowMinutes(){
+  const d = new Date();
+  return d.getHours()*60 + d.getMinutes();
+}
+function __pickNextId(list){
+  if (!Array.isArray(list) || !list.length) return null;
+  const tk = todayKey();
+  const nm = __nowMinutes();
+  for (const it of list){
+    const d = String(it?.date || "").trim();
+    if (!d) continue;
+    if (d > tk) return String(it.id || "");
+    if (d === tk){
+      const m = timeToMinutes(it?.time);
+      if (m === null || m >= nm) return String(it.id || "");
+    }
+  }
+  const first = list.find(x => String(x?.date||"").trim());
+  return first ? String(first.id || "") : null;
+}
+function __focusNextInSection(section){
+  try{
+    const sc = curScenario();
+    let list = [];
+    let prefix = "";
+    if (section === "legs"){ list = sc.legs || []; prefix = "leg-"; }
+    else if (section === "stays"){ list = sc.stays || []; prefix = "stay-"; }
+    else if (section === "acts"){ list = sc.activities || []; prefix = "act-"; }
+    sortByDateTimeEmptyFirst(list);
+    const id = __pickNextId(list);
+    if (!id) return;
+    const el = document.getElementById(prefix + id);
+    if (el) scrollToElWithOffset(el, 0, false);
+  } catch {}
+}
+function __ensureAccordionOpen(accKey){
+  const btn = document.querySelector(`[data-acc="${accKey}"]`);
+  const body = document.querySelector(`[data-acc-body="${accKey}"]`);
+  if (!btn || !body) return;
+  const isHidden = body.classList.contains("hidden") || body.style.display === "none" || body.hasAttribute("hidden");
+  if (isHidden){
+    try { btn.click(); } catch {}
+  }
+}
+
+
 
 
 function timeToMinutes(t) {
@@ -5640,9 +5702,48 @@ function initTimelineControlsFixedObserver(){ /* removed */ }
 
 
 
+
+function __initTimelineNavBindings(){
+  const g = document.getElementById("tlViewGlobal");
+  const d = document.getElementById("tlViewDay");
+  const today = document.getElementById("timelineToday");
+  const next = document.getElementById("timelineNext");
+  const prevDay = document.getElementById("tlDayPrev");
+  const nextDay = document.getElementById("tlDayNext");
+
+  if (g && !g.__bound){
+    g.__bound = 1;
+    g.addEventListener("click", () => { timelineViewMode = "global"; renderTimeline(); });
+  }
+  if (d && !d.__bound){
+    d.__bound = 1;
+    d.addEventListener("click", () => { timelineViewMode = "day"; activeDayISO = ""; renderTimeline(); });
+  }
+  if (today && !today.__bound){
+    today.__bound = 1;
+    today.addEventListener("click", () => { try { scrollToCurrentTimelineItem(); } catch {} });
+  }
+  if (next && !next.__bound){
+    next.__bound = 1;
+    next.addEventListener("click", () => { try { scrollToNextTimelineItem(); } catch {} });
+  }
+  if (prevDay && !prevDay.__bound){
+    prevDay.__bound = 1;
+    prevDay.addEventListener("click", () => { try { moveActiveDay(-1); } catch {} });
+  }
+  if (nextDay && !nextDay.__bound){
+    nextDay.__bound = 1;
+    nextDay.addEventListener("click", () => { try { moveActiveDay(1); } catch {} });
+  }
+}
+
+
+
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
   setupAccordion();
+  try { __initTimelineNavBindings(); } catch {}
+
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
