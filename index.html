@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16B</title>
+<title>V89E5E16C</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -46,20 +46,9 @@ function deleteItemById(kind, id) {
     }
 
 
-    /* Event Sheet: view mode (real read-only) */
-    body.eventsheet-view #eventSheetBody{
-      /* prevent accidental selection toggles */
-    }
-    body.eventsheet-view #eventSheetSave,
-    body.eventsheet-view #eventSheetTrash,
-    body.eventsheet-view #eventSheetAttach,
-    body.eventsheet-view #eventSheetNotes{
-      opacity: .55;
-      pointer-events: none;
-    }
-
-
-  /* Timeline highlighting */
+    /* Event Sheet: view mode (real read-only)
+   Note: do NOT kill header tools with pointer-events; mode is enforced in JS */
+/* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
   .timelineItem.today { background-color: #ecfdf5; border-color: #10b981; }
 
@@ -597,7 +586,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16B - EVENT SHEET VIEW/EDIT (PENCIL) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16C - EVENT SHEET VIEW/EDIT FIXES - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1635,12 +1624,13 @@ function setEventSheetMode(mode){
   if (btnEdit) btnEdit.classList.toggle("hidden", !isView);
   if (btnSave) { btnSave.classList.toggle("hidden", isView); btnSave.disabled = isView; }
   if (btnTrash) btnTrash.disabled = isView;
-  if (btnAttach) btnAttach.disabled = isView;
-  if (btnNotes) btnNotes.disabled = isView;
-
-  document.body.classList.toggle("eventsheet-view", isView);
+  if (btnAttach) btnAttach.disabled = false;
+if (btnNotes) btnNotes.disabled = false;
+document.body.classList.toggle("eventsheet-view", isView);
+  try{ __ensureEventSheetViewGuards(); }catch{}
   __esLockControls(isView);
 }
+
 
 
 function __normKind(k){
@@ -5651,6 +5641,38 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       } catch {}
     });
+
+
+  // Sheet trash (delete button) — only in edit
+  const sheetTrash = document.getElementById("eventSheetTrash");
+  if (sheetTrash && !sheetTrash.__bound) {
+    sheetTrash.__bound = true;
+    sheetTrash.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      try {
+        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de borrar."); return; }
+        const k = sheetTrash.dataset.kind;
+        const id = sheetTrash.dataset.id;
+        if (!k || !id) return;
+        if (!confirm("¿Eliminar este elemento?")) return;
+
+        const ok = deleteItemById(k, id);
+        if (!ok) { toast("No se pudo eliminar."); return; }
+
+        try { if (typeof saveState === "function") saveState(); } catch {}
+
+        // Close and re-render minimal
+        try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+        try {
+          if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); }
+          if (k === "stay"){ if (typeof renderStays === "function") renderStays(); }
+          if (k === "act") { if (typeof renderActivities === "function") renderActivities(); }
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } catch {}
+      } catch {}
+    });
+  }
   }
 
 });
