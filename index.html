@@ -581,7 +581,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11C - TRANSPORT ARRIVAL+REAL DURATION (FIX KEYS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11D - TRANSPORT SUMMARY UNIFIED (NO TL COST) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1055,6 +1055,45 @@ const parseMoney = (v) => {
 const uniq = (arr) => Array.from(new Set(arr.map(x => String(x).trim()).filter(Boolean)));
 
 
+
+/* --------------------------- Date helpers (v89E5E11D) --------------------------- */
+function formatDateES(dateStr) {
+  // dateStr “YYYY-MM-DD” -> “26 feb 2026” (sin weekday)
+  const s = String(dateStr || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const d = new Date(s + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "";
+  let out = d.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+  // normalizar: quitar puntos si el mes viene “feb.” -> “feb”
+  out = String(out || "").replace(/\./g, "").replace(/\s+/g, " ").trim();
+  return out;
+}
+
+function calcDurationText(departDate, departTime, arriveDate, arriveTime) {
+  // si falta algo => ""
+  const d0 = String(departDate || "").trim();
+  const t0 = String(departTime || "").trim();
+  const d1 = String(arriveDate || "").trim();
+  const t1 = String(arriveTime || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d0) || !/^\d{2}:\d{2}$/.test(t0) || !/^\d{4}-\d{2}-\d{2}$/.test(d1) || !/^\d{2}:\d{2}$/.test(t1)) return "";
+
+  const start = new Date(d0 + "T" + t0);
+  const end = new Date(d1 + "T" + t1);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
+
+  let diffMin = Math.round((end - start) / 60000);
+
+  // si negativo y parece cruce de medianoche, sumar 24h si arriveDate==departDate (fallback)
+  if (diffMin < 0 && d1 === d0) diffMin += 24 * 60;
+
+  if (diffMin <= 0) return "";
+  const h = Math.floor(diffMin / 60);
+  const m = diffMin % 60;
+
+  // devolver: “5h” si múltiplo de 60; “2h 29m” si no
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
 /* -------------------------- Timeline jump --------------------------- */
 function todayYMD() {
   const d = new Date();
@@ -2281,7 +2320,7 @@ function renderTabs() {
   if (mc) mc.textContent = state.displayCurrency;
 }
 
-function legCard(leg) {
+function legCard(leg, idx) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
@@ -2294,16 +2333,18 @@ function legCard(leg) {
   const tStart = (leg.time||"").trim();
   const dEndRaw = String((leg.dateIn ?? leg.arriveDate) || "").trim();
   const tEndRaw = String((leg.timeIn ?? leg.arriveTime) || "").trim();
-  let dt = `${dStart || "—"} ${tStart || "—"}`;
-  if (dEndRaw || tEndRaw) {
-    const endD = dEndRaw || dStart || "";
-    const same = (endD && dStart && endD === dStart) && (tEndRaw && tStart && tEndRaw === tStart);
-    if (!same) {
-      if (tEndRaw) dt += ` · Llegada: ${endD} ${tEndRaw}`;
-      else if (endD) dt += ` · Llegada: ${endD}`;
-    }
-  }
-  const hasNotes = !!(leg.notes && String(leg.notes).trim());
+  const dES = leg.date ? formatDateES(leg.date) : "";
+  const t0 = String(leg.time || "").trim();
+  const t1 = String(leg.arriveTime || "").trim();
+  const dur = calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime);
+
+  let timeLine = "";
+  if (t0 && t1) timeLine = `${t0} → ${t1}${dur ? " · " + dur : ""}`;
+  else if (t0)  timeLine = `${t0}`;
+
+  const dt = [dES, timeLine].filter(Boolean).join(" · ") || "—";
+
+const hasNotes = !!(leg.notes && String(leg.notes).trim());
 
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
@@ -3589,7 +3630,18 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
+    items.push({
+      date: (leg.date || "9999-99-99"),
+      time: (leg.time || ""),
+      arriveDate: (leg.arriveDate || ""),
+      arriveTime: (leg.arriveTime || ""),
+      duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
+      type: "Trayecto",
+      title: `${leg.from || "—"} → ${leg.to || "—"}`,
+      cost: parseMoney(leg.cost),
+      legId: leg.id,
+      uid: `leg:${leg.id}`
+    });
   }
   for (const s of sc.stays) {
     items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
@@ -3680,53 +3732,36 @@ function renderTimeline() {
       : "tlTimeBadge tlTimeNone";
     const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
-    // V89E5E11: Transporte (leg) premium summary in timeline (times + duration). No date duplication.
+    // V89E5E11D: Transporte (leg) — resumen unificado (fecha ES + horas + duración) + lugares
     let __title = it.title;
     let __dateLineHTML = dateLineHTML;
+    let __placeLineHTML = "";
+
     if (jumpType === 'leg') {
-      const fromTxt = String(__leg?.from || '').trim() || '(origen)';
-      const toTxt = String(__leg?.to || '').trim() || '(destino)';
+      const fromTxt = String(__leg?.from || '').trim() || '—';
+      const toTxt = String(__leg?.to || '').trim() || '—';
       __title = `${fromTxt} → ${toTxt}`;
 
-      const dStart = String(__leg?.date || '').trim();
-      const tStart = String(__leg?.time || '').trim();
-      const dEnd = String((__leg?.dateIn ?? __leg?.arriveDate) || '').trim() || dStart;
-      const tEnd = String((__leg?.timeIn ?? __leg?.arriveTime) || '').trim();
+      const dES = (it.date && it.date !== "9999-99-99") ? formatDateES(it.date) : "";
+      const t0 = String(it.time || "").trim();
+      const t1 = String(it.arriveTime || "").trim();
+      const dur = String(it.duration || "").trim();
 
-      const hasStart = !!(dStart && /^\d{2}:\d{2}$/.test(tStart));
-      const hasEnd = !!(dEnd && /^\d{2}:\d{2}$/.test(tEnd));
+      let timeLine = "";
+      if (t0 && t1) timeLine = `${t0} → ${t1}${dur ? " · " + dur : ""}`;
+      else if (t0)  timeLine = `${t0}`;
 
-      let line2 = '';
-      if (hasStart && hasEnd) line2 = `${tStart} → ${tEnd}`;
-      else if (hasStart) line2 = `${tStart}`;
-      else if (hasEnd) line2 = `→ ${tEnd}`;
+      const metaLine = [dES, timeLine].filter(Boolean).join(" · ");
+      __dateLineHTML = escapeHtml(metaLine || "—");
 
-      let durTxt = '';
-      if (hasStart && hasEnd) {
-        const start = new Date(`${dStart}T${tStart}`);
-        const end = new Date(`${dEnd}T${tEnd}`);
-        if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-          if (end < start) end.setDate(end.getDate() + 1);
-          const diffMin = Math.round((end - start) / 60000);
-          if (diffMin > 0) {
-            const h = Math.floor(diffMin / 60);
-            const m = diffMin % 60;
-            if (h > 0 && m > 0) durTxt = `${h}h ${m}m`;
-            else if (h > 0) durTxt = `${h}h`;
-            else if (m > 0) durTxt = `${m}m`;
-          } else if (diffMin === 0) {
-            durTxt = `0m`;
-          }
-        }
+      const p0 = String(__leg?.placeOut || "").trim();
+      const p1 = String(__leg?.placeIn || "").trim();
+      if (p0 || p1) {
+        __placeLineHTML = `<div class="text-sm text-slate-600 mt-0.5">${escapeHtml(p0 || "—")} → ${escapeHtml(p1 || "—")}</div>`;
       }
-
-      if (line2 && durTxt) __dateLineHTML = `${escapeHtml(line2)} · ${escapeHtml(durTxt)}`;
-      else if (line2) __dateLineHTML = `${escapeHtml(line2)}`;
-      else __dateLineHTML = dateLineHTML;
     }
 
-
-    // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
+// Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
     const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
     const isExpanded = __tlExpanded.has(tlKey);
 
@@ -3813,7 +3848,8 @@ function renderTimeline() {
 
             <div class="min-w-0">
               <div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div>
-              <div class="text-xs text-slate-600 mt-0.5">${__dateLineHTML}</div>
+              ${(jumpType === "leg") ? `<div class="text-sm text-slate-600 mt-0.5">${__dateLineHTML}</div>` : `<div class="text-xs text-slate-600 mt-0.5">${__dateLineHTML}</div>`}
+        ${__placeLineHTML || ""}
             </div>
           </div>
 
@@ -3828,7 +3864,7 @@ function renderTimeline() {
             ${hasNote ? "📝" : ""}
           </div>
           <div class="mt-1 flex items-center ${showCost ? "justify-between" : "justify-end"} gap-3">
-            ${showCost ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
+            ${(showCost && jumpType !== "leg") ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
             <div class="flex items-center gap-2">
               ${tlBadges ? tlBadges : ""}
               ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</button>` : ``}
