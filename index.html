@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16D</title>
+<title>V89E5E16E</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -586,7 +586,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16D - EVENT SHEET VIEW/EDIT FIX - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16E - EVENT SHEET VIEW/EDIT FIX - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1211,16 +1211,52 @@ function calibrateViewStartGap(){
   const viewEl = $("view-" + (activeView || ""));
   if (!ms || !totals || !viewEl) return;
 
-  // Only calibrate when user is at the top (avoid messing with contextual scroll)
+  // Only calibrate when user is at the very top (avoid messing with contextual scroll)
   if (ms.scrollTop > 2) return;
 
-  // Measure the real visual gap between Totales bottom and current view start
-  const totalsBottom = totals.getBoundingClientRect().bottom;
-  const viewTop = viewEl.getBoundingClientRect().top;
+  const root = document.documentElement;
+
+  // Robust calibration:
+  // Temporarily neutralize the previous correction so we measure the *base* gap cleanly.
+  // This avoids unstable first-render measurements where the correction is applied twice.
+  const prevFixStr = getComputedStyle(root).getPropertyValue("--view-gap-fix").trim();
+  const prevFix = Math.max(0, Math.round(parseFloat(prevFixStr) || 0));
+
+  root.style.setProperty("--view-gap-fix", "0px");
+
+  // Force a reflow so the DOM reflects the neutralized state before measuring.
+  // (iOS Safari can otherwise report stale rects on first paint.)
+  void ms.offsetHeight;
+  void totals.offsetHeight;
+  void viewEl.offsetHeight;
+
+  const totalsRect = totals.getBoundingClientRect();
+  const viewRect = viewEl.getBoundingClientRect();
+
+  // If layout isn't ready yet, keep the last known good value.
+  if (!totalsRect.height || !viewRect.height) {
+    root.style.setProperty("--view-gap-fix", (__lastGoodViewGapFix || prevFix) + "px");
+    return;
+  }
+
+  const totalsBottom = totalsRect.bottom;
+  const viewTop = viewRect.top;
 
   const gap = Math.max(0, Math.round(viewTop - totalsBottom));
-  document.documentElement.style.setProperty("--view-gap-fix", gap + "px");
+
+  // Guard against early/erratic zero on first render: keep the previous non-zero fix
+  // until we get a stable measurement.
+  const lastGood = (__lastGoodViewGapFix || prevFix);
+  const finalGap = (gap === 0 && lastGood > 0 && !__initialScrollFixDone) ? lastGood : gap;
+
+  root.style.setProperty("--view-gap-fix", finalGap + "px");
+  if (finalGap > 0) __lastGoodViewGapFix = finalGap;
+
+  // Mark initial pass done once we got a layout-backed measurement.
+  __initialScrollFixDone = true;
 }
+
+
 
 function syncTopStackHeights(){
   const hdr = $("appHeader");
@@ -1250,6 +1286,8 @@ function syncTopStackHeights(){
 
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
 let __initialScrollFixDone = false;
+let __lastGoodViewGapFix = 0;
+
 let __syncTopStackPending = false;
 let __syncTopStackDidFirstReset = false;
 function scheduleSyncTopStackHeights(){
