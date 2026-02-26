@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E26A</title>
+<title>V89E5E27B</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -286,7 +286,7 @@ border-radius: 999px;
   background: #2563eb;
   color: #fff;
   box-shadow: 0 10px 25px rgba(2,6,23,0.22);
-  z-index: 3500;
+  z-index: 2500;
 }
 #fabAdd:active{ transform: scale(0.98); }
 
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E26A - FAB RESTORED + TIMELINE STICKY UNDER TOTALS - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E27B - ROLLBACK FIX (FAB NODE + TIMELINE STICKY OFFSET) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -887,6 +887,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 </div>
 </div>
 </div>
+<button aria-label="Añadir" id="fabAdd" class="hidden tap" title="Añadir">+</button>
 <script>
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
@@ -1285,7 +1286,16 @@ function scheduleSyncTopStackHeights(){
     }
   }));
 
-  
+  // Checklist "Hecho" en Transporte (mismo estado/handler que Cronograma)
+  box.querySelectorAll("[data-leg-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.addEventListener("change", (e)=> {
+      try{ e.stopPropagation(); }catch{}
+      try{ handleLegDoneToggle(cb.getAttribute("data-leg-done"), cb.checked, cb); } catch {}
+    });
+  });
+
+}
 document.addEventListener("DOMContentLoaded", scheduleSyncTopStackHeights);
 window.addEventListener("load", scheduleSyncTopStackHeights);
 window.addEventListener("resize", scheduleSyncTopStackHeights);
@@ -2661,15 +2671,6 @@ function renderLegs() {
     if (!id) return;
     try { openEventSheet({ kind: "leg", id, mode: "view", sourceView: "legs" }); } catch {}
   }));
-  // Checklist "Hecho" en Transporte (misma fuente de verdad + handler que Cronograma)
-  box.querySelectorAll("[data-leg-done]").forEach(cb => {
-    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
-    cb.addEventListener("change", (e)=> {
-      try{ e.stopPropagation(); }catch{}
-      try{ handleLegDoneToggle(cb.getAttribute("data-leg-done"), cb.checked, cb); } catch {}
-    });
-  });
-
 }
 
 function stayCard(stay) {
@@ -5794,7 +5795,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
 });
 </script>
-<button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
 <!-- Floating FAB: Collapse all -->
 <button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
 
