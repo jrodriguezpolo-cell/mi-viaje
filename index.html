@@ -617,7 +617,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10 - SHEET SAVE ICON IN HEADER REMOVE BOTTOM BUTTON - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E8B - TRANSPORT SUMMARY PREMIUM PORT ONLY - 2026-02-25 19:25</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1658,6 +1658,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600">Coste</label>
         <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
       </div>
+
+      <div class="sm:col-span-12 flex items-center justify-between gap-2">
+        <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📎 Archivo</button>
+        <button type="button" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 text-sm opacity-60" disabled title="Próximamente">📝 Nota</button>
+      </div>
     </div>
   `;
   wrap.prepend(chipsHost);
@@ -2311,6 +2316,53 @@ function renderTabs() {
   if (mc) mc.textContent = state.displayCurrency;
 }
 
+
+function transportFmtDate(iso){
+  const v = String(iso || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return v || "";
+  const d = new Date(v + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return v;
+  try{
+    return d.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"numeric"}).replace(/\./g,"");
+  }catch{
+    return v;
+  }
+}
+function transportCostText(raw, currency){
+  if (raw === null || raw === undefined || raw === "") return "";
+  const n = Number(String(raw).replace(",", "."));
+  if (!Number.isFinite(n)) return "";
+  const numTxt = (Math.round(n*100) % 100 === 0) ? String(Math.round(n)) : String(n);
+  return `${numTxt} ${currency || ""}`.trim();
+}
+function transportHasAttach(obj){
+  // UI-only / future-proof: detect any common attachment fields if they exist
+  const o = obj || {};
+  return !!(o.attach || o.attachment || o.file || o.fileUrl || o.fileName || (Array.isArray(o.files) && o.files.length));
+}
+function transportDurationText(leg){
+  const out = timeToMinutes(leg && (leg.time || leg.timeOut || ""));
+  const inn = timeToMinutes(leg && (leg.timeIn || leg.arrivalTime || ""));
+  if (out === null || inn === null) return "";
+  let d = inn - out;
+  if (d < 0) d += 24*60; // crosses midnight
+  const h = Math.floor(d/60);
+  const m = d % 60;
+  if (!h && !m) return "0m";
+  return `${h ? (h+"h") : ""}${h && m ? " " : ""}${m ? (m+"m") : ""}`.trim();
+}
+function transportWhenLine(leg){
+  const dateTxt = (String(leg && leg.date || "").trim() ? (transportFmtDate(leg.date) || String(leg.date).trim()) : "Sin fecha");
+  const tOut = String(leg && leg.time || "").trim();
+  const tIn  = String(leg && leg.timeIn || "").trim();
+  const dur = (tOut && tIn) ? transportDurationText(leg) : "";
+  let s = dateTxt;
+  if (tOut) s += ` · ${tOut}`;
+  if (tIn)  s += ` → ${tIn}`;
+  if (dur)  s += ` · ${dur}`;
+  return s;
+}
+
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
@@ -2319,9 +2371,11 @@ function legCard(leg) {
   const isOpen = __sectionExpanded.legs.has(leg.id);
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
-  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
-  const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
-  const hasNotes = !!(leg.notes && String(leg.notes).trim());
+  const route = `${(String(leg?.from||"").trim() || "(origen)")} → ${(String(leg?.to||"").trim() || "(destino)")}`;
+  const dt = transportWhenLine(leg);
+  const hasNotes = !!(leg && String(leg.notes || "").trim());
+  const hasAttach = transportHasAttach(leg);
+  const costText = transportCostText(leg && leg.cost, (state && state.displayCurrency) ? state.displayCurrency : "");
 
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
@@ -2329,12 +2383,12 @@ function legCard(leg) {
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1" title="Notas">📝</span>` : ``} ${hasAttach ? `<span class="ml-1" title="Archivo">📎</span>` : ``}</div>
         ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-      </div>
+      ${costText ? `<span class="text-xs font-semibold px-2 py-1 rounded-lg border border-slate-200 bg-white">${escapeHtml(costText)}</span>` : ``}</div>
     </div>
 
     <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="legs" data-sec-id="${leg.id}">
@@ -3607,7 +3661,7 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
+    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${(String(leg?.from||"").trim() || "(origen)")} → ${(String(leg?.to||"").trim() || "(destino)")}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
   }
   for (const s of sc.stays) {
     items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
@@ -3684,6 +3738,20 @@ function renderTimeline() {
     const jumpId = it.actId || it.legId || it.stayId || '';
     const __leg = (jumpType === 'leg') ? legById.get(String(jumpId)) : null;
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
+
+    const tlTitle = (jumpType === 'leg')
+      ? `${(String(__leg && __leg.from || '').trim() || '(origen)')} → ${(String(__leg && __leg.to || '').trim() || '(destino)')}`
+      : it.title;
+
+    const tlSubline = (jumpType === 'leg')
+      ? (() => {
+          const line = transportWhenLine(__leg || it);
+          const n = (__leg && String(__leg.notes || '').trim()) ? ' 📝' : '';
+          const a = transportHasAttach(__leg) ? ' 📎' : '';
+          return escapeHtml(line) + (n ? `<span class="ml-1" title="Notas">${n.trim()}</span>` : '') + (a ? `<span class="ml-1" title="Archivo">${a.trim()}</span>` : '');
+        })()
+      : dateLineHTML;
+
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
@@ -3784,8 +3852,8 @@ function renderTimeline() {
             <div class="shrink-0 text-lg leading-none mt-[2px]">${escapeHtml(icon || (it.isNote ? "📝" : "•"))}</div>
 
             <div class="min-w-0">
-              <div class="font-semibold text-sm truncate">${escapeHtml(it.title)}</div>
-              <div class="text-xs text-slate-600 mt-0.5">${dateLineHTML}</div>
+              <div class="font-semibold text-sm truncate">${escapeHtml(tlTitle)}</div>
+              <div class="text-xs text-slate-600 mt-0.5">${tlSubline}</div>
             </div>
           </div>
 
@@ -3800,7 +3868,15 @@ function renderTimeline() {
             ${hasNote ? "📝" : ""}
           </div>
           <div class="mt-1 flex items-center ${showCost ? "justify-between" : "justify-end"} gap-3">
-            ${showCost ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
+            ${showCost ? (() => {
+              if (jumpType === 'leg') {
+                const raw = __leg && __leg.cost;
+                const t = transportCostText(raw, (state && state.displayCurrency) ? state.displayCurrency : "");
+                return t ? `<div class="text-sm font-semibold">${escapeHtml(t)}</div>` : ``;
+              }
+              // fallback original behavior for other types
+              return (it.cost || it.cost === 0) ? `<div class="text-sm font-semibold">${escapeHtml(String(it.cost.toFixed ? it.cost.toFixed(2) : it.cost))}</div>` : ``;
+            })() : ``}
             <div class="flex items-center gap-2">
               ${tlBadges ? tlBadges : ""}
               ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</button>` : ``}
@@ -5616,8 +5692,6 @@ window.addEventListener('DOMContentLoaded', () => {
             📝
           </button>
 
-                    <button id="eventSheetSave" class="tap esIconBtn" type="button" aria-label="Guardar" title="Guardar">💾</button>
-
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
         </div>
@@ -5627,7 +5701,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div id="eventSheetFooter">
         <div id="eventSheetSaveFeedback" class="hidden" aria-live="polite">Guardado ✓</div>
-        
+        <button id="eventSheetSave" class="tap" type="button">GUARDAR</button>
       </div>
     </div>
   </div>
