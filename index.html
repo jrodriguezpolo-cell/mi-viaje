@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E20A</title>
+<title>V89E5E19A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -369,9 +369,6 @@ border-radius: 999px;
   padding-bottom: calc(max(env(safe-area-inset-bottom), 16px) + 110px) !important;
 }
 
-#eventSheetBody.sheet-view{ cursor: default; }
-#eventSheetBody.sheet-view input, #eventSheetBody.sheet-view select, #eventSheetBody.sheet-view textarea{ background: rgba(248,250,252,0.6); }
-
 #eventSheetFooter{
   display: flex !important;
   position: sticky !important;
@@ -585,7 +582,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E20A - SHEET DEFAULT VIEW + EXPLICIT EDIT - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E19A - FIX SHEET TOOLBAR ICONS ALIGN - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1584,51 +1581,6 @@ const __sectionExpanded = {
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
 let __eventSheetCtx = null;
 
-function applyEventSheetMode(nextMode){
-  try{
-    if (!window.__eventSheetCtx) return;
-    if (nextMode === "view" || nextMode === "edit") window.__eventSheetCtx.mode = nextMode;
-    const ctx = window.__eventSheetCtx;
-    const body = document.getElementById("eventSheetBody");
-    const btnSave = document.getElementById("eventSheetSave");
-    const btnEdit = document.getElementById("eventSheetEdit");
-
-    const isView = (ctx && ctx.mode === "view");
-
-    // Save button: disabled in view mode (prevents accidental commits)
-    if (btnSave) btnSave.disabled = !!isView;
-
-    // Edit button: visible always; subtle emphasis when in view
-    if (btnEdit){
-      btnEdit.disabled = !ctx; // should not happen, but defensive
-      btnEdit.setAttribute("aria-pressed", (!isView) ? "true" : "false");
-    }
-
-    if (!body) return;
-
-    // Toggle controls inside the sheet body
-    if (isView){
-      body.classList.add("sheet-view");
-      body.querySelectorAll("input, select, textarea, button").forEach(el=>{
-        // don't touch already-disabled controls; only mark those we disable
-        if (el.disabled) return;
-        el.disabled = true;
-        el.setAttribute("data-disabled-by-view", "1");
-      });
-    } else {
-      body.classList.remove("sheet-view");
-      body.querySelectorAll('[data-disabled-by-view="1"]').forEach(el=>{
-        el.disabled = false;
-        el.removeAttribute("data-disabled-by-view");
-      });
-    }
-  } catch(e){
-    // never break UX on mode toggle
-    try{ console.warn(e); }catch{}
-  }
-}
-
-
 function __normKind(k){
   const raw = String(k||"").toLowerCase().trim();
   if (raw === "transport") return "leg";
@@ -1926,8 +1878,7 @@ function __applyLegPlaceholdersInSheet(id, mode){
 function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const k = __normKind(kind);
   const itemId = String(id||"").trim();
-  let m = (mode === "view" || mode === "edit") ? mode : "";
-  if (!m) m = (isNew === true) ? "edit" : "view";
+  const m = (mode === "view") ? "view" : "edit";
   const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
@@ -2051,9 +2002,7 @@ function renderLegModeChips(container, leg, onSelect){
     const ok = __renderLegEditorInSheet(body, legObj, itemId, !!isNew);
     if (!ok) { alert("No se pudo abrir el editor"); return; }
 
-    try { applyEventSheetMode(m); } catch {}
-
-  overlay.classList.remove("hidden");
+    overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
     return;
   }
@@ -3254,7 +3203,7 @@ function jumpToItem(kind, id) {
   if (!rawKind || !itemId) return;
 
   // Sheet-first behavior (V89D1)
-  try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "view", sourceView: "timeline" }); return; } } catch {}
+  try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "edit" }); return; } } catch {}
 
   // 1) kind -> view mapping (timeline "Ir" button)
   const kindMap = {
@@ -3882,7 +3831,7 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
     const jid = row.getAttribute("data-tl-jump-id") || "";
     if (!jt || !jid) return; // notes or non-jump rows
 
-    try { openEventSheet({ kind: jt, id: jid, mode: "view", sourceView: "timeline" }); } catch {}
+    try { openEventSheet({ kind: jt, id: jid, mode: "edit", sourceView: "timeline" }); } catch {}
   });
 });
 
@@ -3894,7 +3843,7 @@ box.querySelectorAll("[data-tl-go]").forEach(btn => {
     if (!row) return;
     const kind = row.getAttribute("data-tl-jump-type");
     const id = row.getAttribute("data-tl-jump-id");
-    if (kind && id) { try { openEventSheet({ kind, id, mode: "view", sourceView: "timeline" }); } catch {} }
+    if (kind && id) { try { openEventSheet({ kind, id, mode: "edit" }); } catch {} }
   });
 });
 
@@ -5636,27 +5585,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-  // Sheet edit (explicit pencil -> enable editing)
-  const sheetEdit = document.getElementById("eventSheetEdit");
-  if (sheetEdit && !sheetEdit.__bound) {
-    sheetEdit.__bound = true;
-    sheetEdit.addEventListener("click", (e) => {
-      try { e.preventDefault(); e.stopPropagation(); } catch {}
-      try {
-        if (!window.__eventSheetCtx) return;
-        // Switch to edit mode without reopening the sheet (keeps origin/context intact)
-        applyEventSheetMode("edit");
-        // Focus the first editable field if possible
-        const b = document.getElementById("eventSheetBody");
-        if (b) {
-          const first = b.querySelector('input:not([type="hidden"]), select, textarea');
-          if (first) { try { first.focus(); } catch {} }
-        }
-      } catch {}
-    });
-  }
-
 });
 </script>
 <button aria-label="Añadir" id="fabAdd" class="hidden" title="Añadir">+</button>
@@ -5690,13 +5618,6 @@ window.addEventListener('DOMContentLoaded', () => {
                   id="eventSheetNotes"
                   title="Notas del evento">
             📝
-          </button>
-
-          <button type="button"
-                  class="esIconBtn"
-                  id="eventSheetEdit"
-                  title="Editar">
-            ✏️
           </button>
 
                     <button id="eventSheetSave" class="tap esIconBtn" type="button" aria-label="Guardar" title="Guardar">💾</button>
