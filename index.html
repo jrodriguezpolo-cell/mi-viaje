@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16A</title>
+<title>V89E5E16B</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -44,6 +44,20 @@ function deleteItemById(kind, id) {
       opacity: .55;
       cursor: not-allowed;
     }
+
+
+    /* Event Sheet: view mode (real read-only) */
+    body.eventsheet-view #eventSheetBody{
+      /* prevent accidental selection toggles */
+    }
+    body.eventsheet-view #eventSheetSave,
+    body.eventsheet-view #eventSheetTrash,
+    body.eventsheet-view #eventSheetAttach,
+    body.eventsheet-view #eventSheetNotes{
+      opacity: .55;
+      pointer-events: none;
+    }
+
 
   /* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
@@ -583,7 +597,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A - FIX REAL VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16B - EVENT SHEET VIEW/EDIT (PENCIL) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1561,6 +1575,73 @@ const __sectionExpanded = {
 
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
 let __eventSheetCtx = null;
+let __eventSheetMode = "view"; // "view" | "edit" (single source of truth)
+
+function __esLockControls(lock){
+  const root = document.getElementById("eventSheetBody");
+  if (!root) return;
+
+  // Form fields
+  root.querySelectorAll("input, textarea, select").forEach(el=>{
+    try{
+      if (lock){
+        if (el.dataset.esWasDisabled === undefined) el.dataset.esWasDisabled = el.disabled ? "1" : "0";
+        el.disabled = true;
+        if ("readOnly" in el) el.readOnly = true;
+      } else {
+        const was = el.dataset.esWasDisabled;
+        if (was === "0") el.disabled = false;
+        delete el.dataset.esWasDisabled;
+        if ("readOnly" in el) el.readOnly = false;
+      }
+    }catch{}
+  });
+
+  // Toggle/chip buttons that mutate state
+  const mutSel = [
+    "[data-legmode]",
+    "[data-leg-done]",
+    "[data-act-done]",
+    "[data-act-skip]",
+    "[data-leg-del]",
+    "[data-stay-del]",
+    "[data-act-del]"
+  ].join(",");
+  root.querySelectorAll(mutSel).forEach(btn=>{
+    try{
+      if (lock){
+        if (btn.dataset.esWasDisabled === undefined) btn.dataset.esWasDisabled = btn.disabled ? "1" : "0";
+        btn.disabled = true;
+      } else {
+        const was = btn.dataset.esWasDisabled;
+        if (was === "0") btn.disabled = false;
+        delete btn.dataset.esWasDisabled;
+      }
+    }catch{}
+  });
+}
+
+function setEventSheetMode(mode){
+  __eventSheetMode = (mode === "edit") ? "edit" : "view";
+  const isView = __eventSheetMode === "view";
+
+  // Header buttons
+  const btnEdit = document.getElementById("eventSheetEdit");
+  const btnSave = document.getElementById("eventSheetSave");
+  const btnTrash = document.getElementById("eventSheetTrash");
+  const btnAttach = document.getElementById("eventSheetAttach");
+  const btnNotes = document.getElementById("eventSheetNotes");
+
+  if (btnEdit) btnEdit.classList.toggle("hidden", !isView);
+  if (btnSave) { btnSave.classList.toggle("hidden", isView); btnSave.disabled = isView; }
+  if (btnTrash) btnTrash.disabled = isView;
+  if (btnAttach) btnAttach.disabled = isView;
+  if (btnNotes) btnNotes.disabled = isView;
+
+  document.body.classList.toggle("eventsheet-view", isView);
+  __esLockControls(isView);
+}
+
 
 function __normKind(k){
   const raw = String(k||"").toLowerCase().trim();
@@ -2086,6 +2167,9 @@ function renderLegModeChips(container, leg, onSelect){
     }
   } catch {}
 
+  // Apply sheet view/edit mode
+  try { if (typeof setEventSheetMode === "function") setEventSheetMode(m); } catch {}
+
   // Focus first input for quick edit
   try {
     if (m === "edit") {
@@ -2103,6 +2187,7 @@ function closeEventSheet({ silent } = {}) {
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
   if (overlay) overlay.classList.add("hidden");
+  try { if (typeof setEventSheetMode === "function") setEventSheetMode("view"); } catch {}
   document.body.classList.remove("sheet-open");
 
   // Flush deferred renders (avoid breaking move-node while sheet open)
@@ -2166,6 +2251,8 @@ function __initEventSheetBindings(){
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+  const editBtn = document.getElementById("eventSheetEdit");
+  if (editBtn) editBtn.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} setEventSheetMode("edit"); });
 
 
   if (overlay) overlay.addEventListener("click", (e) => {
@@ -3184,7 +3271,7 @@ function jumpToItem(kind, id) {
   if (!rawKind || !itemId) return;
 
   // Sheet-first behavior (V89D1)
-  try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "edit" }); return; } } catch {}
+  try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "view" }); return; } } catch {}
 
   // 1) kind -> view mapping (timeline "Ir" button)
   const kindMap = {
@@ -3812,7 +3899,7 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
     const jid = row.getAttribute("data-tl-jump-id") || "";
     if (!jt || !jid) return; // notes or non-jump rows
 
-    try { openEventSheet({ kind: jt, id: jid, mode: "edit", sourceView: "timeline" }); } catch {}
+    try { openEventSheet({ kind: jt, id: jid, mode: "view", sourceView: "timeline" }); } catch {}
   });
 });
 
@@ -3824,7 +3911,7 @@ box.querySelectorAll("[data-tl-go]").forEach(btn => {
     if (!row) return;
     const kind = row.getAttribute("data-tl-jump-type");
     const id = row.getAttribute("data-tl-jump-id");
-    if (kind && id) { try { openEventSheet({ kind, id, mode: "edit" }); } catch {} }
+    if (kind && id) { try { openEventSheet({ kind, id, mode: "view" }); } catch {} }
   });
 });
 
@@ -5600,6 +5687,8 @@ window.addEventListener('DOMContentLoaded', () => {
                   title="Notas del evento">
             📝
           </button>
+
+          <button id="eventSheetEdit" class="tap esIconBtn" type="button" aria-label="Editar" title="Editar">✏️</button>
 
                     <button id="eventSheetSave" class="tap esIconBtn" type="button" aria-label="Guardar" title="Guardar">💾</button>
 
