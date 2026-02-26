@@ -617,7 +617,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10 - SHEET SAVE ICON IN HEADER REMOVE BOTTOM BUTTON - 2026-02-25</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11 - TRANSPORT SUMMARY CONSISTENT SECTION+TIMELINE - 2026-02-25</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -2311,6 +2311,38 @@ function renderTabs() {
   if (mc) mc.textContent = state.displayCurrency;
 }
 
+function fmtLegDate(iso){
+  const v = String(iso||"").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return "";
+  const d = new Date(v + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return v;
+  try{
+    return d.toLocaleDateString("es-ES",{day:"2-digit",month:"short",year:"numeric"}).replace(/\./g,"");
+  }catch{
+    return v;
+  }
+}
+function transportSummary(leg){
+  const origin = (String(leg?.from||"").trim() || "(origen)");
+  const dest   = (String(leg?.to||"").trim()   || "(destino)");
+  const route = `${origin} → ${dest}`;
+  const dateTxt = (String(leg?.date||"").trim() ? (fmtLegDate(leg.date) || String(leg.date).trim()) : "Sin fecha");
+  const timeTxt = (String(leg?.time||"").trim() || "");
+  const when = timeTxt ? `${dateTxt} · ${timeTxt}` : dateTxt;
+
+  const rawCost = leg?.cost;
+  const c = parseMoney(rawCost);
+  const costLabel = (rawCost === null || rawCost === undefined || String(rawCost).trim()==="" || !c || c === 0)
+    ? ""
+    : `${c} ${currencySymbol(state.displayCurrency)}`;
+
+  const hasNotes = !!(leg?.notes && String(leg.notes).trim());
+  const hasAttach = !!(leg?.file || leg?.fileName || leg?.attachment || leg?.attach || (Array.isArray(leg?.attachments) && leg.attachments.length));
+  const indicators = `${hasNotes ? "📝" : ""}${hasAttach ? "📎" : ""}`.trim();
+
+  return { origin, dest, route, when, costLabel, indicators, hasNotes, hasAttach };
+}
+
 function legCard(leg) {
   const tzFrom = leg.tzFrom ? `<span class="text-xs text-slate-500">UTC ${leg.tzFrom >= 0 ? "+" : ""}${leg.tzFrom}</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
   const tzTo   = leg.tzTo   ? `<span class="text-xs text-slate-500">UTC ${leg.tzTo   >= 0 ? "+" : ""}${leg.tzTo  }</span>` : `<span class="text-xs text-slate-400">UTC —</span>`;
@@ -2319,9 +2351,12 @@ function legCard(leg) {
   const isOpen = __sectionExpanded.legs.has(leg.id);
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
-  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
-  const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
-  const hasNotes = !!(leg.notes && String(leg.notes).trim());
+  const sum = transportSummary(leg);
+  const route = sum.route;
+  const dt = sum.when;
+  const hasNotes = sum.hasNotes;
+  const indicators = sum.indicators;
+  const costLabel = sum.costLabel;
 
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
@@ -2329,10 +2364,11 @@ function legCard(leg) {
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${indicators ? `<span class="ml-1">${escapeHtml(indicators)}</span>` : ``}</div>
         ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${costLabel ? `<span class="text-xs font-semibold px-2 py-1 rounded-full border border-slate-200 bg-white">${escapeHtml(costLabel)}</span>` : ``}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -2524,9 +2560,10 @@ function stayCard(stay) {
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${indicators ? `<span class="ml-1">${escapeHtml(indicators)}</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${costLabel ? `<span class="text-xs font-semibold px-2 py-1 rounded-full border border-slate-200 bg-white">${escapeHtml(costLabel)}</span>` : ``}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -3100,9 +3137,10 @@ function actCard(act) {
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="activities" data-sec-id="${act.id}">
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">🎯 Actividad · <span class="done-text">${escapeHtml(title)}</span> <span class="text-slate-500">(${escapeHtml(city)})</span></div>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${indicators ? `<span class="ml-1">${escapeHtml(indicators)}</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${costLabel ? `<span class="text-xs font-semibold px-2 py-1 rounded-full border border-slate-200 bg-white">${escapeHtml(costLabel)}</span>` : ``}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -3607,7 +3645,8 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${leg.from || "—"} → ${leg.to || "—"}`, cost: parseMoney(leg.cost), legId: leg.id, uid: `leg:${leg.id}` });
+    const __sum = transportSummary(leg);
+    items.push({ date: (leg.date || "9999-99-99"), time: (leg.time || ""), type:"Trayecto", title: `${__sum.origin} → ${__sum.dest}`, dateLabel: __sum.when.split(" · ")[0], cost: parseMoney(leg.cost), costLabel: __sum.costLabel, indicators: __sum.indicators, legId: leg.id, uid: `leg:${leg.id}` });
   }
   for (const s of sc.stays) {
     items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
@@ -3689,7 +3728,7 @@ function renderTimeline() {
     const whenLabel = (it.date === "9999-99-99" ? "Sin fecha" : it.date + ((it.time && String(it.time).trim()) ? (" · " + String(it.time).trim()) : ""));
     const clsTime = (isDated && it.date < today) ? "past" : (it.date === today ? "today" : "");
     const noteBadge = (it.isNote ? " bg-white" : " bg-slate-50");
-    const datePart = (it.date === "9999-99-99" ? "Sin fecha" : String(it.date));
+    const datePart = (it.dateLabel ? String(it.dateLabel) : (it.date === "9999-99-99" ? "Sin fecha" : String(it.date)));
     const timePart = (it.time && String(it.time).trim()) ? String(it.time).trim() : "—";
     const hasTime = (timePart !== "—");
     const rel = (it.date === "9999-99-99" ? "" : (String(it.date) < today ? "past" : (String(it.date) > today ? "future" : "today")));
@@ -3790,6 +3829,8 @@ function renderTimeline() {
           </div>
 
           <div class="shrink-0 flex items-center gap-2">
+            ${(it.costLabel && String(it.costLabel).trim()) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full border border-slate-200 bg-white">${escapeHtml(String(it.costLabel))}</span>` : ""}
+            ${(it.indicators && String(it.indicators).trim()) ? `<span class="text-sm leading-none">${escapeHtml(String(it.indicators))}</span>` : ""}
             ${tlCheckbox ? tlCheckbox : ""}
             ${notesBtn ? notesBtn : ""}
           </div>
