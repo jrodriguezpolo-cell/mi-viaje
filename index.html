@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E21A</title>
+<title>V89E5E22A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E21A - SHEET DEFAULT VIEW + EXPLICIT EDIT (HARD LOCK) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E22A - SHEET DEFAULT VIEW + EXPLICIT EDIT (MODE APPLIED ALL KINDS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -2099,6 +2099,7 @@ function renderLegModeChips(container, leg, onSelect){
     if (!ok) { alert("No se pudo abrir el editor"); return; }
 
     try { applyEventSheetMode(m); } catch {}
+    try { requestAnimationFrame(()=>{ try { applyEventSheetMode(m); } catch {} }); } catch {}
 
   overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
@@ -2202,6 +2203,10 @@ function renderLegModeChips(container, leg, onSelect){
       body.addEventListener("change", ()=> updateSheetDynamicSummary());
     }
   } catch {}
+
+  // Enforce sheet mode (view locks controls; edit enables)
+  try { applyEventSheetMode(m); } catch {}
+  try { requestAnimationFrame(()=>{ try { applyEventSheetMode(m); } catch {} }); } catch {}
 
   // Focus first input for quick edit
   try {
