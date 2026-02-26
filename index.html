@@ -581,7 +581,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11B - TRANSPORT NO STRIKE + TIMELINE REAL DURATION - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11C - TRANSPORT ARRIVAL+REAL DURATION (FIX KEYS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1699,8 +1699,14 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   bind("placeIn", (val)=>{ legObj.placeIn = val; });
   bind("dateOut", (val)=>{ legObj.date = val; });
   bind("timeOut", (val)=>{ legObj.time = val; });
-  bind("dateIn", (val)=>{ legObj.arriveDate = val; });
-  bind("timeIn", (val)=>{ legObj.arriveTime = val; });
+  bind("dateIn", (val)=>{
+    legObj.arriveDate = val;
+    legObj.dateIn = val;        // compat legacy para timeline/summary
+  });
+  bind("timeIn", (val)=>{
+    legObj.arriveTime = val;
+    legObj.timeIn = val;        // compat legacy para timeline/summary
+  });
   bind("cost", (val)=>{ const s = String(val||"").trim(); legObj.cost = (s === "") ? null : parseMoney(s); });
   return true;
 }
@@ -2284,7 +2290,19 @@ function legCard(leg) {
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
-  const dt = `${(leg.date||"").trim() || "—"} ${(leg.time||"").trim() || "—"}`;
+  const dStart = (leg.date||"").trim();
+  const tStart = (leg.time||"").trim();
+  const dEndRaw = String((leg.dateIn ?? leg.arriveDate) || "").trim();
+  const tEndRaw = String((leg.timeIn ?? leg.arriveTime) || "").trim();
+  let dt = `${dStart || "—"} ${tStart || "—"}`;
+  if (dEndRaw || tEndRaw) {
+    const endD = dEndRaw || dStart || "";
+    const same = (endD && dStart && endD === dStart) && (tEndRaw && tStart && tEndRaw === tStart);
+    if (!same) {
+      if (tEndRaw) dt += ` · Llegada: ${endD} ${tEndRaw}`;
+      else if (endD) dt += ` · Llegada: ${endD}`;
+    }
+  }
   const hasNotes = !!(leg.notes && String(leg.notes).trim());
 
   return `
@@ -3672,8 +3690,8 @@ function renderTimeline() {
 
       const dStart = String(__leg?.date || '').trim();
       const tStart = String(__leg?.time || '').trim();
-      const dEnd = String(__leg?.dateIn || '').trim() || dStart;
-      const tEnd = String(__leg?.timeIn || '').trim();
+      const dEnd = String((__leg?.dateIn ?? __leg?.arriveDate) || '').trim() || dStart;
+      const tEnd = String((__leg?.timeIn ?? __leg?.arriveTime) || '').trim();
 
       const hasStart = !!(dStart && /^\d{2}:\d{2}$/.test(tStart));
       const hasEnd = !!(dEnd && /^\d{2}:\d{2}$/.test(tEnd));
@@ -3704,7 +3722,7 @@ function renderTimeline() {
 
       if (line2 && durTxt) __dateLineHTML = `${escapeHtml(line2)} · ${escapeHtml(durTxt)}`;
       else if (line2) __dateLineHTML = `${escapeHtml(line2)}`;
-      else __dateLineHTML = ``;
+      else __dateLineHTML = dateLineHTML;
     }
 
 
