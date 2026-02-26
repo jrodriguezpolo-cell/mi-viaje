@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16A_ESVIEW_BASELINE</title>
+<title>V89E5E16A_ESVIEW_TLBAR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -185,14 +185,23 @@ border-radius: 999px;
 
 /* Timeline controls sticky (single row, no clone) */
 #timelineControlsRow{
-  position: sticky;
-  /* mainScroll already starts below the top stack; keep controls glued under Totales */
-  top: 0;
+  position: fixed;
+  left: 0;
+  right: 0;
+  /* Anchor to the real top stack (Header + Totales). Independent from timeline scroll. */
+  top: calc(var(--top-stack-h, 0px) - var(--view-gap-fix, 0px));
   z-index: 950;
   background: #ffffff;
   border-bottom: 1px solid rgba(15,23,42,0.08);
   padding-top: 0;
   padding-bottom: 8px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
+#timelineControlsSpacer{
+  height: var(--timeline-controls-h, 0px);
 }
 
 
@@ -583,7 +592,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_BASELINE - BASELINE ROLLBACK (NO CHANGES) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR - TIMELINE BAR FIXED UNDER TOTALS (INDEPENDENT) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -676,7 +685,9 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 </div>
 <div class="flex gap-2 justify-end" id="timelineGlobalNav">
 <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold" id="timelineToday">Actual</button>
-<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-sm font-semibold" id="timelineNext">Próximo</button>
+<button class="tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-orange-700 text-white text-s
+<div id="timelineControlsSpacer" aria-hidden="true"></div>
+m font-semibold" id="timelineNext">Próximo</button>
 </div>
 </div>
 <div class="mb-3 -mx-1">
@@ -1241,6 +1252,13 @@ function syncTopStackHeights(){
     ms.style.paddingTop = "calc(var(--top-stack-h) - var(--view-gap-fix))";
     ms.style.paddingBottom = "var(--bottom-nav-h)";
   }
+  // Timeline fixed controls (only visible in timeline view). Reserve its height in-flow.
+  const tcr = $("timelineControlsRow");
+  if (tcr){
+    const h = tcr.getBoundingClientRect().height || 0;
+    if (h > 0) root.style.setProperty("--timeline-controls-h", h + "px");
+  }
+
   // After updating stack heights, calibrate any inherited gap at the top.
   requestAnimationFrame(calibrateViewStartGap);
 }
