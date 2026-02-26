@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E24A</title>
+<title>V89E5E20A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E24A - UNIFIED SHEET CTX + REAL VIEW MODE - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E20A - SHEET DEFAULT VIEW + EXPLICIT EDIT - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1584,168 +1584,50 @@ const __sectionExpanded = {
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
 let __eventSheetCtx = null;
 
-function __ensureEventSheetViewGuards(){
-  const body = document.getElementById("eventSheetBody");
-  if (!body || body.__viewGuardsInstalled) return;
-  body.__viewGuardsInstalled = true;
-
-  const shouldBlock = (ev) => {
-    try{
-      const ctx = __eventSheetCtx;
-      if (!ctx || ctx.mode !== "view") return false;
-      const t = ev && ev.target;
-      if (!t || !(t instanceof Element)) return false;
-
-      // Allow plain links (e.g., Maps) to be opened in view mode
-      if (t.closest("a[href]")) return false;
-
-      // Block any interactive form control or button-like element
-      if (t.closest("input,textarea,select,button,[contenteditable='true'],[role='button'],[data-legmode]")) return true;
-
-      // Also block clicks on common chip/toggle containers if they exist as divs/spans
-      if (t.closest("[data-leg],[data-stay],[data-act]")) return true;
-
-      return false;
-    } catch { return false; }
-  };
-
-  const guard = (ev) => {
-    if (!shouldBlock(ev)) return;
-    try{
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (typeof ev.stopImmediatePropagation === "function") ev.stopImmediatePropagation();
-    } catch {}
-  };
-
-  // Capture phase guards: prevent any mutation listeners from running in view mode
-  ["beforeinput","input","change","click","keydown"].forEach(type=>{
-    body.addEventListener(type, guard, true);
-  });
-}
-
 function applyEventSheetMode(nextMode){
   try{
-    if (!__eventSheetCtx) return;
-    if (nextMode === "view" || nextMode === "edit") __eventSheetCtx.mode = nextMode;
-    const ctx = __eventSheetCtx;
+    if (!window.__eventSheetCtx) return;
+    if (nextMode === "view" || nextMode === "edit") window.__eventSheetCtx.mode = nextMode;
+    const ctx = window.__eventSheetCtx;
     const body = document.getElementById("eventSheetBody");
     const btnSave = document.getElementById("eventSheetSave");
     const btnEdit = document.getElementById("eventSheetEdit");
 
-    const isView = !!(ctx && ctx.mode === "view");
+    const isView = (ctx && ctx.mode === "view");
 
     // Save button: disabled in view mode (prevents accidental commits)
-    if (btnSave) btnSave.disabled = isView;
+    if (btnSave) btnSave.disabled = !!isView;
 
-    // Edit button: enabled when a ctx exists; shows "pressed" in edit mode
+    // Edit button: visible always; subtle emphasis when in view
     if (btnEdit){
-      btnEdit.disabled = !ctx;
+      btnEdit.disabled = !ctx; // should not happen, but defensive
       btnEdit.setAttribute("aria-pressed", (!isView) ? "true" : "false");
     }
 
     if (!body) return;
 
-    // Ensure guards exist (capture-phase blockers for real read-only mode)
-    __ensureEventSheetViewGuards();
-
+    // Toggle controls inside the sheet body
     if (isView){
       body.classList.add("sheet-view");
-
-      // Hard-lock in view mode:
-      // - text inputs/textarea => readonly (prevents typing)
-      // - date/time/file inputs => disabled (iOS can ignore readonly for these)
-      // - selects/buttons => disabled
-      body.querySelectorAll("input, textarea, select, button").forEach(el=>{
-        if (!el || !(el instanceof HTMLElement)) return;
-
-        if (el.getAttribute("data-locked-by-view") === "1") return;
-
-        const tagLocked = () => el.setAttribute("data-locked-by-view","1");
-
-        const tagWasDisabled = () => {
-          if (el.disabled) el.setAttribute("data-was-disabled","1");
-          else el.setAttribute("data-was-disabled","0");
-        };
-        const tagWasReadOnly = () => {
-          if ("readOnly" in el) el.setAttribute("data-was-readonly", el.readOnly ? "1" : "0");
-        };
-
-        const t = (el.tagName||"").toLowerCase();
-
-        if (t === "input"){
-          const type = String(el.getAttribute("type") || "text").toLowerCase();
-          tagWasDisabled();
-          tagWasReadOnly();
-
-          // Inputs that iOS may still allow to change with pickers even when readonly
-          const forceDisable = (type === "date" || type === "time" || type === "datetime-local" || type === "month" || type === "week" || type === "file");
-          if (forceDisable){
-            el.disabled = true;
-          } else {
-            el.readOnly = true;
-          }
-          tagLocked();
-          return;
-        }
-
-        if (t === "textarea"){
-          tagWasReadOnly();
-          el.readOnly = true;
-          tagLocked();
-          return;
-        }
-
-        // select / button
-        tagWasDisabled();
+      body.querySelectorAll("input, select, textarea, button").forEach(el=>{
+        // don't touch already-disabled controls; only mark those we disable
+        if (el.disabled) return;
         el.disabled = true;
-        tagLocked();
+        el.setAttribute("data-disabled-by-view", "1");
       });
-
-      // Safety: disable contenteditable if any exist
-      body.querySelectorAll("[contenteditable='true']").forEach(el=>{
-        el.setAttribute("data-locked-by-view","1");
-        el.setAttribute("data-was-contenteditable","true");
-        el.setAttribute("contenteditable","false");
-      });
-
     } else {
       body.classList.remove("sheet-view");
-
-      // Restore only what we locked
-      body.querySelectorAll('[data-locked-by-view="1"]').forEach(el=>{
-        const t = (el.tagName||"").toLowerCase();
-
-        if (t === "input"){
-          const wasDisabled = el.getAttribute("data-was-disabled")==="1";
-          const wasReadOnly = el.getAttribute("data-was-readonly")==="1";
-          el.disabled = wasDisabled;
-          el.readOnly = wasReadOnly;
-          el.removeAttribute("data-was-disabled");
-          el.removeAttribute("data-was-readonly");
-        } else if (t === "textarea"){
-          const wasReadOnly = el.getAttribute("data-was-readonly")==="1";
-          el.readOnly = wasReadOnly;
-          el.removeAttribute("data-was-readonly");
-        } else if (t === "select" || t === "button"){
-          const wasDisabled = el.getAttribute("data-was-disabled")==="1";
-          el.disabled = wasDisabled;
-          el.removeAttribute("data-was-disabled");
-        } else {
-          // contenteditable restoration: conservative (only restore if we know it was true)
-          if (el.getAttribute("data-was-contenteditable")==="true"){
-            el.setAttribute("contenteditable","true");
-            el.removeAttribute("data-was-contenteditable");
-          }
-        }
-
-        el.removeAttribute("data-locked-by-view");
+      body.querySelectorAll('[data-disabled-by-view="1"]').forEach(el=>{
+        el.disabled = false;
+        el.removeAttribute("data-disabled-by-view");
       });
     }
   } catch(e){
+    // never break UX on mode toggle
     try{ console.warn(e); }catch{}
   }
 }
+
 
 function __normKind(k){
   const raw = String(k||"").toLowerCase().trim();
@@ -2170,7 +2052,6 @@ function renderLegModeChips(container, leg, onSelect){
     if (!ok) { alert("No se pudo abrir el editor"); return; }
 
     try { applyEventSheetMode(m); } catch {}
-    try { requestAnimationFrame(()=>{ try { applyEventSheetMode(m); } catch {} }); } catch {}
 
   overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
@@ -2274,10 +2155,6 @@ function renderLegModeChips(container, leg, onSelect){
       body.addEventListener("change", ()=> updateSheetDynamicSummary());
     }
   } catch {}
-
-  // Enforce sheet mode (view locks controls; edit enables)
-  try { applyEventSheetMode(m); } catch {}
-  try { requestAnimationFrame(()=>{ try { applyEventSheetMode(m); } catch {} }); } catch {}
 
   // Focus first input for quick edit
   try {
@@ -5740,7 +5617,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Re-render only what is needed
       try {
-        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+        if (window.__eventSheetCtx && window.__eventSheetCtx.kind === "leg") {
           if (typeof renderLegs === "function") renderLegs();
           if (typeof renderTimeline === "function") renderTimeline();
           if (typeof calcSummary === "function") calcSummary();
@@ -5767,7 +5644,7 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetEdit.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       try {
-        if (!__eventSheetCtx) return;
+        if (!window.__eventSheetCtx) return;
         // Switch to edit mode without reopening the sheet (keeps origin/context intact)
         applyEventSheetMode("edit");
         // Focus the first editable field if possible
