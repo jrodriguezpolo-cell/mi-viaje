@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E23A</title>
+<title>V89E5E24A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E23A - SHEET REAL VIEW MODE (HARD READONLY) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E24A - UNIFIED SHEET CTX + REAL VIEW MODE - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1591,7 +1591,7 @@ function __ensureEventSheetViewGuards(){
 
   const shouldBlock = (ev) => {
     try{
-      const ctx = window.__eventSheetCtx;
+      const ctx = __eventSheetCtx;
       if (!ctx || ctx.mode !== "view") return false;
       const t = ev && ev.target;
       if (!t || !(t instanceof Element)) return false;
@@ -1626,9 +1626,9 @@ function __ensureEventSheetViewGuards(){
 
 function applyEventSheetMode(nextMode){
   try{
-    if (!window.__eventSheetCtx) return;
-    if (nextMode === "view" || nextMode === "edit") window.__eventSheetCtx.mode = nextMode;
-    const ctx = window.__eventSheetCtx;
+    if (!__eventSheetCtx) return;
+    if (nextMode === "view" || nextMode === "edit") __eventSheetCtx.mode = nextMode;
+    const ctx = __eventSheetCtx;
     const body = document.getElementById("eventSheetBody");
     const btnSave = document.getElementById("eventSheetSave");
     const btnEdit = document.getElementById("eventSheetEdit");
@@ -5740,7 +5740,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Re-render only what is needed
       try {
-        if (window.__eventSheetCtx && window.__eventSheetCtx.kind === "leg") {
+        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
           if (typeof renderLegs === "function") renderLegs();
           if (typeof renderTimeline === "function") renderTimeline();
           if (typeof calcSummary === "function") calcSummary();
@@ -5767,7 +5767,7 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetEdit.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       try {
-        if (!window.__eventSheetCtx) return;
+        if (!__eventSheetCtx) return;
         // Switch to edit mode without reopening the sheet (keeps origin/context intact)
         applyEventSheetMode("edit");
         // Focus the first editable field if possible
