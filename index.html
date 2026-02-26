@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E24A</title>
+<title>V89E5E25A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -585,7 +585,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E24A - UNIFIED SHEET CTX + REAL VIEW MODE - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E25A - UNIFIED SHEET CTX + REAL VIEW MODE - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1284,6 +1284,16 @@ function scheduleSyncTopStackHeights(){
       ms.scrollTop = 0;
     }
   }));
+
+  // Checklist "Hecho" en Transporte (mismo estado/handler que Cronograma)
+  box.querySelectorAll("[data-leg-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.addEventListener("change", (e)=> {
+      try{ e.stopPropagation(); }catch{}
+      try{ handleLegDoneToggle(cb.getAttribute("data-leg-done"), cb.checked, cb); } catch {}
+    });
+  });
+
 }
 document.addEventListener("DOMContentLoaded", scheduleSyncTopStackHeights);
 window.addEventListener("load", scheduleSyncTopStackHeights);
@@ -2616,6 +2626,7 @@ function renderTabs() {
 
 function legCard(leg, idx) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
@@ -2634,6 +2645,7 @@ function legCard(leg, idx) {
         ${__sp.placeLineHTML}
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        <input type="checkbox" class="h-4 w-4" data-leg-done="${leg.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""} aria-label="Marcar hecho">
         ${buildEventIndicatorsHTML(leg)}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
         ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
