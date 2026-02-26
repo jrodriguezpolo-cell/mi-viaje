@@ -581,7 +581,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11 - TRANSPORT TIMELINE DURATION ONLY - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E11B - TRANSPORT NO STRIKE + TIMELINE REAL DURATION - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -2291,7 +2291,7 @@ function legCard(leg) {
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="legs" data-sec-id="${leg.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} <span class="done-text">${escapeHtml(route)}</span></div>
+        <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
         <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
         ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
@@ -3670,33 +3670,39 @@ function renderTimeline() {
       const toTxt = String(__leg?.to || '').trim() || '(destino)';
       __title = `${fromTxt} → ${toTxt}`;
 
-      const hasStart = !!(String(__leg?.date || '').trim() && String(__leg?.time || '').trim());
-      const hasEnd = !!(String(__leg?.dateIn || '').trim() && String(__leg?.timeIn || '').trim());
-      const tStart = hasStart ? String(__leg.time).trim() : '';
-      const tEnd = hasEnd ? String(__leg.timeIn).trim() : '';
+      const dStart = String(__leg?.date || '').trim();
+      const tStart = String(__leg?.time || '').trim();
+      const dEnd = String(__leg?.dateIn || '').trim() || dStart;
+      const tEnd = String(__leg?.timeIn || '').trim();
+
+      const hasStart = !!(dStart && /^\d{2}:\d{2}$/.test(tStart));
+      const hasEnd = !!(dEnd && /^\d{2}:\d{2}$/.test(tEnd));
 
       let line2 = '';
-      if (tStart && tEnd) line2 = `${tStart} – ${tEnd}`;
-      else if (tStart) line2 = tStart;
-      else if (tEnd) line2 = tEnd;
+      if (hasStart && hasEnd) line2 = `${tStart} → ${tEnd}`;
+      else if (hasStart) line2 = `${tStart}`;
+      else if (hasEnd) line2 = `→ ${tEnd}`;
 
-      // Duration (only if start+end)
       let durTxt = '';
-      if (tStart && tEnd) {
-        const sm = timeToMinutes(tStart);
-        const em = timeToMinutes(tEnd);
-        if (sm !== null && em !== null) {
-          let diff = em - sm;
-          if (diff < 0) diff += 1440; // crosses midnight
-          const h = Math.floor(diff / 60);
-          const m = diff % 60;
-          if (h > 0 && m > 0) durTxt = `${h}h ${m}m`;
-          else if (h > 0) durTxt = `${h}h`;
-          else if (m > 0) durTxt = `${m}m`;
+      if (hasStart && hasEnd) {
+        const start = new Date(`${dStart}T${tStart}`);
+        const end = new Date(`${dEnd}T${tEnd}`);
+        if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+          if (end < start) end.setDate(end.getDate() + 1);
+          const diffMin = Math.round((end - start) / 60000);
+          if (diffMin > 0) {
+            const h = Math.floor(diffMin / 60);
+            const m = diffMin % 60;
+            if (h > 0 && m > 0) durTxt = `${h}h ${m}m`;
+            else if (h > 0) durTxt = `${h}h`;
+            else if (m > 0) durTxt = `${m}m`;
+          } else if (diffMin === 0) {
+            durTxt = `0m`;
+          }
         }
       }
 
-      if (line2 && durTxt) __dateLineHTML = `${escapeHtml(line2)}   ·   ${escapeHtml(durTxt)}`;
+      if (line2 && durTxt) __dateLineHTML = `${escapeHtml(line2)} · ${escapeHtml(durTxt)}`;
       else if (line2) __dateLineHTML = `${escapeHtml(line2)}`;
       else __dateLineHTML = ``;
     }
