@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16E</title>
+<title>V89E5E16A_ESVIEW</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -45,10 +45,7 @@ function deleteItemById(kind, id) {
       cursor: not-allowed;
     }
 
-
-    /* Event Sheet: view mode (real read-only)
-   Note: do NOT kill header tools with pointer-events; mode is enforced in JS */
-/* Timeline highlighting */
+  /* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
   .timelineItem.today { background-color: #ecfdf5; border-color: #10b981; }
 
@@ -586,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16E - EVENT SHEET VIEW/EDIT FIX - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW - FIX REAL VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1211,52 +1208,16 @@ function calibrateViewStartGap(){
   const viewEl = $("view-" + (activeView || ""));
   if (!ms || !totals || !viewEl) return;
 
-  // Only calibrate when user is at the very top (avoid messing with contextual scroll)
+  // Only calibrate when user is at the top (avoid messing with contextual scroll)
   if (ms.scrollTop > 2) return;
 
-  const root = document.documentElement;
-
-  // Robust calibration:
-  // Temporarily neutralize the previous correction so we measure the *base* gap cleanly.
-  // This avoids unstable first-render measurements where the correction is applied twice.
-  const prevFixStr = getComputedStyle(root).getPropertyValue("--view-gap-fix").trim();
-  const prevFix = Math.max(0, Math.round(parseFloat(prevFixStr) || 0));
-
-  root.style.setProperty("--view-gap-fix", "0px");
-
-  // Force a reflow so the DOM reflects the neutralized state before measuring.
-  // (iOS Safari can otherwise report stale rects on first paint.)
-  void ms.offsetHeight;
-  void totals.offsetHeight;
-  void viewEl.offsetHeight;
-
-  const totalsRect = totals.getBoundingClientRect();
-  const viewRect = viewEl.getBoundingClientRect();
-
-  // If layout isn't ready yet, keep the last known good value.
-  if (!totalsRect.height || !viewRect.height) {
-    root.style.setProperty("--view-gap-fix", (__lastGoodViewGapFix || prevFix) + "px");
-    return;
-  }
-
-  const totalsBottom = totalsRect.bottom;
-  const viewTop = viewRect.top;
+  // Measure the real visual gap between Totales bottom and current view start
+  const totalsBottom = totals.getBoundingClientRect().bottom;
+  const viewTop = viewEl.getBoundingClientRect().top;
 
   const gap = Math.max(0, Math.round(viewTop - totalsBottom));
-
-  // Guard against early/erratic zero on first render: keep the previous non-zero fix
-  // until we get a stable measurement.
-  const lastGood = (__lastGoodViewGapFix || prevFix);
-  const finalGap = (gap === 0 && lastGood > 0 && !__initialScrollFixDone) ? lastGood : gap;
-
-  root.style.setProperty("--view-gap-fix", finalGap + "px");
-  if (finalGap > 0) __lastGoodViewGapFix = finalGap;
-
-  // Mark initial pass done once we got a layout-backed measurement.
-  __initialScrollFixDone = true;
+  document.documentElement.style.setProperty("--view-gap-fix", gap + "px");
 }
-
-
 
 function syncTopStackHeights(){
   const hdr = $("appHeader");
@@ -1286,8 +1247,6 @@ function syncTopStackHeights(){
 
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
 let __initialScrollFixDone = false;
-let __lastGoodViewGapFix = 0;
-
 let __syncTopStackPending = false;
 let __syncTopStackDidFirstReset = false;
 function scheduleSyncTopStackHeights(){
@@ -1602,128 +1561,113 @@ const __sectionExpanded = {
 
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
 let __eventSheetCtx = null;
-let __eventSheetMode = "view"; // "view" | "edit" (single source of truth)
 
-function __esLockControls(lock){
-  const root = document.getElementById("eventSheetBody");
-  if (!root) return;
-
-  // Form fields
-  root.querySelectorAll("input, textarea, select").forEach(el=>{
-    try{
-      if (lock){
-        if (el.dataset.esWasDisabled === undefined) el.dataset.esWasDisabled = el.disabled ? "1" : "0";
-        el.disabled = true;
-        if ("readOnly" in el) el.readOnly = true;
-      } else {
-        const was = el.dataset.esWasDisabled;
-        if (was === "0") el.disabled = false;
-        delete el.dataset.esWasDisabled;
-        if ("readOnly" in el) el.readOnly = false;
-      }
-    }catch{}
-  });
-
-  // Toggle/chip buttons that mutate state
-  const mutSel = [
-    "[data-legmode]",
-    "[data-leg-done]",
-    "[data-act-done]",
-    "[data-act-skip]",
-    "[data-leg-del]",
-    "[data-stay-del]",
-    "[data-act-del]"
-  ].join(",");
-  root.querySelectorAll(mutSel).forEach(btn=>{
-    try{
-      if (lock){
-        if (btn.dataset.esWasDisabled === undefined) btn.dataset.esWasDisabled = btn.disabled ? "1" : "0";
-        btn.disabled = true;
-      } else {
-        const was = btn.dataset.esWasDisabled;
-        if (was === "0") btn.disabled = false;
-        delete btn.dataset.esWasDisabled;
-      }
-    }catch{}
-  });
-}
-
-function __ensureEventSheetViewGuards(){
-  const body = document.getElementById("eventSheetBody");
-  if (!body || body.__viewGuardsBound) return;
-  body.__viewGuardsBound = true;
-
-  const allowedSel = "#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,a,[data-es-allow]";
-  const mutSel = "input,textarea,select,[data-legmode],[data-leg-done],[data-act-done],[data-act-skip],[data-leg-del],[data-stay-del],[data-act-del]";
-
-  const shouldAllow = (t) => !!(t && t.closest && t.closest(allowedSel));
-  const isMutator = (t) => !!(t && (t.matches?.(mutSel) || t.closest?.(mutSel)));
-
-  const stop = (e) => { try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); }catch{} };
-
-  const guard = (e) => {
-    try{
-      if (__eventSheetMode !== "view") return;
-      const t = e.target;
-      if (shouldAllow(t)) return;
-      if (!isMutator(t)) return;
-
-      stop(e);
-
-      // If something managed to receive focus, remove it to avoid keyboard popups in iOS
-      try{
-        const active = document.activeElement;
-        if (active && (active.matches?.("input,textarea,select") || active.closest?.("#eventSheetBody"))) active.blur?.();
-      }catch{}
-    }catch{}
-  };
-
-  // Capture-phase guards (precise, not generic button blocking)
-  ["pointerdown","click","input","change","keydown","paste","focusin"].forEach(type=>{
-    try{ body.addEventListener(type, guard, true); }catch{}
-  });
+// Event Sheet mode: single source of truth lives in __eventSheetCtx.mode ("view" | "edit")
+function getEventSheetMode(){
+  try { return (__eventSheetCtx && (__eventSheetCtx.mode === "view" || __eventSheetCtx.mode === "edit")) ? __eventSheetCtx.mode : "edit"; }
+  catch { return "edit"; }
 }
 
 function applyEventSheetMode(){
-  const isView = (__eventSheetMode === "view");
+  const mode = getEventSheetMode();
+  const overlay = document.getElementById("eventSheetOverlay");
+  const body = document.getElementById("eventSheetBody");
+  if (mode === "view") document.body.classList.add("eventsheet-view");
+  else document.body.classList.remove("eventsheet-view");
 
-  // Header buttons (do NOT hide the pencil)
-  const btnEdit  = document.getElementById("eventSheetEdit");
-  const btnSave  = document.getElementById("eventSheetSave");
+  const btnSave = document.getElementById("eventSheetSave");
   const btnTrash = document.getElementById("eventSheetTrash");
-  const btnAttach= document.getElementById("eventSheetAttach");
-  const btnNotes = document.getElementById("eventSheetNotes");
+  const btnEdit = document.getElementById("eventSheetEdit");
 
+  // Pencil is always available (transition to edit); never hide it
   if (btnEdit) {
     btnEdit.disabled = false;
-    btnEdit.classList.toggle("opacity-60", !isView); // subtle 'active' cue in edit
+    btnEdit.classList.remove("opacity-50");
   }
-  if (btnSave) {
-    btnSave.disabled = isView;
-    btnSave.classList.toggle("opacity-40", isView);
-  }
-  if (btnTrash) {
-    btnTrash.disabled = isView;
-    btnTrash.classList.toggle("opacity-40", isView);
-  }
-  if (btnAttach) btnAttach.disabled = false;
-  if (btnNotes) btnNotes.disabled = false;
 
-  document.body.classList.toggle("eventsheet-view", isView);
+  // Mutating actions only in edit
+  if (btnSave) btnSave.disabled = (mode !== "edit");
+  if (btnTrash) btnTrash.disabled = (mode !== "edit");
 
-  // Real lock/unlock of mutating controls inside body
-  try{ __esLockControls(isView); }catch{}
-  try{ __ensureEventSheetViewGuards(); }catch{}
+  // Hard-lock editable controls in view (real read-only)
+  if (body) {
+    const lock = (mode === "view");
+    body.querySelectorAll("input, textarea, select").forEach(el => {
+      try {
+        if (lock) {
+          el.setAttribute("data-es-was-disabled", el.disabled ? "1" : "0");
+          el.setAttribute("data-es-was-readonly", el.readOnly ? "1" : "0");
+          el.disabled = true;
+          el.readOnly = true;
+        } else {
+          // restore previous state if we captured it; default enable
+          const wasDis = el.getAttribute("data-es-was-disabled");
+          const wasRO = el.getAttribute("data-es-was-readonly");
+          el.disabled = (wasDis === "1");
+          el.readOnly = (wasRO === "1");
+          el.removeAttribute("data-es-was-disabled");
+          el.removeAttribute("data-es-was-readonly");
+        }
+      } catch {}
+    });
+
+    // Disable known mutating chips/toggles in view (but do NOT blanket-disable all buttons)
+    body.querySelectorAll("[data-legmode], [data-leg-done], [data-act-done], [data-act-skip], [data-stay-done], [data-stay-skip]").forEach(el => {
+      try { el.toggleAttribute("disabled", lock); } catch {}
+    });
+  }
+
+  // Ensure guards are installed (capture blockers) once
+  try { __ensureEventSheetViewGuards(); } catch {}
 }
 
 function setEventSheetMode(mode){
-  __eventSheetMode = (mode === "edit") ? "edit" : "view";
-  if (!__eventSheetCtx) __eventSheetCtx = {};
-  __eventSheetCtx.mode = __eventSheetMode;
+  const m = (mode === "view") ? "view" : "edit";
+  if (!__eventSheetCtx) __eventSheetCtx = { kind:"", id:"", mode:m, isNew:false, sourceView:"" };
+  __eventSheetCtx.mode = m;
   applyEventSheetMode();
 }
 
+// Capture-phase guards: block ONLY mutators in view, never block structural tools.
+function __ensureEventSheetViewGuards(){
+  const body = document.getElementById("eventSheetBody");
+  if (!body || body.__esGuardsBound) return;
+  body.__esGuardsBound = true;
 
+  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach"]);
+  const isAllowed = (t) => {
+    if (!t) return false;
+    if (t.id && allowIds.has(t.id)) return true;
+    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach")) return true;
+    if (t.closest && t.closest("a")) return true; // navigation/links are consult
+    if (t.closest && t.closest("[data-es-allow]")) return true;
+    return false;
+  };
+
+  const isMutator = (t) => {
+    if (!t) return false;
+    const tag = (t.tagName||"").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+    if (t.closest && t.closest("input,textarea,select")) return true;
+    // known chips/toggles
+    if (t.closest && t.closest("[data-legmode],[data-leg-done],[data-act-done],[data-act-skip],[data-stay-done],[data-stay-skip]")) return true;
+    // generic mutator markers (safe)
+    if (t.closest && t.closest("[data-mutates],[data-action='mutate']")) return true;
+    return false;
+  };
+
+  const blockIfView = (e) => {
+    if (getEventSheetMode() !== "view") return;
+    const t = e.target;
+    if (isAllowed(t)) return;
+    if (!isMutator(t)) return;
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+  };
+
+  ["click","input","change","keydown","paste"].forEach(ev => {
+    body.addEventListener(ev, blockIfView, true);
+  });
+}
 
 function __normKind(k){
   const raw = String(k||"").toLowerCase().trim();
@@ -2026,15 +1970,15 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
-  // Sheet context (single source of truth)
-  __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView };
-
   const overlay = document.getElementById("eventSheetOverlay");
   const sheet = document.getElementById("eventSheet");
   const titleEl = document.getElementById("eventSheetTitle");
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
   if (!overlay || !sheet || !titleEl || !body) return;
+  // Event Sheet context (single source of truth)
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView };
+
   // V89E5D: bind sheet trash context
   try {
     const sheetTrash = document.getElementById("eventSheetTrash");
@@ -2151,6 +2095,9 @@ function renderLegModeChips(container, leg, onSelect){
 
     overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    // In view mode we avoid focusing fields automatically
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
     return;
   }
 
@@ -2238,7 +2185,10 @@ function renderLegModeChips(container, leg, onSelect){
 
 
   overlay.classList.remove("hidden");
-  document.body.classList.add("sheet-open");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    // In view mode we avoid focusing fields automatically
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
   // sheetSummaryLine hidden for leg
   try { const sl = document.getElementById("eventSheetSummaryLine"); if (sl) sl.style.display = (k === "leg") ? "none" : ""; } catch {}
 
@@ -2251,9 +2201,6 @@ function renderLegModeChips(container, leg, onSelect){
       body.addEventListener("change", ()=> updateSheetDynamicSummary());
     }
   } catch {}
-
-  // Apply sheet view/edit mode
-  try { if (typeof setEventSheetMode === "function") setEventSheetMode(m); } catch {}
 
   // Focus first input for quick edit
   try {
@@ -2272,8 +2219,8 @@ function closeEventSheet({ silent } = {}) {
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
   if (overlay) overlay.classList.add("hidden");
-  try { if (typeof setEventSheetMode === "function") setEventSheetMode("view"); } catch {}
   document.body.classList.remove("sheet-open");
+  document.body.classList.remove("eventsheet-view");
 
   // Flush deferred renders (avoid breaking move-node while sheet open)
   try {
@@ -2336,69 +2283,48 @@ function __initEventSheetBindings(){
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+
+
   const editBtn = document.getElementById("eventSheetEdit");
-  if (editBtn) editBtn.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} setEventSheetMode("edit"); });
-
-  // Robust bindings (do not depend on other flows)
-  const saveBtn = document.getElementById("eventSheetSave");
-  if (saveBtn && !saveBtn.__boundCore) {
-    saveBtn.__boundCore = true;
-    saveBtn.addEventListener("click", (e) => {
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      try{
-        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de guardar."); return; }
-        if (typeof saveState === "function") saveState();
-        if (typeof closeEventSheet === "function") closeEventSheet();
-
-        const ctx = window.__eventSheetCtx || {};
-        const k = ctx.kind;
-        if (k === "leg") {
-          if (typeof renderLegs === "function") renderLegs();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else if (k === "stay") {
-          if (typeof renderStays === "function") renderStays();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else if (k === "act") {
-          if (typeof renderActivities === "function") renderActivities();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else {
-          if (typeof renderAll === "function") renderAll();
-        }
-
-        const fb = document.getElementById("eventSheetSaveFeedback");
-        if (fb) { fb.classList.remove("hidden"); setTimeout(()=>fb.classList.add("hidden"), 900); }
-      }catch{}
+  if (editBtn && !editBtn.__bound) {
+    editBtn.__bound = true;
+    editBtn.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      try { setEventSheetMode("edit"); } catch {}
     });
   }
 
+  const saveBtn = document.getElementById("eventSheetSave");
+  if (saveBtn && !saveBtn.__esModeBound) {
+    saveBtn.__esModeBound = true;
+    saveBtn.addEventListener("click", (e) => {
+      // Respect mode: only save in edit
+      if (getEventSheetMode() !== "edit") { try { e.preventDefault(); e.stopPropagation(); } catch {} return; }
+      // Let existing handlers (if any) run; do not duplicate saveState here.
+    }, true);
+  }
+
   const trashBtn = document.getElementById("eventSheetTrash");
-  if (trashBtn && !trashBtn.__boundCore) {
-    trashBtn.__boundCore = true;
+  if (trashBtn && !trashBtn.__bound) {
+    trashBtn.__bound = true;
     trashBtn.addEventListener("click", (e) => {
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      try{
-        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de borrar."); return; }
-        const ctx = window.__eventSheetCtx || {};
-        const k = trashBtn.dataset.kind || ctx.kind;
-        const id = trashBtn.dataset.id || ctx.id;
-        if (!k || !id) return;
-        if (!confirm("¿Eliminar este elemento?")) return;
-
-        const ok = (typeof deleteItemById === "function") ? deleteItemById(k, id) : false;
-        if (!ok) { toast("No se pudo eliminar."); return; }
-
-        if (typeof saveState === "function") saveState();
-        if (typeof closeEventSheet === "function") closeEventSheet();
-
-        if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); }
-        if (k === "stay"){ if (typeof renderStays === "function") renderStays(); }
-        if (k === "act") { if (typeof renderActivities === "function") renderActivities(); }
-        if (typeof renderTimeline === "function") renderTimeline();
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      if (getEventSheetMode() !== "edit") return;
+      const ctx = __eventSheetCtx || {};
+      const k = String(ctx.kind || trashBtn.dataset.kind || "");
+      const id = String(ctx.id || trashBtn.dataset.id || "");
+      if (!k || !id) return;
+      if (!confirm("¿Eliminar este elemento?")) return;
+      try { deleteItemById(k, id); } catch {}
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try { closeEventSheet(); } catch {}
+      // Minimal rerender
+      try {
+        if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); if (typeof renderTimeline === "function") renderTimeline(); }
+        else if (k === "stay") { if (typeof renderStays === "function") renderStays(); if (typeof renderTimeline === "function") renderTimeline(); }
+        else if (k === "act") { if (typeof renderActs === "function") renderActs(); if (typeof renderTimeline === "function") renderTimeline(); }
         if (typeof calcSummary === "function") calcSummary();
-      }catch{}
+      } catch {}
     });
   }
 
@@ -4058,7 +3984,7 @@ box.querySelectorAll("[data-tl-go]").forEach(btn => {
     if (!row) return;
     const kind = row.getAttribute("data-tl-jump-type");
     const id = row.getAttribute("data-tl-jump-id");
-    if (kind && id) { try { openEventSheet({ kind, id, mode: "view" }); } catch {} }
+    if (kind && id) { try { openEventSheet({ kind, id, mode: "edit" }); } catch {} }
   });
 });
 
@@ -5781,7 +5707,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Re-render only what is needed
       try {
-        if (window.__eventSheetCtx && window.__eventSheetCtx.kind === "leg") {
+        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
           if (typeof renderLegs === "function") renderLegs();
           if (typeof renderTimeline === "function") renderTimeline();
           if (typeof calcSummary === "function") calcSummary();
@@ -5798,38 +5724,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       } catch {}
     });
-
-
-  // Sheet trash (delete button) — only in edit
-  const sheetTrash = document.getElementById("eventSheetTrash");
-  if (sheetTrash && !sheetTrash.__bound) {
-    sheetTrash.__bound = true;
-    sheetTrash.addEventListener("click", (e) => {
-      try { e.preventDefault(); e.stopPropagation(); } catch {}
-      try {
-        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de borrar."); return; }
-        const k = sheetTrash.dataset.kind;
-        const id = sheetTrash.dataset.id;
-        if (!k || !id) return;
-        if (!confirm("¿Eliminar este elemento?")) return;
-
-        const ok = deleteItemById(k, id);
-        if (!ok) { toast("No se pudo eliminar."); return; }
-
-        try { if (typeof saveState === "function") saveState(); } catch {}
-
-        // Close and re-render minimal
-        try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
-        try {
-          if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); }
-          if (k === "stay"){ if (typeof renderStays === "function") renderStays(); }
-          if (k === "act") { if (typeof renderActivities === "function") renderActivities(); }
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } catch {}
-      } catch {}
-    });
-  }
   }
 
 });
@@ -5867,9 +5761,14 @@ window.addEventListener('DOMContentLoaded', () => {
             📝
           </button>
 
-          <button id="eventSheetEdit" class="tap esIconBtn" type="button" aria-label="Editar" title="Editar">✏️</button>
-
-                    <button id="eventSheetSave" class="tap esIconBtn" type="button" aria-label="Guardar" title="Guardar">💾</button>
+                    
+          <button type="button"
+                  class="esIconBtn"
+                  id="eventSheetEdit"
+                  title="Editar">
+            ✏️
+          </button>
+<button id="eventSheetSave" class="tap esIconBtn" type="button" aria-label="Guardar" title="Guardar">💾</button>
 
           <button id="eventSheetTrash" class="tap esIconBtn" aria-label="Eliminar">🗑️</button>
           <button id="eventSheetClose" class="tap esIconBtn" aria-label="Cerrar">✕</button>
