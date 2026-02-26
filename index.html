@@ -452,21 +452,24 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 #eventSheetBody .sheet-leg-editor [data-leg-done]{ display:none !important; }
 
 
-/* V89E5D header cleanup */
-#eventSheetHeader .esTypeLine{ display:none !important; }
-#eventSheetSummaryLine{ display:none !important; }
-
-
 /* V89E5E..V89E5E8 (historical leg-sheet duplicates) cleaned.
    See FINAL: Sheet Transporte single source of truth (end of <style>).
 */
 
-/* Sheet mini-modals (UI only) */
+/* FINAL: Sheet Transporte single source of truth */
+/* Keeps current appearance/behavior; consolidates leg-sheet + sheet UI rules that were duplicated historically. */
+
+/* Header cleanup (keep header clean, no redundant type/summary lines) */
+#eventSheetHeader .esTypeLine{ display:none !important; }
+#eventSheetSummaryLine{ display:none !important; }
+
+/* Sheet mini-modals (UI only) — always above sheet + block sheet interaction */
 #sheetMiniOverlay{
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,.35);
-  z-index: 5000;
+  z-index: 9800 !important;
+  pointer-events: auto;
 }
 .sheetMiniModal{
   position: fixed;
@@ -475,9 +478,10 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
   top: 18%;
   background: #fff;
   border-radius: 16px;
-  z-index: 5100;
+  z-index: 9900 !important;
   box-shadow: 0 10px 30px rgba(0,0,0,.2);
   overflow: hidden;
+  pointer-events: auto;
 }
 .sheetMiniHeader{
   display:flex;
@@ -492,46 +496,29 @@ body.sheet-open #eventSheetOverlay{ pointer-events: auto; }
 }
 .sheetMiniBody{ padding: 12px 14px; }
 
-/* V89E5E7: mini-modals on top fix (z-index + block sheet interaction) */
-#sheetMiniOverlay{ z-index: 9800 !important; }
-.sheetMiniModal{ z-index: 9900 !important; }
-
 body.mini-open #eventSheet{ pointer-events: none; }
 body.mini-open #eventSheetOverlay{ pointer-events: none; }
 body.mini-open .sheetMiniModal,
 body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 
-
-
-/* V89E5E8: iOS no-zoom on form fields inside event sheet (CSS-only) */
+/* iOS no-zoom on form fields inside event sheet (CSS-only) */
 #eventSheet, #eventSheetBody{
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
-
 #eventSheetBody input,
 #eventSheetBody select,
 #eventSheetBody textarea{
   font-size: 16px !important; /* clave para evitar auto-zoom iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
-
-/* Mantener date/time en 16px (ya lo estaban) y NO tocar sus tamaños compactos */
+/* Keep date/time at 16px; DO NOT change compact sizing */
 #eventSheetBody input[type="date"],
 #eventSheetBody input[type="time"]{
   font-size: 16px !important;
 }
 
-/* Opcional y seguro: evita glitches de reflow al enfocar (sin afectar layout) */
-#eventSheetBody input,
-#eventSheetBody select,
-#eventSheetBody textarea{
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
-
-
-/* FINAL: Sheet Transporte single source of truth */
-/* Keeps current appearance/behavior; consolidates leg-sheet rules that were duplicated historically. */
 #eventSheetBody .sheet-leg-editor{
   font-size: 14px !important;
 }
@@ -594,7 +581,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10C - CSS CLEANUP NO VISUAL CHANGE - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E10D - CSS HYGIENE NO BEHAVIOR CHANGE - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
