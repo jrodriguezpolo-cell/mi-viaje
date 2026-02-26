@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E13A - CONTEXTUAL SHEET NAV (TRANSPORT+TIMELINE) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E14A - LAYOUT CLEANUP (TOP UNDER TOTALS + NO ADD BUTTONS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -717,9 +717,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="legs">
-<div class="flex justify-end mb-3">
-<button class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold" id="addLeg">+ Añadir trayecto</button>
-</div>
+<button aria-hidden="true" tabindex="-1" class="tap px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold hidden" id="addLeg">+ Añadir trayecto</button>
 <div class="space-y-3" id="legsList"></div>
 </div>
 </div>
@@ -738,9 +736,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="stays">
-<div class="flex justify-end mb-3">
-<button class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold" id="addStay">+ Añadir alojamiento</button>
-</div>
+<button aria-hidden="true" tabindex="-1" class="tap px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold hidden" id="addStay">+ Añadir alojamiento</button>
 <div class="space-y-3" id="staysList"></div>
 </div>
 </div>
@@ -795,9 +791,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="acts">
-<div class="flex justify-end mb-3">
-<button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="addAct">+ Añadir actividad</button>
-</div>
+<button aria-hidden="true" tabindex="-1" class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold hidden" id="addAct">+ Añadir actividad</button>
 <div class="space-y-3" id="actsList"></div>
 </div>
 </div>
@@ -938,7 +932,15 @@ function setView(viewName){
 
   const ms = $("mainScroll");
   if (ms){
-    requestAnimationFrame(()=>{ ms.scrollTop = 0; });
+    requestAnimationFrame(()=>{
+      const viewEl = views[viewName];
+      if (viewEl) {
+        // Keep the active section header glued right under Totales (dynamic height)
+        landUnderTotals(viewEl, 8, { smooth: false });
+      } else {
+        ms.scrollTop = 0;
+      }
+    });
   }
 
   if (typeof updateFabForView === "function") updateFabForView(viewName);
@@ -3999,7 +4001,17 @@ function applySummaryFold() {
   if (d) d.classList.toggle("hidden", !summaryExpanded);
 
   // Keep top stack measurements deterministic when detail opens/closes
-  requestAnimationFrame(() => requestAnimationFrame(() => { try { syncTopStackHeights(); } catch {} }));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    try { syncTopStackHeights(); } catch {}
+    // If user is at the top, keep the active section glued under Totales after expand/collapse
+    try {
+      const ms = document.getElementById("mainScroll");
+      if (ms && ms.scrollTop < 4) {
+        const viewEl = document.getElementById("view-" + String(activeView || ""));
+        if (viewEl) landUnderTotals(viewEl, 8, { smooth: false });
+      }
+    } catch {}
+  }));
 
   // Re-render sticky detail (cheap + keeps it fresh even if calcSummary runs often)
   if (inner) {
