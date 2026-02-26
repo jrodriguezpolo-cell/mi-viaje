@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16C</title>
+<title>V89E5E16D</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -586,7 +586,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16C - EVENT SHEET VIEW/EDIT FIXES - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16D - EVENT SHEET VIEW/EDIT FIX - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1610,25 +1610,79 @@ function __esLockControls(lock){
   });
 }
 
-function setEventSheetMode(mode){
-  __eventSheetMode = (mode === "edit") ? "edit" : "view";
-  const isView = __eventSheetMode === "view";
+function __ensureEventSheetViewGuards(){
+  const body = document.getElementById("eventSheetBody");
+  if (!body || body.__viewGuardsBound) return;
+  body.__viewGuardsBound = true;
 
-  // Header buttons
-  const btnEdit = document.getElementById("eventSheetEdit");
-  const btnSave = document.getElementById("eventSheetSave");
+  const allowedSel = "#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,a,[data-es-allow]";
+  const mutSel = "input,textarea,select,[data-legmode],[data-leg-done],[data-act-done],[data-act-skip],[data-leg-del],[data-stay-del],[data-act-del]";
+
+  const shouldAllow = (t) => !!(t && t.closest && t.closest(allowedSel));
+  const isMutator = (t) => !!(t && (t.matches?.(mutSel) || t.closest?.(mutSel)));
+
+  const stop = (e) => { try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation?.(); }catch{} };
+
+  const guard = (e) => {
+    try{
+      if (__eventSheetMode !== "view") return;
+      const t = e.target;
+      if (shouldAllow(t)) return;
+      if (!isMutator(t)) return;
+
+      stop(e);
+
+      // If something managed to receive focus, remove it to avoid keyboard popups in iOS
+      try{
+        const active = document.activeElement;
+        if (active && (active.matches?.("input,textarea,select") || active.closest?.("#eventSheetBody"))) active.blur?.();
+      }catch{}
+    }catch{}
+  };
+
+  // Capture-phase guards (precise, not generic button blocking)
+  ["pointerdown","click","input","change","keydown","paste","focusin"].forEach(type=>{
+    try{ body.addEventListener(type, guard, true); }catch{}
+  });
+}
+
+function applyEventSheetMode(){
+  const isView = (__eventSheetMode === "view");
+
+  // Header buttons (do NOT hide the pencil)
+  const btnEdit  = document.getElementById("eventSheetEdit");
+  const btnSave  = document.getElementById("eventSheetSave");
   const btnTrash = document.getElementById("eventSheetTrash");
-  const btnAttach = document.getElementById("eventSheetAttach");
+  const btnAttach= document.getElementById("eventSheetAttach");
   const btnNotes = document.getElementById("eventSheetNotes");
 
-  if (btnEdit) btnEdit.classList.toggle("hidden", !isView);
-  if (btnSave) { btnSave.classList.toggle("hidden", isView); btnSave.disabled = isView; }
-  if (btnTrash) btnTrash.disabled = isView;
+  if (btnEdit) {
+    btnEdit.disabled = false;
+    btnEdit.classList.toggle("opacity-60", !isView); // subtle 'active' cue in edit
+  }
+  if (btnSave) {
+    btnSave.disabled = isView;
+    btnSave.classList.toggle("opacity-40", isView);
+  }
+  if (btnTrash) {
+    btnTrash.disabled = isView;
+    btnTrash.classList.toggle("opacity-40", isView);
+  }
   if (btnAttach) btnAttach.disabled = false;
-if (btnNotes) btnNotes.disabled = false;
-document.body.classList.toggle("eventsheet-view", isView);
+  if (btnNotes) btnNotes.disabled = false;
+
+  document.body.classList.toggle("eventsheet-view", isView);
+
+  // Real lock/unlock of mutating controls inside body
+  try{ __esLockControls(isView); }catch{}
   try{ __ensureEventSheetViewGuards(); }catch{}
-  __esLockControls(isView);
+}
+
+function setEventSheetMode(mode){
+  __eventSheetMode = (mode === "edit") ? "edit" : "view";
+  if (!__eventSheetCtx) __eventSheetCtx = {};
+  __eventSheetCtx.mode = __eventSheetMode;
+  applyEventSheetMode();
 }
 
 
@@ -1933,6 +1987,9 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const m = (mode === "view") ? "view" : "edit";
   const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
+
+  // Sheet context (single source of truth)
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView };
 
   const overlay = document.getElementById("eventSheetOverlay");
   const sheet = document.getElementById("eventSheet");
@@ -2244,6 +2301,68 @@ function __initEventSheetBindings(){
   const editBtn = document.getElementById("eventSheetEdit");
   if (editBtn) editBtn.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} setEventSheetMode("edit"); });
 
+  // Robust bindings (do not depend on other flows)
+  const saveBtn = document.getElementById("eventSheetSave");
+  if (saveBtn && !saveBtn.__boundCore) {
+    saveBtn.__boundCore = true;
+    saveBtn.addEventListener("click", (e) => {
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      try{
+        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de guardar."); return; }
+        if (typeof saveState === "function") saveState();
+        if (typeof closeEventSheet === "function") closeEventSheet();
+
+        const ctx = window.__eventSheetCtx || {};
+        const k = ctx.kind;
+        if (k === "leg") {
+          if (typeof renderLegs === "function") renderLegs();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else if (k === "stay") {
+          if (typeof renderStays === "function") renderStays();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else if (k === "act") {
+          if (typeof renderActivities === "function") renderActivities();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else {
+          if (typeof renderAll === "function") renderAll();
+        }
+
+        const fb = document.getElementById("eventSheetSaveFeedback");
+        if (fb) { fb.classList.remove("hidden"); setTimeout(()=>fb.classList.add("hidden"), 900); }
+      }catch{}
+    });
+  }
+
+  const trashBtn = document.getElementById("eventSheetTrash");
+  if (trashBtn && !trashBtn.__boundCore) {
+    trashBtn.__boundCore = true;
+    trashBtn.addEventListener("click", (e) => {
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      try{
+        if (__eventSheetMode !== "edit") { toast("Pulsa ✏️ para editar antes de borrar."); return; }
+        const ctx = window.__eventSheetCtx || {};
+        const k = trashBtn.dataset.kind || ctx.kind;
+        const id = trashBtn.dataset.id || ctx.id;
+        if (!k || !id) return;
+        if (!confirm("¿Eliminar este elemento?")) return;
+
+        const ok = (typeof deleteItemById === "function") ? deleteItemById(k, id) : false;
+        if (!ok) { toast("No se pudo eliminar."); return; }
+
+        if (typeof saveState === "function") saveState();
+        if (typeof closeEventSheet === "function") closeEventSheet();
+
+        if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); }
+        if (k === "stay"){ if (typeof renderStays === "function") renderStays(); }
+        if (k === "act") { if (typeof renderActivities === "function") renderActivities(); }
+        if (typeof renderTimeline === "function") renderTimeline();
+        if (typeof calcSummary === "function") calcSummary();
+      }catch{}
+    });
+  }
 
   if (overlay) overlay.addEventListener("click", (e) => {
     // click outside sheet closes
