@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E15A</title>
+<title>V89E5E16A</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -255,7 +255,7 @@ border-radius: 999px;
   bottom: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
-  padding-top: var(--top-stack-h, 0px);
+  padding-top: calc(var(--top-stack-h, 0px) - var(--view-gap-fix, 0px));
   padding-bottom: var(--bottom-nav-h, 0px);
 }
 
@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E15A - FIX VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A - FIX REAL VIEW START GAP (UNDER TOTALS) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -1201,6 +1201,24 @@ function getStickyOffset() {
 
 
 
+
+function calibrateViewStartGap(){
+  const ms = $("mainScroll");
+  const totals = $("stickyTotalBar");
+  const viewEl = $("view-" + (activeView || ""));
+  if (!ms || !totals || !viewEl) return;
+
+  // Only calibrate when user is at the top (avoid messing with contextual scroll)
+  if (ms.scrollTop > 2) return;
+
+  // Measure the real visual gap between Totales bottom and current view start
+  const totalsBottom = totals.getBoundingClientRect().bottom;
+  const viewTop = viewEl.getBoundingClientRect().top;
+
+  const gap = Math.max(0, Math.round(viewTop - totalsBottom));
+  document.documentElement.style.setProperty("--view-gap-fix", gap + "px");
+}
+
 function syncTopStackHeights(){
   const hdr = $("appHeader");
   const totals = $("stickyTotalBar");
@@ -1220,9 +1238,11 @@ function syncTopStackHeights(){
   root.style.setProperty("--bottom-nav-h", navH + "px");
 
   if (ms){
-    ms.style.paddingTop = "var(--top-stack-h)";
+    ms.style.paddingTop = "calc(var(--top-stack-h) - var(--view-gap-fix))";
     ms.style.paddingBottom = "var(--bottom-nav-h)";
   }
+  // After updating stack heights, calibrate any inherited gap at the top.
+  requestAnimationFrame(calibrateViewStartGap);
 }
 
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
@@ -3999,6 +4019,7 @@ function applySummaryFold() {
     try {
       const ms = document.getElementById("mainScroll");
       if (ms && ms.scrollTop < 4) scrollMainToTop();
+    requestAnimationFrame(calibrateViewStartGap);
     } catch {}
   }));
 
