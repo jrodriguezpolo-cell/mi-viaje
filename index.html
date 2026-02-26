@@ -571,6 +571,8 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
   opacity: .75 !important;
 }
 
+
+  .mv-nb{ white-space: nowrap; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1094,6 +1096,78 @@ function calcDurationText(departDate, departTime, arriveDate, arriveTime) {
   if (m === 0) return `${h}h`;
   return `${h}h ${m}m`;
 }
+
+/* =========================
+   Unified event summary helpers
+   (single source of truth for section + timeline)
+   ========================= */
+
+function getPersistedFilesCount(item) {
+  // Real persisted model only. Do NOT infer from UI buttons.
+  const arr = item && item.files;
+  return Array.isArray(arr) ? arr.length : 0;
+}
+
+function buildEventIndicatorsHTML(item) {
+  const hasNotes = !!(item && String(item.notes || "").trim());
+  const filesCount = getPersistedFilesCount(item);
+  const notesIcon = hasNotes ? `<span class="text-sm leading-none" title="Notas">🗒️</span>` : ``;
+  const filesIcon = (filesCount > 0) ? `<span class="text-sm leading-none" title="Archivos">📎</span>` : ``;
+  if (!notesIcon && !filesIcon) return ``;
+  return `<div class="flex items-center gap-2">${notesIcon}${filesIcon}</div>`;
+}
+
+function _mvNoBreakText(s) {
+  // Ensures "2h 35m" behaves as a single visual unit (no line break between tokens)
+  return escapeHtml(String(s || "").trim()).replace(/\s+/g, "&nbsp;");
+}
+
+function buildLegSummaryParts(leg) {
+  const fromTxt = String(leg?.from || "").trim() || "—";
+  const toTxt   = String(leg?.to   || "").trim() || "—";
+  const title = `${fromTxt} → ${toTxt}`;
+
+  const dES = leg?.date ? formatDateES(leg.date) : "";
+  const t0 = String(leg?.time || "").trim();
+  const t1 = String(leg?.arriveTime || "").trim();
+  const durRaw = calcDurationText(leg?.date, leg?.time, leg?.arriveDate, leg?.arriveTime);
+  const dur = durRaw ? `<span class="mv-nb">${_mvNoBreakText(durRaw)}</span>` : "";
+
+  let timeLine = "";
+  if (t0 && t1) timeLine = `${escapeHtml(t0)} → ${escapeHtml(t1)}${dur ? " · " + dur : ""}`;
+  else if (t0)  timeLine = `${escapeHtml(t0)}`;
+
+  const metaHTML = [dES ? escapeHtml(dES) : "", timeLine].filter(Boolean).join(" · ") || "—";
+
+  const p0 = String(leg?.placeOut || "").trim();
+  const p1 = String(leg?.placeIn || "").trim();
+  const placeLineHTML = (p0 || p1)
+    ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml(p0 || "—")} → ${escapeHtml(p1 || "—")}</div>`
+    : ``;
+
+  return { title, metaHTML, placeLineHTML };
+}
+
+function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
+  if (jumpType === "leg" && modelItem) {
+    const parts = buildLegSummaryParts(modelItem);
+    return {
+      title: parts.title,
+      metaHTML: parts.metaHTML,
+      placeLineHTML: parts.placeLineHTML,
+      metaClass: "text-xs text-slate-600 mt-0.5 truncate",
+      indicatorsHTML: "" // timeline uses notesBtn + optional file icon in right rail
+    };
+  }
+  return {
+    title: it.title,
+    metaHTML: dateLineHTML,
+    placeLineHTML: "",
+    metaClass: "text-xs text-slate-600 mt-0.5",
+    indicatorsHTML: ""
+  };
+}
+
 /* -------------------------- Timeline jump --------------------------- */
 function todayYMD() {
   const d = new Date();
@@ -2343,8 +2417,8 @@ function legCard(leg, idx) {
   else if (t0)  timeLine = `${t0}`;
 
   const dt = [dES, timeLine].filter(Boolean).join(" · ") || "—";
+  const __sp = buildLegSummaryParts(leg);
 
-const hasNotes = !!(leg.notes && String(leg.notes).trim());
 
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
@@ -2352,10 +2426,12 @@ const hasNotes = !!(leg.notes && String(leg.notes).trim());
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
         <button type="button" class="tap ml-2 px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-xs" data-leg-edit="${leg.id}">✎ Editar</button>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
-        ${((leg.placeOut||leg.placeIn) ? `<div class="text-xs text-slate-500 mt-0.5">${escapeHtml((leg.placeOut||"").trim()||"—")} → ${escapeHtml((leg.placeIn||"").trim()||"—")}</div>` : ``)}
+        <div class="text-xs text-slate-600 mt-0.5 truncate">${__sp.metaHTML}</div>
+        ${__sp.placeLineHTML}
       </div>
       <div class="shrink-0 flex items-center gap-2">
+        ${buildEventIndicatorsHTML(leg)}
+        
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
     </div>
@@ -3732,34 +3808,11 @@ function renderTimeline() {
       : "tlTimeBadge tlTimeNone";
     const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
-    // V89E5E11D: Transporte (leg) — resumen unificado (fecha ES + horas + duración) + lugares
-    let __title = it.title;
-    let __dateLineHTML = dateLineHTML;
-    let __placeLineHTML = "";
-
-    if (jumpType === 'leg') {
-      const fromTxt = String(__leg?.from || '').trim() || '—';
-      const toTxt = String(__leg?.to || '').trim() || '—';
-      __title = `${fromTxt} → ${toTxt}`;
-
-      const dES = (it.date && it.date !== "9999-99-99") ? formatDateES(it.date) : "";
-      const t0 = String(it.time || "").trim();
-      const t1 = String(it.arriveTime || "").trim();
-      const dur = String(it.duration || "").trim();
-
-      let timeLine = "";
-      if (t0 && t1) timeLine = `${t0} → ${t1}${dur ? " · " + dur : ""}`;
-      else if (t0)  timeLine = `${t0}`;
-
-      const metaLine = [dES, timeLine].filter(Boolean).join(" · ");
-      __dateLineHTML = escapeHtml(metaLine || "—");
-
-      const p0 = String(__leg?.placeOut || "").trim();
-      const p1 = String(__leg?.placeIn || "").trim();
-      if (p0 || p1) {
-        __placeLineHTML = `<div class="text-sm text-slate-600 mt-0.5">${escapeHtml(p0 || "—")} → ${escapeHtml(p1 || "—")}</div>`;
-      }
-    }
+    const __sum = buildTimelineSummaryParts(it, jumpType, __leg, dateLineHTML);
+    let __title = __sum.title;
+    let __dateLineHTML = __sum.metaHTML;
+    let __placeLineHTML = __sum.placeLineHTML;
+    const __metaClass = __sum.metaClass;
 
 // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
     const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
@@ -3774,12 +3827,14 @@ function renderTimeline() {
                       : (jumpType === 'stay') ? stayById.get(String(jumpId))
                       : null;
     const hasItemNotes = !!(itemForNotes && String(itemForNotes.notes || "").trim());
+    const filesCount = getPersistedFilesCount(itemForNotes);
+    const filesIconHTML = (filesCount > 0) ? `<span class="text-sm leading-none" title="Archivos">📎</span>` : ``;
     const notesBtn = (it.isNote && isDated)
       ? `<button type="button"
                  class="tap tlNotesBtn px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs notes-has"
                  data-daily-note-open="${escapeHtml(datePart)}"
                  title="Notas del día">🗒️<span class="note-dot"></span></button>`
-      : (jumpType && jumpId && !it.isNote)
+      : (hasItemNotes && jumpType && jumpId && !it.isNote)
         ? `<button type="button"
                  class="tap tlNotesBtn px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasItemNotes ? "notes-has" : ""}"
                  data-item-notes-type="${escapeHtml(jumpType)}"
@@ -3848,12 +3903,13 @@ function renderTimeline() {
 
             <div class="min-w-0">
               <div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div>
-              ${(jumpType === "leg") ? `<div class="text-sm text-slate-600 mt-0.5">${__dateLineHTML}</div>` : `<div class="text-xs text-slate-600 mt-0.5">${__dateLineHTML}</div>`}
+              <div class="${__metaClass}">${__dateLineHTML}</div>
         ${__placeLineHTML || ""}
             </div>
           </div>
 
           <div class="shrink-0 flex items-center gap-2">
+            ${filesIconHTML || ""}
             ${tlCheckbox ? tlCheckbox : ""}
             ${notesBtn ? notesBtn : ""}
           </div>
