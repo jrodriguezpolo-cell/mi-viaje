@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E27G</title>
+<title>V89E5E27H</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -183,17 +183,24 @@ border-radius: 999px;
 }
 
 
-/* Timeline controls sticky (single row, no clone) */
+/* Timeline controls fixed (anchored to top stack; removed from internal sticky) */
 #timelineControlsRow{
-  position: sticky;
-      /* Sticky should clear the fixed top stack (Header+Totales). */
+  position: fixed;
+  left: 0;
+  right: 0;
   top: calc(var(--top-stack-h, 0px) - var(--view-gap-fix, 0px));
-  /* Sticky offset uses --top-stack-h so the bar sits below Header+Totales while stuck. */
-  z-index: 960;
+  z-index: 970; /* Above content; below sheets */
   background: #ffffff;
   border-bottom: 1px solid rgba(15,23,42,0.08);
+  padding-left: 20px;  /* matches parent .px-5 */
+  padding-right: 20px; /* matches parent .px-5 */
   padding-top: 0;
   padding-bottom: 8px;
+}
+
+/* Spacer to reserve flow space under the fixed timeline controls bar */
+#timelineControlsSpacer{
+  height: var(--timeline-controls-h, 0px);
 }
 
 
@@ -586,7 +593,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E27G - HOTFIX (TIMELINE STICKY) - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E27H - HOTFIX (TIMELINE CONTROLS FIXED BAR) - 2026-02-26</div></div>
 </div>
 <div class="flex items-center gap-2">
 
@@ -688,6 +695,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 </div>
 </div>
 </div>
+<div id="timelineControlsSpacer" aria-hidden="true"></div>
 <div class="space-y-3" id="timelineList"></div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
 <button class="w-full tap flex items-center justify-between px-4 py-4" data-acc="dailyNotes">
@@ -1278,7 +1286,13 @@ function scheduleSyncTopStackHeights(){
   __syncTopStackPending = true;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     __syncTopStackPending = false;
-    try { syncTopStackHeights(); } catch {}
+        try { syncTopStackHeights(); } catch {}
+    // Timeline controls: keep spacer height in sync (fixed bar sits under top stack)
+    try{
+      const tcr = document.getElementById("timelineControlsRow");
+      const h = tcr ? (tcr.offsetHeight || 0) : 0;
+      document.documentElement.style.setProperty("--timeline-controls-h", h + "px");
+    }catch{}
     // One-time safety: if mainScroll is born scrolled, reset once.
     const ms = $("mainScroll");
     if (ms && !__syncTopStackDidFirstReset && ms.scrollTop > 4){
