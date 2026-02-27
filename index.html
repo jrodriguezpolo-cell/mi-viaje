@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V97_HYGIENE</title>
+<title>V98_DATE_JUMP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -639,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V97_HYGIENE</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V98_DATE_JUMP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -675,6 +675,12 @@ div[data-acc-body="acts"]{
   <div class="max-w-6xl mx-auto px-5 py-3">
     <div class="flex items-center justify-center">
       <div id="subSectionTitle" class="font-extrabold text-slate-900 text-base text-center">—</div>
+    </div>
+    <div id="dateJumpBar" class="hidden mt-2 flex items-center justify-center gap-2">
+      <select id="dateJumpSelect" class="h-9 max-w-[70vw] bg-white border border-slate-200 rounded-xl px-3 text-sm font-semibold text-slate-800">
+        <option value="">Fecha…</option>
+      </select>
+      <button id="dateJumpRelevantBtn" class="tap h-9 px-3 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" type="button">Hoy/Próximo</button>
     </div>
   </div>
 </div>
@@ -949,7 +955,149 @@ function scrollMainToTop(){
 
 function updateSubSectionHeader(viewName){
   const bar = document.getElementById("subSectionHeader");
-  const title = document.getElementById("subSectionTitle");
+  const title = document.
+
+
+/* ---------------- Optional Date Jump (manual only) ----------------
+   - Does NOT affect entry/scroll base behavior (no auto-jumps).
+   - Only jumps when user uses the selector/button.
+------------------------------------------------------------------- */
+const DateJumpUI = (() => {
+  const SUPPORTED = new Set(["timeline","legs","stays","acts"]);
+  let els = null;
+
+  function $(id){ return document.getElementById(id); }
+
+  function getMainScroll(){
+    return $("mainScroll");
+  }
+
+  function todayYMD(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function getViewEl(viewName){
+    return document.getElementById(`view-${viewName}`);
+  }
+
+  function getDateSeps(viewName){
+    const v = getViewEl(viewName);
+    if (!v) return [];
+    return Array.from(v.querySelectorAll('[data-date-sep]'))
+      .map(el => ({ el, key: (el.getAttribute("data-date-sep")||"").trim() }))
+      .filter(x => x.key && /^\d{4}-\d{2}-\d{2}$/.test(x.key));
+  }
+
+  function getDates(viewName){
+    const seen = new Set();
+    const list = [];
+    for (const x of getDateSeps(viewName)) {
+      if (!seen.has(x.key)) { seen.add(x.key); list.push(x.key); }
+    }
+    list.sort(); // YYYY-MM-DD lexicographic = chronological
+    return list;
+  }
+
+  function pickRelevantDate(dates){
+    if (!dates || !dates.length) return "";
+    const t = todayYMD();
+    if (dates.includes(t)) return t;
+    const future = dates.find(d => d > t);
+    return future || dates[0];
+  }
+
+  function setVisible(show){
+    if (!els) return;
+    els.bar.classList.toggle("hidden", !show);
+  }
+
+  function fillSelect(dates){
+    if (!els) return;
+    const sel = els.sel;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Fecha…</option>';
+    for (const d of dates) {
+      const opt = document.createElement("option");
+      opt.value = d;
+      // display as dd mon yyyy (es)
+      try {
+        const dt = new Date(d + "T00:00:00");
+        opt.textContent = dt.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" });
+      } catch {
+        opt.textContent = d;
+      }
+      sel.appendChild(opt);
+    }
+    // keep selection if still exists
+    if (prev && dates.includes(prev)) sel.value = prev;
+  }
+
+  function scrollToSep(viewName, key){
+    if (!key) return false;
+    const ms = getMainScroll();
+    const v = getViewEl(viewName);
+    if (!ms || !v) return false;
+    const target = v.querySelector(`[data-date-sep="${CSS.escape(key)}"]`);
+    if (!target) return false;
+
+    const msRect = ms.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    const top = (tRect.top - msRect.top) + ms.scrollTop - 6; // small cushion
+    ms.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    return true;
+  }
+
+  function ensureInit(){
+    if (els) return true;
+    const bar = $("dateJumpBar");
+    const sel = $("dateJumpSelect");
+    const btn = $("dateJumpRelevantBtn");
+    if (!bar || !sel || !btn) return false;
+    els = { bar, sel, btn };
+    // listeners (manual only)
+    sel.addEventListener("change", () => {
+      const view = (document.body.dataset.view || "").trim();
+      if (!SUPPORTED.has(view)) return;
+      const key = sel.value;
+      if (!key) return;
+      scrollToSep(view, key);
+    });
+    btn.addEventListener("click", () => {
+      const view = (document.body.dataset.view || "").trim();
+      if (!SUPPORTED.has(view)) return;
+      const dates = getDates(view);
+      const key = pickRelevantDate(dates);
+      if (!key) return;
+      // also sync select for user clarity
+      try { els.sel.value = key; } catch {}
+      scrollToSep(view, key);
+    });
+    return true;
+  }
+
+  function onViewChanged(viewName){
+    if (!ensureInit()) return;
+    if (!SUPPORTED.has(viewName)) { setVisible(false); return; }
+
+    const dates = getDates(viewName);
+    if (!dates.length) { setVisible(false); return; }
+
+    fillSelect(dates);
+    setVisible(true);
+
+    // Update measured heights since subsection header may grow/shrink.
+    try { scheduleSyncTopStackHeights(); } catch {}
+  }
+
+  return { onViewChanged };
+})();
+
+
+getElementById("subSectionTitle");
   if (!bar || !title) return;
 
   const map = {
@@ -1024,6 +1172,9 @@ function setView(viewName){
   scheduleSyncTopStackHeights();
 
   if (typeof updateFabForView === "function") updateFabForView(viewName);
+
+  // Optional manual date-jump UI (does not affect entry behavior)
+  try { DateJumpUI.onViewChanged(viewName); } catch {}
 
   // Simple & deterministic: always reset scroll to top on entry (no date auto-jumps)
   try { scrollMainToTop(); } catch(_){ const ms = document.getElementById("mainScroll"); if (ms) ms.scrollTop = 0; }
