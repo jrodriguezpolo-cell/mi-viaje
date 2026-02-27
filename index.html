@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16A_ESVIEW_TLBAR_FIX7</title>
+<title>V89E5E16A_ESVIEW_TLBAR_FIX8</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -582,6 +582,29 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 
 
   .mv-nb{ white-space: nowrap; }
+
+/* ---------------- Subsection fixed header (FIX8) ---------------- */
+#subSectionHeader{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--top-stack-h, 0px); /* default: under Totales */
+  z-index: 940; /* below timelineControlsRow (950) */
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15,23,42,0.08);
+}
+body[data-view="timeline"] #subSectionHeader{
+  top: calc(var(--top-stack-h, 0px) + var(--timeline-controls-h, 0px));
+}
+#view-legs,
+#view-stays,
+#view-acts,
+#view-timeline{
+  padding-top: var(--subsection-header-h, 0px);
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -592,7 +615,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX7 - Structural start + defaults - 2026-02-26</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX8 - Subsection fixed header - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -622,6 +645,14 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 </div>
 </div>
 </div>
+
+<!-- Fixed subsection header (per-view) -->
+<div id="subSectionHeader" class="hidden" aria-live="polite">
+  <div class="max-w-6xl mx-auto px-4 py-2">
+    <div id="subSectionTitle" class="text-sm font-extrabold tracking-tight text-slate-900">—</div>
+  </div>
+</div>
+
 <!-- Main -->
 <div id="mainScroll"><main class="max-w-6xl mx-auto px-4 pt-0 pb-24">
 <!-- Scenario toggle -->
@@ -913,6 +944,31 @@ function scrollMainToTop(){
 }
 
 
+
+function updateSubSectionHeader(viewName){
+  const bar = document.getElementById("subSectionHeader");
+  const title = document.getElementById("subSectionTitle");
+  if (!bar || !title) return;
+
+  const map = {
+    timeline: "Cronograma",
+    legs: "Transporte",
+    stays: "Alojamiento",
+    acts: "Actividades",
+  };
+
+  const txt = map[String(viewName || "")] || "";
+  if (!txt) {
+    bar.classList.add("hidden");
+    try { document.documentElement.style.setProperty("--subsection-header-h", "0px"); } catch {}
+    return;
+  }
+
+  title.textContent = txt;
+  bar.classList.remove("hidden");
+}
+
+
 function setView(viewName){
   const views = {
     timeline: $("view-timeline"),
@@ -930,7 +986,14 @@ function setView(viewName){
 
   activeView = viewName;
 
-  // Keep sticky heights in sync (Totales can be expanded/collapsed)
+  
+
+  // FIX8: allow CSS top offsets by active view (timeline exception)
+  try { document.body.dataset.view = viewName; } catch {}
+
+  // FIX8: fixed subsection title under Totales (and under timeline controls in timeline)
+  updateSubSectionHeader(viewName);
+// Keep sticky heights in sync (Totales can be expanded/collapsed)
   scheduleSyncTopStackHeights();
 
   // Structural start of a view is always just below Totales:
@@ -5961,6 +6024,12 @@ overlay.classList.remove("hidden");
   window.openSheetMiniModal = openSheetMiniModal;
   window.closeSheetMiniModals = closeSheetMiniModals;
 })();
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  try { document.body.dataset.view = activeView || ""; } catch {}
+  try { updateSubSectionHeader(activeView); } catch {}
+});
 </script>
 </body>
 </html>
