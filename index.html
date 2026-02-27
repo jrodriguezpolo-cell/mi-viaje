@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V89E5E16A_ESVIEW_TLBAR_FIX9</title>
+<title>V89E5E16A_ESVIEW_TLBAR_FIX10</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -583,7 +583,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
 
   .mv-nb{ white-space: nowrap; }
 
-/* ---------------- Subsection fixed header (FIX9) ---------------- */
+/* ---------------- Subsection fixed header (FIX10) ---------------- */
 #subSectionHeader{
   position: fixed;
   left: 0;
@@ -606,6 +606,24 @@ body[data-view="timeline"] #subSectionHeader{
   padding-top: var(--subsection-header-h, 0px);
 }
 
+/* Hide duplicated in-scroll accordion headers (keep in DOM for listeners) */
+button[data-acc="timeline"],
+button[data-acc="legs"],
+button[data-acc="stays"],
+button[data-acc="meals"],
+button[data-acc="acts"]{
+  display: none !important;
+}
+
+/* Restore comfortable top padding lost when accordion header is hidden */
+div[data-acc-body="timeline"],
+div[data-acc-body="legs"],
+div[data-acc-body="stays"],
+div[data-acc-body="meals"],
+div[data-acc-body="acts"]{
+  padding-top: 1rem !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -616,7 +634,7 @@ body[data-view="timeline"] #subSectionHeader{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX9 - Subsection fixed header - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V89E5E16A_ESVIEW_TLBAR_FIX10 - Subsection fixed header - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1017,6 +1035,9 @@ function setView(viewName){
     }
     if (viewName === "acts") {
       requestAnimationFrame(() => { __ensureAccordionOpen("acts"); __focusNextInSection("acts"); });
+    }
+    if (viewName === "meals") {
+      requestAnimationFrame(() => { __ensureAccordionOpen("meals"); });
     }
   } catch {}
 }
