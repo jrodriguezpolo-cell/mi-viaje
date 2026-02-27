@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V91D_ENTRY_OK</title>
+<title>V92_TIME_NAV</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -641,7 +641,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V91D_ENTRY_OK - Deterministic date entry (today/next) - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V92_TIME_NAV - Date grouping + scroll start tweak - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1007,26 +1007,25 @@ function updateSubSectionHeader(viewName){
 
 // V91: Date navigation (timeline/legs/stays/acts) based on rendered date separators
 function __supportsDateNav(viewName){
-  return ["timeline","legs","stays","acts"].includes(String(viewName||""));
+  const v = String(viewName||"");
+  return (v === "timeline" || v === "legs" || v === "stays" || v === "acts");
 }
 
 function __getDateSepsInView(viewName){
   const root = document.getElementById("view-"+String(viewName||""));
   if (!root) return [];
   return Array.from(root.querySelectorAll('.dateSep[data-date-sep]'))
-    .filter(el => (el.getAttribute("data-date-sep")||"").match(/^\d{4}-\d{2}-\d{2}$/));
+    .filter(el => (/^\d{4}-\d{2}-\d{2}$/).test(String(el.getAttribute("data-date-sep")||"")));
 }
 
 function __getDatesForView(viewName){
   const seps = __getDateSepsInView(viewName);
-  const seen = new Set();
-  const out = [];
+  const set = new Set();
   for (const el of seps){
-    const iso = el.getAttribute("data-date-sep");
-    if (!seen.has(iso)){ seen.add(iso); out.push(iso); }
+    const iso = String(el.getAttribute("data-date-sep")||"");
+    if (iso) set.add(iso);
   }
-  out.sort();
-  return out;
+  return Array.from(set).sort(); // YYYY-MM-DD lexicographic == chronological
 }
 
 function __formatDateLabel(iso){
@@ -1039,44 +1038,31 @@ function __formatDateLabel(iso){
   }
 }
 
-function __relevantDateFromList(dates){
-  const list = Array.isArray(dates) ? dates.filter(Boolean) : [];
-  if (!list.length) return { iso: "", kind: "none" };
-
-  const toNum = (iso) => {
-    const s = String(iso || "");
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (!m) return NaN;
-    return (parseInt(m[1],10) * 10000) + (parseInt(m[2],10) * 100) + parseInt(m[3],10);
-  };
-
-  const tISO = todayYMD();
-  const tN = toNum(tISO);
-
-  // Ensure chronological order even if caller passes unsorted
-  const pairs = list.map(d => [toNum(d), d]).filter(p => !Number.isNaN(p[0]));
-  pairs.sort((a,b) => a[0] - b[0]);
-  const ordered = pairs.map(p => p[1]);
-  if (!ordered.length) return { iso: "", kind: "none" };
-
-  // Today if present
-  if (ordered.includes(tISO)) return { iso: tISO, kind: "today" };
-
-  // Next strictly after today
-  const next = ordered.find(d => toNum(d) > tN);
-  if (next) return { iso: next, kind: "next" };
-
-  // No future dates: fallback to earliest available
-  return { iso: ordered[0], kind: "next" };
+function __pickRelevantISO(dates){
+  if (!Array.isArray(dates) || !dates.length) return "";
+  const today = todayYMD();
+  if (dates.includes(today)) return today;
+  for (const d of dates){
+    if (d > today) return d;
+  }
+  return dates[0];
 }
 
-function __scrollToDateSep(viewName, iso, smooth=true, extra=8){
+function __relevantDateFromList(dates){
+  const iso = __pickRelevantISO(dates);
+  if (!iso) return { iso: "", kind: "none" };
+  const today = todayYMD();
+  return { iso, kind: (iso === today ? "today" : "next") };
+}
+
+function __scrollToDateSep(viewName, iso, smooth=true){
   if (!iso) return false;
   const root = document.getElementById("view-"+String(viewName||""));
   if (!root) return false;
   const el = root.querySelector(`.dateSep[data-date-sep="${iso}"]`);
   if (!el) return false;
-  scrollToElWithOffset(el, extra || 0, smooth);
+  // Extra padding so the date pill never feels clipped under fixed headers
+  scrollToElWithOffset(el, 12, smooth);
   return true;
 }
 
@@ -1096,24 +1082,83 @@ function __updateDateNavUI(viewName){
     nav.classList.add("hidden");
     return;
   }
+
   nav.classList.remove("hidden");
 
-  const cur = __relevantDateFromList(dates);
-  btn.textContent = (cur.kind === "today") ? "Hoy" : "Próximo";
-  btn.dataset.targetDate = cur.iso || "";
+  const rel = __relevantDateFromList(dates);
+  btn.textContent = (rel.kind === "today") ? "Hoy" : "Próximo";
+  btn.dataset.targetDate = rel.iso || "";
 
-  // Rebuild options only if changed (stability + no flicker)
   const key = dates.join("|");
   if (sel.dataset.optKey !== key){
     sel.innerHTML = dates.map(d => `<option value="${d}">${__formatDateLabel(d)}</option>`).join("");
     sel.dataset.optKey = key;
   }
 
-  // Ensure selection reflects current relevant date if empty or not present
-  if (!sel.value || !dates.includes(sel.value)){
-    sel.value = cur.iso || dates[0];
-  }
+  // Keep selection always valid + stable
+  const target = (rel.iso && dates.includes(rel.iso)) ? rel.iso : dates[0];
+  if (!sel.value || !dates.includes(sel.value)) sel.value = target;
 }
+
+
+// ---------------- Deterministic Date Navigation Engine (rewritten) ----------------
+const DateNavEngine = (() => {
+  let token = 0;
+
+  function _resetScroll(){
+    const sc = getScrollContainer();
+    if (sc && sc !== document.documentElement) sc.scrollTop = 0;
+    else window.scrollTo(0, 0);
+  }
+
+  function _ensureRenderedAndJump(viewName, iso){
+    if (!iso) { try { scrollMainToTop(); } catch {} return; }
+    // One more sync to ensure offsets are up to date before final jump
+    scheduleSyncTopStackHeights();
+    requestAnimationFrame(() => {
+      // Jump to the date separator (never cut a card)
+      __scrollToDateSep(viewName, iso, false);
+    });
+  }
+
+  function enter(viewName){
+    const v = String(viewName||"");
+    const my = ++token;
+
+    // Views without date nav: just go to top deterministically
+    if (!__supportsDateNav(v)){
+      try { _resetScroll(); } catch {}
+      return;
+    }
+
+    // Always start clean (ignore any previous scroll position)
+    try { _resetScroll(); } catch {}
+
+    // After the view is rendered + layout is computed, compute dates from DOM and jump
+    requestAnimationFrame(() => {
+      if (my !== token || activeView !== v) return;
+
+      // Ensure nav is visible + options are up to date
+      __updateDateNavUI(v);
+      scheduleSyncTopStackHeights();
+
+      requestAnimationFrame(() => {
+        if (my !== token || activeView !== v) return;
+
+        const dates = __getDatesForView(v);
+        const iso = __pickRelevantISO(dates);
+
+        // Keep selector in sync with the chosen entry date
+        const sel = document.getElementById("dateJumpSelect");
+        if (sel && iso && dates.includes(iso)) sel.value = iso;
+
+        _ensureRenderedAndJump(v, iso);
+      });
+    });
+  }
+
+  return { enter };
+})();
 
 // Hook once
 (function(){
@@ -1161,7 +1206,7 @@ function setView(viewName){
   // Fixed subsection title under Totales (and under timeline controls in timeline)
   updateSubSectionHeader(viewName);
 
-  // Ensure required accordions are open (keep listeners intact)
+  // Ensure required accordions are open (keep listeners intact) + render view content
   if (viewName === "timeline") {
     __ensureAccordionOpen("timeline");
     // Force premium scroll-based timeline mode on every entry
@@ -1186,47 +1231,15 @@ function setView(viewName){
     if (typeof renderMeals === "function") renderMeals();
   }
 
-  
-  // Keep measured heights in sync
+  // Date nav bar (under subsection header) + keep measured heights in sync
+  __updateDateNavUI(viewName);
   scheduleSyncTopStackHeights();
 
   if (typeof updateFabForView === "function") updateFabForView(viewName);
 
-  // Deterministic landing for date-nav views (ignore inherited scroll position)
-  const wantsDateLanding = __supportsDateNav(viewName);
-  if (wantsDateLanding) scrollMainToTop();
-
-  // After render + layout: update date nav + land on today/next date header (never cut a card)
-  const __attemptDateLanding = (triesLeft) => {
-    // Keep heights in sync before measuring/scrolling
-    scheduleSyncTopStackHeights();
-    __updateDateNavUI(viewName);
-
-    if (!wantsDateLanding) return;
-
-    const dates = __getDatesForView(viewName);
-    const rel = __relevantDateFromList(dates);
-
-    // If separators are not in DOM yet (async render), retry a few frames
-    if ((!dates || !dates.length || !rel || !rel.iso) && triesLeft > 0) {
-      requestAnimationFrame(() => __attemptDateLanding(triesLeft - 1));
-      return;
-    }
-
-    // Hard reset again right before jumping (avoid any scroll contamination)
-    scrollMainToTop();
-
-    if (!rel || !rel.iso) return;
-
-    // One more frame ensures final layout before offset scroll
-    requestAnimationFrame(() => {
-      __scrollToDateSep(viewName, rel.iso, false, 18);
-    });
-  };
-
-  requestAnimationFrame(() => __attemptDateLanding(3));
+  // Deterministic entry: always ignore previous scroll and land on relevant date header
+  DateNavEngine.enter(viewName);
 }
-
 
 
 
