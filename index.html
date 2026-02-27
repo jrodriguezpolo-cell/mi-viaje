@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V90B_GROUP_FIX</title>
+<title>V90C_DATE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -634,7 +634,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V90B_GROUP_FIX - Date grouping + scroll start tweak - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V90C_DATE_FIX - Date grouping + scroll start tweak - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1015,6 +1015,14 @@ function setView(viewName){
   updateSubSectionHeader(viewName);
 // Keep sticky heights in sync (Totales can be expanded/collapsed)
   scheduleSyncTopStackHeights();
+
+  // Transport UX: ensure landing shows date header first
+  try {
+    if (String(viewName) === "legs") {
+      const sc = getScrollContainer();
+      sc.scrollTo({ top: 0, behavior: "auto" });
+    }
+  } catch {}
 
   // Structural start of a view is always just below Totales:
   // mainScroll already has padding-top = --top-stack-h, so scrollTop=0 is the correct anchor.
@@ -1414,12 +1422,21 @@ function scrollToTopValue(top, behavior="smooth"){
 
 function scrollToElWithOffset(el, extra = 0, smooth = true) {
   if (!el) return;
+  // If this element belongs to a dated group, prefer scrolling to the group's date separator
+  try{
+    let p = el.previousElementSibling;
+    while (p) {
+      if (p.classList && p.classList.contains("dateSep")) { el = p; break; }
+      p = p.previousElementSibling;
+    }
+  }catch{}
   const sc = getScrollContainer();
   const offset = getStickyOffset() + (extra || 0);
   const curTop = (sc === document.documentElement) ? getScrollTop() : sc.scrollTop;
   const y = el.getBoundingClientRect().top + curTop - offset;
   sc.scrollTo({ top: Math.max(0, y), behavior: smooth ? "smooth" : "auto" });
 }
+
 
 function getTopStackOffset() {
   const cs = getComputedStyle(document.documentElement);
@@ -3014,9 +3031,10 @@ function __fmtDateES(iso){
     return String(iso);
   }
 }
-function __dateSeparatorHTML(label){
+function __dateSeparatorHTML(label, iso){
+  const key = (iso && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(iso))) ? String(iso) : "";
   return `
-    <div class="mt-4 mb-2">
+    <div class="mt-4 mb-2 dateSep" ${key ? `data-date-sep="${key}"` : `data-date-sep=""`}>
       <div class="px-3 py-1 rounded-full inline-flex items-center text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
         ${label}
       </div>
@@ -3037,12 +3055,12 @@ function __renderGroupedByDate(list, getDateFn, renderItemFn){
     const d = String(getDateFn(it)||"").trim();
     if (d !== cur){
       cur = d;
-      out += __dateSeparatorHTML(__fmtDateES(d));
+      out += __dateSeparatorHTML(__fmtDateES(d), d);
     }
     out += renderItemFn(it);
   }
   if (invalid.length){
-    out += __dateSeparatorHTML("Sin fecha");
+    out += __dateSeparatorHTML("Sin fecha", "");
     for (const it of invalid) out += renderItemFn(it);
   }
   return out;
@@ -3482,7 +3500,7 @@ function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.activities);
-  box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
+  box.innerHTML = sc.activities.length ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard) : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
   // v80b: accordion per item (activities)
   box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
@@ -4166,7 +4184,7 @@ function renderTimeline() {
 
   box.innerHTML = (timelineViewMode === "global")
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
-    : visibleItems.map(__tlRenderItem).join("");
+    : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
