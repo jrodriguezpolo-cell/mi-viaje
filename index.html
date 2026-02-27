@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V96_CLEAN</title>
+<title>V97_HYGIENE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -82,7 +82,6 @@ function deleteItemById(kind, id) {
 }
 
 
-
     /* Timeline item notes button */
     .timelineItem .notes-has { font-weight: 700; }
 
@@ -110,7 +109,6 @@ function deleteItemById(kind, id) {
   border-radius: 50%;
   box-shadow: 0 0 0 2px white;
 }
-
 
 
 /* Daily notes in timeline (v46 daily notes highlight + CRUD) */
@@ -267,7 +265,6 @@ border-radius: 999px;
   padding-top: var(--top-stack-h, 0px);
   padding-bottom: var(--bottom-nav-h, 0px);
 }
-
 
 
 /* V89C2b: Fix initial gap (single top-stack compensation) */
@@ -642,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V96_CLEAN</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V97_HYGIENE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -931,7 +928,6 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-
 /* ----------------------------- Views (v89a) ----------------------------- */
 let activeView = "timeline";
 
@@ -949,7 +945,6 @@ function scrollMainToTop(){
   // iOS double pass
   requestAnimationFrame(() => { try { sc.scrollTop = 0; } catch {} });
 }
-
 
 
 function updateSubSectionHeader(viewName){
@@ -1034,8 +1029,6 @@ function setView(viewName){
   try { scrollMainToTop(); } catch(_){ const ms = document.getElementById("mainScroll"); if (ms) ms.scrollTop = 0; }
 
 }
-
-
 
 
 function triggerAddForView(view){
@@ -1148,7 +1141,6 @@ const parseMoney = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 const uniq = (arr) => Array.from(new Set(arr.map(x => String(x).trim()).filter(Boolean)));
-
 
 
 /* --------------------------- Date helpers (v89E5E11D) --------------------------- */
@@ -1271,10 +1263,6 @@ function todayYMD() {
 }
 
 
-
-
-
-
 function getStickyOffset() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
   const totalBar = document.getElementById("stickyTotalBar");
@@ -1297,8 +1285,6 @@ function getStickyOffset() {
 offset += 12; // margin
   return offset;
 }
-
-
 
 
 function calibrateViewStartGap(){
@@ -1372,7 +1358,6 @@ function scheduleSyncTopStackHeights(){
 document.addEventListener("DOMContentLoaded", scheduleSyncTopStackHeights);
 window.addEventListener("load", scheduleSyncTopStackHeights);
 window.addEventListener("resize", scheduleSyncTopStackHeights);
-
 
 
 function getScrollContainer(){
@@ -1885,8 +1870,6 @@ function updateSheetDynamicSummary(){
 }
 
 
-
-
 function __updateTransportSheetTitle(mode, from, to){
   try{
     const t = document.getElementById("eventSheetTitle");
@@ -2099,7 +2082,6 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
     const sheetTrash = document.getElementById("eventSheetTrash");
     if (sheetTrash) { sheetTrash.dataset.kind = k; sheetTrash.dataset.id = itemId; }
   } catch {}
-
 
 
   // Reset any previous sheet-only UI fragments
@@ -2667,7 +2649,6 @@ function updateFabVisibility() {
 }
 
 
-
 /* ------------------------------ Rendering ---------------------------- */
 function renderAll() {
   renderTabs();
@@ -3097,8 +3078,6 @@ function __ensureAccordionOpen(accKey){
     try { btn.click(); } catch {}
   }
 }
-
-
 
 
 function timeToMinutes(t) {
@@ -3640,7 +3619,6 @@ function jumpToItem(kind, id) {
 }
 
 
-
 /* ---------------- Item notes (timeline CRUD) ---------------- */
 
 function getItemByTypeAndId(type, id) {
@@ -4079,7 +4057,6 @@ function renderTimeline() {
                  data-item-notes-id="${escapeHtml(String(jumpId))}"
                  title="Observaciones">🗒️${hasItemNotes ? '<span class="note-dot"></span>' : ''}</button>`
         : "";
-
 
 
     // Checkpoint (Hecho) para Transporte / Alojamiento / Actividades en el cronograma
@@ -5127,7 +5104,6 @@ if (tn) {
 }
 
 
-
     const bn = $("doBackupNow");
     if (bn) {
       bn.onclick = () => {
@@ -5398,9 +5374,6 @@ function exportMilestone() {
 }
 
 
-
-
-
 async function importTrip(ev) {
   const input = ev?.target;
   const file = input?.files?.[0];
@@ -5607,7 +5580,6 @@ Tu iPhone: ${l}
 }
 
 
-
 /* ----------------------------- Events ----------------------------- */
 $("tabA").addEventListener("click", ()=>{ state.scenario="A"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
 $("tabB").addEventListener("click", ()=>{ state.scenario="B"; saveState(); __sectionExpanded.legs.clear(); __sectionExpanded.stays.clear(); __sectionExpanded.activities.clear(); renderAll(); });
@@ -5782,8 +5754,6 @@ const __tt = $("timelineToday");
 if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); });
 
 
-
-
 $("btnReadOnly").addEventListener("click", () => {
   setReadOnly(!isReadOnly());
 });
@@ -5814,8 +5784,6 @@ document.querySelectorAll('[data-jump]').forEach(btn => {
     try { setView(key); } catch {}
   });
 });
-
-
 
 
 function syncHeaderHeightVar(){
@@ -5851,8 +5819,6 @@ function showHideTimelineControlsFixed(){ /* removed */ }
 function initTimelineControlsFixedObserver(){ /* removed */ }
 
 
-
-
 function __initTimelineNavBindings(){
   const g = document.getElementById("tlViewGlobal");
   const d = document.getElementById("tlViewDay");
@@ -5886,7 +5852,6 @@ function __initTimelineNavBindings(){
     nextDay.addEventListener("click", () => { try { moveActiveDay(1); } catch {} });
   }
 }
-
 
 
 window.addEventListener('DOMContentLoaded', () => {
