@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99_NOLOCK</title>
+<title>V99B_NOLOCK</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -35,6 +35,15 @@ function deleteItemById(kind, id) {
     .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
     .safe-t { padding-top: max(env(safe-area-inset-top), 12px); }
     .tap { -webkit-tap-highlight-color: transparent; }
+  
+    /* Read-only mode */
+    body.readonly-mode button[disabled],
+    body.readonly-mode input[disabled],
+    body.readonly-mode select[disabled],
+    body.readonly-mode textarea[disabled]{
+      opacity: .55;
+      cursor: not-allowed;
+    }
 
   /* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
@@ -630,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99_NOLOCK</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99B_NOLOCK</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2443,7 +2452,210 @@ try{
 const LS_KEY_GEMINI = "miviaje\.gemini\.key";
 
 /* --------------------------- Read-only mode -------------------------- */
-nOpen());
+const LS_KEY_READONLY = "miviaje.readonly";
+function isReadOnly() { return localStorage.getItem(LS_KEY_READONLY) === "1"; }
+
+function setReadOnly(on) {
+  localStorage.setItem(LS_KEY_READONLY, on ? "1" : "0");
+  applyReadOnlyMode();
+}
+
+function applyReadOnlyMode() {
+  const on = isReadOnly();
+
+  // body class
+  document.body.classList.toggle("readonly-mode", on);
+
+  // Toggle button label
+  const btn = $("btnReadOnly");
+  if (btn) {
+    btn.textContent = on ? "🔓" : "🔒";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  // Disable all form controls (except file inputs for import/export modal)
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (el.type === "file") return; // allow import in modal
+    el.disabled = on;
+  });
+
+  // Disable only the buttons that modify data
+  const idsToDisable = [
+    "addLeg", "addStay", "addAct",
+    "tabA", "tabB",
+    "aiPick", "aiGenerate"
+  ];
+  idsToDisable.forEach(id => {
+    const el = $(id);
+    if (el) el.disabled = on;
+  });
+
+  // Disable delete buttons (created dynamically)
+  document.querySelectorAll("[data-leg-del], [data-stay-del], [data-act-del]").forEach(b => {
+    b.disabled = on;
+  });
+
+  // Block AI actions that add items (created dynamically)
+  document.querySelectorAll("#aiResults button").forEach(b => {
+    b.disabled = on;
+  });
+}
+
+
+/* ------------------------- Sync helpers (iCloud) ------------------------- */
+const META_KEY = "miviaje.meta.v1";
+const BACKUPS_KEY = "miviaje.backups.v1";
+const DEVICE_KEY = "miviaje.deviceName.v1";
+
+function getMeta() {
+  try { return JSON.parse(localStorage.getItem(META_KEY) || "{}") || {}; }
+  catch { return {}; }
+}
+function setMeta(patch) {
+  const cur = getMeta();
+  const next = Object.assign({}, cur, patch || {});
+  localStorage.setItem(META_KEY, JSON.stringify(next));
+  return next;
+}
+function getDeviceName(askIfMissing = true) {
+  // Fuente de verdad: miviaje.deviceName (nuevo). Compat: miviaje.deviceName.v1 (legacy)
+  let v = (localStorage.getItem("miviaje.deviceName") || "").trim();
+  if (!v) v = (localStorage.getItem(DEVICE_KEY) || "").trim();
+
+  if (!v && askIfMissing) {
+    v = (prompt("Nombre de este dispositivo (ej: iPhone Ana / iPhone Luis):", "") || "").trim();
+    if (v) {
+      try { localStorage.setItem("miviaje.deviceName", v); } catch {}
+      try { localStorage.setItem(DEVICE_KEY, v); } catch {}
+    }
+  }
+  return v || "Dispositivo";
+}
+function pushBackup(reason, fromPayloadMeta = null) {
+  try {
+    const meta = getMeta();
+    const item = {
+      savedAt: new Date().toISOString(),
+      reason: reason || "backup",
+      deviceName: getDeviceName(false),
+      from: fromPayloadMeta || null,
+      state
+    };
+    const list = JSON.parse(localStorage.getItem(BACKUPS_KEY) || "[]");
+    list.unshift(item);
+    localStorage.setItem(BACKUPS_KEY, JSON.stringify(list.slice(0, 15)));
+  } catch {}
+}
+function getLatestBackup() {
+  try {
+    const list = JSON.parse(localStorage.getItem(BACKUPS_KEY) || "[]");
+    return list?.[0] || null;
+  } catch { return null; }
+}
+
+const emptyScenario = () => ({
+  legs: [],
+  stays: [],
+  meals: { daily: 0, people: "", days: "" },
+  activities: []
+,
+  dailyNotes: {}
+});
+
+let state = {
+  scenario: "A",
+  displayCurrency: "EUR",
+  scenarios: { A: emptyScenario(), B: emptyScenario() },
+  aiPick: { cities: [], items: [] } // chosen topics
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) state = Object.assign(state, JSON.parse(raw));
+  } catch {}
+}
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  // Update sync meta so "lastSavedAt" reflects real editing time (not only export/import).
+  try { setMeta({ lastSavedAt: new Date().toISOString() }); } catch {}
+}
+function curScenario() { return state.scenarios[state.scenario]; }
+
+/* -------------------------- Currency convert ------------------------- */
+function currencySymbol(code){
+  switch(String(code||"")){
+    case "EUR": return "€";
+    case "USD": return "$";
+    case "GBP": return "£";
+    case "JPY": return "¥";
+    default: return String(code||"");
+  }
+}
+
+/* Simple: no external API. Keeps values in display currency.
+   You can later swap to real rates if needed. */
+function setDisplayCurrency(cur) {
+  state.displayCurrency = cur;
+  $("sumCur").textContent = cur;
+  $("mealCur").textContent = cur;
+  saveState();
+  renderAll();
+  syncStickyTotalsHeightVar();
+  }
+
+/* ----------------------------- Accordion ----------------------------- */
+function setupAccordion() {
+  document.querySelectorAll("[data-acc]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-acc");
+      const body = document.querySelector(`[data-acc-body="${key}"]`);
+      body.classList.toggle("hidden");
+
+    const isNowHidden = body.classList.contains("hidden");
+    if (isNowHidden) {
+      if (key === "legs") __sectionExpanded.legs.clear();
+      if (key === "stays") __sectionExpanded.stays.clear();
+      if (key === "acts") __sectionExpanded.activities.clear();
+    } else {
+      if (key === "legs") renderLegs();
+      if (key === "stays") renderStays();
+      if (key === "acts") renderActivities();
+    }
+      const icon = btn.querySelector(".accIcon");
+      icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+      updateFabVisibility();
+    });
+  });
+}
+
+function collapseAllAccordions() {
+  document.querySelectorAll("[data-acc-body]").forEach(body => body.classList.add("hidden"));
+  document.querySelectorAll("[data-acc] .accIcon").forEach(icon => { icon.textContent = "▾"; });
+  updateFabVisibility();
+
+  // v88b: also collapse per-item accordions (legs/stays/activities)
+  try {
+    __sectionExpanded.legs.clear();
+    __sectionExpanded.stays.clear();
+    __sectionExpanded.activities.clear();
+  } catch {}
+
+  // Re-render sections so items visually collapse
+  try { renderLegs(); } catch {}
+  try { renderStays(); } catch {}
+  try { renderActivities(); } catch {}
+}
+
+
+function anyAccordionOpen() {
+  return !!document.querySelector('[data-acc-body]:not(.hidden)');
+}
+
+function updateFabVisibility() {
+  const fab = document.getElementById('fabCollapseAll');
+  if (!fab) return;
+  fab.classList.toggle('hidden', !anyAccordionOpen());
 }
 
 
@@ -2456,6 +2668,7 @@ function renderAll() {
   renderActivities();
   renderTimeline();
   calcSummary();
+  applyReadOnlyMode();
 }
 
 function renderTabs() {
@@ -4141,6 +4354,10 @@ function renderDailyNotes() {
       if (typeof renderTimeline === "function") renderTimeline();
     };
   }
+
+  // Ensure readonly UI is applied after rerender if available
+  try { if (typeof applyReadOnlyMode === "function") applyReadOnlyMode(); } catch {}
+  try { if (typeof applyReadOnlyUI === "function") applyReadOnlyUI(); } catch {}
 }
 
 
@@ -5545,6 +5762,8 @@ if (__tn) __tn.addEventListener("click", (e) => { e.preventDefault(); e.stopProp
 
 const __tt = $("timelineToday");
 if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); });
+
+
 });
 $("btnCompare").addEventListener("click", ()=>{
   const a = state.scenarios.A;
