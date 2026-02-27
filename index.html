@@ -1,79 +1,10 @@
-<!
-
-/* ---------------- Date grouping helpers (V90_GROUP_FIX1) ---------------- */
-function __isValidISODate(d){
-  const s = String(d||"").trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) && s !== "9999-99-99";
-}
-function __dateLabelES(iso){
-  try{
-    const s = String(iso||"").trim();
-    if(!__isValidISODate(s)) return "";
-    const dt = new Date(s + "T00:00:00");
-    if (isNaN(dt.getTime())) return "";
-    const fmt = new Intl.DateTimeFormat("es-ES", { day:"2-digit", month:"short", year:"numeric" });
-    return fmt.format(dt).replace(".", "");
-  }catch{ return ""; }
-}
-function __dateSeparatorHTML(label){
-  const l = String(label||"").trim();
-  if(!l) return "";
-  return `
-    <div class="mt-4 mb-2 flex items-center gap-3">
-      <div class="text-[11px] font-extrabold tracking-tight text-slate-700 bg-slate-100 border border-slate-200 rounded-full px-3 py-1 whitespace-nowrap">
-        ${escapeHtml(l)}
-      </div>
-      <div class="h-px bg-slate-200 flex-1"></div>
-    </div>
-  `;
-}
-function __sortByDateTimeInvalidLast(list){
-  if(!Array.isArray(list)) return list;
-  list.sort((a,b)=>{
-    const ad = String(a?.date||"").trim();
-    const bd = String(b?.date||"").trim();
-    const av = __isValidISODate(ad);
-    const bv = __isValidISODate(bd);
-    if (av && !bv) return -1;
-    if (!av && bv) return 1;
-    if (av && bv && ad !== bd) return ad < bd ? -1 : 1;
-    if (av && bv){
-      const at = timeSortKey(a?.time);
-      const bt = timeSortKey(b?.time);
-      if (at !== bt) return at - bt;
-    }
-    return String(a?.id||"").localeCompare(String(b?.id||""));
-  });
-  return list;
-}
-function __renderGroupedByDate(items, getDateFn, renderFn){
-  const arr = Array.isArray(items) ? items : [];
-  if(!arr.length) return "";
-  let out = "";
-  let cur = null;
-  for(const it of arr){
-    const d = getDateFn ? getDateFn(it) : (it?.date||"");
-    const ds = String(d||"").trim();
-    const valid = __isValidISODate(ds);
-    const key = valid ? ds : "__invalid__";
-    if (key !== cur){
-      cur = key;
-      if (valid){
-        out += __dateSeparatorHTML(__dateLabelES(ds));
-      }
-    }
-    out += renderFn(it);
-  }
-  return out;
-}
-
-DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V90_GROUP_FIX1</title>
+<title>V90B_GROUP_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -703,7 +634,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V90_GROUP_FIX1 - Subsection fixed header - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V90B_GROUP_FIX - Date grouping + scroll start tweak - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2792,9 +2723,11 @@ function legCard(leg, idx) {
 function renderLegs() {
   const box = $("legsList");
   const sc = curScenario();
-const list = Array.isArray(sc.legs) ? [...sc.legs] : [];
-  __sortByDateTimeInvalidLast(list);
-  box.innerHTML = list.length ? __renderGroupedByDate(list, (x)=>x.date, legCard) : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
+
+  sortByDateTimeEmptyFirst(sc.legs);
+  box.innerHTML = sc.legs.length
+    ? __renderGroupedByDate(sc.legs, (it)=>it.date, legCard)
+    : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
   // UX 2.1: tap on summary opens sheet in view mode
   box.querySelectorAll("[data-leg-open]").forEach(btn => btn.addEventListener("click", (e) => {
@@ -2869,9 +2802,10 @@ function stayCard(stay) {
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
-const list = Array.isArray(sc.stays) ? [...sc.stays] : [];
-  __sortByDateTimeInvalidLast(list);
-  box.innerHTML = list.length ? __renderGroupedByDate(list, (x)=>x.date, stayCard) : `<div class="text-sm text-slate-500">Añade alojamientos para estimar noches y coste.</div>`;
+  sortByDateTimeEmptyFirst(sc.stays);
+  box.innerHTML = sc.stays.length
+    ? __renderGroupedByDate(sc.stays, (it)=>it.date, stayCard)
+    : `<div class="text-sm text-slate-500">Añade alojamientos para organizar tus noches.</div>`;
 
   // v80b: accordion per item (stays)
   box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
@@ -3060,6 +2994,59 @@ function sortByDateTimeEmptyFirst(list) {
   return list;
 }
 
+
+/* ---------------- Date grouping helpers (V90B) ---------------- */
+function __isValidISODate(d){
+  const s = String(d||"").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const [y,m,da]=s.split("-").map(n=>parseInt(n,10));
+  if (!y || !m || !da) return false;
+  const dt = new Date(y, m-1, da);
+  return dt && !isNaN(dt.getTime()) && (dt.getFullYear()===y) && (dt.getMonth()===(m-1)) && (dt.getDate()===da);
+}
+function __fmtDateES(iso){
+  if (!__isValidISODate(iso)) return "Sin fecha";
+  const [y,m,d]=String(iso).split("-").map(n=>parseInt(n,10));
+  const dt = new Date(y, m-1, d);
+  try{
+    return dt.toLocaleDateString("es-ES",{ day:"2-digit", month:"short", year:"numeric" }).replace(".", "");
+  }catch(_){
+    return String(iso);
+  }
+}
+function __dateSeparatorHTML(label){
+  return `
+    <div class="mt-4 mb-2">
+      <div class="px-3 py-1 rounded-full inline-flex items-center text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+        ${label}
+      </div>
+    </div>
+  `;
+}
+function __renderGroupedByDate(list, getDateFn, renderItemFn){
+  if (!Array.isArray(list) || !list.length) return "";
+  const valid = [];
+  const invalid = [];
+  for (const it of list){
+    const d = getDateFn ? getDateFn(it) : "";
+    if (__isValidISODate(d)) valid.push(it); else invalid.push(it);
+  }
+  let out = "";
+  let cur = "";
+  for (const it of valid){
+    const d = String(getDateFn(it)||"").trim();
+    if (d !== cur){
+      cur = d;
+      out += __dateSeparatorHTML(__fmtDateES(d));
+    }
+    out += renderItemFn(it);
+  }
+  if (invalid.length){
+    out += __dateSeparatorHTML("Sin fecha");
+    for (const it of invalid) out += renderItemFn(it);
+  }
+  return out;
+}
 /* ---------------- Upcoming focus helpers (vFIX7) ---------------- */
 function __nowMinutes(){
   const d = new Date();
@@ -3494,9 +3481,8 @@ function actCard(act) {
 function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
-const list = Array.isArray(sc.activities) ? [...sc.activities] : [];
-  __sortByDateTimeInvalidLast(list);
-  box.innerHTML = list.length ? __renderGroupedByDate(list, (x)=>x.date, actCard) : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
+  sortByDateTimeEmptyFirst(sc.activities);
+  box.innerHTML = sc.activities.length ? sc.activities.map(actCard).join("") : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
   // v80b: accordion per item (activities)
   box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
@@ -4035,7 +4021,7 @@ function renderTimeline() {
 
   const showCost = (timelineViewMode === "global");
 
-  box.innerHTML = __renderGroupedByDate(visibleItems, (x)=>x.date, (it) => {
+  const __tlRenderItem = (it) => {
     const isDated = it.date && it.date !== "9999-99-99";
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
@@ -4176,7 +4162,11 @@ function renderTimeline() {
         </div>
       </div>
     `;
-});
+};
+
+  box.innerHTML = (timelineViewMode === "global")
+    ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
+    : visibleItems.map(__tlRenderItem).join("");
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
