@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V91_NAV_FIX</title>
+<title>V91B_NAV_OK</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -641,7 +641,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V91_NAV_FIX - Date grouping + scroll start tweak - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V91B_NAV_OK - Date grouping + scroll start tweak - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1053,7 +1053,7 @@ function __scrollToDateSep(viewName, iso, smooth=true){
   if (!root) return false;
   const el = root.querySelector(`.dateSep[data-date-sep="${iso}"]`);
   if (!el) return false;
-  scrollToElWithOffset(el, 0, smooth);
+  scrollToElWithOffset(el, 8, smooth);
   return true;
 }
 
@@ -1132,66 +1132,56 @@ function setView(viewName){
 
   activeView = viewName;
 
-  
+  // Allow CSS top offsets by active view (timeline exception)
+  document.body.dataset.view = String(viewName || "");
 
-  // FIX9: allow CSS top offsets by active view (timeline exception)
-  try { document.body.dataset.view = viewName; } catch {}
-
-  // FIX9: fixed subsection title under Totales (and under timeline controls in timeline)
+  // Fixed subsection title under Totales (and under timeline controls in timeline)
   updateSubSectionHeader(viewName);
-// Keep sticky heights in sync (Totales can be expanded/collapsed)
+
+  // Ensure required accordions are open (keep listeners intact)
+  if (viewName === "timeline") {
+    __ensureAccordionOpen("timeline");
+    // Force premium scroll-based timeline mode on every entry
+    timelineViewMode = "global";
+    activeDayISO = "";
+    if (typeof renderTimeline === "function") renderTimeline();
+  }
+  if (viewName === "legs") {
+    __ensureAccordionOpen("legs");
+    if (typeof renderLegs === "function") renderLegs();
+  }
+  if (viewName === "stays") {
+    __ensureAccordionOpen("stays");
+    if (typeof renderStays === "function") renderStays();
+  }
+  if (viewName === "acts") {
+    __ensureAccordionOpen("acts");
+    if (typeof renderActivities === "function") renderActivities();
+  }
+  if (viewName === "meals") {
+    __ensureAccordionOpen("meals");
+    if (typeof renderMeals === "function") renderMeals();
+  }
+
+  // Date nav bar (under subsection header) + keep measured heights in sync
+  __updateDateNavUI(viewName);
   scheduleSyncTopStackHeights();
 
-  // Transport UX: ensure landing shows date header first
-  try {
-    if (String(viewName) === "legs") {
-      const sc = getScrollContainer();
-      sc.scrollTo({ top: 0, behavior: "auto" });
+  if (typeof updateFabForView === "function") updateFabForView(viewName);
+
+  // After paint: land on today/next date header (never cut a card)
+  requestAnimationFrame(() => {
+    if (__supportsDateNav(viewName)) {
+      const dates = __getDatesForView(viewName);
+      const rel = __relevantDateFromList(dates);
+      if (rel && rel.iso) __scrollToDateSep(viewName, rel.iso, false);
+      else { try { scrollMainToTop(); } catch {} }
+    } else {
+      try { scrollMainToTop(); } catch {}
     }
-  } catch {}
-if (typeof updateFabForView === "function") updateFabForView(viewName);
-
-  // Defaults: open key sections and land on relevant date (today/next)
-  try {
-    requestAnimationFrame(() => {
-      try{
-        if (viewName === "timeline") {
-          // Stability: ensure accordion open + render before any scroll
-          __ensureAccordionOpen("timeline");
-          if (typeof renderTimeline === "function") renderTimeline();
-        }
-        if (viewName === "legs") { __ensureAccordionOpen("legs"); }
-        if (viewName === "stays") { __ensureAccordionOpen("stays"); }
-        if (viewName === "acts") { __ensureAccordionOpen("acts"); }
-        if (viewName === "meals") { __ensureAccordionOpen("meals"); }
-      }catch{}
-    });
-
-    // After paint: build date nav options and land on relevant date header (never cut a card)
-    requestAnimationFrame(() => {
-      try{
-        __updateDateNavUI(viewName);
-        if (__supportsDateNav(viewName)) {
-          const dates = __getDatesForView(viewName);
-          const rel = __relevantDateFromList(dates);
-          if (rel && rel.iso) __scrollToDateSep(viewName, rel.iso, false);
-          else { try { scrollMainToTop(); } catch {} }
-        } else {
-          try { scrollMainToTop(); } catch {}
-        }
-      }catch{}
-    });
-
-    // Keep existing "next focus" behavior for non-timeline sections (doesn't fight date scroll)
-    requestAnimationFrame(() => {
-      try{
-        if (viewName === "legs") __focusNextInSection("legs");
-        if (viewName === "stays") __focusNextInSection("stays");
-        if (viewName === "acts") __focusNextInSection("acts");
-      }catch{}
-    });
-  } catch {}
+  });
 }
+
 
 
 
