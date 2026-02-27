@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V98I_INITJUMP</title>
+<title>V98K_INITJUMP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -639,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V98I_INITJUMP</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V98K_INITJUMP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6335,25 +6335,58 @@ function scrollToDateSep(viewName, iso){
     // Initial paint
     const initialView = getActiveViewName("timeline");
     try{ refresh(initialView); }catch(_){}
-
     // One-time auto-jump ONLY on first app load when starting in Cronograma.
     // Does NOT affect later tab switches (baseline scroll entry remains unchanged).
     if (!window.__dj_initialJumpDone) {
       window.__dj_initialJumpDone = true;
-      if (initialView === "timeline") {
-        const sel = $("dateJumpSelect");
-        const dates = collectDates("timeline");
-        const rel = chooseRelevant(dates);
-        if (sel && rel) {
-          sel.value = rel;
-          // Ensure fixed header height reflects selector + options before jumping.
-          requestAnimationFrame(() => {
-            try{ if (typeof syncTopStackHeights === "function") syncTopStackHeights(); }catch(_){ }
+
+      // Defer until: view is rendered, date separators exist, fixed header height is final,
+      // and base scroll reset has finished (prevents being overwritten by later scrollMainToTop()).
+      const TARGET_VIEW = "timeline";
+      const MAX_FRAMES = 80; // ~1.3s @60fps, conservative
+      let frames = 0;
+      let stableCount = 0;
+      let lastScrollTop = null;
+
+      const tick = () => {
+        frames++;
+
+        const vNow = getActiveViewName(TARGET_VIEW);
+        const sc = getMainScroll();
+        const st = sc ? (sc.scrollTop || 0) : 0;
+
+        if (lastScrollTop === st) stableCount++; else stableCount = 0;
+        lastScrollTop = st;
+
+        // Only for initial Cronograma.
+        if (vNow === TARGET_VIEW && initialView === TARGET_VIEW) {
+          const sel = $("dateJumpSelect");
+          const dates = collectDates(TARGET_VIEW);
+          const rel = chooseRelevant(dates);
+
+          const viewEl = getViewEl(TARGET_VIEW);
+          const sep = (viewEl && rel) ? viewEl.querySelector(`[data-date-sep="${rel}"]`) : null;
+
+          // Need: selector + relevant date + separator exists + scroll settled for a couple frames.
+          if (sel && rel && sep && stableCount >= 2) {
+            sel.value = rel;
+
+            // Sync final fixed-header height (includes dateJumpUI).
+            try { if (typeof syncTopStackHeights === "function") syncTopStackHeights(); } catch(_){}
             forceSubHeaderHeightVar();
-            requestAnimationFrame(() => { scrollToDateSep("timeline", rel); });
-          });
+
+            // Jump after 2 frames so layout is fully committed.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              scrollToDateSep(TARGET_VIEW, rel);
+            }));
+            return;
+          }
         }
-      }
+
+        if (frames < MAX_FRAMES) requestAnimationFrame(tick);
+      };
+
+      requestAnimationFrame(tick);
     }
   });
 })();
