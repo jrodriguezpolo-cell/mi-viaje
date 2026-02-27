@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V98E_DATE_FIX</title>
+<title>V98F_DATE_ANCHOR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -639,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V98E_DATE_FIX</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V98F_DATE_ANCHOR</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6147,41 +6147,55 @@ document.addEventListener("DOMContentLoaded", () => {
     return future || dates[0];
   }
 
-  function headerOffset(){
-    const cs = getComputedStyle(document.documentElement);
-    const topStack = parseFloat(cs.getPropertyValue("--top-stack-h")) || 0;
-    const subH = parseFloat(cs.getPropertyValue("--subsection-header-h")) || 0;
-    return topStack + subH + 8; // small breathing room
+  function forceSubHeaderHeightVar(){
+    const sub = document.getElementById("subSectionHeader");
+    if (!sub) return 0;
+    const h = sub.getBoundingClientRect().height || 0;
+    try{ document.documentElement.style.setProperty("--subsection-header-h", h + "px"); }catch(_){}
+    return h;
   }
 
-  function scrollToDateSep(viewName, iso){
+  function fixedHeaderBottomY(){
+    // Bottom Y (viewport coords) of the fixed subsection header (includes dateJumpUI when visible)
+    const sub = document.getElementById("subSectionHeader");
+    if (!sub) return 0;
+    return sub.getBoundingClientRect().bottom || 0;
+  }
+
+  function scrollToDateSep  function scrollToDateSep(viewName, iso){
     const viewEl = getViewEl(viewName);
     if (!viewEl) return false;
     const sep = viewEl.querySelector(`[data-date-sep="${iso}"]`);
     if (!sep) return false;
 
-    // Robust offset-aware scroll under fixed headers (uses existing project helper).
-    // Do not use scrollIntoView + manual correction (can expose previous-day remnants).
-    const doJump = () => {
-      try{
-        if (typeof syncTopStackHeights === "function") syncTopStackHeights();
-      }catch(_){}
-      try{
-        if (typeof scrollToElWithOffset === "function") {
-          scrollToElWithOffset(sep, -10, false);
-        } else {
-          // Fallback: compute position relative to main scroll.
-          const sc = getMainScroll();
-          const cur = sc.scrollTop || 0;
-          const off = (typeof getStickyOffset==="function" ? Math.max(0, getStickyOffset()-10) : headerOffset());
-          const y = sep.getBoundingClientRect().top + cur - off;
-          sc.scrollTop = Math.max(0, y);
-        }
-      }catch(_){}
+    const sc = getMainScroll();
+
+    const attemptJump = (triesLeft) => {
+      // Ensure CSS vars reflect final fixed header height (dateJumpUI can change it).
+      try{ if (typeof syncTopStackHeights === "function") syncTopStackHeights(); }catch(_){}
+      forceSubHeaderHeightVar();
+
+      const subBottom = fixedHeaderBottomY();
+
+      // Position sep so its top aligns just under the fixed header bottom.
+      const sepRect = sep.getBoundingClientRect();
+      const delta = sepRect.top - (subBottom + 1); // +1px avoids edge overlap
+      const before = sc.scrollTop || 0;
+      const target = Math.max(0, before + delta);
+
+      sc.scrollTop = target;
+
+      // Verify alignment; if layout not settled yet, retry next frame.
+      requestAnimationFrame(() => {
+        const nowRect = sep.getBoundingClientRect();
+        const nowDelta = nowRect.top - (fixedHeaderBottomY() + 1);
+        if (Math.abs(nowDelta) <= 2) return; // good
+        if (triesLeft > 0) attemptJump(triesLeft - 1);
+      });
     };
 
-    // 2-frame to ensure layout/vars reflect current fixed header height.
-    requestAnimationFrame(() => requestAnimationFrame(doJump));
+    // 2-frame start to let DOM/styles settle after select change.
+    requestAnimationFrame(() => requestAnimationFrame(() => attemptJump(4)));
     return true;
   }
 
@@ -6210,6 +6224,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!SUPPORTED.has(v)){
       bar.classList.add("hidden");
       try{ if (typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); else if (typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch(_){ }
+      try{ forceSubHeaderHeightVar(); }catch(_){ }
       return;
     }
 
@@ -6217,6 +6232,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!dates.length){
       bar.classList.add("hidden");
       try{ if (typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); else if (typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch(_){ }
+      try{ forceSubHeaderHeightVar(); }catch(_){ }
       return;
     }
 
@@ -6224,18 +6240,20 @@ document.addEventListener("DOMContentLoaded", () => {
     bar.classList.remove("hidden");
     setOptions(sel, dates);
 
-    
-    // header height changes when dateJumpUI becomes visible (inside subSectionHeader)
-    try{
-      if (typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights();
-      else if (typeof syncTopStackHeights==="function") syncTopStackHeights();
-    }catch(_){}
+    // Header height changes when dateJumpUI becomes visible (inside subSectionHeader).
+    // Make --subsection-header-h the single source of truth for padding/offset.
+    try{ if (typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch(_){}
+    forceSubHeaderHeightVar();
+    // Re-sync in the next frames to catch late layout (Safari/iOS)
     requestAnimationFrame(() => {
-      try{
-        if (typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights();
-        else if (typeof syncTopStackHeights==="function") syncTopStackHeights();
-      }catch(_){}
+      try{ if (typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch(_){}
+      forceSubHeaderHeightVar();
+      requestAnimationFrame(() => {
+        try{ if (typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch(_){}
+        forceSubHeaderHeightVar();
+      });
     });
+
 // default selected = relevant (but DO NOT auto scroll)
     const rel = chooseRelevant(dates);
     if (rel) sel.value = rel;
