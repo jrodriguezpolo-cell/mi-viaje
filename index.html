@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V90D_TL_STABLE</title>
+<title>V91_NAV_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -596,7 +596,7 @@ body.mini-open #sheetMiniOverlay{ pointer-events: auto; }
   border-bottom: 1px solid rgba(15,23,42,0.08);
 }
 body[data-view="timeline"] #subSectionHeader{
-  top: calc(var(--top-stack-h, 0px) + var(--timeline-controls-h, 0px));
+  top: var(--top-stack-h, 0px);
 }
 #view-legs,
 #view-stays,
@@ -604,6 +604,13 @@ body[data-view="timeline"] #subSectionHeader{
 #view-meals,
 #view-timeline{
   padding-top: calc(var(--subsection-header-h, 0px) + 10px);
+}
+
+
+/* V91: timeline old controls are deprecated (kept in DOM but hidden) */
+#timelineControlsRow,
+#timelineControlsSpacer{
+  display:none !important;
 }
 
 /* Hide duplicated in-scroll accordion headers (keep in DOM for listeners) */
@@ -634,7 +641,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V90D_TL_STABLE - Date grouping + scroll start tweak - 2026-02-27</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V91_NAV_FIX - Date grouping + scroll start tweak - 2026-02-27</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -667,8 +674,22 @@ div[data-acc-body="acts"]{
 
 <!-- Fixed subsection header (per-view) -->
 <div id="subSectionHeader" class="hidden" aria-live="polite">
-  <div class="max-w-6xl mx-auto px-5 py-4 flex items-center justify-center">
-    <div id="subSectionTitle" class="font-extrabold text-slate-900 text-base text-center">—</div>
+  <div class="max-w-6xl mx-auto px-5 py-3">
+    <div class="flex items-center justify-center">
+      <div id="subSectionTitle" class="font-extrabold text-slate-900 text-base text-center">—</div>
+    </div>
+
+    <!-- Date navigation (shown only in timeline/legs/stays/acts) -->
+    <div id="subSectionDateNav" class="mt-2 hidden">
+      <div class="flex items-center justify-center gap-2">
+        <select id="dateJumpSelect" class="tap px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 bg-white max-w-[70vw]">
+          <option value="">—</option>
+        </select>
+        <button id="dateJumpNowBtn" class="tap px-3 py-1.5 rounded-lg text-sm font-semibold border border-slate-200 bg-white">
+          Hoy
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -984,6 +1005,111 @@ function updateSubSectionHeader(viewName){
     return;
   }
 
+// V91: Date navigation (timeline/legs/stays/acts) based on rendered date separators
+function __supportsDateNav(viewName){
+  return ["timeline","legs","stays","acts"].includes(String(viewName||""));
+}
+
+function __getDateSepsInView(viewName){
+  const root = document.getElementById("view-"+String(viewName||""));
+  if (!root) return [];
+  return Array.from(root.querySelectorAll('.dateSep[data-date-sep]'))
+    .filter(el => (el.getAttribute("data-date-sep")||"").match(/^\d{4}-\d{2}-\d{2}$/));
+}
+
+function __getDatesForView(viewName){
+  const seps = __getDateSepsInView(viewName);
+  const seen = new Set();
+  const out = [];
+  for (const el of seps){
+    const iso = el.getAttribute("data-date-sep");
+    if (!seen.has(iso)){ seen.add(iso); out.push(iso); }
+  }
+  out.sort();
+  return out;
+}
+
+function __formatDateLabel(iso){
+  try{
+    const [y,m,d] = String(iso).split("-").map(n=>parseInt(n,10));
+    const dt = new Date(y, (m||1)-1, d||1);
+    return dt.toLocaleDateString("es-ES",{ day:"2-digit", month:"short", year:"numeric" }).replace(".", "");
+  }catch(_){
+    return String(iso||"");
+  }
+}
+
+function __relevantDateFromList(dates){
+  const t = todayYMD();
+  if (dates.includes(t)) return { iso: t, kind: "today" };
+  const next = dates.find(d => d >= t);
+  if (next) return { iso: next, kind: "next" };
+  return dates.length ? { iso: dates[0], kind: "next" } : { iso: "", kind: "none" };
+}
+
+function __scrollToDateSep(viewName, iso, smooth=true){
+  if (!iso) return false;
+  const root = document.getElementById("view-"+String(viewName||""));
+  if (!root) return false;
+  const el = root.querySelector(`.dateSep[data-date-sep="${iso}"]`);
+  if (!el) return false;
+  scrollToElWithOffset(el, 0, smooth);
+  return true;
+}
+
+function __updateDateNavUI(viewName){
+  const nav = document.getElementById("subSectionDateNav");
+  const sel = document.getElementById("dateJumpSelect");
+  const btn = document.getElementById("dateJumpNowBtn");
+  if (!nav || !sel || !btn) return;
+
+  if (!__supportsDateNav(viewName)){
+    nav.classList.add("hidden");
+    return;
+  }
+
+  const dates = __getDatesForView(viewName);
+  if (!dates.length){
+    nav.classList.add("hidden");
+    return;
+  }
+  nav.classList.remove("hidden");
+
+  const cur = __relevantDateFromList(dates);
+  btn.textContent = (cur.kind === "today") ? "Hoy" : "Próximo";
+  btn.dataset.targetDate = cur.iso || "";
+
+  // Rebuild options only if changed (stability + no flicker)
+  const key = dates.join("|");
+  if (sel.dataset.optKey !== key){
+    sel.innerHTML = dates.map(d => `<option value="${d}">${__formatDateLabel(d)}</option>`).join("");
+    sel.dataset.optKey = key;
+  }
+
+  // Ensure selection reflects current relevant date if empty or not present
+  if (!sel.value || !dates.includes(sel.value)){
+    sel.value = cur.iso || dates[0];
+  }
+}
+
+// Hook once
+(function(){
+  document.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!(t && t.id === "dateJumpSelect")) return;
+    const iso = t.value || "";
+    if (iso) __scrollToDateSep(activeView, iso, true);
+  }, { passive: true });
+
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    const btn = (t && (t.id === "dateJumpNowBtn" || (t.closest && t.closest("#dateJumpNowBtn")))) ? (t.id==="dateJumpNowBtn"?t:t.closest("#dateJumpNowBtn")) : null;
+    if (!btn) return;
+    const iso = btn.dataset.targetDate || "";
+    if (iso) __scrollToDateSep(activeView, iso, true);
+  }, { passive: true });
+})();
+
   title.textContent = txt;
   bar.classList.remove("hidden");
 }
@@ -1016,16 +1142,6 @@ function setView(viewName){
 // Keep sticky heights in sync (Totales can be expanded/collapsed)
   scheduleSyncTopStackHeights();
 
-
-  // TL stability: ensure accordion body is open and timeline is rendered before any scroll-to logic
-  try {
-    if (viewName === "timeline") {
-      __ensureAccordionOpen("timeline");
-      renderTimeline();
-    }
-  } catch {}
-
-
   // Transport UX: ensure landing shows date header first
   try {
     if (String(viewName) === "legs") {
@@ -1033,32 +1149,50 @@ function setView(viewName){
       sc.scrollTo({ top: 0, behavior: "auto" });
     }
   } catch {}
+if (typeof updateFabForView === "function") updateFabForView(viewName);
 
-  // Structural start of a view is always just below Totales:
-  // mainScroll already has padding-top = --top-stack-h, so scrollTop=0 is the correct anchor.
-  requestAnimationFrame(() => { try { scrollMainToTop(); } catch {} });
-
-  if (typeof updateFabForView === "function") updateFabForView(viewName);
-
-  // Defaults (vFIX7): focus next item and expand key sections
+  // Defaults: open key sections and land on relevant date (today/next)
   try {
-    if (viewName === "timeline") {
-      requestAnimationFrame(() => { try { scrollToNextTimelineItem(); } catch {} });
-    }
-    if (viewName === "legs") {
-      requestAnimationFrame(() => { __ensureAccordionOpen("legs"); __focusNextInSection("legs"); });
-    }
-    if (viewName === "stays") {
-      requestAnimationFrame(() => { __ensureAccordionOpen("stays"); __focusNextInSection("stays"); });
-    }
-    if (viewName === "acts") {
-      requestAnimationFrame(() => { __ensureAccordionOpen("acts"); __focusNextInSection("acts"); });
-    }
-    if (viewName === "meals") {
-      requestAnimationFrame(() => { __ensureAccordionOpen("meals"); });
-    }
+    requestAnimationFrame(() => {
+      try{
+        if (viewName === "timeline") {
+          // Stability: ensure accordion open + render before any scroll
+          __ensureAccordionOpen("timeline");
+          if (typeof renderTimeline === "function") renderTimeline();
+        }
+        if (viewName === "legs") { __ensureAccordionOpen("legs"); }
+        if (viewName === "stays") { __ensureAccordionOpen("stays"); }
+        if (viewName === "acts") { __ensureAccordionOpen("acts"); }
+        if (viewName === "meals") { __ensureAccordionOpen("meals"); }
+      }catch{}
+    });
+
+    // After paint: build date nav options and land on relevant date header (never cut a card)
+    requestAnimationFrame(() => {
+      try{
+        __updateDateNavUI(viewName);
+        if (__supportsDateNav(viewName)) {
+          const dates = __getDatesForView(viewName);
+          const rel = __relevantDateFromList(dates);
+          if (rel && rel.iso) __scrollToDateSep(viewName, rel.iso, false);
+          else { try { scrollMainToTop(); } catch {} }
+        } else {
+          try { scrollMainToTop(); } catch {}
+        }
+      }catch{}
+    });
+
+    // Keep existing "next focus" behavior for non-timeline sections (doesn't fight date scroll)
+    requestAnimationFrame(() => {
+      try{
+        if (viewName === "legs") __focusNextInSection("legs");
+        if (viewName === "stays") __focusNextInSection("stays");
+        if (viewName === "acts") __focusNextInSection("acts");
+      }catch{}
+    });
   } catch {}
 }
+
 
 
 function triggerAddForView(view){
@@ -1303,7 +1437,8 @@ function getStickyOffset() {
   const totalBar = document.getElementById("stickyTotalBar");
   const controls = document.getElementById("timelineControlsRow");
 
-  // Prefer measured vars (kept in sync by syncTopStackHeights)
+    const subHeader = document.getElementById("subSectionHeader");
+// Prefer measured vars (kept in sync by syncTopStackHeights)
   const root = document.documentElement;
   const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
   const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
@@ -1312,12 +1447,11 @@ function getStickyOffset() {
   offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
   offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
 
-  // Controls row only matters when visible (timeline accordion open)
-  if (controls && !controls.classList.contains("hidden")) {
-    offset += controls.getBoundingClientRect().height;
+  // Subsection header (fixed per-view)
+  if (subHeader && !subHeader.classList.contains("hidden")) {
+    offset += subHeader.getBoundingClientRect().height;
   }
-
-  offset += 12; // margin
+offset += 12; // margin
   return offset;
 }
 
