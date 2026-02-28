@@ -2263,7 +2263,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   bind("cost", (val)=>{
     const s = String(val||"").trim();
-    stayObj.cost = (s === "") ? 0 : parseMoney(s);
+    stayObj.cost = (s === "") ? null : parseMoney(s);
   });
 
   return true;
@@ -2338,7 +2338,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
   bind("date", (val)=>{ actObj.date = val; });
   bind("time", (val)=>{ actObj.time = val; });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? 0 : parseMoney(s); });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
 
   return true;
 }
@@ -5120,7 +5120,7 @@ function renderAIResults(sections) {
         title: sp.title,
         city: sec.city || "",
         date: "", // optional
-        cost: 0,
+        cost:null,
         fromAI: true
       });
       added++;
@@ -6005,7 +6005,7 @@ $("addLeg").addEventListener("click", ()=>{
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
+  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:null });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
@@ -6014,7 +6014,7 @@ $("addStay").addEventListener("click", ()=>{
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
+  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:null, fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
