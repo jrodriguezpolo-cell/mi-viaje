@@ -2056,6 +2056,181 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   return true;
 }
 
+
+function __updateStaySheetTitle(city, name){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const c = String(city||"").trim();
+    const n = String(name||"").trim();
+    const detail = [c,n].filter(Boolean).join(" · ");
+    t.textContent = `🏨 ${(detail || "Alojamiento")}`.trim();
+  } catch {}
+}
+function __updateActSheetTitle(city, title){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const c = String(city||"").trim();
+    const a = String(title||"").trim();
+    const detail = [c,a].filter(Boolean).join(" · ");
+    t.textContent = `🎯 ${(detail || "Actividad")}`.trim();
+  } catch {}
+}
+
+function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
+  if (!body || !stayObj) return false;
+  body.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-leg-editor sheet-stay-editor";
+  const costVal = (isNew && !stayObj.cost) ? "" : (stayObj.cost ?? "");
+
+  wrap.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">UBICACIÓN</div>
+
+        <label class="text-xs text-slate-600">Ciudad</label>
+        <input data-stay-city="${escapeHtml(String(itemId))}" data-sheet-stay="city"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
+
+        <label class="text-xs text-slate-600 mt-2 block">Hotel / Apartamento</label>
+        <input data-stay-name="${escapeHtml(String(itemId))}" data-sheet-stay="name"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Nombre del alojamiento">
+      </div>
+
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">CHECK‑IN</div>
+
+        <label class="text-xs text-slate-600">Fecha</label>
+        <input data-stay-date="${escapeHtml(String(itemId))}" data-sheet-stay="date" type="date"
+          class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+
+        <label class="text-xs text-slate-600 mt-2 block">Hora</label>
+        <div class="mt-1 flex items-center gap-1">
+          <input data-stay-time="${escapeHtml(String(itemId))}" data-sheet-stay="time" type="time"
+            class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap utcLabel">UTC</div>
+        </div>
+
+        <label class="text-xs text-slate-600 mt-2 block">Noches</label>
+        <input data-stay-nights="${escapeHtml(String(itemId))}" data-sheet-stay="nights" type="number" min="1" step="1"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="1">
+      </div>
+
+      <div class="sm:col-span-12">
+        <label class="text-xs text-slate-600">Coste</label>
+        <input data-stay-cost="${escapeHtml(String(itemId))}" data-sheet-stay="cost" type="number" min="0" step="0.01"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+      </div>
+    </div>
+  `;
+
+  body.appendChild(wrap);
+
+  const qs = (k) => wrap.querySelector(`[data-sheet-stay="${k}"]`);
+  const v = (x) => (x == null ? "" : String(x));
+
+  qs("city").value = v(stayObj.city);
+  qs("name").value = v(stayObj.name);
+  qs("date").value = v(stayObj.date || "");
+  qs("time").value = v(stayObj.time || "");
+  qs("nights").value = v(stayObj.nights ?? 1);
+  qs("cost").value = (stayObj.cost == null ? "" : String(stayObj.cost));
+
+  try { __updateStaySheetTitle(stayObj.city, stayObj.name); } catch {}
+
+  const bind = (key, fn) => {
+    const el = qs(key);
+    if (!el) return;
+    el.addEventListener("input", () => { try { fn(el.value); } catch {} });
+    el.addEventListener("change", () => { try { fn(el.value); } catch {} });
+  };
+
+  bind("city", (val)=>{ stayObj.city = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} });
+  bind("name", (val)=>{ stayObj.name = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} });
+  bind("date", (val)=>{ stayObj.date = val; });
+  bind("time", (val)=>{ stayObj.time = val; });
+  bind("nights", (val)=>{ const n = Math.max(1, parseInt(String(val||"1"),10) || 1); stayObj.nights = n; });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); stayObj.cost = (s === "") ? 0 : parseMoney(s); });
+
+  return true;
+}
+
+function __renderActEditorInSheet(body, actObj, itemId, isNew){
+  if (!body || !actObj) return false;
+  body.innerHTML = "";
+
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-leg-editor sheet-act-editor";
+
+  wrap.innerHTML = `
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">ACTIVIDAD</div>
+
+        <label class="text-xs text-slate-600">Título</label>
+        <input data-act-title="${escapeHtml(String(itemId))}" data-sheet-act="title"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: Museo / Tour / Restaurante">
+
+        <label class="text-xs text-slate-600 mt-2 block">Ciudad</label>
+        <input data-act-city="${escapeHtml(String(itemId))}" data-sheet-act="city"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
+
+        ${actObj.fromAI ? `<div class="mt-2 text-xs text-slate-500">Añadida desde IA</div>` : ``}
+      </div>
+
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">HORARIO</div>
+
+        <label class="text-xs text-slate-600">Fecha</label>
+        <input data-act-date="${escapeHtml(String(itemId))}" data-sheet-act="date" type="date"
+          class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+
+        <label class="text-xs text-slate-600 mt-2 block">Hora</label>
+        <div class="mt-1 flex items-center gap-1">
+          <input data-act-time="${escapeHtml(String(itemId))}" data-sheet-act="time" type="time"
+            class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <div class="text-xs text-slate-500 whitespace-nowrap utcLabel">UTC</div>
+        </div>
+
+        <label class="text-xs text-slate-600 mt-2 block">Coste</label>
+        <input data-act-cost="${escapeHtml(String(itemId))}" data-sheet-act="cost" type="number" min="0" step="0.01"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+      </div>
+    </div>
+  `;
+
+  body.appendChild(wrap);
+
+  const qs = (k) => wrap.querySelector(`[data-sheet-act="${k}"]`);
+  const v = (x) => (x == null ? "" : String(x));
+
+  qs("title").value = v(actObj.title);
+  qs("city").value = v(actObj.city);
+  qs("date").value = v(actObj.date || "");
+  qs("time").value = v(actObj.time || "");
+  qs("cost").value = (actObj.cost == null ? "" : String(actObj.cost));
+
+  try { __updateActSheetTitle(actObj.city, actObj.title); } catch {}
+
+  const bind = (key, fn) => {
+    const el = qs(key);
+    if (!el) return;
+    el.addEventListener("input", () => { try { fn(el.value); } catch {} });
+    el.addEventListener("change", () => { try { fn(el.value); } catch {} });
+  };
+
+  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
+  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
+  bind("date", (val)=>{ actObj.date = val; });
+  bind("time", (val)=>{ actObj.time = val; });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? 0 : parseMoney(s); });
+
+  return true;
+}
+
 function __legPlacePlaceholder(mode, which){
   const m = (typeof legModeDefault === "function") ? legModeDefault(mode) : String(mode||"plane");
   const w = (which === "to") ? "llegada" : "salida";
@@ -2166,19 +2341,19 @@ function renderLegModeChips(container, leg, onSelect){
   // Find the real editor node (move-node approach: avoid duplicate IDs)
   let node = null;
   let legObj = null;
+  let stayObj = null;
+  let actObj = null;
 
-  if (k === "leg") {
-    try {
-      const sc = (typeof curScenario === "function") ? curScenario() : null;
-      legObj = sc && Array.isArray(sc.legs) ? sc.legs.find(x => String(x && x.id) === String(itemId)) : null;
-    } catch {}
-    if (!legObj) { alert("No se encontró el evento"); return; }
-  } else {
-    const sel = (k === "stay") ? `[data-sec-body="stays"][data-sec-id="${CSS.escape(itemId)}"]`
-              : `[data-sec-body="activities"][data-sec-id="${CSS.escape(itemId)}"]`;
-    node = document.querySelector(sel);
-    if (!node) { alert("No se encontró el evento"); return; }
-  }
+  try {
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if (k === "leg") legObj = sc && Array.isArray(sc.legs) ? sc.legs.find(x => String(x && x.id) === String(itemId)) : null;
+    if (k === "stay") stayObj = sc && Array.isArray(sc.stays) ? sc.stays.find(x => String(x && x.id) === String(itemId)) : null;
+    if (k === "act") actObj = sc && Array.isArray(sc.activities) ? sc.activities.find(x => String(x && x.id) === String(itemId)) : null;
+  } catch {}
+
+  if (k === "leg" && !legObj) { alert("No se encontró el evento"); return; }
+  if (k === "stay" && !stayObj) { alert("No se encontró el evento"); return; }
+  if (k === "act" && !actObj) { alert("No se encontró el evento"); return; }
 
 // Build a nice title
   try {
@@ -2220,7 +2395,32 @@ function renderLegModeChips(container, leg, onSelect){
   } catch {}
 
 
-  // If leg: inject mode chips just under title
+  
+  // STAY/ACT: render isolated premium editor HTML (no DOM move from section)
+  if (k === "stay") {
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+    const ok = __renderStayEditorInSheet(body, stayObj, itemId, !!isNew);
+    if (!ok) { alert("No se pudo abrir el editor"); return; }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+    return;
+  }
+  if (k === "act") {
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+    const ok = __renderActEditorInSheet(body, actObj, itemId, !!isNew);
+    if (!ok) { alert("No se pudo abrir el editor"); return; }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+    return;
+  }
+
+// If leg: inject mode chips just under title
   try {
     if (k === "leg") {
       const legObj = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", itemId) : null;
