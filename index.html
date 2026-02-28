@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99V_ACT_2COL</title>
+<title>V99W_ACT_SUM_UNI</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -3853,6 +3853,43 @@ function handleStayDoneToggle(id, targetChecked, el) {
 /* ---------------- /Activities: smart done ---------------- */
 
 
+
+function actSummaryLinesHTML(act, opts){
+  opts = opts || {};
+  const city = (act.city||"").trim();
+  const title = (act.title||act.name||"").trim();
+  const dES = (act.date ? formatDateES(act.date) : "");
+  const t = (act.time||"").trim();
+  const duration = (act.duration||"").trim();
+  const hasNotes = !!(act.notes && String(act.notes).trim());
+
+  const line1City = city || "—";
+  const line1Title = title || "—";
+
+  const line2Date = dES || "—";
+  const line2Time = t || "";
+
+  // Line 1: ciudad -> actividad (ciudad primero)
+  const line1 = `<div class="text-sm font-semibold truncate">
+    <span class="font-medium">${escapeHtml(line1City)}</span>
+    <span class="text-slate-400"> · </span>
+    <span>🎯 ${escapeHtml(line1Title)}</span>
+    ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
+    ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
+  </div>`;
+
+  // Line 2: fecha -> hora (fecha primero)
+  const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
+    <span>${escapeHtml(line2Date)}</span>
+    ${line2Time ? `<span class="text-slate-400"> · </span><span>${escapeHtml(line2Time)}</span>` : ``}
+  </div>`;
+
+  // Line 3: duración si existe
+  const line3 = duration ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>` : ``;
+
+  return `${line1}${line2}${line3}`;
+}
+
 function actCard(act) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(act, act.date || "") : {done:false,auto:false,skipped:false};
   const city = (act.city||"").trim() || "—";
@@ -3869,10 +3906,9 @@ function actCard(act) {
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(title)}</span></div>
-        <div class="text-xs text-slate-600 mt-1 truncate"><span class="font-medium">${escapeHtml(city)}</span><span class="text-slate-400"> · </span><span>${when}</span>${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}</div>
+        ${actSummaryLinesHTML(act)}
       </div>
-      <div class="shrink-0 flex items-center gap-2">
+      <div class="shrink-0 flex items-center gap-2"><div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
         ${buildEventIndicatorsHTML(act)}
       </div>
@@ -4491,6 +4527,8 @@ function renderTimeline() {
     const jumpType = it.actId ? 'act' : (it.legId ? 'leg' : (it.stayId ? 'stay' : ''));
     const jumpId = it.actId || it.legId || it.stayId || '';
     const __leg = (jumpType === 'leg') ? legById.get(String(jumpId)) : null;
+    const __act = (jumpType === 'act') ? actById.get(String(jumpId)) : null;
+    const __stay = (jumpType === 'stay') ? stayById.get(String(jumpId)) : null;
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
@@ -4599,9 +4637,7 @@ function renderTimeline() {
             <div class="shrink-0 text-lg leading-none mt-[2px]">${escapeHtml(icon || (it.isNote ? "📝" : "•"))}</div>
 
             <div class="min-w-0">
-              <div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div>
-              <div class="${__metaClass}">${__dateLineHTML}</div>
-        ${__placeLineHTML || ""}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
