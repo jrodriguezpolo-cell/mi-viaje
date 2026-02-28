@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99K_NAVFIX</title>
+<title>V99L_BASE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99K_NAVFIX</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99L_BASE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2754,30 +2754,27 @@ function renderLegs() {
 
 function stayCard(stay) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
-  const ro = false;
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.stays.has(stay.id);
+
   const city = (stay.city||"").trim() || "—";
   const name = (stay.name||"").trim() || "—";
-  const date = (stay.date||"").trim() || "—";
-  const time = (stay.time||"").trim();
-  const nights = (stay.nights!=null && String(stay.nights).trim()!=="") ? `${stay.nights} noche${Number(stay.nights)===1?"":"s"}` : "";
-  const meta = [date, time].filter(Boolean).join(" ");
-  const extra = nights ? ` · ${escapeHtml(nights)}` : "";
+  const dt = `${(stay.date||"").trim() || "—"} ${(stay.time||"").trim() || "—"}`;
+  const hasNotes = !!(stay.notes && String(stay.notes).trim());
+
   return `
-  <div id="stay-${stay.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
-    <button type="button"
-            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
-            data-stay-open="${stay.id}"
-            aria-label="Abrir alojamiento">
+  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 truncate">${escapeHtml(meta)}${extra}</div>
+        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
-    </button>
+    </div>
 
-    <div class="mt-3 hidden" data-sec-body="stays" data-sec-id="${stay.id}" data-editor-kind="stay" data-editor-id="${stay.id}">
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="stays" data-sec-id="${stay.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
         <div class="sm:col-span-4">
           <label class="text-xs text-slate-600">Ciudad</label>
@@ -2814,7 +2811,6 @@ function stayCard(stay) {
         </div>
       </div>
     </div>
-  </div>
   </div>`;
 }
 function renderStays() {
@@ -2825,59 +2821,61 @@ function renderStays() {
     ? __renderGroupedByDate(sc.stays, (it)=>it.date, stayCard)
     : `<div class="text-sm text-slate-500">Añade alojamientos para organizar tus noches.</div>`;
 
-  // UX: tap on summary opens sheet in view mode (same model as Transporte)
-  box.querySelectorAll("[data-stay-open]").forEach(btn => btn.addEventListener("click", (e) => {
-    try { e.preventDefault(); e.stopPropagation(); } catch {}
-    const id = btn.getAttribute("data-stay-open");
+  // v80b: accordion per item (stays)
+  box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
     if (!id) return;
-    try { openEventSheet({ kind: "stay", id, mode: "view", sourceView: "stays" }); } catch {}
+    if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
+    else __sectionExpanded.stays.add(id);
+    const prevTop = box.scrollTop;
+    renderStays();
+    box.scrollTop = prevTop;
   }));
 
-
   box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
-      const id = b.getAttribute("data-stay-del");
-      sc.stays = sc.stays.filter(x => x.id !== id);
-      __sectionExpanded.stays.delete(id);
-      saveState(); renderAll();
-    }));
-    box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-stay-city");
-      const s = sc.stays.find(x => x.id === id);
-      s.city = cap1(inp.value); inp.value = s.city;
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-stay-date]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-stay-date");
-      sc.stays.find(x => x.id === id).date = inp.value;
-      sortByDateTimeEmptyFirst(sc.stays);
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-stay-time]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-stay-time");
-      sc.stays.find(x => x.id === id).time = inp.value;
-      sortByDateTimeEmptyFirst(sc.stays);
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-stay-name]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-stay-name");
-      sc.stays.find(x => x.id === id).name = inp.value.trim();
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-stay-nights]").forEach(inp => inp.addEventListener("input", () => {
-      const id = inp.getAttribute("data-stay-nights");
-      sc.stays.find(x => x.id === id).nights = Math.max(1, parseInt(inp.value || "1",10));
-      saveState(); calcSummary();
-    }));
-    box.querySelectorAll("[data-stay-cost]").forEach(inp => inp.addEventListener("input", () => {
-      const id = inp.getAttribute("data-stay-cost");
-      sc.stays.find(x => x.id === id).cost = parseMoney(inp.value);
-      saveState(); calcSummary();
-    }));
-  
-    box.querySelectorAll("[data-stay-done]").forEach(cb => cb.addEventListener("change", () => {
-      handleStayDoneToggle(cb.getAttribute("data-stay-done"), cb.checked, cb);
-    }));
-  }
+    const id = b.getAttribute("data-stay-del");
+    sc.stays = sc.stays.filter(x => x.id !== id);
+    __sectionExpanded.stays.delete(id);
+    saveState(); renderAll();
+  }));
+  box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-city");
+    const s = sc.stays.find(x => x.id === id);
+    s.city = cap1(inp.value); inp.value = s.city;
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-date]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-date");
+    sc.stays.find(x => x.id === id).date = inp.value;
+    sortByDateTimeEmptyFirst(sc.stays);
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-time]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-time");
+    sc.stays.find(x => x.id === id).time = inp.value;
+    sortByDateTimeEmptyFirst(sc.stays);
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-name]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-stay-name");
+    sc.stays.find(x => x.id === id).name = inp.value.trim();
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-stay-nights]").forEach(inp => inp.addEventListener("input", () => {
+    const id = inp.getAttribute("data-stay-nights");
+    sc.stays.find(x => x.id === id).nights = Math.max(1, parseInt(inp.value || "1",10));
+    saveState(); calcSummary();
+  }));
+  box.querySelectorAll("[data-stay-cost]").forEach(inp => inp.addEventListener("input", () => {
+    const id = inp.getAttribute("data-stay-cost");
+    sc.stays.find(x => x.id === id).cost = parseMoney(inp.value);
+    saveState(); calcSummary();
+  }));
+
+  box.querySelectorAll("[data-stay-done]").forEach(cb => cb.addEventListener("change", () => {
+    handleStayDoneToggle(cb.getAttribute("data-stay-done"), cb.checked, cb);
+  }));
 }
 
 function renderMeals() {
@@ -3433,27 +3431,28 @@ function handleStayDoneToggle(id, targetChecked, el) {
 
 
 function actCard(act) {
-  const st = (typeof computeDoneState==="function") ? computeDoneState(act) : {done:false,auto:false,skipped:false};
-  const ro = false;
+  const st = computeDoneState(act);
+  const ro = (localStorage.getItem("miviaje.readonly") === "1");
+  const isOpen = __sectionExpanded.activities.has(act.id);
+
   const title = (act.title||"").trim() || "—";
   const city = (act.city||"").trim() || "—";
-  const dt = `${(act.date||"").trim() || "—"} ${(act.time||"").trim() || ""}`.trim();
+  const dt = `${(act.date||"").trim() || "—"} ${(act.time||"").trim() || "—"}`;
+  const hasNotes = !!(act.notes && String(act.notes).trim());
+
   return `
-  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
-    <button type="button"
-            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
-            data-act-open="${act.id}"
-            aria-label="Abrir actividad">
+  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
+    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="activities" data-sec-id="${act.id}">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(city)} — ${escapeHtml(title)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 truncate">${escapeHtml(dt)}</div>
+        <div class="text-sm font-semibold truncate">🎯 Actividad · <span class="done-text">${escapeHtml(title)}</span> <span class="text-slate-500">(${escapeHtml(city)})</span></div>
+        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
       </div>
-    </button>
+    </div>
 
-    <div class="mt-3 hidden" data-sec-body="activities" data-sec-id="${act.id}" data-editor-kind="act" data-editor-id="${act.id}">
+    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="activities" data-sec-id="${act.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
         <div class="sm:col-span-4">
           <label class="text-xs text-slate-600">Actividad</label>
@@ -3489,7 +3488,6 @@ function actCard(act) {
         ${act.fromAI ? `<span class="text-slate-500">Añadida desde IA</span>` : ``}
       </div>
     </div>
-  </div>
   </div>`;
 }
 
@@ -3497,447 +3495,58 @@ function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.activities);
-  box.innerHTML = sc.activities.length
-    ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard)
-    : `<div class="text-sm text-slate-500">Añade actividades para completar tu plan.</div>`;
+  box.innerHTML = sc.activities.length ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard) : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
-  // UX: tap on summary opens sheet in view mode (same model as Transporte)
-  box.querySelectorAll("[data-act-open]").forEach(btn => btn.addEventListener("click", (e) => {
-    try { e.preventDefault(); e.stopPropagation(); } catch {}
-    const id = btn.getAttribute("data-act-open");
+  // v80b: accordion per item (activities)
+  box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
+    if (e.target.closest("button, input, textarea, select, a, label")) return;
+    const id = h.getAttribute("data-sec-id");
     if (!id) return;
-    try { openEventSheet({ kind: "act", id, mode: "view", sourceView: "acts" }); } catch {}
+    if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
+    else __sectionExpanded.activities.add(id);
+    const prevTop = box.scrollTop;
+    renderActivities();
+    box.scrollTop = prevTop;
   }));
 
-
   box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
-      const id = b.getAttribute("data-act-del");
-      sc.activities = sc.activities.filter(x => x.id !== id);
-      __sectionExpanded.activities.delete(id);
-      saveState(); renderAll();
-    }));
-    box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-act-title");
-      sc.activities.find(x => x.id === id).title = inp.value.trim();
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-act-city");
-      const a = sc.activities.find(x => x.id === id);
-      a.city = cap1(inp.value); inp.value = a.city;
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-act-date");
-      sc.activities.find(x => x.id === id).date = inp.value;
-      sortByDateTimeEmptyFirst(sc.activities);
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
-      const id = inp.getAttribute("data-act-time");
-      sc.activities.find(x => x.id === id).time = inp.value;
-      sortByDateTimeEmptyFirst(sc.activities);
-      saveState(); renderTimeline();
-    }));
-    box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
-      const id = inp.getAttribute("data-act-cost");
-      sc.activities.find(x => x.id === id).cost = parseMoney(inp.value);
-      saveState(); calcSummary();
-    }));
-    box.querySelectorAll("[data-act-done]").forEach(cb => cb.addEventListener("change", () => {
-      handleActDoneToggle(cb.getAttribute("data-act-done"), cb.checked, cb);
-    }));
-  
-  }
-  
-  
-  /* ---------------- Timeline: jump to item ---------------- */
-  function openAccordionKey(key) {
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    const btn = document.querySelector(`[data-acc="${key}"]`);
-    if (!body || !btn) return;
-    if (body.classList.contains("hidden")) btn.click();
-  }
-  
-  function scrollAccordionBodyToTop(key) {
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if (!body) return;
-    try { body.scrollTop = 0; } catch {}
-  }
-  
-  
-  function jumpToItem(kind, id) {
-    const rawKind = String(kind || "").toLowerCase().trim();
-    const itemId = String(id || "").trim();
-    if (!rawKind || !itemId) return;
-  
-    // Sheet-first behavior (V89D1)
-    try { if (typeof openEventSheet === "function") { openEventSheet({ kind: rawKind, id: itemId, mode: "view" }); return; } } catch {}
-  
-    // 1) kind -> view mapping (timeline "Ir" button)
-    const kindMap = {
-      leg: "legs",
-      transport: "legs",
-      stay: "stays",
-      lodging: "stays",
-      act: "acts",
-      activity: "acts",
-      meal: "meals",
-      meals: "meals"
-    };
-    const view = kindMap[rawKind];
-    if (!view) return;
-  
-    // 2) Switch to target view
-    try { if (typeof setView === "function") setView(view); } catch {}
-  
-    // 3) Ensure the section accordion is open (if accordion shell exists)
-    try {
-      const accKey = (view === "acts") ? "acts" : view; // keys used by openAccordionKey
-      if (typeof openAccordionKey === "function") openAccordionKey(accKey);
-    } catch {}
-  
-    // 4) Expand target item (if applicable) + rerender that section
-    try {
-      if (rawKind === "leg" || rawKind === "transport") {
-        if (__sectionExpanded?.legs) __sectionExpanded.legs.add(itemId);
-        if (typeof renderLegs === "function") renderLegs();
-      } else if (rawKind === "stay" || rawKind === "lodging") {
-        if (__sectionExpanded?.stays) __sectionExpanded.stays.add(itemId);
-        if (typeof renderStays === "function") renderStays();
-      } else if (rawKind === "act" || rawKind === "activity") {
-        if (__sectionExpanded?.activities) __sectionExpanded.activities.add(itemId);
-        if (typeof renderActivities === "function") renderActivities();
-      } else {
-        // meals are not timeline items in current model; keep safe fallback
-        if (typeof renderMeals === "function") renderMeals();
-      }
-    } catch {}
-  
-    // 5) Scroll to the item (minimal; no offsets, no window["scrollTo"])
-    const findTargetEl = () => {
-      try {
-        if (view === "legs") return document.querySelector(`[data-sec-toggle="legs"][data-sec-id="${CSS.escape(itemId)}"]`);
-        if (view === "stays") return document.querySelector(`[data-sec-toggle="stays"][data-sec-id="${CSS.escape(itemId)}"]`);
-        if (view === "acts") return document.querySelector(`[data-sec-toggle="activities"][data-sec-id="${CSS.escape(itemId)}"]`);
-        return null;
-      } catch {
-        return null;
-      }
-    };
-  
-    // Wait for DOM paint after rerender
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const el = findTargetEl();
-        if (el) {
-          const ms = document.getElementById("mainScroll");
-          if (ms && typeof ms.scrollTo === "function") {
-            const topStack = getTopStackHeight();
-            const y = el.getBoundingClientRect().top + ms.scrollTop - topStack - 8;
-            try { ms.scrollTo({ top: Math.max(0, y), behavior: "smooth" }); } catch { ms.scrollTop = Math.max(0, y); }
-            try { el.focus({ preventScroll: true }); } catch {}
-          } else if (typeof el.scrollIntoView === "function") {
-            try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch { el.scrollIntoView(); }
-            try { el.focus({ preventScroll: true }); } catch {}
-          }
-        } else {
-          alert("No se encontró el evento");
-        }
-      });
-    });
-  }
-  
-  
-  /* ---------------- Item notes (timeline CRUD) ---------------- */
-  
-  function getItemByTypeAndId(type, id) {
-    const sc = curScenario();
-    const t = String(type || "");
-    const itemId = String(id || "");
-    if (!sc || !t || !itemId) return null;
-  
-    if (t === "act") return (sc.activities || []).find(a => String(a.id) === itemId) || null;
-    if (t === "leg") return (sc.legs || []).find(l => String(l.id) === itemId) || null;
-    if (t === "stay") return (sc.stays || []).find(s => String(s.id) === itemId) || null;
-    if (t === "meal") return (sc.meals || []).find(m => String(m.id) === itemId) || null;
-    return null;
-  }
-  
-  function openItemNotesModal(type, id) {
-    const item = getItemByTypeAndId(type, id);
-    if (!item) return;
-  
-    const ro = (localStorage.getItem("miviaje.readonly") === "1");
-    const current = String(item.notes || "");
-  
-    const html = `
-      <div class="text-sm text-slate-600 mb-2">Observaciones</div>
-      <textarea id="itemNotesText" rows="5"
-        class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
-        placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
-  
-      <div class="mt-3 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <button id="itemNotesSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
-            Guardar
-          </button>
-          <button id="itemNotesDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
-            Borrar
-          </button>
-        </div>
-        <span id="itemNotesStatus" class="text-xs text-slate-500"></span>
-      </div>
-    `;
-  
-    showModal("Observaciones", html);
-  
-    setTimeout(() => {
-      const ta = $("itemNotesText");
-      const btnSave = $("itemNotesSave");
-      const btnDel = $("itemNotesDelete");
-      const st = $("itemNotesStatus");
-  
-      const hasText = !!String(current || "").trim();
-      if (!hasText && btnDel) btnDel.classList.add("hidden");
-  
-      if (ro) {
-        if (ta) ta.disabled = true;
-        if (btnSave) btnSave.disabled = true;
-        if (btnDel) btnDel.disabled = true;
-        return;
-      }
-  
-      if (btnSave) {
-        btnSave.onclick = () => {
-          const txt = String(ta ? ta.value : "").trim();
-          item.notes = txt;
-          saveState();
-          if (st) st.textContent = "Guardado ✓";
-          renderTimeline();
-          closeModal();
-        };
-      }
-  
-      if (btnDel) {
-        btnDel.onclick = () => {
-          const ok = confirm("¿Borrar estas observaciones?\n(Esta acción no borra el item.)");
-          if (!ok) return;
-          item.notes = "";
-          saveState();
-          renderTimeline();
-          closeModal();
-        };
-      }
-    }, 0);
-  }
-  
-  
-  function openDailyNoteModal(dateKey) {
-    const sc = curScenario();
-    if (!sc.dailyNotes) sc.dailyNotes = {};
-    const key = String(dateKey || "").trim();
-    if (!key) return;
-  
-    const ro = (localStorage.getItem("miviaje.readonly") === "1");
-    const current = String(sc.dailyNotes[key] || "");
-  
-    const html = `
-      <div class="text-sm text-slate-600 mb-2">Notas del día (${escapeHtml(key)})</div>
-      <textarea id="dailyNoteModalText" rows="6"
-        class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white"
-        placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
-  
-      <div class="mt-3 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <button id="dailyNoteModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
-            Guardar
-          </button>
-          ${current.trim() ? `
-            <button id="dailyNoteModalDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
-              Borrar
-            </button>
-          ` : ``}
-        </div>
-        <button id="dailyNoteModalGo" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
-          Ir a Notas del día
-        </button>
-      </div>
-    `;
-  
-    showModal("Observaciones", html);
-  
-    setTimeout(() => {
-      const ta = document.getElementById("dailyNoteModalText");
-      const btnSave = document.getElementById("dailyNoteModalSave");
-      const btnDel = document.getElementById("dailyNoteModalDelete");
-      const btnGo = document.getElementById("dailyNoteModalGo");
-  
-      if (ro) {
-        if (ta) ta.disabled = true;
-        if (btnSave) btnSave.disabled = true;
-        if (btnDel) btnDel.disabled = true;
-      }
-  
-      if (btnGo) {
-        btnGo.onclick = () => {
-          // Abrir acordeón de Notas del día y seleccionar fecha
-          try {
-            const box = document.getElementById("dailyNotesBox");
-            if (box) box.dataset.selDate = key;
-          } catch {}
-          // Si existe función de abrir acordeones por id, úsala. Si no, jump al timeline/section.
-          try {
-            const accBtn = document.querySelector('[data-acc="dailyNotes"]');
-            if (accBtn) accBtn.click();
-          } catch {}
-          try {
-            const sec = document.getElementById("dailyNotesSection");
-            if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
-          } catch {}
-          try { renderDailyNotes(); } catch {}
-          closeModal();
-        };
-      }
-  
-      if (btnSave && !ro) {
-        btnSave.onclick = () => {
-          const v = String(ta?.value || "").trim();
-          if (!v) {
-            // Guardar vacío => borrar key
-            delete sc.dailyNotes[key];
-          } else {
-            sc.dailyNotes[key] = v;
-          }
-          saveState();
-          renderTimeline();
-          try { renderDailyNotes(); } catch {}
-          closeModal();
-        };
-      }
-  
-      if (btnDel && !ro) {
-        btnDel.onclick = () => {
-          const ok = confirm("¿Borrar esta nota del día?");
-          if (!ok) return;
-          delete sc.dailyNotes[key];
-          saveState();
-          renderTimeline();
-          try { renderDailyNotes(); } catch {}
-          closeModal();
-        };
-      }
-    }, 0);
-  }
-  
-  /* ---------------- /Timeline: jump to item ---------------- */
-  const __tlExpanded = new Set();
-  
-  
-  function formatDayLabel(iso) {
-    const v = String(iso || "").trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return "—";
-    const d = new Date(v + "T00:00:00");
-    if (Number.isNaN(d.getTime())) return v;
-    try {
-      return d.toLocaleDateString("es-ES", { weekday: "short", day: "2-digit", month: "short" }).replace(".", "");
-    } catch {
-      return v;
-    }
-  }
-  
-  function getTimelineDays(items) {
-    const days = [];
-    const seen = new Set();
-    for (const it of (items || [])) {
-      const d = String(it?.date || "").trim();
-      if (!d || d === "9999-99-99") continue;
-      if (!seen.has(d)) { seen.add(d); days.push(d); }
-    }
-    days.sort((a,b)=>String(a).localeCompare(String(b)));
-    return days;
-  }
-  
-  function syncTimelineViewUI(days) {
-    const btnG = document.getElementById("tlViewGlobal");
-    const btnD = document.getElementById("tlViewDay");
-    const navDay = document.getElementById("timelineDayNav");
-    const navGlobal = document.getElementById("timelineGlobalNav");
-    const lbl = document.getElementById("tlDayLabel");
-  
-    // IMPORTANT: With Tailwind CDN, if both bg/text utility classes exist simultaneously,
-    // the *CSS generation order* (not the DOM class order) can decide the winner.
-    // So we must explicitly add/remove the mutually-exclusive classes (not just toggle one side).
-    const setToggleBtn = (btn, isActive) => {
-      if (!btn) return;
-      btn.classList.toggle("seg-active", !!isActive);
-      btn.classList.toggle("seg-inactive", !isActive);
-    };
-  
-    setToggleBtn(btnG, timelineViewMode === "global");
-    setToggleBtn(btnD, timelineViewMode === "day");
-  
-    if (navDay) navDay.classList.toggle("hidden", timelineViewMode !== "day");
-    if (navGlobal) navGlobal.classList.toggle("hidden", timelineViewMode !== "global");
-  
-    if (lbl) lbl.textContent = (timelineViewMode === "day" && activeDayISO) ? formatDayLabel(activeDayISO) : "—";
-  
-    const prev = document.getElementById("tlDayPrev");
-    const next = document.getElementById("tlDayNext");
-    const idx = (days || []).indexOf(activeDayISO);
-    const prevDisabled = (idx === -1) ? true : (idx <= 0);
-    const nextDisabled = (idx === -1) ? ((days || []).length === 0) : (idx >= (days.length - 1));
-  
-    // Do not use native disabled (it blocks click events on some mobile browsers).
-    // We only show a visual hint; bounds are enforced in moveActiveDay().
-    if (prev) prev.classList.toggle("opacity-40", prevDisabled);
-    if (next) next.classList.toggle("opacity-40", nextDisabled);
-  }
-  
-  function setTimelineViewMode(mode) {
-    const prev = timelineViewMode;
-    timelineViewMode = (mode === "day") ? "day" : "global";
-    // When entering day view, active day will be auto-selected in renderTimeline()
-    renderTimeline();
-  
-    // Entering Day from Global: ensure the first event isn't hidden under the fixed controls bar.
-    if (timelineViewMode === "day" && prev !== "day") {
-      requestAnimationFrame(() => {
-        const nodes = document.querySelectorAll(".timelineItem");
-        let first = null;
-        for (const el of nodes) {
-          const d = (el.getAttribute("data-date") || "").trim();
-          if (d === activeDayISO) { first = el; break; }
-        }
-        if (first) scrollToElWithOffset(first);
-      });
-    }
-    // Entering Global from Day: ensure the timeline is visible under the sticky totals bar.
-    if (timelineViewMode === "global" && prev === "day") {
-      requestAnimationFrame(() => {
-        const first = document.querySelector(".timelineItem");
-        const list = document.getElementById("timelineList");
-        if (first) {
-          scrollToElWithOffset(first, 0);
-        } else if (list) {
-          scrollToElWithOffset(list, 0);
-        } else {
-          scrollToTopValue(0, "smooth");
-        }
-      });
-    }
-  
-  }
-  
-  
-  function moveActiveDay(delta) {
-    const days = Array.isArray(__tlDays) ? __tlDays : [];
-    const idx = days.indexOf(activeDayISO);
-    const ni = idx + delta;
-    if (ni < 0 || ni >= days.length) return;
-    activeDayISO = days[ni];
-    renderTimeline();
-  }
+    const id = b.getAttribute("data-act-del");
+    sc.activities = sc.activities.filter(x => x.id !== id);
+    __sectionExpanded.activities.delete(id);
+    saveState(); renderAll();
+  }));
+  box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-act-title");
+    sc.activities.find(x => x.id === id).title = inp.value.trim();
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-act-city");
+    const a = sc.activities.find(x => x.id === id);
+    a.city = cap1(inp.value); inp.value = a.city;
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-act-date");
+    sc.activities.find(x => x.id === id).date = inp.value;
+    sortByDateTimeEmptyFirst(sc.activities);
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
+    const id = inp.getAttribute("data-act-time");
+    sc.activities.find(x => x.id === id).time = inp.value;
+    sortByDateTimeEmptyFirst(sc.activities);
+    saveState(); renderTimeline();
+  }));
+  box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
+    const id = inp.getAttribute("data-act-cost");
+    sc.activities.find(x => x.id === id).cost = parseMoney(inp.value);
+    saveState(); calcSummary();
+  }));
+  box.querySelectorAll("[data-act-done]").forEach(cb => cb.addEventListener("change", () => {
+    handleActDoneToggle(cb.getAttribute("data-act-done"), cb.checked, cb);
+  }));
+
 }
 
 
@@ -6786,51 +6395,5 @@ function scrollToDateSep(viewName, iso){
   });
 })();
 </script>
-</body
-<!-- NAV WIRING FIX (V99K) -->
-<script>
-(function(){
-  function bindJumpNav(){
-    if (window.__jumpNavBound) return;
-    window.__jumpNavBound = true;
-
-    var buttons = document.querySelectorAll('[data-jump]');
-    buttons.forEach(function(btn){
-      if (btn.dataset && btn.dataset.jumpBound === "1") return;
-      btn.addEventListener('click', function(e){
-        var view = btn.dataset ? btn.dataset.jump : null;
-        if (typeof window.setView === "function" && view) {
-          window.setView(view);
-        }
-      }, { passive: true });
-      if (btn.dataset) btn.dataset.jumpBound = "1";
-    });
-  }
-
-  function ensureInitialView(){
-    if (window.__initialViewSet) return;
-    if (typeof window.setView !== "function") return;
-    window.__initialViewSet = true;
-    // Do not change base scroll behavior; just ensure initial view renders.
-    window.setView("timeline");
-  }
-
-  function onReady(){
-    bindJumpNav();
-    // Run init after existing startup code has had a chance to define setView.
-    requestAnimationFrame(function(){
-      bindJumpNav();
-      ensureInitialView();
-    });
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", onReady, { once: true });
-  } else {
-    onReady();
-  }
-})();
-</script>
-
->
+</body>
 </html>
