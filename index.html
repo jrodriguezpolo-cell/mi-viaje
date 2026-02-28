@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99L_BASE</title>
+<title>V99M_UNIFY_OK</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99L_BASE</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99M_UNIFY_OK</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2754,27 +2754,34 @@ function renderLegs() {
 
 function stayCard(stay) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
-  const ro = (localStorage.getItem("miviaje.readonly") === "1");
-  const isOpen = __sectionExpanded.stays.has(stay.id);
-
   const city = (stay.city||"").trim() || "—";
   const name = (stay.name||"").trim() || "—";
-  const dt = `${(stay.date||"").trim() || "—"} ${(stay.time||"").trim() || "—"}`;
+  const dES = (stay.date ? formatDateES(stay.date) : "") || "—";
+  const t = (stay.time||"").trim();
+  const meta = t ? `${dES} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
+  const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
   const hasNotes = !!(stay.notes && String(stay.notes).trim());
 
+  // Summary (Transport-like): tap opens premium sheet; no old per-item accordion UX
+  // Keep an editor node in DOM for move-node sheet (data-sec-body/data-sec-id), but hidden.
   return `
-  <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
-    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="stays" data-sec-id="${stay.id}">
+  <div id="stay-${stay.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+    <button type="button"
+            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
+            data-stay-open="${stay.id}"
+            aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 Alojamiento · <span class="done-text">${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5 truncate">${meta}${nights ? ` · ${nights} noche${nights===1?"":"s"}` : ""}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
+        ${buildEventIndicatorsHTML(stay)}
       </div>
-    </div>
+    </button>
 
-    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="stays" data-sec-id="${stay.id}">
+    <!-- Hidden editor node for premium sheet (move-node). Not an accordion UI. -->
+    <div class="hidden" data-sec-body="stays" data-sec-id="${stay.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
         <div class="sm:col-span-4">
           <label class="text-xs text-slate-600">Ciudad</label>
@@ -2792,7 +2799,6 @@ function stayCard(stay) {
           <label class="text-xs text-slate-600">Hora (opcional)</label>
           <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
         </div>
-
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Noches</label>
           <input data-stay-nights="${stay.id}" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights ?? 1)}">
@@ -2801,82 +2807,112 @@ function stayCard(stay) {
           <label class="text-xs text-slate-600">Coste</label>
           <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
         </div>
-        <div class="sm:col-span-2 flex flex-col items-end gap-2">
-          <label class="flex items-center gap-2 text-xs text-slate-600">
-            <input type="checkbox" class="h-4 w-4" data-stay-done="${stay.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
-            Hecho
-          </label>
-          ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : ``}
+        <div class="sm:col-span-8">
+          <label class="text-xs text-slate-600">Notas</label>
+          <textarea data-stay-notes="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" rows="3" placeholder="Detalles (check-in, dirección, etc.)">${escapeHtml(stay.notes || "")}</textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Estado</label>
+          <select data-stay-status="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
+            <option value="">—</option>
+            <option value="done" ${String(stay.status||"")==="done" ? "selected" : ""}>Hecho</option>
+            <option value="skipped" ${String(stay.status||"")==="skipped" ? "selected" : ""}>No realizado</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 flex justify-end">
           <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
         </div>
       </div>
     </div>
   </div>`;
 }
+
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.stays);
+
   box.innerHTML = sc.stays.length
     ? __renderGroupedByDate(sc.stays, (it)=>it.date, stayCard)
     : `<div class="text-sm text-slate-500">Añade alojamientos para organizar tus noches.</div>`;
 
-  // v80b: accordion per item (stays)
-  box.querySelectorAll("[data-sec-toggle=\"stays\"]").forEach(h => h.addEventListener("click", (e) => {
-    if (e.target.closest("button, input, textarea, select, a, label")) return;
-    const id = h.getAttribute("data-sec-id");
+  // Tap on summary opens premium sheet in view mode (Transport-like)
+  box.querySelectorAll("[data-stay-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+    const id = btn.getAttribute("data-stay-open");
     if (!id) return;
-    if (__sectionExpanded.stays.has(id)) __sectionExpanded.stays.delete(id);
-    else __sectionExpanded.stays.add(id);
-    const prevTop = box.scrollTop;
-    renderStays();
-    box.scrollTop = prevTop;
+    try { openEventSheet({ kind: "stay", id, mode: "view", sourceView: "stays" }); } catch {}
   }));
 
-  box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", () => {
+  // Keep existing bindings (editor node lives hidden in DOM; listeners must exist for sheet)
+  box.querySelectorAll("[data-stay-del]").forEach(b => b.addEventListener("click", (e) => {
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = b.getAttribute("data-stay-del");
     sc.stays = sc.stays.filter(x => x.id !== id);
-    __sectionExpanded.stays.delete(id);
+    try { __sectionExpanded?.stays?.delete(id); } catch {}
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-stay-city]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-city");
     const s = sc.stays.find(x => x.id === id);
+    if (!s) return;
     s.city = cap1(inp.value); inp.value = s.city;
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-stay-date]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-date");
-    sc.stays.find(x => x.id === id).date = inp.value;
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.date = inp.value;
     sortByDateTimeEmptyFirst(sc.stays);
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-stay-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-time");
-    sc.stays.find(x => x.id === id).time = inp.value;
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.time = inp.value;
     sortByDateTimeEmptyFirst(sc.stays);
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-stay-name]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-stay-name");
-    sc.stays.find(x => x.id === id).name = inp.value.trim();
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.name = inp.value.trim();
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-stay-nights]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-stay-nights");
-    sc.stays.find(x => x.id === id).nights = Math.max(1, parseInt(inp.value || "1",10));
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.nights = Math.max(1, parseInt(inp.value || "1",10));
     saveState(); calcSummary();
   }));
   box.querySelectorAll("[data-stay-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-stay-cost");
-    sc.stays.find(x => x.id === id).cost = parseMoney(inp.value);
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.cost = parseMoney(inp.value);
     saveState(); calcSummary();
   }));
-
-  box.querySelectorAll("[data-stay-done]").forEach(cb => cb.addEventListener("change", () => {
-    handleStayDoneToggle(cb.getAttribute("data-stay-done"), cb.checked, cb);
+  box.querySelectorAll("[data-stay-notes]").forEach(inp => inp.addEventListener("input", () => {
+    const id = inp.getAttribute("data-stay-notes");
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.notes = inp.value;
+    saveState();
+    __dirtyTimeline = true;
+  }));
+  box.querySelectorAll("[data-stay-status]").forEach(sel => sel.addEventListener("change", () => {
+    const id = sel.getAttribute("data-stay-status");
+    const it = sc.stays.find(x => x.id === id);
+    if (!it) return;
+    it.status = sel.value;
+    saveState();
   }));
 }
+
 
 function renderMeals() {
   const sc = curScenario();
@@ -3431,123 +3467,153 @@ function handleStayDoneToggle(id, targetChecked, el) {
 
 
 function actCard(act) {
-  const st = computeDoneState(act);
-  const ro = (localStorage.getItem("miviaje.readonly") === "1");
-  const isOpen = __sectionExpanded.activities.has(act.id);
-
-  const title = (act.title||"").trim() || "—";
+  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(act, act.date || "") : {done:false,auto:false,skipped:false};
   const city = (act.city||"").trim() || "—";
-  const dt = `${(act.date||"").trim() || "—"} ${(act.time||"").trim() || "—"}`;
+  const title = (act.title||act.name||"").trim() || "—";
+  const dES = (act.date ? formatDateES(act.date) : "") || "—";
+  const t = (act.time||"").trim();
+  const meta = t ? `${dES} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
   const hasNotes = !!(act.notes && String(act.notes).trim());
 
   return `
-  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl p-4 bg-slate-50 ${st.done ? 'done-item' : ''} ${st.skipped ? 'skipped-item' : ''}">
-    <div class="flex items-start justify-between gap-3 cursor-pointer" data-sec-toggle="activities" data-sec-id="${act.id}">
+  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+    <button type="button"
+            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
+            data-act-open="${act.id}"
+            aria-label="Abrir actividad">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🎯 Actividad · <span class="done-text">${escapeHtml(title)}</span> <span class="text-slate-500">(${escapeHtml(city)})</span></div>
-        <div class="text-xs text-slate-600 mt-0.5">${escapeHtml(dt)} ${hasNotes ? `<span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(city)} • ${escapeHtml(title)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5 truncate">${meta}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
+        ${buildEventIndicatorsHTML(act)}
       </div>
-    </div>
+    </button>
 
-    <div class="mt-3 ${isOpen ? "" : "hidden"}" data-sec-body="activities" data-sec-id="${act.id}">
+    <!-- Hidden editor node for premium sheet (move-node). Not an accordion UI. -->
+    <div class="hidden" data-sec-body="activities" data-sec-id="${act.id}">
       <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-        <div class="sm:col-span-4">
+        <div class="sm:col-span-5">
           <label class="text-xs text-slate-600">Actividad</label>
-          <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.title)}" placeholder="Ej: Museo / Tour / Restaurante">
+          <input data-act-title="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.title || "")}" placeholder="Ej: Museo / Tour / Restaurante">
         </div>
         <div class="sm:col-span-3">
           <label class="text-xs text-slate-600">Ciudad</label>
-          <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.city)}" placeholder="Ciudad">
+          <input data-act-city="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.city || "")}" placeholder="Ciudad">
         </div>
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Fecha</label>
-          <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.date||"")}">
+          <input data-act-date="${act.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.date||"")}">
         </div>
         <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Hora (opcional)</label>
-          <input data-act-time="${act.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.time||"")}">
+          <label class="text-xs text-slate-600">Hora</label>
+          <input data-act-time="${act.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.time||"")}">
         </div>
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Coste</label>
-          <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 ${st.done ? 'done-text' : ''}" value="${escapeHtml(act.cost ?? "")}">
+          <input data-act-cost="${act.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(act.cost ?? "")}">
         </div>
-        <div class="sm:col-span-1 flex justify-end gap-2 items-center">
-          <label class="flex items-center gap-2 text-xs text-slate-600">
-            <input type="checkbox" class="h-4 w-4" data-act-done="${act.id}" ${st.done ? "checked" : ""} ${ro ? "disabled" : ""}>
-            Hecho
-          </label>
+        <div class="sm:col-span-8">
+          <label class="text-xs text-slate-600">Notas</label>
+          <textarea data-act-notes="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" rows="3" placeholder="Detalles, enlaces, recordatorios…">${escapeHtml(act.notes || "")}</textarea>
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-slate-600">Estado</label>
+          <select data-act-status="${act.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
+            <option value="">—</option>
+            <option value="done" ${String(act.status||"")==="done" ? "selected" : ""}>Hecho</option>
+            <option value="skipped" ${String(act.status||"")==="skipped" ? "selected" : ""}>No realizado</option>
+          </select>
+        </div>
+        <div class="sm:col-span-2 flex justify-end">
           <button data-act-del="${act.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
         </div>
-      </div>
-      <div class="mt-2 flex items-center gap-3 text-xs">
-        ${st.skipped ? `<span class="font-semibold skipped-badge">No realizado</span>` : ``}
-        ${(!st.skipped && st.auto) ? `<span class="auto-badge">Asumido</span>` : ``}
-        ${act.fromAI ? `<span class="text-slate-500">Añadida desde IA</span>` : ``}
       </div>
     </div>
   </div>`;
 }
 
+
 function renderActivities() {
   const box = $("actsList");
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.activities);
-  box.innerHTML = sc.activities.length ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard) : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
-  // v80b: accordion per item (activities)
-  box.querySelectorAll("[data-sec-toggle=\"activities\"]").forEach(h => h.addEventListener("click", (e) => {
-    if (e.target.closest("button, input, textarea, select, a, label")) return;
-    const id = h.getAttribute("data-sec-id");
+  box.innerHTML = sc.activities.length
+    ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard)
+    : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
+
+  // Tap on summary opens premium sheet in view mode (Transport-like)
+  box.querySelectorAll("[data-act-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+    const id = btn.getAttribute("data-act-open");
     if (!id) return;
-    if (__sectionExpanded.activities.has(id)) __sectionExpanded.activities.delete(id);
-    else __sectionExpanded.activities.add(id);
-    const prevTop = box.scrollTop;
-    renderActivities();
-    box.scrollTop = prevTop;
+    try { openEventSheet({ kind: "act", id, mode: "view", sourceView: "acts" }); } catch {}
   }));
 
-  box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", () => {
+  // Keep existing bindings for editor node (hidden in DOM; moved to sheet)
+  box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", (e) => {
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = b.getAttribute("data-act-del");
     sc.activities = sc.activities.filter(x => x.id !== id);
-    __sectionExpanded.activities.delete(id);
+    try { __sectionExpanded?.activities?.delete(id); } catch {}
     saveState(); renderAll();
   }));
   box.querySelectorAll("[data-act-title]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-title");
-    sc.activities.find(x => x.id === id).title = inp.value.trim();
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.title = inp.value.trim();
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-city");
-    const a = sc.activities.find(x => x.id === id);
-    a.city = cap1(inp.value); inp.value = a.city;
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.city = cap1(inp.value); inp.value = it.city;
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-date");
-    sc.activities.find(x => x.id === id).date = inp.value;
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.date = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-time");
-    sc.activities.find(x => x.id === id).time = inp.value;
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.time = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
   }));
   box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-act-cost");
-    sc.activities.find(x => x.id === id).cost = parseMoney(inp.value);
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.cost = parseMoney(inp.value);
     saveState(); calcSummary();
   }));
-  box.querySelectorAll("[data-act-done]").forEach(cb => cb.addEventListener("change", () => {
-    handleActDoneToggle(cb.getAttribute("data-act-done"), cb.checked, cb);
+  box.querySelectorAll("[data-act-notes]").forEach(inp => inp.addEventListener("input", () => {
+    const id = inp.getAttribute("data-act-notes");
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.notes = inp.value;
+    saveState();
+    __dirtyTimeline = true;
   }));
-
+  box.querySelectorAll("[data-act-status]").forEach(sel => sel.addEventListener("change", () => {
+    const id = sel.getAttribute("data-act-status");
+    const it = sc.activities.find(x => x.id === id);
+    if (!it) return;
+    it.status = sel.value;
+    saveState();
+  }));
 }
+
 
 
 /* ---------------- Timeline: jump to item ---------------- */
