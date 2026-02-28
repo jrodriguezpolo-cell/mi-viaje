@@ -3869,11 +3869,15 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  // Line 1: ciudad -> actividad (ciudad primero)
+  // In Timeline we already show the category icon outside; avoid duplicating.
+  const showIcon = (opts.context !== "timeline");
+  const iconHTML = showIcon ? `<span class="mr-1">🎯</span>` : ``;
+
+  // Line 1: icono -> ciudad -> actividad (ciudad primero después del icono)
   const line1 = `<div class="text-sm font-semibold truncate">
-    <span class="font-medium">${escapeHtml(line1City)}</span>
+    ${iconHTML}<span class="font-medium">${escapeHtml(line1City)}</span>
     <span class="text-slate-400"> · </span>
-    <span>🎯 ${escapeHtml(line1Title)}</span>
+    <span>${escapeHtml(line1Title)}</span>
     ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
     ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
   </div>`;
@@ -3885,7 +3889,9 @@ function actSummaryLinesHTML(act, opts){
   </div>`;
 
   // Line 3: duración si existe
-  const line3 = duration ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>` : ``;
+  const line3 = duration
+    ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>`
+    : ``;
 
   return `${line1}${line2}${line3}`;
 }
