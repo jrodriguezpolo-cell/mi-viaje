@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99Q_STAY_2COL</title>
+<title>V99S_STAYACT_SUMMARY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99Q_STAY_2COL</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99S_STAYACT_SUMMARY</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2263,7 +2263,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   bind("cost", (val)=>{
     const s = String(val||"").trim();
-    stayObj.cost = (s === "") ? null : parseMoney(s);
+    stayObj.cost = (s === "") ? 0 : parseMoney(s);
   });
 
   return true;
@@ -2338,7 +2338,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
   bind("date", (val)=>{ actObj.date = val; });
   bind("time", (val)=>{ actObj.time = val; });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? 0 : parseMoney(s); });
 
   return true;
 }
@@ -3068,11 +3068,36 @@ function stayCard(stay) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
   const city = (stay.city||"").trim() || "—";
   const name = (stay.name||"").trim() || "—";
-  const dES = (stay.date ? formatDateES(stay.date) : "") || "—";
-  const t = (stay.time||"").trim();
-  const meta = t ? `${dES} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
+
+  // Dates / times (no timezone logic yet)
+  const checkInISO = String(stay.date||"").trim();
+  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
+  const checkInTime = (stay.time||"").trim();
+
   const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
+
+  const __addDaysISO_inline = (iso, days)=>{
+    const s = String(iso||"").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    const d = new Date(s + "T12:00:00");
+    if (isNaN(d.getTime())) return "";
+    d.setDate(d.getDate() + (Number(days)||0));
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const da = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  };
+
+  const coISO_raw = String(stay.checkout||"").trim();
+  const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
+  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
+  const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
+
   const hasNotes = !!(stay.notes && String(stay.notes).trim());
+
+  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` <span class="font-semibold">${escapeHtml(checkInTime)}</span>` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
+  const showCheckOut = !!(checkOutISO && checkOutISO !== "—");
+  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
 
   // Summary (Transport-like): tap opens premium sheet; no old per-item accordion UX
   // Keep an editor node in DOM for move-node sheet (data-sec-body/data-sec-id), but hidden.
@@ -3083,8 +3108,9 @@ function stayCard(stay) {
             data-stay-open="${stay.id}"
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)} — ${escapeHtml(name)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 truncate">${meta}${nights ? ` · ${nights} noche${nights===1?"":"s"}` : ""}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)}</span><span class="text-slate-400 font-normal"> · </span><span class="font-medium">${escapeHtml(name)}</span></div>
+        <div class="text-xs text-slate-600 mt-1">${lineCheckIn}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
+        <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -3784,7 +3810,7 @@ function actCard(act) {
   const title = (act.title||act.name||"").trim() || "—";
   const dES = (act.date ? formatDateES(act.date) : "") || "—";
   const t = (act.time||"").trim();
-  const meta = t ? `${dES} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
+  const when = t ? `${escapeHtml(dES)} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
   const hasNotes = !!(act.notes && String(act.notes).trim());
 
   return `
@@ -3794,8 +3820,8 @@ function actCard(act) {
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(city)} • ${escapeHtml(title)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 truncate">${meta}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}</div>
+        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(title)}</span></div>
+        <div class="text-xs text-slate-600 mt-1 truncate"><span class="font-medium">${escapeHtml(city)}</span><span class="text-slate-400"> · </span><span>${when}</span>${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -5120,7 +5146,7 @@ function renderAIResults(sections) {
         title: sp.title,
         city: sec.city || "",
         date: "", // optional
-        cost:null,
+        cost: 0,
         fromAI: true
       });
       added++;
@@ -6005,7 +6031,7 @@ $("addLeg").addEventListener("click", ()=>{
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:null });
+  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
@@ -6014,7 +6040,7 @@ $("addStay").addEventListener("click", ()=>{
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:null, fromAI:false });
+  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
