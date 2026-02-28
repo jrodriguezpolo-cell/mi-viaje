@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99X_ACTSUM_TL</title>
+<title>V99V_ACT_2COL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99X_ACTSUM_TL</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1256,23 +1256,6 @@ function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
       indicatorsHTML: "" // timeline uses notesBtn + optional file icon in right rail
     };
   }
-
-  if (jumpType === "act" && modelItem) {
-    const p = buildActSummaryParts(modelItem);
-    const title = `${p.city} · ${p.title}`;
-    const metaHTML = p.line2; // already escaped
-    const placeLineHTML = p.duration
-      ? `<div class="text-xs text-slate-500 mt-1 truncate">⏱️ <span>${escapeHtml(p.duration)}</span></div>`
-      : "";
-    return {
-      title,
-      metaHTML,
-      placeLineHTML,
-      metaClass: "text-xs text-slate-600 mt-1 truncate",
-      indicatorsHTML: ""
-    };
-  }
-
   return {
     title: it.title,
     metaHTML: dateLineHTML,
@@ -2291,42 +2274,86 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   if (!body || !actObj) return false;
   body.innerHTML = "";
 
+  // Ensure optional fields exist (no currency logic yet)
+  if (actObj.duration == null) actObj.duration = "";
+  if (actObj.currency == null) actObj.currency = "EUR";
+
   const wrap = document.createElement("div");
   wrap.className = "sheet-leg-editor sheet-act-editor";
 
+  // Premium two-column layout (clean + consistent)
   wrap.innerHTML = `
-    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
-      <div class="sm:col-span-6">
-        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">ACTIVIDAD</div>
-
-        <label class="text-xs text-slate-600">Título</label>
+    <div class="grid grid-cols-2 gap-3 items-start">
+      <!-- Fila 1 -->
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Actividad</label>
         <input data-act-title="${escapeHtml(String(itemId))}" data-sheet-act="title"
           class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: Museo / Tour / Restaurante">
-
-        <label class="text-xs text-slate-600 mt-2 block">Ciudad</label>
-        <input data-act-city="${escapeHtml(String(itemId))}" data-sheet-act="city"
-          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
-
         ${actObj.fromAI ? `<div class="mt-2 text-xs text-slate-500">Añadida desde IA</div>` : ``}
       </div>
 
-      <div class="sm:col-span-6">
-        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">HORARIO</div>
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Ciudad</label>
+        <input data-act-city="${escapeHtml(String(itemId))}" data-sheet-act="city"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
+      </div>
 
+      <!-- Fila 2 -->
+      <div class="min-w-0">
         <label class="text-xs text-slate-600">Fecha</label>
         <input data-act-date="${escapeHtml(String(itemId))}" data-sheet-act="date" type="date"
           class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+      </div>
 
-        <label class="text-xs text-slate-600 mt-2 block">Hora</label>
-        <div class="mt-1 flex items-center gap-1">
-          <input data-act-time="${escapeHtml(String(itemId))}" data-sheet-act="time" type="time"
-            class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <div class="text-xs text-slate-500 whitespace-nowrap utcLabel">UTC</div>
-        </div>
+      <div class="min-w-0">
+        <!-- spacer to align duration with hour (fila 3) -->
+        <div class="h-10"></div>
+      </div>
 
-        <label class="text-xs text-slate-600 mt-2 block">Coste</label>
+      <!-- Fila 3 -->
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Hora</label>
+        <input data-act-time="${escapeHtml(String(itemId))}" data-sheet-act="time" type="time"
+          class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+      </div>
+
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Duración</label>
+        <input data-act-duration="${escapeHtml(String(itemId))}" data-sheet-act="duration"
+          class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="Ej: 1h 30m">
+      </div>
+
+      <!-- Fila 4 -->
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">UTC</label>
+        <div class="mt-1 h-10 px-3 rounded-xl border border-slate-200 flex items-center text-sm font-semibold text-slate-600 bg-white utcLabel">UTC</div>
+      </div>
+
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">UTC</label>
+        <div class="mt-1 h-10 px-3 rounded-xl border border-slate-200 flex items-center text-sm font-semibold text-slate-600 bg-white utcLabel">UTC</div>
+      </div>
+
+      <!-- Fila 5 -->
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Importe</label>
         <input data-act-cost="${escapeHtml(String(itemId))}" data-sheet-act="cost" type="number" min="0" step="0.01"
           class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+      </div>
+
+      <div class="min-w-0">
+        <label class="text-xs text-slate-600">Moneda</label>
+        <select data-act-currency="${escapeHtml(String(itemId))}" data-sheet-act="currency"
+          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white">
+          <option value="EUR">EUR €</option>
+          <option value="USD">USD $</option>
+          <option value="GBP">GBP £</option>
+          <option value="CHF">CHF</option>
+          <option value="JPY">JPY ¥</option>
+          <option value="CAD">CAD</option>
+          <option value="AUD">AUD</option>
+          <option value="MXN">MXN</option>
+        </select>
       </div>
     </div>
   `;
@@ -2340,6 +2367,8 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   qs("city").value = v(actObj.city);
   qs("date").value = v(actObj.date || "");
   qs("time").value = v(actObj.time || "");
+  qs("duration").value = v(actObj.duration || "");
+  qs("currency").value = v(actObj.currency || "EUR");
   qs("cost").value = (actObj.cost == null ? "" : String(actObj.cost));
 
   try { __updateActSheetTitle(actObj.city, actObj.title); } catch {}
@@ -2355,10 +2384,13 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
   bind("date", (val)=>{ actObj.date = val; });
   bind("time", (val)=>{ actObj.time = val; });
+  bind("duration", (val)=>{ actObj.duration = val; });
+  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; });
   bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? 0 : parseMoney(s); });
 
   return true;
 }
+
 
 function __legPlacePlaceholder(mode, which){
   const m = (typeof legModeDefault === "function") ? legModeDefault(mode) : String(mode||"plane");
@@ -3271,8 +3303,7 @@ function renderStays() {
 
 function renderMeals() {
   const sc = curScenario();
-    const _d = sc.meals.daily;
-  $("mealDaily").value = (_d === "" || _d == null) ? "" : _d;
+  $("mealDaily").value = sc.meals.daily ?? 0;
 
   // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
   $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
@@ -3822,20 +3853,6 @@ function handleStayDoneToggle(id, targetChecked, el) {
 /* ---------------- /Activities: smart done ---------------- */
 
 
-function buildActSummaryParts(act) {
-  const city = (act?.city || "").trim() || "—";
-  const title = (act?.title || act?.name || "").trim() || "—";
-  const dES = (act?.date ? formatDateES(act.date) : "") || "—";
-  const t = (act?.time || "").trim();
-  const line2 = t ? `${escapeHtml(dES)} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
-
-  // Optional duration (may come from IA or future fields)
-  const durRaw = (act?.duration || act?.dur || act?.durationText || "").toString().trim();
-  const duration = durRaw ? durRaw : "";
-
-  return { city, title, line2, duration };
-}
-
 function actCard(act) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(act, act.date || "") : {done:false,auto:false,skipped:false};
   const city = (act.city||"").trim() || "—";
@@ -3852,20 +3869,8 @@ function actCard(act) {
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
-        ${(() => {
-          const p = buildActSummaryParts(act);
-          const hasNotes = !!(act.notes && String(act.notes).trim());
-          const iaBadge = act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``;
-          const notesBadge = hasNotes ? ` <span class="ml-1">🗒️</span>` : ``;
-          const durLine = p.duration ? `<div class="text-xs text-slate-500 mt-1 truncate">⏱️ <span>${escapeHtml(p.duration)}</span></div>` : ``;
-          return `
-            <div class="text-sm font-semibold truncate">
-              <span class="font-medium">${escapeHtml(p.city)}</span><span class="text-slate-400"> · </span><span>${escapeHtml(p.title)}</span>
-            </div>
-            <div class="text-xs text-slate-600 mt-1 truncate">${p.line2}${notesBadge}${iaBadge}</div>
-            ${durLine}
-          `;
-        })()}
+        <div class="text-sm font-semibold truncate">🎯 <span>${escapeHtml(title)}</span></div>
+        <div class="text-xs text-slate-600 mt-1 truncate"><span class="font-medium">${escapeHtml(city)}</span><span class="text-slate-400"> · </span><span>${when}</span>${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -4501,8 +4506,7 @@ function renderTimeline() {
       : "tlTimeBadge tlTimeNone";
     const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
-    const __model = (jumpType === 'leg') ? __leg : (jumpType === 'act') ? actById.get(String(jumpId)) : (jumpType === 'stay') ? stayById.get(String(jumpId)) : null;
-    const __sum = buildTimelineSummaryParts(it, jumpType, __model, dateLineHTML);
+    const __sum = buildTimelineSummaryParts(it, jumpType, __leg, dateLineHTML);
     let __title = __sum.title;
     let __dateLineHTML = __sum.metaHTML;
     let __placeLineHTML = __sum.placeLineHTML;
@@ -6095,8 +6099,7 @@ $("addAct").addEventListener("click", ()=>{
 ["mealDaily","mealPeople","mealDays"].forEach(id=>{
   $(id).addEventListener("input", ()=>{
     const sc = curScenario();
-        const _rawDaily = String($("mealDaily").value || "");
-    sc.meals.daily = (_rawDaily.trim() === "") ? "" : parseMoney(_rawDaily);
+    sc.meals.daily = parseMoney($("mealDaily").value);
     const rawP = $("mealPeople").value;
     const rawD = $("mealDays").value;
 
