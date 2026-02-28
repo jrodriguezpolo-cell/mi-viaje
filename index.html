@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99W_ACT_SUM_UNI</title>
+<title>V99Z_STAYTL_NOPLEGAR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="text-[11px] font-semibold text-slate-500">V99Z</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -695,7 +695,6 @@ div[data-acc-body="acts"]{
 <!-- Scenario toggle -->
 <div class="flex items-center justify-between gap-3 mb-0">
 <div class="inline-flex bg-white border border-slate-200 rounded-2xl p-1">
-<button class="tap px-3 py-2 rounded-2xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50" id="collapseAll" title="Plegar todas las secciones">PLEGAR TODO</button>
 </div>
 </div>
 <!-- Grid -->
@@ -3113,6 +3112,49 @@ function renderLegs() {
   }));
 }
 
+
+function staySummaryLinesHTML(stay, opts){
+  opts = opts || {};
+  const city = (stay.city||"").trim() || "—";
+  const name = (stay.name||"").trim() || "—";
+
+  // Dates / times (no timezone logic yet)
+  const checkInISO = String(stay.date||"").trim();
+  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
+  const checkInTime = (stay.time||"").trim();
+
+  const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
+
+  const __addDaysISO_inline = (iso, days)=>{
+    const s = String(iso||"").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    const d = new Date(s + "T12:00:00");
+    if (isNaN(d.getTime())) return "";
+    d.setDate(d.getDate() + (Number(days)||0));
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const da = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  };
+
+  const coISO_raw = String(stay.checkout||"").trim();
+  const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
+  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
+  const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
+
+  const hasNotes = !!(stay.notes && String(stay.notes).trim());
+
+  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` <span class="font-semibold">${escapeHtml(checkInTime)}</span>` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
+  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
+
+  return `
+    <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)}</span><span class="text-slate-400 font-normal"> · </span><span class="font-medium">${escapeHtml(name)}</span></div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckIn}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
+  `;
+}
+
+
 function stayCard(stay) {
   const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
   const city = (stay.city||"").trim() || "—";
@@ -3157,9 +3199,7 @@ function stayCard(stay) {
             data-stay-open="${stay.id}"
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)}</span><span class="text-slate-400 font-normal"> · </span><span class="font-medium">${escapeHtml(name)}</span></div>
-        <div class="text-xs text-slate-600 mt-1">${lineCheckIn}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
-        <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
+        ${staySummaryLinesHTML(stay)}</div>
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
@@ -3869,15 +3909,11 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  // In Timeline we already show the category icon outside; avoid duplicating.
-  const showIcon = (opts.context !== "timeline");
-  const iconHTML = showIcon ? `<span class="mr-1">🎯</span>` : ``;
-
-  // Line 1: icono -> ciudad -> actividad (ciudad primero después del icono)
+  // Line 1: ciudad -> actividad (ciudad primero)
   const line1 = `<div class="text-sm font-semibold truncate">
-    ${iconHTML}<span class="font-medium">${escapeHtml(line1City)}</span>
+    <span class="font-medium">${escapeHtml(line1City)}</span>
     <span class="text-slate-400"> · </span>
-    <span>${escapeHtml(line1Title)}</span>
+    <span>🎯 ${escapeHtml(line1Title)}</span>
     ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
     ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
   </div>`;
@@ -3889,9 +3925,7 @@ function actSummaryLinesHTML(act, opts){
   </div>`;
 
   // Line 3: duración si existe
-  const line3 = duration
-    ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>`
-    : ``;
+  const line3 = duration ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>` : ``;
 
   return `${line1}${line2}${line3}`;
 }
@@ -4640,10 +4674,10 @@ function renderTimeline() {
 
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            <div class="shrink-0 text-lg leading-none mt-[2px]">${escapeHtml(icon || (it.isNote ? "📝" : "•"))}</div>
+            ${(jumpType==="stay" && __stay) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
 
             <div class="min-w-0">
-              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
@@ -6479,8 +6513,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
-<!-- Floating FAB: Collapse all -->
-<button aria-label="Plegar todo" class="hidden" id="fabCollapseAll" title="Plegar todo">▾▾</button>
 <!-- Event Detail Sheet (V89D) -->
 <div aria-hidden="true" class="hidden" id="eventSheetOverlay">
 <div aria-label="Detalle del evento" aria-modal="true" id="eventSheet" role="dialog">
