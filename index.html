@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99S_STAYACT_SUMMARY</title>
+<title>V99T_TL_UNIFY_SUMMARY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99S_STAYACT_SUMMARY</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99T_TL_UNIFY_SUMMARY</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1245,6 +1245,59 @@ function buildLegSummaryParts(leg) {
   return { title, metaHTML, placeLineHTML };
 }
 
+function __staySummaryParts(stay){
+  const city = (stay?.city||"").trim() || "—";
+  const name = (stay?.name||"").trim() || "—";
+
+  const checkInISO = String(stay?.date||"").trim();
+  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
+  const checkInTime = String(stay?.time||"").trim();
+
+  const nights = Number.isFinite(Number(stay?.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
+
+  const __addDaysISO_inline = (iso, days)=>{
+    const s = String(iso||"").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    const d = new Date(s + "T12:00:00");
+    if (isNaN(d.getTime())) return "";
+    d.setDate(d.getDate() + (Number(days)||0));
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const da = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  };
+
+  const coISO_raw = String(stay?.checkout||"").trim();
+  const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
+  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
+  const checkOutTime = String(stay?.checkoutTime || stay?.checkout_time || "").trim();
+
+  const hasNotes = !!(stay?.notes && String(stay.notes).trim());
+
+  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` <span class="font-semibold">${escapeHtml(checkInTime)}</span>` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}`;
+  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
+
+  return {
+    title: `${city} · ${name}`,
+    line1HTML: lineCheckIn,
+    line2HTML: lineCheckOut
+  };
+}
+
+function __actSummaryParts(act){
+  const city = (act?.city||"").trim() || "—";
+  const title = (act?.title||act?.name||"").trim() || "—";
+  const dES = (act?.date ? formatDateES(act.date) : "") || "—";
+  const t = String(act?.time||"").trim();
+  const when = t ? `${escapeHtml(dES)} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
+  const hasNotes = !!(act?.notes && String(act.notes).trim());
+  const fromAI = !!act?.fromAI;
+
+  const meta = `<span class="font-medium">${escapeHtml(city)}</span><span class="text-slate-400"> · </span><span>${when}</span>${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}${fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}`;
+
+  return { title, metaHTML: meta };
+}
+
 function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
   if (jumpType === "leg" && modelItem) {
     const parts = buildLegSummaryParts(modelItem);
@@ -1254,6 +1307,26 @@ function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
       placeLineHTML: parts.placeLineHTML,
       metaClass: "text-xs text-slate-600 mt-0.5 truncate",
       indicatorsHTML: "" // timeline uses notesBtn + optional file icon in right rail
+    };
+  }
+  if (jumpType === "stay" && modelItem) {
+    const p = __staySummaryParts(modelItem);
+    return {
+      title: p.title,
+      metaHTML: p.line1HTML,
+      placeLineHTML: `<div class="text-xs text-slate-600 mt-1">${p.line2HTML}</div>`,
+      metaClass: "text-xs text-slate-600 mt-1",
+      indicatorsHTML: ""
+    };
+  }
+  if (jumpType === "act" && modelItem) {
+    const p = __actSummaryParts(modelItem);
+    return {
+      title: p.title,
+      metaHTML: p.metaHTML,
+      placeLineHTML: "",
+      metaClass: "text-xs text-slate-600 mt-1 truncate",
+      indicatorsHTML: ""
     };
   }
   return {
@@ -4457,7 +4530,12 @@ function renderTimeline() {
       : "tlTimeBadge tlTimeNone";
     const dateLineHTML = `${escapeHtml(datePart)}  <span class="${timeCls}">${escapeHtml(timePart)}</span>`;
 
-    const __sum = buildTimelineSummaryParts(it, jumpType, __leg, dateLineHTML);
+    const __model = (jumpType === 'leg') ? __leg
+                    : (jumpType === 'stay') ? stayById.get(String(jumpId))
+                    : (jumpType === 'act') ? actById.get(String(jumpId))
+                    : null;
+
+    const __sum = buildTimelineSummaryParts(it, jumpType, __model, dateLineHTML);
     let __title = __sum.title;
     let __dateLineHTML = __sum.metaHTML;
     let __placeLineHTML = __sum.placeLineHTML;
