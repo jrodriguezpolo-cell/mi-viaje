@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100J_NOJERK</title>
+<title>V100K_ROLLBACK</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -641,7 +641,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100J_NOJERK</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100K_ROLLBACK</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5750,6 +5750,7 @@ ${label}`)) return;
           body.classList.toggle("hidden");
           const icon = btn.querySelector(".accIcon");
           if (icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+        });
       });
     }
   }, 0);
@@ -6759,8 +6760,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const h = Math.max(0, Math.ceil(px || 0));
     sp.style.height = h + "px";
   }
-function scrollToDateSep(viewName, iso, opts){
-    opts = opts || {};
+function scrollToDateSep(viewName, iso){
     const viewEl = getViewEl(viewName);
     if (!viewEl) return false;
     const sep = viewEl.querySelector(`[data-date-sep="${iso}"]`);
@@ -6768,14 +6768,15 @@ function scrollToDateSep(viewName, iso, opts){
 
     const sc = getMainScroll();
 
-    const runJumpOnce = (allowRetry) => {
+    const attemptJump = (triesLeft) => {
       // Ensure CSS vars reflect final fixed header height (dateJumpUI can change it).
       try{ if (typeof syncTopStackHeights === "function") syncTopStackHeights(); }catch(_){}
-      try{ forceSubHeaderHeightVar(); }catch(_){}
+      forceSubHeaderHeightVar();
+    try{ ensureTailSpacer(v, fixedHeaderBottomY() + 24); }catch(_){ }
 
       const subBottom = fixedHeaderBottomY();
       // Ensure enough scroll range so the last date header can align under the fixed header.
-      try{ ensureTailSpacer(viewName, subBottom + 24); }catch(_){}
+      ensureTailSpacer(viewName, subBottom + 24);
 
       // Compute stable target scrollTop using DOM offsets (avoids rect timing drift).
       let y = 0;
@@ -6791,30 +6792,18 @@ function scrollToDateSep(viewName, iso, opts){
       }
 
       const target = Math.max(0, y - (subBottom + 1));
-      // Use direct assignment to avoid extra layout work that scrollTo may trigger.
-      sc.scrollTop = target;
-
-      if (!allowRetry) return;
-
-      // Verify alignment next frame; do a single corrective pass if needed.
+      sc.scrollTo({ top: target, behavior: "auto" });
+      // Verify alignment; if layout not settled yet, retry next frame.
       requestAnimationFrame(() => {
         const nowRect = sep.getBoundingClientRect();
-        const desired = fixedHeaderBottomY() + 1;
-        const delta = (nowRect.top || 0) - desired;
-        if (Math.abs(delta) <= 2) return; // good
-        // One correction only (fallback)
-        sc.scrollTop = Math.max(0, (sc.scrollTop || 0) + delta);
+        const nowDelta = nowRect.top - (fixedHeaderBottomY() + 1);
+        if (Math.abs(nowDelta) <= 2) return; // good
+        if (triesLeft > 0) attemptJump(triesLeft - 1);
       });
     };
 
-    // If caller already waited for layout, jump immediately to avoid visible double-adjust.
-    if (opts.immediate) {
-      runJumpOnce(true);
-      return true;
-    }
-
-    // Default: single frame defer (lets layout settle) + one possible correction.
-    requestAnimationFrame(() => runJumpOnce(true));
+    // 2-frame start to let DOM/styles settle after select change.
+    requestAnimationFrame(() => requestAnimationFrame(() => attemptJump(4)));
     return true;
   }
 
@@ -6896,7 +6885,7 @@ function scrollToDateSep(viewName, iso, opts){
       const v = getActiveViewName("");
       const iso = sel.value || "";
       if (!iso) return;
-      scrollToDateSep(v, iso, { immediate:true });
+      scrollToDateSep(v, iso);
     }, { passive:true });
 
     btn.addEventListener("click", () => {
@@ -6905,7 +6894,7 @@ function scrollToDateSep(viewName, iso, opts){
       const rel = chooseRelevant(dates);
       if (!rel) return;
       sel.value = rel;
-      scrollToDateSep(v, rel, { immediate:true });
+      scrollToDateSep(v, rel);
     }, { passive:true });
   }
 
@@ -6926,6 +6915,7 @@ function scrollToDateSep(viewName, iso, opts){
 
       // Wait for DOM/layout to be ready (separators + header height), then jump.
       requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           // If user already switched again, abort
           if (String(getActiveViewName("") || "") !== v) return;
 
@@ -6939,7 +6929,8 @@ function scrollToDateSep(viewName, iso, opts){
 
           // Select + jump to the date separator using the same robust path as manual actions.
           sel.value = rel;
-          scrollToDateSep(v, rel, { immediate:true });
+          scrollToDateSep(v, rel);
+        });
       });
     }
 
