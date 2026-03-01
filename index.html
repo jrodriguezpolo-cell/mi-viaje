@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100D_SCROLLFIX</title>
+<title>V100E_LEGSFIX_BOLDTIME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -606,6 +606,8 @@ body[data-view="timeline"] #subSectionHeader{
   /* Main scroll already compensates top stack (header + totales + subheader).
      Keep only a small breathing space to match other sections. */
   padding-top: 10px;
+
+#view-legs .dateSep:first-child{margin-top:0 !important;}
 }
 
 
@@ -644,7 +646,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100D_SCROLLFIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100E_LEGSFIX_BOLDTIME</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1228,12 +1230,14 @@ function buildLegSummaryParts(leg) {
   const dES = leg?.date ? formatDateES(leg.date) : "";
   const t0 = String(leg?.time || "").trim();
   const t1 = String(leg?.arriveTime || "").trim();
+  const bt0 = t0 ? `<span class="font-semibold">${escapeHtml(t0)}</span>` : "";
+  const bt1 = t1 ? `<span class="font-semibold">${escapeHtml(t1)}</span>` : "";
   const durRaw = calcDurationText(leg?.date, leg?.time, leg?.arriveDate, leg?.arriveTime);
   const dur = durRaw ? `<span class="mv-nb">${_mvNoBreakText(durRaw)}</span>` : "";
 
   let timeLine = "";
-  if (t0 && t1) timeLine = `${escapeHtml(t0)} → ${escapeHtml(t1)}${dur ? " · " + dur : ""}`;
-  else if (t0)  timeLine = `${escapeHtml(t0)}`;
+  if (t0 && t1) timeLine = `${bt0} → ${bt1}${dur ? " · " + dur : ""}`;
+  else if (t0)  timeLine = `${bt0}`;
 
   const dateHTML = dES ? `<span class="font-semibold">${escapeHtml(dES)}</span>` : "";
 
