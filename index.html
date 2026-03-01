@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100T_LEGS_TZ_LABELS</title>
+<title>V100U_LEGS_TZ_AUTO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100T_LEGS_TZ_LABELS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100U_LEGS_TZ_AUTO</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1209,6 +1209,136 @@ function calcDurationTextTZ(departDate, departTime, arriveDate, arriveTime, tzFr
   if (h > 0 && m > 0) return `${h}h ${m}m`;
   if (h > 0) return `${h}h`;
   return `${m}m`;
+}
+
+
+// --- TZ auto (no API): derive UTC offset from city + date/time using Intl timeZone ---
+const __CITY_TZ_MAP = {
+  "madrid":"Europe/Madrid",
+  "barcelona":"Europe/Madrid",
+  "valencia":"Europe/Madrid",
+  "sevilla":"Europe/Madrid",
+  "seville":"Europe/Madrid",
+  "bilbao":"Europe/Madrid",
+  "lisboa":"Europe/Lisbon",
+  "lisbon":"Europe/Lisbon",
+  "paris":"Europe/Paris",
+  "londres":"Europe/London",
+  "london":"Europe/London",
+  "roma":"Europe/Rome",
+  "rome":"Europe/Rome",
+  "berlin":"Europe/Berlin",
+  "amsterdam":"Europe/Amsterdam",
+  "bruselas":"Europe/Brussels",
+  "brussels":"Europe/Brussels",
+  "zurich":"Europe/Zurich",
+  "ginebra":"Europe/Zurich",
+  "geneva":"Europe/Zurich",
+  "viena":"Europe/Vienna",
+  "vienna":"Europe/Vienna",
+  "praga":"Europe/Prague",
+  "prague":"Europe/Prague",
+  "atenas":"Europe/Athens",
+  "athens":"Europe/Athens",
+  "helsinki":"Europe/Helsinki",
+  "estocolmo":"Europe/Stockholm",
+  "stockholm":"Europe/Stockholm",
+  "copenhague":"Europe/Copenhagen",
+  "copenhagen":"Europe/Copenhagen",
+  "oslo":"Europe/Oslo",
+  "dublin":"Europe/Dublin",
+  "reykjavik":"Atlantic/Reykjavik",
+  "nueva york":"America/New_York",
+  "new york":"America/New_York",
+  "nyc":"America/New_York",
+  "miami":"America/New_York",
+  "boston":"America/New_York",
+  "chicago":"America/Chicago",
+  "dallas":"America/Chicago",
+  "houston":"America/Chicago",
+  "denver":"America/Denver",
+  "phoenix":"America/Phoenix",
+  "los angeles":"America/Los_Angeles",
+  "la":"America/Los_Angeles",
+  "san francisco":"America/Los_Angeles",
+  "seattle":"America/Los_Angeles",
+  "mexico":"America/Mexico_City",
+  "ciudad de mexico":"America/Mexico_City",
+  "méxico":"America/Mexico_City",
+  "tokio":"Asia/Tokyo",
+  "tokyo":"Asia/Tokyo",
+  "seul":"Asia/Seoul",
+  "seoul":"Asia/Seoul",
+  "singapur":"Asia/Singapore",
+  "singapore":"Asia/Singapore",
+  "hong kong":"Asia/Hong_Kong",
+  "sídney":"Australia/Sydney",
+  "sydney":"Australia/Sydney"
+};
+
+function __normalizeCityKey(s){
+  const t = String(s||"").trim().toLowerCase();
+  if(!t) return "";
+  // remove parentheses and extra parts after comma
+  const base = t.split(",")[0].replace(/\(.*?\)/g,"").trim();
+  return base;
+}
+
+function __resolveCityTimeZone(city){
+  const k = __normalizeCityKey(city);
+  if(!k) return "";
+  if(__CITY_TZ_MAP[k]) return __CITY_TZ_MAP[k];
+  // try to match by prefix (e.g., "new york city")
+  const hit = Object.keys(__CITY_TZ_MAP).find(key => k === key || k.startsWith(key+" "));
+  return hit ? __CITY_TZ_MAP[hit] : "";
+}
+
+function __tzOffsetMinutes(timeZone, date){
+  try{
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+    const parts = dtf.formatToParts(date);
+    const map = {};
+    for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+    const asUTC = Date.UTC(
+      Number(map.year), Number(map.month)-1, Number(map.day),
+      Number(map.hour), Number(map.minute), Number(map.second)
+    );
+    return (asUTC - date.getTime()) / 60000; // minutes to add to UTC to get local
+  } catch { return NaN; }
+}
+
+function __localToUtcWithZone(iso, hhmm, timeZone){
+  const d = String(iso||"").trim();
+  const t = String(hhmm||"").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !/^\d{2}:\d{2}$/.test(t) || !timeZone) return { utc: NaN, offMin: NaN };
+  const [Y,M,D] = d.split("-").map(n=>parseInt(n,10));
+  const [h,m] = t.split(":").map(n=>parseInt(n,10));
+  const guess = Date.UTC(Y, M-1, D, h, m, 0, 0);
+  let utc = guess;
+  for(let i=0;i<2;i++){
+    const offMin = __tzOffsetMinutes(timeZone, new Date(utc));
+    if(!Number.isFinite(offMin)) return { utc: NaN, offMin: NaN };
+    utc = guess - offMin*60000;
+  }
+  const offMin2 = __tzOffsetMinutes(timeZone, new Date(utc));
+  return { utc, offMin: offMin2 };
+}
+
+function __deriveUtcOffsetHours(city, iso, hhmm){
+  const tz = __resolveCityTimeZone(city);
+  if(!tz) return NaN;
+  // If no date/time yet, compute "now" offset for display only
+  if (!iso || !hhmm) {
+    const offMin = __tzOffsetMinutes(tz, new Date());
+    return Number.isFinite(offMin) ? (offMin/60) : NaN;
+  }
+  const r = __localToUtcWithZone(iso, hhmm, tz);
+  return Number.isFinite(r.offMin) ? (r.offMin/60) : NaN;
 }
 
 function buildLegSummaryParts(leg) {
@@ -1931,7 +2061,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
         <label class="text-xs text-slate-600">Ciudad salida</label>
         <input data-sheet-leg="from" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad salida">
-        <div class="mt-1 text-xs text-slate-500 font-semibold" data-sheet-leg="fromTzLine"></div>
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
@@ -1939,7 +2068,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <select data-sheet-leg="tzFrom" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10">${__utcOffsetOptionsHTML()}</select>
+          <input data-sheet-leg="tzFrom" type="hidden" value="">
+          <span id="legTzFromBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
       </div>
 
@@ -1947,7 +2077,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">LLEGADA</div>
         <label class="text-xs text-slate-600">Ciudad llegada</label>
         <input data-sheet-leg="to" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad llegada">
-        <div class="mt-1 text-xs text-slate-500 font-semibold" data-sheet-leg="toTzLine"></div>
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
@@ -1955,7 +2084,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
-          <select data-sheet-leg="tzTo" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10">${__utcOffsetOptionsHTML()}</select>
+          <input data-sheet-leg="tzTo" type="hidden" value="">
+          <span id="legTzToBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
       </div>
 
@@ -1993,39 +2123,51 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("cost").value = (legObj.cost == null ? "" : String(legObj.cost));
   qs("currency").value = v(legObj.currency || "EUR");
 
-// Show which UTC is applied to each city (UI-only, stays in Transporte sheet)
-const updateTZLines = () => {
-  try {
-    const cityFrom = String(qs("from").value || "").trim();
-    const cityTo   = String(qs("to").value || "").trim();
-    const offFromRaw = qs("tzFrom").value;
-    const offToRaw   = qs("tzTo").value;
-
-    const offFrom = (offFromRaw === "" || offFromRaw == null) ? null : parseInt(offFromRaw, 10);
-    const offTo   = (offToRaw === "" || offToRaw == null) ? null : parseInt(offToRaw, 10);
-
-    const tzFromTxt = formatUTCOffset(offFrom) || "UTC—";
-    const tzToTxt   = formatUTCOffset(offTo) || "UTC—";
-
-    const elFrom = qs("fromTzLine");
-    const elTo   = qs("toTzLine");
-    if (elFrom) elFrom.textContent = `${cityFrom || "Origen"} — ${tzFromTxt}`;
-    if (elTo)   elTo.textContent   = `${cityTo   || "Destino"} — ${tzToTxt}`;
-  } catch {}
-};
-updateTZLines();
-// Keep in sync while user edits
-["from","to","tzFrom","tzTo"].forEach((k)=>{
-  const el = qs(k);
-  if (el) el.addEventListener("input", updateTZLines);
-  if (el) el.addEventListener("change", updateTZLines);
-});
-
   // Placeholders based on mode
   try {
     const mode = legModeDefault(legObj.mode);
     qs("placeOut").placeholder = __legPlacePlaceholder(mode, "from");
     qs("placeIn").placeholder  = __legPlacePlaceholder(mode, "to");
+
+  // Auto UTC offsets from city (no manual selector). Values stored in hidden tzFrom/tzTo inputs.
+  const tzBadgeFrom = document.getElementById("legTzFromBadge");
+  const tzBadgeTo   = document.getElementById("legTzToBadge");
+  function __updateLegTzBadges(){
+    try{
+      const cityFrom = qs("from").value;
+      const cityTo   = qs("to").value;
+      const d0 = qs("dateOut").value;
+      const t0 = qs("timeOut").value;
+      const d1 = qs("dateIn").value;
+      const t1 = qs("timeIn").value;
+
+      const off0 = __deriveUtcOffsetHours(cityFrom, d0, t0);
+      const off1 = __deriveUtcOffsetHours(cityTo, d1, t1);
+
+      if (Number.isFinite(off0)) {
+        qs("tzFrom").value = String(off0);
+        if (tzBadgeFrom) tzBadgeFrom.textContent = formatUTCOffset(off0);
+      } else {
+        qs("tzFrom").value = "";
+        if (tzBadgeFrom) tzBadgeFrom.textContent = "UTC—";
+      }
+
+      if (Number.isFinite(off1)) {
+        qs("tzTo").value = String(off1);
+        if (tzBadgeTo) tzBadgeTo.textContent = formatUTCOffset(off1);
+      } else {
+        qs("tzTo").value = "";
+        if (tzBadgeTo) tzBadgeTo.textContent = "UTC—";
+      }
+    } catch {}
+  }
+  // Initial paint + live updates
+  __updateLegTzBadges();
+  ["from","to","dateOut","timeOut","dateIn","timeIn"].forEach(k=>{
+    try { qs(k).addEventListener("input", __updateLegTzBadges); } catch {}
+    try { qs(k).addEventListener("change", __updateLegTzBadges); } catch {}
+  });
+
   } catch {}
 
 
