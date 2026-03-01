@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100H_LEGS_ALIGN</title>
+<title>V100I_LEGS_LASTDATE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -641,7 +641,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100H_LEGS_ALIGN</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100I_LEGS_LASTDATE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6760,6 +6760,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const h = Math.max(0, Math.ceil(px || 0));
     sp.style.height = h + "px";
   }
+
 function scrollToDateSep(viewName, iso){
     const viewEl = getViewEl(viewName);
     if (!viewEl) return false;
@@ -6772,11 +6773,8 @@ function scrollToDateSep(viewName, iso){
       // Ensure CSS vars reflect final fixed header height (dateJumpUI can change it).
       try{ if (typeof syncTopStackHeights === "function") syncTopStackHeights(); }catch(_){}
       forceSubHeaderHeightVar();
-    try{ ensureTailSpacer(v, fixedHeaderBottomY() + 24); }catch(_){ }
 
       const subBottom = fixedHeaderBottomY();
-      // Ensure enough scroll range so the last date header can align under the fixed header.
-      ensureTailSpacer(viewName, subBottom + 24);
 
       // Compute stable target scrollTop using DOM offsets (avoids rect timing drift).
       let y = 0;
@@ -6791,9 +6789,33 @@ function scrollToDateSep(viewName, iso){
         y = (sc.scrollTop || 0) + (sepRect.top || 0);
       }
 
-      const target = Math.max(0, y - (subBottom + 1));
-      sc.scrollTo({ top: target, behavior: "auto" });
-      // Verify alignment; if layout not settled yet, retry next frame.
+      const desired = Math.max(0, y - (subBottom + 1));
+
+      // Case límite (última fecha): asegurar recorrido final suficiente SOLO en Transporte.
+      if (String(viewName) === "legs"){
+        const seps = viewEl.querySelectorAll("[data-date-sep]");
+        const lastIso = seps && seps.length ? seps[seps.length - 1].getAttribute("data-date-sep") : null;
+        if (lastIso && String(lastIso) === String(iso)){
+          // Necesario extra = desired - maxScrollTop (si > 0). Añadimos tail spacer solo lo justo.
+          const maxNow = Math.max(0, (sc.scrollHeight || 0) - (sc.clientHeight || 0));
+          const needExtra = Math.max(0, Math.ceil(desired - maxNow) + 12);
+          if (needExtra > 0){
+            const existing = viewEl.querySelector('[data-dj-tail="1"]');
+            const curH = existing ? (parseInt(existing.style.height || "0", 10) || 0) : 0;
+            ensureTailSpacer(viewName, Math.max(curH, needExtra));
+          }
+        } else {
+          // Spacer base suficiente para saltos normales.
+          ensureTailSpacer(viewName, subBottom + 24);
+        }
+      } else {
+        // Spacer base para el resto de vistas.
+        ensureTailSpacer(viewName, subBottom + 24);
+      }
+
+      sc.scrollTo({ top: desired, behavior: "auto" });
+
+      // Verify alignment; if layout not settled yet (e.g., spacer just applied), retry next frame.
       requestAnimationFrame(() => {
         const nowRect = sep.getBoundingClientRect();
         const nowDelta = nowRect.top - (fixedHeaderBottomY() + 1);
