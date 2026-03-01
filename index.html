@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100I_LEGS_LASTDATE</title>
+<title>V100J_TECHCLEAN2</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -116,31 +116,6 @@ function deleteItemById(kind, id) {
 .tl-dnote-has { }
 .noteDateActive { background: rgba(59,130,246,0.10); border-color: rgba(59,130,246,0.25); }
 
-    /* --- UX: Floating collapse-all FAB + sticky total bar --- */
-    @media (max-width: 640px){
-      /* Hide header button on mobile; FAB provides access */
-      #collapseAll{ display:none; }
-    }
-    #fabCollapseAll{
-      position: fixed;
-      right: 14px;
-      bottom: calc(env(safe-area-inset-bottom) + 76px);
-      width: 44px;
-      height: 44px;
-            line-height: 44px;
-      text-align: center;
-border-radius: 999px;
-      border: 1px solid rgba(148,163,184,.6);
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 6px 16px rgba(15,23,42,.12);
-      color: #0f172a;
-      font-weight: 800;
-      z-index: 60; /* above bottom bar */
-      opacity: .92;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #fabCollapseAll:active{ transform: translateY(1px); }
-
     #stickyTotalBar{
       position: fixed;
       left: 0;
@@ -178,28 +153,6 @@ border-radius: 999px;
   background: #ffffff;
   border-color: #e2e8f0;
   color: #0f172a;
-}
-
-
-/* Timeline controls sticky (single row, no clone) */
-#timelineControlsRow{
-  position: fixed;
-  left: 0;
-  right: 0;
-  /* Anchor to the real top stack (Header + Totales). Independent from timeline scroll. */
-  top: var(--top-stack-h, 0px);
-  z-index: 950;
-  background: #ffffff;
-  border-bottom: 1px solid rgba(15,23,42,0.08);
-  padding-top: 0;
-  padding-bottom: 8px;
-  padding-left: 20px;
-  padding-right: 20px;
-  box-sizing: border-box;
-}
-
-#timelineControlsSpacer{
-  height: var(--timeline-controls-h, 0px);
 }
 
 
@@ -641,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100I_LEGS_LASTDATE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100J_TECHCLEAN2</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1386,22 +1339,8 @@ window.addEventListener("resize", scheduleSyncTopStackHeights);
 
 function getScrollContainer(){
   return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
-
-  // LIVE SUMMARY delegated (V89E3B)
-  const esBody = document.getElementById("eventSheetBody");
-  if (esBody && !esBody.__liveBound) {
-    esBody.__liveBound = true;
-    const tick = () => {
-      try {
-        if (document.body.classList.contains("sheet-open") && typeof updateSheetDynamicSummary === "function") {
-          updateSheetDynamicSummary();
-        }
-      } catch {}
-    };
-    esBody.addEventListener("input", tick);
-    esBody.addEventListener("change", tick);
-  }
 }
+
 function getScrollTop(){
   const sc = getScrollContainer();
   return (sc === document.documentElement) ? (window["pageYOffset"] || 0) : (sc.scrollTop || 0);
@@ -3035,39 +2974,12 @@ function setupAccordion() {
     }
       const icon = btn.querySelector(".accIcon");
       icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
-      updateFabVisibility();
+      
     });
   });
 }
 
-function collapseAllAccordions() {
-  document.querySelectorAll("[data-acc-body]").forEach(body => body.classList.add("hidden"));
-  document.querySelectorAll("[data-acc] .accIcon").forEach(icon => { icon.textContent = "▾"; });
-  updateFabVisibility();
 
-  // v88b: also collapse per-item accordions (legs/stays/activities)
-  try {
-    __sectionExpanded.legs.clear();
-    __sectionExpanded.stays.clear();
-    __sectionExpanded.activities.clear();
-  } catch {}
-
-  // Re-render sections so items visually collapse
-  try { renderLegs(); } catch {}
-  try { renderStays(); } catch {}
-  try { renderActivities(); } catch {}
-}
-
-
-function anyAccordionOpen() {
-  return !!document.querySelector('[data-acc-body]:not(.hidden)');
-}
-
-function updateFabVisibility() {
-  const fab = document.getElementById('fabCollapseAll');
-  if (!fab) return;
-  fab.classList.toggle('hidden', !anyAccordionOpen());
-}
 
 
 /* ------------------------------ Rendering ---------------------------- */
@@ -6452,12 +6364,6 @@ window.addEventListener('DOMContentLoaded', () => {
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
   
-    const fab = document.getElementById('fabCollapseAll');
-    if (fab) fab.onclick = () => { collapseAllAccordions(); scrollToTopValue(0, 'smooth'); };
-  
-    const ca = document.getElementById("collapseAll");
-    if (ca) ca.onclick = () => { collapseAllAccordions(); scrollToTopValue(0, 'smooth'); };
-  
     // Timeline view controls (Global / Day)
     const _tlG = document.getElementById("tlViewGlobal");
     const _tlD = document.getElementById("tlViewDay");
@@ -6487,7 +6393,7 @@ window.addEventListener('DOMContentLoaded', () => {
   syncStickyTotalsHeightVar();
   summaryExpanded = false;
   applySummaryFold();
-  updateFabVisibility();
+  
 
   // Sheet trash (single source of truth)
   const sheetTrash = document.getElementById("eventSheetTrash");
