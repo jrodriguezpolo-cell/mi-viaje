@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100S_LEGS_TZ_NO_SUMUTC</title>
+<title>V100T_LEGS_TZ_LABELS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100S_LEGS_TZ_NO_SUMUTC</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100T_LEGS_TZ_LABELS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1931,6 +1931,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
         <label class="text-xs text-slate-600">Ciudad salida</label>
         <input data-sheet-leg="from" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad salida">
+        <div class="mt-1 text-xs text-slate-500 font-semibold" data-sheet-leg="fromTzLine"></div>
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
@@ -1946,6 +1947,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">LLEGADA</div>
         <label class="text-xs text-slate-600">Ciudad llegada</label>
         <input data-sheet-leg="to" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad llegada">
+        <div class="mt-1 text-xs text-slate-500 font-semibold" data-sheet-leg="toTzLine"></div>
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
@@ -1990,6 +1992,34 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("tzTo").value = (legObj.tzTo == null || legObj.tzTo === "" ? "" : String(legObj.tzTo));
   qs("cost").value = (legObj.cost == null ? "" : String(legObj.cost));
   qs("currency").value = v(legObj.currency || "EUR");
+
+// Show which UTC is applied to each city (UI-only, stays in Transporte sheet)
+const updateTZLines = () => {
+  try {
+    const cityFrom = String(qs("from").value || "").trim();
+    const cityTo   = String(qs("to").value || "").trim();
+    const offFromRaw = qs("tzFrom").value;
+    const offToRaw   = qs("tzTo").value;
+
+    const offFrom = (offFromRaw === "" || offFromRaw == null) ? null : parseInt(offFromRaw, 10);
+    const offTo   = (offToRaw === "" || offToRaw == null) ? null : parseInt(offToRaw, 10);
+
+    const tzFromTxt = formatUTCOffset(offFrom) || "UTC—";
+    const tzToTxt   = formatUTCOffset(offTo) || "UTC—";
+
+    const elFrom = qs("fromTzLine");
+    const elTo   = qs("toTzLine");
+    if (elFrom) elFrom.textContent = `${cityFrom || "Origen"} — ${tzFromTxt}`;
+    if (elTo)   elTo.textContent   = `${cityTo   || "Destino"} — ${tzToTxt}`;
+  } catch {}
+};
+updateTZLines();
+// Keep in sync while user edits
+["from","to","tzFrom","tzTo"].forEach((k)=>{
+  const el = qs(k);
+  if (el) el.addEventListener("input", updateTZLines);
+  if (el) el.addEventListener("change", updateTZLines);
+});
 
   // Placeholders based on mode
   try {
