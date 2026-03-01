@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100A_FIX5</title>
+<title>V100C_SUMORDER_CCY_HDR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="text-[11px] font-semibold text-slate-500">V100A_FIX5</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100C_SUMORDER_CCY_HDR</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1976,7 +1976,15 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 
       <div class="sm:col-span-12">
         <label class="text-xs text-slate-600">Coste</label>
-        <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+        <div class="mt-1 flex items-center gap-2">
+          <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+          <select data-sheet-leg="currency" class="shrink-0 px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+            <option value="EUR">EUR €</option>
+            <option value="USD">USD $</option>
+            <option value="GBP">GBP £</option>
+            <option value="CHF">CHF</option>
+          </select>
+        </div>
       </div>
     </div>
   `;
@@ -1996,6 +2004,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("dateIn").value = v(legObj.arriveDate || "");
   qs("timeIn").value = v(legObj.arriveTime || "");
   qs("cost").value = (legObj.cost == null ? "" : String(legObj.cost));
+  qs("currency").value = v(legObj.currency || "EUR");
 
   // Placeholders based on mode
   try {
@@ -2064,6 +2073,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     legObj.timeIn = val;        // compat legacy para timeline/summary
   });
   bind("cost", (val)=>{ const s = String(val||"").trim(); legObj.cost = (s === "") ? null : parseMoney(s); });
+  bind("currency", (val)=>{ legObj.currency = val; });
   return true;
 }
 
@@ -2198,8 +2208,14 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
       <div class="mt-1 flex items-center gap-2">
         <input data-stay-cost="${escapeHtml(String(itemId))}" data-sheet-stay="cost" type="number" min="0" step="0.01"
           class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
-        <!-- Slot reservado para selector de moneda (iteración posterior) -->
-        <div class="min-w-[44px] h-10 rounded-xl border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-400 select-none" aria-hidden="true">¤</div>
+        <label class="sr-only">Moneda</label>
+        <select data-stay-currency="${escapeHtml(String(itemId))}" data-sheet-stay="currency"
+          class="shrink-0 px-3 py-2 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          <option value="EUR">EUR €</option>
+          <option value="USD">USD $</option>
+          <option value="GBP">GBP £</option>
+          <option value="CHF">CHF</option>
+        </select>
       </div>
     </div>
   </div>
@@ -2218,6 +2234,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   qs("nights").value = v(stayObj.nights ?? 1);
   qs("checkout").value = v(stayObj.checkout || "");
   qs("checkoutTime").value = v(stayObj.checkoutTime || stayObj.checkout_time || "");
+  qs("currency").value = v(stayObj.currency || "EUR");
   qs("cost").value = (stayObj.cost == null ? "" : String(stayObj.cost));
 
   try { __updateStaySheetTitle(stayObj.city, stayObj.name); } catch {}
@@ -2271,6 +2288,8 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   });
 
   bind("checkoutTime", (val)=>{ stayObj.checkoutTime = val; });
+
+  bind("currency", (val)=>{ stayObj.currency = val; });
 
   bind("cost", (val)=>{
     const s = String(val||"").trim();
@@ -3160,7 +3179,7 @@ function staySummaryLinesHTML(stay, opts){
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
 
   return `
-    <div class="text-sm font-semibold truncate">🏨 <span>${escapeHtml(city)}</span><span class="text-slate-400 font-normal"> · </span><span class="font-medium">${escapeHtml(name)}</span></div>
+    <div class="text-sm font-semibold truncate">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
   `;
@@ -3924,9 +3943,9 @@ function actSummaryLinesHTML(act, opts){
   // Line 1: icono + ciudad + actividad (sin icono entre ciudad y actividad)
 const line1 = `<div class="text-sm font-semibold truncate">
   <span class="mr-1">🎯</span>
-  <span class="font-medium">${escapeHtml(line1City)}</span>
-  <span class="text-slate-400"> · </span>
   <span>${escapeHtml(line1Title)}</span>
+  <span class="text-slate-400"> · </span>
+  <span class="font-medium">${escapeHtml(line1City)}</span>
   ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
   ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
 </div>`;
@@ -3934,7 +3953,7 @@ const line1 = `<div class="text-sm font-semibold truncate">
   // Line 2: fecha -> hora (fecha primero)
   const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
     <span class="font-semibold">${escapeHtml(line2Date)}</span>
-    ${line2Time ? `<span class="text-slate-400"> · </span><span>${escapeHtml(line2Time)}</span>` : ``}
+    ${line2Time ? `<span class="text-slate-400"> · </span><span class="font-semibold">${escapeHtml(line2Time)}</span>` : ``}
   </div>`;
 
   // Line 3: duración si existe
