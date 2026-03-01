@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100J_TECHCLEAN2</title>
+<title>V100K_CCY_TOTALS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100J_TECHCLEAN2</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100K_CCY_TOTALS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2233,7 +2233,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   bind("cost", (val)=>{
     const s = String(val||"").trim();
-    stayObj.cost = (s === "") ? 0 : parseMoney(s);
+    stayObj.cost = (s === "") ? null : parseMoney(s);
   });
 
   return true;
@@ -2246,7 +2246,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
 
   // Ensure optional fields exist (no currency logic yet)
   if (actObj.duration == null) actObj.duration = "";
-  if (actObj.currency == null) actObj.currency = "EUR";
+  if (actObj.currency == null) actObj.currency = (state.displayCurrency || "EUR");
 
   const wrap = document.createElement("div");
   wrap.className = "sheet-leg-editor sheet-act-editor";
@@ -2356,7 +2356,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   bind("time", (val)=>{ actObj.time = val; });
   bind("duration", (val)=>{ actObj.duration = val; });
   bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? 0 : parseMoney(s); });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
 
   return true;
 }
@@ -2939,14 +2939,49 @@ function currencySymbol(code){
     case "USD": return "$";
     case "GBP": return "£";
     case "JPY": return "¥";
+    case "AUD": return "A$";
+    case "CAD": return "C$";
+    case "CHF": return "CHF";
+    case "MXN": return "MX$";
     default: return String(code||"");
   }
+}
+
+/* ----------------------------- FX table ------------------------------ */
+/* Fixed internal rates (editable). Values are: 1 UNIT of currency = X EUR.
+   Source-free by design (no external API) — adjust manually when needed. */
+const FX_TO_EUR = {
+  EUR: 1.0,
+  USD: 0.92,
+  GBP: 1.17,
+  JPY: 0.0062,
+  AUD: 0.61,
+  CAD: 0.68,
+  CHF: 1.04,
+  MXN: 0.052
+};
+
+function fxToEUR(code){
+  const c = String(code||"EUR").toUpperCase();
+  return (FX_TO_EUR[c] != null) ? Number(FX_TO_EUR[c]) : 1.0;
+}
+
+function convertMoney(amount, fromCur, toCur){
+  const a = Number(amount);
+  if (!isFinite(a) || a === 0) return 0;
+  const from = String(fromCur||"EUR").toUpperCase();
+  const to = String(toCur||"EUR").toUpperCase();
+  if (from === to) return a;
+  const eur = a * fxToEUR(from);
+  return eur / fxToEUR(to);
+}
 }
 
 /* Simple: no external API. Keeps values in display currency.
    You can later swap to real rates if needed. */
 function setDisplayCurrency(cur) {
   state.displayCurrency = cur;
+  try { const sc = curScenario(); if (sc && sc.meals && !sc.meals.currency) sc.meals.currency = cur; } catch {}
   $("sumCur").textContent = cur;
   $("mealCur").textContent = cur;
   saveState();
@@ -3287,7 +3322,7 @@ function renderStays() {
 
 function renderMeals() {
   const sc = curScenario();
-  $("mealDaily").value = sc.meals.daily ?? 0;
+  $("mealDaily").value = (sc.meals.daily == null || String(sc.meals.daily).trim()==="") ? "" : sc.meals.daily;
 
   // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
   $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
@@ -5000,24 +5035,42 @@ function applySummaryFold() {
 
 function calcSummary() {
   const sc = curScenario();
-  const transport = sc.legs.reduce((a,x)=>a+parseMoney(x.cost),0);
-  const stay = sc.stays.reduce((a,x)=>a+parseMoney(x.cost),0);
-  const acts = sc.activities.reduce((a,x)=>a+parseMoney(x.cost),0);
-  const meals = parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10));
+  const targetCur =
+    (document.getElementById("displayCurrency")?.value) ||
+    (state.displayCurrency) ||
+    (document.getElementById("sumCur")?.textContent) ||
+    "EUR";
+
+  const sumConverted = (arr, fallbackCur="EUR") =>
+    (arr||[]).reduce((acc, x) => {
+      const cost = parseMoney(x?.cost);
+      if (!cost) return acc;
+      const fromCur = (x && x.currency) ? String(x.currency) : (state.displayCurrency || fallbackCur);
+      return acc + convertMoney(cost, fromCur, targetCur);
+    }, 0);
+
+  const transport = sumConverted(sc.legs, "EUR");
+  const stay = sumConverted(sc.stays, "EUR");
+  const acts = sumConverted(sc.activities, "EUR");
+
+  // Meals: aggregate block. Interpreted in the *display currency* (current app model).
+  const mealsRaw = parseMoney(sc.meals?.daily) *
+                   (parseInt(sc.meals?.people || 1, 10)) *
+                   (parseInt(sc.meals?.days || 1, 10));
+  const mealsFromCur = (sc.meals && sc.meals.currency) ? String(sc.meals.currency) : (state.displayCurrency || targetCur);
+  const meals = convertMoney(mealsRaw, mealsFromCur, targetCur);
 
   $("sumTransport").textContent = transport.toFixed(2);
   $("sumStay").textContent = stay.toFixed(2);
   $("sumActs").textContent = acts.toFixed(2);
   $("sumMeals").textContent = meals.toFixed(2);
-  $("sumTotal").textContent = (transport+stay+acts+meals).toFixed(2);
+  $("sumTotal").textContent = (transport + stay + acts + meals).toFixed(2);
+
   const stickyVal = document.getElementById("stickyTotalValue");
-  if (stickyVal) {
-    const curCode = (document.getElementById("displayCurrency")?.value) || (document.getElementById("sumCur")?.textContent) || "";
-    const curSym = currencySymbol(curCode);
-    stickyVal.textContent = `${$("sumTotal").textContent}`;
-  }
-  // summary fold (no persistence)
+  if (stickyVal) stickyVal.textContent = `${$("sumTotal").textContent}`;
+
   applySummaryFold();
+}
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
@@ -6092,7 +6145,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, tzFrom:null, tzTo:null });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, currency:(state.displayCurrency||"EUR"), tzFrom:null, tzTo:null });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
@@ -6101,7 +6154,7 @@ $("addLeg").addEventListener("click", ()=>{
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:0 });
+  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:null, currency:(state.displayCurrency||"EUR"), checkoutDate:"", checkoutTime:"" });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
@@ -6110,7 +6163,7 @@ $("addStay").addEventListener("click", ()=>{
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:"", fromAI:false });
+  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", duration:"", cost:null, currency:(state.displayCurrency||"EUR"), fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
@@ -6120,7 +6173,9 @@ $("addAct").addEventListener("click", ()=>{
 ["mealDaily","mealPeople","mealDays"].forEach(id=>{
   $(id).addEventListener("input", ()=>{
     const sc = curScenario();
-    sc.meals.daily = parseMoney($("mealDaily").value);
+    const rawDaily = $("mealDaily").value;
+    sc.meals.daily = (String(rawDaily).trim() === "") ? null : parseMoney(rawDaily);
+    if (!sc.meals.currency) sc.meals.currency = (state.displayCurrency || "EUR");
     const rawP = $("mealPeople").value;
     const rawD = $("mealDays").value;
 
