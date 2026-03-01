@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V99Z_STAYTL_NOPLEGAR</title>
+<title>V100A_FIX5</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -642,7 +642,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="text-[11px] font-semibold text-slate-500">V99Z</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
+<div class="leading-tight"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="text-[11px] font-semibold text-slate-500">V100A_FIX5</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold" id="buildId">Build: V99V_ACT_2COL</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1233,7 +1233,9 @@ function buildLegSummaryParts(leg) {
   if (t0 && t1) timeLine = `${escapeHtml(t0)} → ${escapeHtml(t1)}${dur ? " · " + dur : ""}`;
   else if (t0)  timeLine = `${escapeHtml(t0)}`;
 
-  const metaHTML = [dES ? escapeHtml(dES) : "", timeLine].filter(Boolean).join(" · ") || "—";
+  const dateHTML = dES ? `<span class="font-semibold">${escapeHtml(dES)}</span>` : "";
+
+  const metaHTML = [dateHTML, timeLine].filter(Boolean).join(" · ") || "—";
 
   const p0 = String(leg?.placeOut || "").trim();
   const p1 = String(leg?.placeIn || "").trim();
@@ -1244,6 +1246,16 @@ function buildLegSummaryParts(leg) {
   return { title, metaHTML, placeLineHTML };
 }
 
+function legSummaryLinesHTML(leg, opts){
+  opts = opts || {};
+  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
+  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
+  const parts = buildLegSummaryParts(leg);
+  return `
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>
+    <div class="text-xs text-slate-600 mt-0.5 truncate">${parts.metaHTML}</div>
+    ${parts.placeLineHTML || ""}`;
+}
 function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
   if (jumpType === "leg" && modelItem) {
     const parts = buildLegSummaryParts(modelItem);
@@ -3909,18 +3921,19 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  // Line 1: ciudad -> actividad (ciudad primero)
-  const line1 = `<div class="text-sm font-semibold truncate">
-    <span class="font-medium">${escapeHtml(line1City)}</span>
-    <span class="text-slate-400"> · </span>
-    <span>🎯 ${escapeHtml(line1Title)}</span>
-    ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
-    ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
-  </div>`;
+  // Line 1: icono + ciudad + actividad (sin icono entre ciudad y actividad)
+const line1 = `<div class="text-sm font-semibold truncate">
+  <span class="mr-1">🎯</span>
+  <span class="font-medium">${escapeHtml(line1City)}</span>
+  <span class="text-slate-400"> · </span>
+  <span>${escapeHtml(line1Title)}</span>
+  ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
+  ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
+</div>`;
 
   // Line 2: fecha -> hora (fecha primero)
   const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
-    <span>${escapeHtml(line2Date)}</span>
+    <span class="font-semibold">${escapeHtml(line2Date)}</span>
     ${line2Time ? `<span class="text-slate-400"> · </span><span>${escapeHtml(line2Time)}</span>` : ``}
   </div>`;
 
@@ -4674,10 +4687,10 @@ function renderTimeline() {
 
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
-            ${(jumpType==="stay" && __stay) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
+            ${((jumpType==="stay" && __stay) || (jumpType==="act" && __act) || (jumpType==="leg" && __leg)) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
 
             <div class="min-w-0">
-              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline"}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
@@ -5271,7 +5284,7 @@ function renderAIResults(sections) {
         title: sp.title,
         city: sec.city || "",
         date: "", // optional
-        cost: 0,
+        cost: "",
         fromAI: true
       });
       added++;
@@ -6165,7 +6178,7 @@ $("addStay").addEventListener("click", ()=>{
 $("addAct").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:0, fromAI:false });
+  sc.activities.unshift({ id, title:"", city:"", date:"", time:"", cost:"", fromAI:false });
   __sectionExpanded.activities.add(id);
   saveState(); renderActivities(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "act", id, mode: "edit", isNew: true })));
@@ -6687,11 +6700,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function chooseRelevant(dates){
     if (!dates || !dates.length) return "";
+    const ds = Array.from(dates).filter(Boolean).map(String).sort();
+    if (!ds.length) return "";
     const t = todayYMD();
-    if (dates.includes(t)) return t;
-    // first > today
-    const future = dates.find(x => x > t);
-    return future || dates[0];
+    if (ds.includes(t)) return t;
+    const future = ds.find(x => x > t);
+    return future || ds[0];
   }
 
   function forceSubHeaderHeightVar(){
