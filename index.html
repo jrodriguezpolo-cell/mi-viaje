@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V111_AC_EMPTY_QUERY_FIX_AND_CLEAR_X</title>
+<title>V112_CITY_EMPTY_QUERY_PLUS_PREMIUM_AIRPORT_HINTS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -618,7 +618,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V111_AC_EMPTY_QUERY_FIX_AND_CLEAR_X</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V112_CITY_EMPTY_QUERY_PLUS_PREMIUM_AIRPORT_HINTS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1784,11 +1784,7 @@ function __cityProvider(q){
   const out = [];
   const qq = __acNorm(q);
   if(!qq){
-    for(const c of __AC_CITY_LIST){
-      out.push(c);
-      if(out.length>=10) break;
-    }
-    return out;
+    return [];
   }
   // prefer prefix, then contains
   for(const c of __AC_CITY_LIST){
@@ -1824,6 +1820,30 @@ function __airportPlaceProvider(q){
     value: `${a.iata} · ${a.name}`
   }));
 }
+
+// Premium hint: airports for a given city label (used only when mode=plane and query is empty)
+function __airportsForCityLabel(cityLabel){
+  const c = __acNorm(cityLabel);
+  if(!c) return [];
+  const hits = [];
+  for(const a of __AC_AIRPORT_LIST){
+    const ac = __acNorm(a.city);
+    if(ac === c || ac.includes(c) || c.includes(ac)){
+      hits.push(a);
+      if(hits.length >= 6) break;
+    }
+  }
+  return hits.slice(0,3).map(a=>({
+    kind:"plane",
+    iata:a.iata,
+    tz:a.tz,
+    city:a.city,
+    name:a.name,
+    label:`${a.iata} — ${a.name} (${a.city})`,
+    value:`${a.iata} · ${a.name}`
+  }));
+}
+
 
 function __airportProvider(q){
   if(!q) return [];
@@ -2035,9 +2055,22 @@ function __wireLegAutocomplete(wrap, getModeFn){
   };
 
   const apply = ()=>{
-    const prov = __providerByMode(modeKey());
-    // update provider live (no rewire)
-    __attachAutocomplete(outPlace, prov, (it)=>{
+    const m = modeKey();
+    const baseProv = __providerByMode(m);
+
+    // Premium (plane only): if query empty + city is set, hint airports for that city
+    const provOut = (m==="plane") ? ((q)=>{
+      if(!q && fromCity && String(fromCity.value||"").trim()) return __airportsForCityLabel(fromCity.value);
+      return __airportPlaceProvider(q);
+    }) : baseProv;
+
+    const provIn = (m==="plane") ? ((q)=>{
+      if(!q && toCity && String(toCity.value||"").trim()) return __airportsForCityLabel(toCity.value);
+      return __airportPlaceProvider(q);
+    }) : baseProv;
+
+    // update providers live (no rewire)
+    __attachAutocomplete(outPlace, provOut, (it)=>{
       if(!it) return;
       outPlace.value = (it.value || it.label || "");
       __dispatchInputChange(outPlace);
@@ -2053,7 +2086,7 @@ function __wireLegAutocomplete(wrap, getModeFn){
         }
       }
     });
-    __attachAutocomplete(inPlace, prov, (it)=>{
+    __attachAutocomplete(inPlace, provIn, (it)=>{
       if(!it) return;
       inPlace.value = (it.value || it.label || "");
       __dispatchInputChange(inPlace);
