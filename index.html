@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V107_TRANSPORT_PLACES_RESTORE_APP</title>
+<title>V108_TRANSPORT_PLACES_WIRING_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V107_TRANSPORT_PLACES_RESTORE_APP</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V108_TRANSPORT_PLACES_WIRING_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2803,7 +2803,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("to").value = v(legObj.to);
   qs("placeOut").value = v(legObj.placeOut || "");
   qs("placeIn").value = v(legObj.placeIn || "");
-  try{ __wireLegAutocomplete(wrap, ()=>currentMode); }catch{}
+  let currentMode = legModeDefault(legObj.mode);
+  updateChipUI(currentMode);
+  try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+
+  try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
   qs("dateOut").value = v(legObj.date || "");
   qs("timeOut").value = v(legObj.time || "");
   qs("dateIn").value = v(legObj.arriveDate || "");
@@ -2880,10 +2884,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       }
     });
   }
-
-  let currentMode = legModeDefault(legObj.mode);
-  updateChipUI(currentMode);
-  try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
 
 
   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
