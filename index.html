@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V101C_AC_ZFIX</title>
+<title>V102_ACFIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V101C_AC_ZFIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V102_ACFIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1625,6 +1625,7 @@ function __acPosition(menu, input){
     if(!input) return;
 
     const r = input.getBoundingClientRect();
+
     // Keep width aligned with input visual width
     const w = Math.max(180, Math.round(r.width));
     const left = Math.round(r.left);
@@ -1634,30 +1635,60 @@ function __acPosition(menu, input){
     const prevHidden = menu.classList.contains("hidden");
     if(prevHidden) menu.classList.remove("hidden");
 
-    // Constrain height to max-h-52 (Tailwind) but we can read actual
-    const mh = menu.offsetHeight || 200;
-    const vh = window.innerHeight || document.documentElement.clientHeight || 700;
+    const vw = (window.innerWidth || document.documentElement.clientWidth || 390);
+    const vh = (window.innerHeight || document.documentElement.clientHeight || 700);
 
-    // Prefer below; if not enough space (keyboard), open above
-    const belowTop = Math.round(r.bottom + gap);
-    const aboveTop = Math.round(r.top - gap - mh);
+    // Desired cap (Tailwind max-h-52 = 13rem = 208px)
+    const HARD_CAP = 208;
+    const EDGE = 8;
+    const MIN_LIST_H = 64; // allow small list instead of flipping above too early
 
-    const spaceBelow = vh - (r.bottom + gap);
-    const spaceAbove = (r.top - gap);
+    const spaceBelow = (vh - EDGE) - (r.bottom + gap);
+    const spaceAbove = (r.top - gap) - EDGE;
 
-    let top = belowTop;
-    if(spaceBelow < Math.min(140, mh) && spaceAbove > 120){
-      top = Math.max(8, aboveTop);
+    // 1) Always prefer below: shrink height to fit before considering above
+    let openAbove = false;
+
+    // If there is literally no usable space below, consider above
+    if(spaceBelow < 28 && spaceAbove >= MIN_LIST_H){
+      openAbove = true;
     }
 
-    // Clamp within viewport
-    top = Math.min(Math.max(8, top), Math.max(8, vh - 60));
-    const maxLeft = Math.max(8, (window.innerWidth || document.documentElement.clientWidth || 390) - w - 8);
-    const clLeft = Math.min(Math.max(8, left), maxLeft);
+    // Compute maxHeight depending on side (never overlap active input)
+    let maxH = HARD_CAP;
+    let top = Math.round(r.bottom + gap);
+
+    if(!openAbove){
+      maxH = Math.max(28, Math.min(HARD_CAP, Math.floor(spaceBelow)));
+      // Keep anchored under input
+      top = Math.round(r.bottom + gap);
+
+      // If still doesn't fit, clamp maxH (do NOT move above unless completely impossible)
+      if(top + maxH > vh - EDGE){
+        maxH = Math.max(28, (vh - EDGE) - top);
+      }
+
+      // If maxH becomes tiny and above is clearly better, only then open above
+      if(maxH < 28 && spaceAbove >= MIN_LIST_H){
+        openAbove = true;
+      }
+    }
+
+    if(openAbove){
+      maxH = Math.max(28, Math.min(HARD_CAP, Math.floor(spaceAbove)));
+      // Top so that menu bottom is anchored to input top-gap (no overlap)
+      top = Math.round(r.top - gap - maxH);
+      top = Math.max(EDGE, top);
+    }
+
+    // Apply geometry
+    const maxLeft = Math.max(EDGE, vw - w - EDGE);
+    const clLeft = Math.min(Math.max(EDGE, left), maxLeft);
 
     menu.style.left = clLeft + "px";
     menu.style.top = top + "px";
     menu.style.width = w + "px";
+    menu.style.maxHeight = maxH + "px";
 
     if(prevHidden) menu.classList.add("hidden");
   }catch{}
