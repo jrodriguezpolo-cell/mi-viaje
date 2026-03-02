@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V105_TRANSPORT_PLACES_PROVIDERS</title>
+<title>V106_TRANSPORT_PLACES_HOTFIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V105_TRANSPORT_PLACES_PROVIDERS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V106_TRANSPORT_PLACES_HOTFIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1745,12 +1745,98 @@ function __attachAutocomplete(input, provider, onPick){
 
 function __cityProvider(q){
   const out = [];
+  const qq = __acNorm(q);
+  if(!qq){
+    for(const c of __AC_CITY_LIST){
+      out.push(c);
+      if(out.length>=10) break;
+    }
+    return out;
+  }
+  // prefix first
+  for(const c of __AC_CITY_LIST){
+    if(c.norm.startsWith(qq)) out.push(c);
+    if(out.length>=10) break;
+  }
+  // then contains
+  if(out.length<10){
+    for(const c of __AC_CITY_LIST){
+      if(out.includes(c)) continue;
+      if(c.norm.includes(qq)) out.push(c);
+      if(out.length>=10) break;
+    }
+  }
+  return out;
+}
 
+function __trainProvider(q){ return __simpleListProvider(__TRAIN_STATIONS, q); }
+function __busProvider(q){ return __simpleListProvider(__BUS_TERMINALS, q); }
+function __portProvider(q){ return __simpleListProvider(__PORTS, q); }
+
+// Premium airport provider for placeOut/placeIn (keeps IATA recognition)
+function __airportPlaceProvider(q){
+  const items = __airportProvider(String(q||"").toLowerCase()) || [];
+  return items.slice(0,10).map(a=>({
+    kind:"plane",
+    iata: a.iata,
+    tz: a.tz,
+    city: a.city,
+    name: a.name,
+    label: `${a.iata} — ${a.name} (${a.city})`,
+    value: `${a.iata} · ${a.name}`
+  }));
+}
+
+function __providerByMode(mode){
+  const m = String(mode||"plane").toLowerCase();
+  if(m==="plane") return __airportPlaceProvider;
+  if(m==="train") return __trainProvider;
+  if(m==="bus") return __busProvider;
+  if(m==="boat" || m==="ferry") return __portProvider;
+  // car: no menu
+  return (q)=>[];
+}
+  // prefer prefix, then contains
+  for(const c of __AC_CITY_LIST){
+    if(c.norm.startsWith(q)) out.push(c);
+    if(out.length>=8) break;
+  }
+  if(out.length<8){
+    for(const c of __AC_CITY_LIST){
+      if(out.includes(c)) continue;
+      if(c.norm.includes(q)) out.push(c);
+      if(out.length>=8) break;
+    }
+  }
+  return out;
+}
+
+function __airportProvider(q){
+  const out = [];
+  const isIata = /^[a-z]{1,3}$/.test(q);
+  if(isIata){
+    for(const a of __AC_AIRPORT_LIST){
+      if(a.normIATA.startsWith(q)) out.push(a);
+      if(out.length>=10) break;
+    }
+  }
+  if(out.length<10){
+    for(const a of __AC_AIRPORT_LIST){
+      if(out.includes(a)) continue;
+      if(a.normName.includes(q) || a.normCity.includes(q) || a.normIATA===q) out.push(a);
+      if(out.length>=10) break;
+    }
+  }
+  return out;
+}
 
 /* =========================
    Transport place providers (ONLY for placeOut/placeIn)
    - Does NOT touch city providers.
 ========================= */
+
+// Safe alias for normalization (V105 had __norm() but the app uses __acNorm())
+const __norm = __acNorm;
 
 // Mini DBs (local, small, stable)
 const __TRAIN_STATIONS = [
@@ -1815,7 +1901,7 @@ function __portProvider(q){ return __simpleListProvider(__PORTS, q); }
 
 // Premium airport provider for placeOut/placeIn (keeps IATA recognition)
 function __airportPlaceProvider(q){
-  const items = __airportProvider(String(q||"").toLowerCase()) || [];
+  const items = __airportProvider(__norm(q)) || [];
   return items.slice(0,10).map(a=>({
     kind:"plane",
     iata: a.iata,
@@ -1836,39 +1922,7 @@ function __providerByMode(mode){
   // car: no menu
   return (q)=>[];
 }
-  // prefer prefix, then contains
-  for(const c of __AC_CITY_LIST){
-    if(c.norm.startsWith(q)) out.push(c);
-    if(out.length>=8) break;
-  }
-  if(out.length<8){
-    for(const c of __AC_CITY_LIST){
-      if(out.includes(c)) continue;
-      if(c.norm.includes(q)) out.push(c);
-      if(out.length>=8) break;
-    }
-  }
-  return out;
-}
 
-function __airportProvider(q){
-  const out = [];
-  const isIata = /^[a-z]{1,3}$/.test(q);
-  if(isIata){
-    for(const a of __AC_AIRPORT_LIST){
-      if(a.normIATA.startsWith(q)) out.push(a);
-      if(out.length>=10) break;
-    }
-  }
-  if(out.length<10){
-    for(const a of __AC_AIRPORT_LIST){
-      if(out.includes(a)) continue;
-      if(a.normName.includes(q) || a.normCity.includes(q) || a.normIATA===q) out.push(a);
-      if(out.length>=10) break;
-    }
-  }
-  return out;
-}
 
 function __dispatchInputChange(el){
   try{ el.dispatchEvent(new Event("input",{bubbles:true})); }catch{}
