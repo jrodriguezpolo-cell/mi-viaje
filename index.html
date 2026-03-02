@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V126_FIX_TRANSPORT_MODE_CHIPS</title>
+<title>V127_TRANSPORT_MODE_VIEW_LOCK_AND_MULTI_MODE_PLACES_PREMIUM</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -663,7 +663,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V126_FIX_TRANSPORT_MODE_CHIPS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V127_TRANSPORT_MODE_VIEW_LOCK_AND_MULTI_MODE_PLACES_PREMIUM</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1851,6 +1851,22 @@ function __cityProvider(q){
   return out;
 }
 
+
+
+function __topPlacesForCity(list, cityLabel, max=3){
+  const c = __acNorm(cityLabel);
+  if(!c) return [];
+  const hits = [];
+  for(const x of list){
+    const n = x.norm ? x.norm : __acNorm(x.label||x.value||x||"");
+    const lab = x.label ? x.label : String(x);
+    if(n.includes(c) || c.includes(n)){
+      hits.push({ label: lab, value: lab, kind:"place" });
+      if(hits.length>=max) break;
+    }
+  }
+  return hits;
+}
 function __trainProvider(q){ return __simpleListProvider(__TRAIN_STATIONS, q); }
 function __busProvider(q){ return __simpleListProvider(__BUS_TERMINALS, q); }
 function __portProvider(q){ return __simpleListProvider(__PORTS, q); }
@@ -2231,46 +2247,145 @@ function __wireLegAutocomplete(wrap, getModeFn){
   const apply = ()=>{
     const m = modeKey();
     const baseProv = __providerByMode(m);
+    // Providers for placeOut/placeIn (mode-aware, premium hints by city)
+    let provOut = baseProv;
+    let provIn = baseProv;
 
-    // Premium (plane only): if query empty + city is set, hint airports for that city
-    const provOut = (m==="plane") ? ((q)=>{
-      const city = (fromCity && fromCity.value) ? fromCity.value : "";
-      const hasCity = String(city||"").trim();
-      const qq = String(q||"").trim();
-      if(!qq && hasCity) return __airportsForCity(city);
+    if(m==="plane"){
+      provOut = (q)=>{
+        const city = (fromCity && fromCity.value) ? fromCity.value : "";
+        const hasCity = String(city||"").trim();
+        const qq = String(q||"").trim();
+        if(!qq && hasCity) return __airportsForCity(city);
 
-      const all = __airportPlaceProvider(qq) || [];
-      if(hasCity){
-        const keys = __airportCityKeysFromUserCity(city);
-        const filtered = all.filter(it=>{
-          const ac = __acNorm(it.city || "");
-          return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
-        });
-        return filtered.length ? filtered.slice(0,10) : all;
-      }
-      return all;
-    }) : baseProv;
+        const all = __airportPlaceProvider(qq) || [];
+        if(hasCity){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const ac = __acNorm(it.city || "");
+            return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
+          });
+          return filtered.length ? filtered.slice(0,10) : all;
+        }
+        return all;
+      };
 
-    const provIn = (m==="plane") ? ((q)=>{
-      const city = (toCity && toCity.value) ? toCity.value : "";
-      const hasCity = String(city||"").trim();
-      const qq = String(q||"").trim();
-      if(!qq && hasCity) return __airportsForCity(city);
+      provIn = (q)=>{
+        const city = (toCity && toCity.value) ? toCity.value : "";
+        const hasCity = String(city||"").trim();
+        const qq = String(q||"").trim();
+        if(!qq && hasCity) return __airportsForCity(city);
 
-      const all = __airportPlaceProvider(qq) || [];
-      if(hasCity){
-        const keys = __airportCityKeysFromUserCity(city);
-        const filtered = all.filter(it=>{
-          const ac = __acNorm(it.city || "");
-          return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
-        });
-        return filtered.length ? filtered.slice(0,10) : all;
-      }
-      return all;
-    }) : baseProv;
+        const all = __airportPlaceProvider(qq) || [];
+        if(hasCity){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const ac = __acNorm(it.city || "");
+            return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
+          });
+          return filtered.length ? filtered.slice(0,10) : all;
+        }
+        return all;
+      };
+    } else if(m==="train"){
+      provOut = (q)=>{
+        const city = (fromCity && fromCity.value) ? fromCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__TRAIN_STATIONS, city, 3);
+        const all = __trainProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+      provIn = (q)=>{
+        const city = (toCity && toCity.value) ? toCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__TRAIN_STATIONS, city, 3);
+        const all = __trainProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+    } else if(m==="bus"){
+      provOut = (q)=>{
+        const city = (fromCity && fromCity.value) ? fromCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__BUS_TERMINALS, city, 3);
+        const all = __busProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+      provIn = (q)=>{
+        const city = (toCity && toCity.value) ? toCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__BUS_TERMINALS, city, 3);
+        const all = __busProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+    } else if(m==="boat" || m==="ferry"){
+      provOut = (q)=>{
+        const city = (fromCity && fromCity.value) ? fromCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__PORTS, city, 3);
+        const all = __portProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+      provIn = (q)=>{
+        const city = (toCity && toCity.value) ? toCity.value : "";
+        const qq = String(q||"").trim();
+        if(!qq && String(city||"").trim()) return __topPlacesForCity(__PORTS, city, 3);
+        const all = __portProvider(qq) || [];
+        if(String(city||"").trim()){
+          const keys = __airportCityKeysFromUserCity(city);
+          const filtered = all.filter(it=>{
+            const n = __acNorm(it.label||it.value||"");
+            return keys.some(k => n.includes(k) || k.includes(n));
+          });
+          return filtered.length ? filtered : all;
+        }
+        return all;
+      };
+    } else {
+      provOut = (q)=>[];
+      provIn = (q)=>[];
+    }
 
-    // update providers live (no rewire)
-    __attachAutocomplete(outPlace, provOut, (it)=>{
+__attachAutocomplete(outPlace, provOut, (it)=>{
       if(!it) return;
       outPlace.value = (it.value || it.label || "");
       __dispatchInputChange(outPlace);
@@ -2860,7 +2975,7 @@ function applyEventSheetMode(){
   // Hard-lock editable controls in view (real read-only)
   if (body) {
     const lock = (mode === "view");
-    body.querySelectorAll("input, textarea, select").forEach(el => {
+    body.querySelectorAll("input, textarea, select, [data-leg-mode], .legModeChip").forEach(el => {
       try {
         if (lock) {
           el.setAttribute("data-es-was-disabled", el.disabled ? "1" : "0");
@@ -3189,6 +3304,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     }catch{}
   }
   try{ __applyLegDetailText(); }catch{}
+  try{ qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from"); }catch{}
+  try{ qs("placeIn").placeholder = __legPlacePlaceholder(currentMode, "to"); }catch{}
 
   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
 
@@ -3290,6 +3407,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       if(!newMode) return;
       currentMode = newMode;
       updateChipUI(currentMode);
+      try{ qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from"); }catch{}
+      try{ qs("placeIn").placeholder = __legPlacePlaceholder(currentMode, "to"); }catch{}
       try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
       try{ legObj.mode = currentMode; }catch{}
       try{ __applyLegDetailText(); }catch{}
