@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V124_TRANSPORT_DETAIL_FIELD_POLISH</title>
+<title>V125_TRANSPORT_MODE_CHIPS_CLICKABLE_AND_DETAIL_REFRESH</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -644,6 +644,15 @@ div[data-acc-body="acts"]{
   max-width: 220px !important;
 }
 
+
+/* Autocomplete overlay should not steal taps when hidden */
+#__acOverlayMenu.hidden{ pointer-events:none !important; }
+#__acOverlayMenu{ pointer-events:auto; }
+
+
+/* Ensure leg mode chips are clickable in edit mode */
+.sheet-leg-editor .legModeChip{ pointer-events:auto; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -654,7 +663,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V124_TRANSPORT_DETAIL_FIELD_POLISH</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V125_TRANSPORT_MODE_CHIPS_CLICKABLE_AND_DETAIL_REFRESH</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2946,11 +2955,11 @@ function legModeIcon(m){
 
 function __legDetailText(mode){
   const m = legModeDefault(mode);
-  if(m==="plane") return { label:"Terminal / Puerta", ph:"Ej: T4, Puerta H12…" };
-  if(m==="train") return { label:"Andén", ph:"Ej: Andén 7…" };
-  if(m==="bus")   return { label:"Dársena / Andén", ph:"Ej: Dársena 12…" };
-  if(m==="boat")  return { label:"Muelle / Terminal", ph:"Ej: Muelle A…" };
-  return { label:"Detalle (opcional)", ph:"Ej: Parking, punto exacto…" };
+  if(m==="plane") return { label:"Terminal", ph:"Ej: T4" };
+  if(m==="train") return { label:"Andén", ph:"Ej: Andén 7" };
+  if(m==="bus")   return { label:"Dársena", ph:"Ej: Dársena 12" };
+  if(m==="boat")  return { label:"Muelle", ph:"Ej: Muelle A" };
+  return { label:"Detalle", ph:"Ej: Parking / punto" };
 }
 
 function legModeLabel(m){
@@ -3277,27 +3286,21 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 
   chips.forEach(c=>{
     c.addEventListener("click", ()=>{
-      currentMode = c.dataset.legMode;
+      const newMode = (c.dataset.legMode || c.getAttribute("data-leg-mode") || c.getAttribute("data-legMode") || "").trim();
+      if(!newMode) return;
+      currentMode = newMode;
       updateChipUI(currentMode);
       try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+      try{ legObj.mode = currentMode; }catch{}
       try{ __applyLegDetailText(); }catch{}
-      // persist mode + update placeholders (no global rerender)
-      try { legObj.mode = currentMode; } catch {}
-      // update place providers live
+      // update place providers live (if wired) without breaking focus/autocomplete
       try{ wrap.__applyPlaceProviders && wrap.__applyPlaceProviders(); }catch{}
-      // if user is in placeOut/placeIn, refresh menu immediately
       try{
         const a = document.activeElement;
         if(a && (a.getAttribute('data-sheet-leg')==='placeOut' || a.getAttribute('data-sheet-leg')==='placeIn')){
           a.dispatchEvent(new Event('input',{bubbles:true}));
         }
       }catch{}
-      try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
-      try { __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); } catch {}
-      try {
-        qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from");
-        qs("placeIn").placeholder  = __legPlacePlaceholder(currentMode, "to");
-      } catch {}
     });
   });
 
