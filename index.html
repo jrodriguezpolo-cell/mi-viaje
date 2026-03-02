@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V101A_AUTOCOMP_PERSIST</title>
+<title>V101B_AC_POSFIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V101A_AUTOCOMP_PERSIST</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V101B_AC_POSFIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1600,17 +1600,66 @@ const __AC_AIRPORT_LIST = (__AIRPORT_DB||[]).map(a=>({
 }));
 
 function __acEnsureMenu(input){
-  const p = input.parentElement;
-  if(!p) return null;
-  const cs = getComputedStyle(p);
-  if(cs.position === "static") p.style.position = "relative";
-  let menu = p.querySelector(":scope > .ac-menu");
-  if(menu) return menu;
-  menu = document.createElement("div");
-  menu.className = "ac-menu hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-auto max-h-52";
-  menu.setAttribute("role","listbox");
-  p.appendChild(menu);
+  // Use a single floating overlay menu anchored to the active input (robust on iOS with sheet scroll + keyboard)
+  if(!input) return null;
+  let menu = document.getElementById("__acOverlayMenu");
+  if(!menu){
+    menu = document.createElement("div");
+    menu.id = "__acOverlayMenu";
+    menu.className = "ac-menu hidden fixed bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-auto max-h-52";
+    menu.setAttribute("role","listbox");
+    menu.style.left = "0px";
+    menu.style.top = "0px";
+    menu.style.width = "0px";
+    document.body.appendChild(menu);
+  }
+  menu.__acInput = input;
   return menu;
+}
+
+function __acPosition(menu, input){
+  try{
+    if(!menu || menu.classList.contains("hidden")) return;
+    input = input || menu.__acInput;
+    if(!input) return;
+
+    const r = input.getBoundingClientRect();
+    // Keep width aligned with input visual width
+    const w = Math.max(180, Math.round(r.width));
+    const left = Math.round(r.left);
+    const gap = 6;
+
+    // Temporarily show to measure height if needed
+    const prevHidden = menu.classList.contains("hidden");
+    if(prevHidden) menu.classList.remove("hidden");
+
+    // Constrain height to max-h-52 (Tailwind) but we can read actual
+    const mh = menu.offsetHeight || 200;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 700;
+
+    // Prefer below; if not enough space (keyboard), open above
+    const belowTop = Math.round(r.bottom + gap);
+    const aboveTop = Math.round(r.top - gap - mh);
+
+    const spaceBelow = vh - (r.bottom + gap);
+    const spaceAbove = (r.top - gap);
+
+    let top = belowTop;
+    if(spaceBelow < Math.min(140, mh) && spaceAbove > 120){
+      top = Math.max(8, aboveTop);
+    }
+
+    // Clamp within viewport
+    top = Math.min(Math.max(8, top), Math.max(8, vh - 60));
+    const maxLeft = Math.max(8, (window.innerWidth || document.documentElement.clientWidth || 390) - w - 8);
+    const clLeft = Math.min(Math.max(8, left), maxLeft);
+
+    menu.style.left = clLeft + "px";
+    menu.style.top = top + "px";
+    menu.style.width = w + "px";
+
+    if(prevHidden) menu.classList.add("hidden");
+  }catch{}
 }
 
 function __acRender(menu, items, onPick){
@@ -1648,7 +1697,13 @@ function __attachAutocomplete(input, provider, onPick){
   const close = ()=> menu.classList.add("hidden");
   let blurT = null;
 
+  const reposition = ()=>{
+    if(menu.classList.contains("hidden")) return;
+    __acPosition(menu, input);
+  };
+
   const refresh = ()=>{
+    menu.__acInput = input;
     const q = __acNorm(input.value);
     if(!q){ close(); return; }
     const items = provider(q);
@@ -1657,6 +1712,8 @@ function __attachAutocomplete(input, provider, onPick){
       close();
       requestAnimationFrame(()=>{ try{ input.focus(); }catch{} });
     });
+    // Position after render (needs measured height)
+    requestAnimationFrame(reposition);
   };
 
   input.addEventListener("input", refresh);
@@ -1665,10 +1722,15 @@ function __attachAutocomplete(input, provider, onPick){
     clearTimeout(blurT);
     blurT = setTimeout(close, 120);
   });
-  // close on scroll inside sheet
+
+  // Reposition on sheet scroll / viewport changes (iOS keyboard)
   const sheet = document.getElementById("eventSheetBody");
-  if(sheet) sheet.addEventListener("scroll", close, { passive:true });
-  window.addEventListener("resize", close, { passive:true });
+  if(sheet) sheet.addEventListener("scroll", reposition, { passive:true });
+  window.addEventListener("resize", reposition, { passive:true });
+  if(window.visualViewport){
+    window.visualViewport.addEventListener("resize", reposition, { passive:true });
+    window.visualViewport.addEventListener("scroll", reposition, { passive:true });
+  }
 }
 
 function __cityProvider(q){
