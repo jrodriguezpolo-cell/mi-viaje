@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V110_TRANSPORT_AC_OVERLAY_ANCHOR_FIX</title>
+<title>V111_AC_EMPTY_QUERY_FIX_AND_CLEAR_X</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -584,6 +584,30 @@ div[data-acc-body="meals"],
 div[data-acc-body="acts"]{
   padding-top: 1rem !important;
 }
+
+/* Clear-X button for inputs (Event Sheet) */
+.clearx-wrap{ position:relative; }
+.clearx-btn{
+  position:absolute;
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  width:22px;
+  height:22px;
+  border-radius:9999px;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  line-height:1;
+  background: rgb(241 245 249);
+  color: rgb(51 65 85);
+  border: 1px solid rgb(226 232 240);
+  z-index: 2;
+}
+.clearx-wrap.has-value .clearx-btn{ display:flex; }
+.clearx-pad{ padding-right: 40px !important; }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -594,7 +618,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V110_TRANSPORT_AC_OVERLAY_ANCHOR_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V111_AC_EMPTY_QUERY_FIX_AND_CLEAR_X</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1787,6 +1811,8 @@ function __portProvider(q){ return __simpleListProvider(__PORTS, q); }
 
 // Premium airport provider for placeOut/placeIn (keeps IATA recognition)
 function __airportPlaceProvider(q){
+  if(!q) return [];
+
   const items = __airportProvider(String(q||"").toLowerCase()) || [];
   return items.slice(0,10).map(a=>({
     kind:"plane",
@@ -1800,6 +1826,8 @@ function __airportPlaceProvider(q){
 }
 
 function __airportProvider(q){
+  if(!q) return [];
+
   const out = [];
   const isIata = /^[a-z]{1,3}$/.test(q);
   if(isIata){
@@ -1865,7 +1893,7 @@ const __PORTS = [
 function __simpleListProvider(list, q){
   const qq = __norm(q);
   if(!qq){
-    return list.slice(0,10).map(x=>({ label:x.label, value:x.label, kind:"place" }));
+    return [];
   }
   const out = [];
   // prefix first
@@ -1916,6 +1944,74 @@ function __dispatchInputChange(el){
   try{ el.dispatchEvent(new Event("input",{bubbles:true})); }catch{}
   try{ el.dispatchEvent(new Event("change",{bubbles:true})); }catch{}
 }
+
+// Install Clear-X buttons inside a root (Event Sheet). Safe: only wraps text-like inputs/textarea.
+function __installClearX(root){
+  try{
+    if(!root) return;
+    const els = Array.from(root.querySelectorAll("input, textarea"));
+    for(const el of els){
+      const tag = el.tagName.toLowerCase();
+      const type = (tag==="input") ? String(el.getAttribute("type")||"text").toLowerCase() : "textarea";
+
+      // Skip date/time and other non-text inputs
+      if(tag==="input" && ["date","time","datetime-local","month","week","color","range","file","checkbox","radio","hidden"].includes(type)) continue;
+
+      // Avoid double-install
+      if(el.__clearXInstalled) continue;
+      el.__clearXInstalled = true;
+
+      // Ensure a wrapper
+      let wrap = el.closest(".clearx-wrap");
+      if(!wrap){
+        wrap = document.createElement("div");
+        wrap.className = "clearx-wrap";
+        // insert wrapper in DOM around el
+        const parent = el.parentNode;
+        parent.insertBefore(wrap, el);
+        wrap.appendChild(el);
+      }
+
+      // Add padding so text doesn't sit under X
+      el.classList.add("clearx-pad");
+
+      // Create button
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "clearx-btn";
+      btn.setAttribute("aria-label","Borrar");
+      btn.textContent = "×";
+
+      // pointerdown to avoid blur on iOS
+      btn.addEventListener("pointerdown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
+      btn.addEventListener("mousedown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
+      btn.addEventListener("click",(e)=>{
+        e.preventDefault(); e.stopPropagation();
+        el.value = "";
+        try{ el.dispatchEvent(new Event("input",{bubbles:true})); }catch{}
+        try{ el.dispatchEvent(new Event("change",{bubbles:true})); }catch{}
+        try{ el.focus({preventScroll:true}); }catch{ try{ el.focus(); }catch{} }
+        update();
+      });
+
+      wrap.appendChild(btn);
+
+      const update = ()=>{
+        if(String(el.value||"").length){
+          wrap.classList.add("has-value");
+        } else {
+          wrap.classList.remove("has-value");
+        }
+      };
+
+      el.addEventListener("input", update, {passive:true});
+      el.addEventListener("change", update, {passive:true});
+      update();
+    }
+  }catch{}
+}
+
+
 
 // WIRING per sheet kind (safe, no side effects outside filling inputs)
 function __wireLegAutocomplete(wrap, getModeFn){
