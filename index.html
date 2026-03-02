@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V132_FIX_CLOSEEVENTSHEET_SYNTAX_AND_UNSAVED_GUARD</title>
+<title>V133_FIX_CLOSEEVENTSHEET_FINAL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -665,7 +665,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V132_FIX_CLOSEEVENTSHEET_SYNTAX_AND_UNSAVED_GUARD</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V133_FIX_CLOSEEVENTSHEET_FINAL</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4299,82 +4299,7 @@ function renderLegModeChips(container, leg, onSelect){
 
 }
 
-function closeEventSheet({ silent } = {}) {
-
-  try{
-    const body = document.getElementById("eventSheetBody");
-    const overlay = document.getElementById("eventSheetOverlay") || body;
-    const mode = overlay?.getAttribute("data-sheet-mode") || body?.getAttribute("data-sheet-mode") || "";
-    if(mode === "edit" && body && body.__esDirty){
-      const ok = confirm("Tienes cambios sin guardar. ¿Quieres salir sin guardar?");
-      if(!ok) return;
-    }
-  }catch{}
-  silent 
-} = {}) {
-  const overlay = document.getElementById("eventSheetOverlay");
-  const body = document.getElementById("eventSheetBody");
-  const mainScroll = document.getElementById("mainScroll");
-  if (overlay) overlay.classList.add("hidden");
-  document.body.classList.remove("sheet-open");
-  document.body.classList.remove("eventsheet-view");
-
-  // Flush deferred renders (avoid breaking move-node while sheet open)
-  try {
-    if (__dirtyTimeline && typeof renderTimeline === "function") renderTimeline();
-  } catch {}
-  try {
-    if (__dirtySummary && typeof calcSummary === "function") calcSummary();
-  } catch {}
-  __dirtyTimeline = false;
-  __dirtySummary = false;
-
-
-  // Restore moved node if any
-  if (__eventSheetCtx && __eventSheetCtx.node && __eventSheetCtx.parent) {
-    try {
-      const { node, parent, next } = __eventSheetCtx;
-      if (next && next.parentNode === parent) parent.insertBefore(node, next);
-      else parent.appendChild(node);
-    } catch {}
-  }
-
-  if (body) body.innerHTML = "";
-  const ctx = __eventSheetCtx;
-
-  try { if (ctx && ctx.node) ctx.node.classList.remove("sheet-leg-editor"); } catch {}
-  __eventSheetCtx = null;
-
-  // Re-render to reflect any edits
-  try {
-    if (typeof renderTimeline === "function") renderTimeline();
-    if (ctx?.kind === "leg" && typeof renderLegs === "function") renderLegs();
-    if (ctx?.kind === "stay" && typeof renderStays === "function") renderStays();
-    if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
-  } catch {}
-
-  // Restore view context (only if changed while sheet open)
-  try {
-    const src = ctx && ctx.sourceView ? String(ctx.sourceView) : "";
-    if (src && typeof setView === "function" && (typeof activeView !== "undefined") && String(activeView) !== src) {
-      setView(src);
-    }
-  } catch {}
-
-// Restore scroll position (no aggressive jumps)
-  try {
-    if (mainScroll && typeof ctx?.prevScrollTop === "number") {
-      const y = ctx.prevScrollTop;
-      try { mainScroll.scrollTop = y; } catch {}
-      try { requestAnimationFrame(() => { try { mainScroll.scrollTop = y; } catch {} }); } catch {}
-    }
-  } catch {}
-
-  if (!silent) {
-    try { /* noop */ } catch {}
-  }
-}
-
+function closeEventSheet({ silent }
 function __initEventSheetBindings(){
   const overlay = document.getElementById("eventSheetOverlay");
   const closeBtn = document.getElementById("eventSheetClose");
