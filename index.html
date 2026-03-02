@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V104_TRANSPORT_PLACES_SAFE (hotfix)</title>
+<title>V105_TRANSPORT_PLACES_PROVIDERS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V104_TRANSPORT_PLACES_SAFE (hotfix)</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V105_TRANSPORT_PLACES_PROVIDERS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1691,8 +1691,15 @@ function __acRender(menu, items, onPick){
 }
 
 function __attachAutocomplete(input, provider, onPick){
-  if(!input || input.__acWired) return;
+  if(!input) return;
+
+  // Allow updating provider/onPick without rewiring listeners
+  input.__acProvider = provider;
+  input.__acOnPick = onPick;
+
+  if(input.__acWired) return;
   input.__acWired = true;
+
   const menu = __acEnsureMenu(input);
   if(!menu) return;
 
@@ -1702,46 +1709,133 @@ function __attachAutocomplete(input, provider, onPick){
   menu.addEventListener("click",(e)=>{ e.stopPropagation(); });
 
   const close = ()=> menu.classList.add("hidden");
-  let blurT = null;
-
-  const reposition = ()=>{
-    if(menu.classList.contains("hidden")) return;
-    __acPosition(menu, input);
-  };
 
   const refresh = ()=>{
-    menu.__acInput = input;
-    const q = __acNorm(input.value);
-    if(!q){ close(); return; }
-    const items = provider(q);
+    const q = String(input.value||"").trim();
+    const prov = input.__acProvider;
+    const items = (prov ? (prov(q.toLowerCase())||[]) : []);
     __acRender(menu, items, (it)=>{
-      onPick(it);
+      const pick = input.__acOnPick;
+      try{ pick && pick(it); }catch{}
       close();
-      requestAnimationFrame(()=>{ try{ input.focus(); }catch{} });
+      // keep focus for iPhone sheet
+      try{ input.focus({preventScroll:true}); }catch{ try{ input.focus(); }catch{} }
     });
-    // Position after render (needs measured height)
-    requestAnimationFrame(reposition);
+    __acPosition(menu, input);
   };
 
   input.addEventListener("input", refresh);
   input.addEventListener("focus", refresh);
+
+  let blurT=null;
   input.addEventListener("blur", ()=>{
     clearTimeout(blurT);
     blurT = setTimeout(close, 120);
   });
 
-  // Reposition on sheet scroll / viewport changes (iOS keyboard)
+  // Position updates
   const sheet = document.getElementById("eventSheetBody");
-  if(sheet) sheet.addEventListener("scroll", reposition, { passive:true });
-  window.addEventListener("resize", reposition, { passive:true });
+  if(sheet) sheet.addEventListener("scroll", ()=>__acPosition(menu, input), {passive:true});
+  window.addEventListener("resize", ()=>__acPosition(menu, input), {passive:true});
   if(window.visualViewport){
-    window.visualViewport.addEventListener("resize", reposition, { passive:true });
-    window.visualViewport.addEventListener("scroll", reposition, { passive:true });
+    window.visualViewport.addEventListener("resize", ()=>__acPosition(menu, input), {passive:true});
+    window.visualViewport.addEventListener("scroll", ()=>__acPosition(menu, input), {passive:true});
   }
 }
 
 function __cityProvider(q){
   const out = [];
+
+
+/* =========================
+   Transport place providers (ONLY for placeOut/placeIn)
+   - Does NOT touch city providers.
+========================= */
+
+// Mini DBs (local, small, stable)
+const __TRAIN_STATIONS = [
+  "Madrid-Puerta de Atocha",
+  "Madrid-Chamartín",
+  "Barcelona Sants",
+  "Sevilla Santa Justa",
+  "Valencia Joaquín Sorolla",
+  "Bilbao-Abando",
+  "Málaga María Zambrano",
+  "Zaragoza-Delicias",
+  "Alicante Terminal",
+  "Córdoba Central"
+].map(s=>({ label:s, norm: __norm(s) }));
+
+const __BUS_TERMINALS = [
+  "Estación Sur de Autobuses (Madrid)",
+  "Intercambiador Av. de América (Madrid)",
+  "Barcelona Nord",
+  "Sevilla Plaza de Armas",
+  "Valencia Estació d’Autobusos",
+  "Málaga Estación de Autobuses",
+  "Bilbao Estación de Autobuses",
+  "San Sebastián Estación de Autobuses"
+].map(s=>({ label:s, norm: __norm(s) }));
+
+const __PORTS = [
+  "Puerto de Barcelona",
+  "Puerto de Valencia",
+  "Puerto de Palma",
+  "Puerto de Ibiza",
+  "Puerto de Málaga",
+  "Puerto de Cádiz",
+  "Puerto de Las Palmas",
+  "Puerto de Santa Cruz de Tenerife"
+].map(s=>({ label:s, norm: __norm(s) }));
+
+function __simpleListProvider(list, q){
+  const qq = __norm(q);
+  if(!qq){
+    return list.slice(0,10).map(x=>({ label:x.label, value:x.label, kind:"place" }));
+  }
+  const out = [];
+  // prefix first
+  for(const x of list){
+    if(out.length>=10) break;
+    if(x.norm.startsWith(qq)) out.push({ label:x.label, value:x.label, kind:"place" });
+  }
+  // then contains
+  if(out.length<10){
+    for(const x of list){
+      if(out.length>=10) break;
+      if(!x.norm.startsWith(qq) && x.norm.includes(qq)) out.push({ label:x.label, value:x.label, kind:"place" });
+    }
+  }
+  return out.slice(0,10);
+}
+
+function __trainProvider(q){ return __simpleListProvider(__TRAIN_STATIONS, q); }
+function __busProvider(q){ return __simpleListProvider(__BUS_TERMINALS, q); }
+function __portProvider(q){ return __simpleListProvider(__PORTS, q); }
+
+// Premium airport provider for placeOut/placeIn (keeps IATA recognition)
+function __airportPlaceProvider(q){
+  const items = __airportProvider(String(q||"").toLowerCase()) || [];
+  return items.slice(0,10).map(a=>({
+    kind:"plane",
+    iata: a.iata,
+    tz: a.tz,
+    city: a.city,
+    name: a.name,
+    label: `${a.iata} — ${a.name} (${a.city})`,
+    value: `${a.iata} · ${a.name}`
+  }));
+}
+
+function __providerByMode(mode){
+  const m = String(mode||"plane").toLowerCase();
+  if(m==="plane") return __airportPlaceProvider;
+  if(m==="train") return __trainProvider;
+  if(m==="bus") return __busProvider;
+  if(m==="boat" || m==="ferry") return __portProvider;
+  // car: no menu
+  return (q)=>[];
+}
   // prefer prefix, then contains
   for(const c of __AC_CITY_LIST){
     if(c.norm.startsWith(q)) out.push(c);
@@ -1782,13 +1876,14 @@ function __dispatchInputChange(el){
 }
 
 // WIRING per sheet kind (safe, no side effects outside filling inputs)
-function __wireLegAutocomplete(wrap){
+function __wireLegAutocomplete(wrap, getModeFn){
   if(!wrap) return;
   const fromCity = wrap.querySelector('[data-sheet-leg="from"]');
   const toCity   = wrap.querySelector('[data-sheet-leg="to"]');
   const outPlace = wrap.querySelector('[data-sheet-leg="placeOut"]');
   const inPlace  = wrap.querySelector('[data-sheet-leg="placeIn"]');
 
+  // Cities: INTACT (do not change provider)
   __attachAutocomplete(fromCity, __cityProvider, (it)=>{
     fromCity.value = it.label; __dispatchInputChange(fromCity);
   });
@@ -1796,19 +1891,48 @@ function __wireLegAutocomplete(wrap){
     toCity.value = it.label; __dispatchInputChange(toCity);
   });
 
-  __attachAutocomplete(outPlace, __airportProvider, (it)=>{
-    outPlace.value = it.iata; __dispatchInputChange(outPlace);
-    // bonus: if city empty, fill it
-    if(fromCity && !String(fromCity.value||"").trim()){
-      fromCity.value = it.city; __dispatchInputChange(fromCity);
-    }
-  });
-  __attachAutocomplete(inPlace, __airportProvider, (it)=>{
-    inPlace.value = it.iata; __dispatchInputChange(inPlace);
-    if(toCity && !String(toCity.value||"").trim()){
-      toCity.value = it.city; __dispatchInputChange(toCity);
-    }
-  });
+  const modeKey = ()=> {
+    try{ return (getModeFn && getModeFn()) ? getModeFn() : (wrap.dataset.legModeCurrent || "plane"); }catch{}
+    return "plane";
+  };
+
+  const apply = ()=>{
+    const prov = __providerByMode(modeKey());
+    // update provider live (no rewire)
+    __attachAutocomplete(outPlace, prov, (it)=>{
+      if(!it) return;
+      outPlace.value = (it.value || it.label || "");
+      __dispatchInputChange(outPlace);
+      // optional safe: fill city if empty
+      if(fromCity && it.city && !String(fromCity.value||"").trim()){
+        fromCity.value = it.city; __dispatchInputChange(fromCity);
+      }
+      // optional safe tz (only if empty; don't break anything)
+      if(it.kind==="plane" && it.tz){
+        const tzFrom = wrap.querySelector('[data-sheet-leg="tzFrom"]');
+        if(tzFrom && !String(tzFrom.value||"").trim()){
+          tzFrom.value = it.tz; __dispatchInputChange(tzFrom);
+        }
+      }
+    });
+    __attachAutocomplete(inPlace, prov, (it)=>{
+      if(!it) return;
+      inPlace.value = (it.value || it.label || "");
+      __dispatchInputChange(inPlace);
+      if(toCity && it.city && !String(toCity.value||"").trim()){
+        toCity.value = it.city; __dispatchInputChange(toCity);
+      }
+      if(it.kind==="plane" && it.tz){
+        const tzTo = wrap.querySelector('[data-sheet-leg="tzTo"]');
+        if(tzTo && !String(tzTo.value||"").trim()){
+          tzTo.value = it.tz; __dispatchInputChange(tzTo);
+        }
+      }
+    });
+  };
+
+  apply();
+  wrap.__applyPlaceProviders = apply;
 }
 
 function __wireStayAutocomplete(wrap){
@@ -2650,7 +2774,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("to").value = v(legObj.to);
   qs("placeOut").value = v(legObj.placeOut || "");
   qs("placeIn").value = v(legObj.placeIn || "");
-  try{ __wireLegAutocomplete(wrap); }catch{}
+  try{ __wireLegAutocomplete(wrap, ()=>currentMode); }catch{}
   qs("dateOut").value = v(legObj.date || "");
   qs("timeOut").value = v(legObj.time || "");
   qs("dateIn").value = v(legObj.arriveDate || "");
@@ -2730,6 +2854,8 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 
   let currentMode = legModeDefault(legObj.mode);
   updateChipUI(currentMode);
+  try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+
 
   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
 
@@ -2738,8 +2864,18 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     c.addEventListener("click", ()=>{
       currentMode = c.dataset.legMode;
       updateChipUI(currentMode);
+      try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
       // persist mode + update placeholders (no global rerender)
       try { legObj.mode = currentMode; } catch {}
+      // update place providers live
+      try{ wrap.__applyPlaceProviders && wrap.__applyPlaceProviders(); }catch{}
+      // if user is in placeOut/placeIn, refresh menu immediately
+      try{
+        const a = document.activeElement;
+        if(a && (a.getAttribute('data-sheet-leg')==='placeOut' || a.getAttribute('data-sheet-leg')==='placeIn')){
+          a.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+      }catch{}
       try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
       try { __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); } catch {}
       try {
