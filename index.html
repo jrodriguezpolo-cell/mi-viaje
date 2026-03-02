@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V134_ROLLBACK_TO_V130_STABLE</title>
+<title>V135_UNSAVED_CHANGES_GUARD_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -665,7 +665,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V134_ROLLBACK_TO_V130_STABLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V135_UNSAVED_CHANGES_GUARD_SAFE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2302,6 +2302,69 @@ function __installClearX(root){
     }
   }catch{}
 }
+
+function __sheetSnapshot(){
+  try{
+    const body = document.getElementById("eventSheetBody");
+    if(!body) return "";
+    const els = Array.from(body.querySelectorAll("input, textarea, select"));
+    const pairs = [];
+    for(const el of els){
+      const tag = el.tagName.toLowerCase();
+      const type = (tag==="input") ? String(el.getAttribute("type")||"text").toLowerCase() : "";
+      if(tag==="input" && ["button","submit","reset","hidden"].includes(type)) continue;
+
+      const key =
+        (el.getAttribute("data-sheet-leg") ? ("leg:" + el.getAttribute("data-sheet-leg")) : "") ||
+        (el.getAttribute("data-sheet-stay") ? ("stay:" + el.getAttribute("data-sheet-stay")) : "") ||
+        (el.getAttribute("data-sheet-act") ? ("act:" + el.getAttribute("data-sheet-act")) : "") ||
+        el.getAttribute("name") ||
+        el.id ||
+        el.getAttribute("placeholder") ||
+        ("el@" + pairs.length);
+
+      const val = String(el.value ?? "");
+      pairs.push([key, val]);
+    }
+    pairs.sort((a,b)=> a[0].localeCompare(b[0]));
+    return pairs.map(([k,v])=> k + "=" + v).join("|");
+  }catch{
+    return "";
+  }
+}
+
+function __sheetSetSnapshot(){
+  try{
+    const body = document.getElementById("eventSheetBody");
+    if(!body) return;
+    body.__esSnapshot = __sheetSnapshot();
+    body.__esDirty = false;
+  }catch{}
+}
+
+function __sheetUpdateDirty(){
+  try{
+    const body = document.getElementById("eventSheetBody");
+    if(!body) return;
+    const cur = __sheetSnapshot();
+    body.__esDirty = (!!body.__esSnapshot && cur !== body.__esSnapshot);
+  }catch{}
+}
+
+function __confirmCloseIfDirty(){
+  try{
+    const body = document.getElementById("eventSheetBody");
+    const overlay = document.getElementById("eventSheetOverlay") || body;
+    const mode = overlay?.getAttribute("data-sheet-mode") || body?.getAttribute("data-sheet-mode") || "";
+    if(mode !== "edit") return true;
+    if(body && body.__esDirty){
+      return confirm("Tienes cambios sin guardar. ¿Quieres salir sin guardar?");
+    }
+  }catch{}
+  return true;
+}
+
+
 
 // Build a destination string, optionally appending city if not already included (for better Maps matching)
 function __mapsDestWithCity(value, city){
@@ -4098,6 +4161,21 @@ function renderLegModeChips(container, leg, onSelect){
     document.body.classList.add("sheet-open");
     requestAnimationFrame(()=>{ try{ __installClearX(document.getElementById("eventSheetBody")); }catch{} });
     try { applyEventSheetMode(); } catch {}
+    // Unsaved-changes guard: snapshot + dirty tracking (edit only)
+    try{
+      const body = document.getElementById("eventSheetBody");
+      const overlay = document.getElementById("eventSheetOverlay") || body;
+      const mode = overlay?.getAttribute("data-sheet-mode") || body?.getAttribute("data-sheet-mode") || "";
+      if(mode === "edit" && body){
+        __sheetSetSnapshot();
+        if(!body.__esDirtyBound){
+          body.addEventListener("input", __sheetUpdateDirty, true);
+          body.addEventListener("change", __sheetUpdateDirty, true);
+          body.__esDirtyBound = true;
+        }
+      }
+    }catch{}
+
     // In view mode we avoid focusing fields automatically
     try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
     return;
@@ -4311,7 +4389,7 @@ function __initEventSheetBindings(){
   const overlay = document.getElementById("eventSheetOverlay");
   const closeBtn = document.getElementById("eventSheetClose");
   const sheet = document.getElementById("eventSheet");
-  if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); closeEventSheet(); });
+  if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); if(!__confirmCloseIfDirty()) return; closeEventSheet(); });
 
 
   const editBtn = document.getElementById("eventSheetEdit");
@@ -4376,10 +4454,12 @@ function __initEventSheetBindings(){
   if (overlay) overlay.addEventListener("click", (e) => {
     // click outside sheet closes
     if (sheet && sheet.contains(e.target)) return;
+    if(!__confirmCloseIfDirty()) return;
     closeEventSheet();
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay?.classList.contains("hidden")) closeEventSheet();
+    if (e.key === "Escape" && !overlay?.classList.contains("hidden")) if(!__confirmCloseIfDirty()) return;
+    closeEventSheet();
   });
 }
 try{
@@ -8083,6 +8163,7 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       try { if (typeof saveState === "function") saveState(); } catch {}
+      try{ __sheetSetSnapshot(); }catch{}
 
       // Close sheet first (keeps UI consistent)
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
