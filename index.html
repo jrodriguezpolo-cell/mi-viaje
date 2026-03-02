@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V115_BASELINE_STABLE</title>
+<title>V116_MAPS_PINS_FROM_MY_LOCATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -606,6 +606,27 @@ div[data-acc-body="acts"]{
   z-index: 5;
 }
 .clearx-wrap.has-value .clearx-btn{ display:flex; }
+
+.pinBtn{
+  position:absolute;
+  right:38px; /* leave room for clear-X */
+  top:50%;
+  transform:translateY(-50%);
+  z-index:6;
+  width:24px;
+  height:24px;
+  border-radius:9999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgb(241 245 249);
+  border: 1px solid rgb(226 232 240);
+  font-size:16px;
+  line-height:1;
+}
+.pinPad{ padding-right: 72px !important; }
+
+
 .clearx-pad{ padding-right: 40px !important; }
 
 </style>
@@ -618,7 +639,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V115_BASELINE_STABLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V116_MAPS_PINS_FROM_MY_LOCATION</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2082,6 +2103,84 @@ function __installClearX(root){
   }catch{}
 }
 
+// Build a destination string, optionally appending city if not already included (for better Maps matching)
+function __mapsDestWithCity(value, city){
+  const v = String(value||"").trim();
+  if(!v) return "";
+  const c = String(city||"").trim();
+  if(!c) return v;
+  const vn = __acNorm(v);
+  const cn = __acNorm(c);
+  if(!cn) return v;
+  if(vn.includes(cn)) return v;
+  return (v + " " + c).trim();
+}
+
+// Open Google Maps directions FROM "my location" TO destination.
+function __openDirectionsTo(destination, mode){
+  const dest = String(destination||"").trim();
+  if(!dest){ alert("Rellena este campo primero"); return; }
+
+  const m = String(mode||"").toLowerCase();
+  const travel = (m==="car" || m==="driving") ? "driving"
+               : (m==="walk" || m==="walking") ? "walking"
+               : (m==="bike" || m==="bicycling") ? "bicycling"
+               : "transit";
+
+  const appUrl = "comgooglemaps://?daddr=" + encodeURIComponent(dest)
+               + "&directionsmode=" + encodeURIComponent(travel);
+
+  const webUrl = "https://www.google.com/maps/dir/?api=1"
+               + "&destination=" + encodeURIComponent(dest)
+               + "&travelmode=" + encodeURIComponent(travel);
+
+  try{ window.location.href = appUrl; }catch{}
+  setTimeout(()=>{
+    try{ window.open(webUrl, "_blank", "noopener,noreferrer"); }catch{}
+  }, 700);
+}
+
+// Install a 📍 pin button for an input (coexists with Clear-X)
+function __installPinBtn(input, getDestFn, getModeFn){
+  try{
+    if(!input || input.__pinInstalled) return;
+    input.__pinInstalled = true;
+
+    let wrap = input.closest(".clearx-wrap");
+    if(!wrap){
+      wrap = document.createElement("div");
+      wrap.className = "clearx-wrap";
+      const parent = input.parentNode;
+      parent.insertBefore(wrap, input);
+      wrap.appendChild(input);
+    }
+    wrap.style.position = "relative";
+
+    input.classList.add("pinPad");
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pinBtn";
+    btn.title = "Cómo llegar";
+    btn.textContent = "📍";
+
+    btn.addEventListener("pointerdown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
+    btn.addEventListener("mousedown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
+    btn.addEventListener("click",(e)=>{
+      e.preventDefault(); e.stopPropagation();
+      const dest = (getDestFn ? getDestFn() : String(input.value||"")).trim();
+      if(!dest){ alert("Rellena este campo primero"); return; }
+      const mode = (getModeFn ? getModeFn() : "");
+      __openDirectionsTo(dest, mode);
+      try{ input.focus({preventScroll:true}); }catch{ try{ input.focus(); }catch{} }
+    });
+
+    wrap.appendChild(btn);
+  }catch{}
+}
+
+
+
 
 
 // WIRING per sheet kind (safe, no side effects outside filling inputs)
@@ -3047,6 +3146,18 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   updateChipUI(currentMode);
   try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
 
+  
+  // Maps pins (Transport): placeOut/placeIn → directions from my location
+  try{
+    const _from = qs("from");
+    const _to = qs("to");
+    const _po = qs("placeOut");
+    const _pi = qs("placeIn");
+    const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
+    __installPinBtn(_po, ()=>__mapsDestWithCity(_po.value, _from && _from.value), _modeFn);
+    __installPinBtn(_pi, ()=>__mapsDestWithCity(_pi.value, _to && _to.value), _modeFn);
+  }catch{}
+
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
   qs("dateOut").value = v(legObj.date || "");
   qs("timeOut").value = v(legObj.time || "");
@@ -3319,6 +3430,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   qs("city").value = v(stayObj.city);
   try{ __wireStayAutocomplete(wrap); }catch{}
   qs("name").value = v(stayObj.name);
+  try{ const _n=qs("name"); const _c=qs("city"); __installPinBtn(_n, ()=>__mapsDestWithCity(_n.value, _c && _c.value), ()=>"transit"); }catch{}
   qs("date").value = v(stayObj.date || "");
   qs("time").value = v(stayObj.time || "");
   qs("nights").value = v(stayObj.nights ?? 1);
@@ -3484,6 +3596,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   const v = (x) => (x == null ? "" : String(x));
 
   qs("title").value = v(actObj.title);
+  try{ const _t=qs("title"); const _c=qs("city"); __installPinBtn(_t, ()=>__mapsDestWithCity(_t.value, _c && _c.value), ()=>"transit"); }catch{}
   qs("city").value = v(actObj.city);
   try{ __wireActAutocomplete(wrap); }catch{}
   qs("date").value = v(actObj.date || "");
