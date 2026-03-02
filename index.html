@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100W_LEGS_TZ_SUMDUR</title>
+<title>V100Z_AUTOCOMP_WIRED</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100Y_DATA_EXPAND</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100Z_AUTOCOMP_WIRED</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1568,6 +1568,185 @@ function __resolveCityTimeZone(city){
   return hit ? __CITY_TZ_MAP[hit] : "";
 }
 
+
+/* === Local Autocomplete (cities + airports) ===
+   Deterministic, no external APIs. Mobile-first dropdown.
+*/
+function __acNorm(s){
+  return String(s||"").trim().toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function __acTitleCase(s){
+  const t = String(s||"").trim();
+  if(!t) return "";
+  // keep common particles
+  return t.split(/\s+/).map((w,i)=>{
+    const lw=w.toLowerCase();
+    if(i>0 && ["de","del","la","las","los","y","da","do","di"].includes(lw)) return lw;
+    return lw.charAt(0).toUpperCase()+lw.slice(1);
+  }).join(" ");
+}
+const __AC_CITY_LIST = Object.keys(__CITY_TZ_MAP).map(k=>({
+  key:k,
+  norm:__acNorm(k),
+  label:__acTitleCase(k)
+}));
+const __AC_AIRPORT_LIST = (__AIRPORT_DB||[]).map(a=>({
+  ...a,
+  normIATA: __acNorm(a.iata),
+  normName: __acNorm(a.name),
+  normCity: __acNorm(a.city),
+  label: `${a.iata} · ${a.name} (${a.city})`
+}));
+
+function __acEnsureMenu(input){
+  const p = input.parentElement;
+  if(!p) return null;
+  const cs = getComputedStyle(p);
+  if(cs.position === "static") p.style.position = "relative";
+  let menu = p.querySelector(":scope > .ac-menu");
+  if(menu) return menu;
+  menu = document.createElement("div");
+  menu.className = "ac-menu hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-auto max-h-52";
+  menu.setAttribute("role","listbox");
+  p.appendChild(menu);
+  return menu;
+}
+
+function __acRender(menu, items, onPick){
+  menu.innerHTML = "";
+  if(!items.length){
+    menu.classList.add("hidden");
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  items.forEach((it, idx)=>{
+    const b = document.createElement("button");
+    b.type="button";
+    b.className = "w-full text-left px-3 py-2 text-sm hover:bg-slate-50 active:bg-slate-100";
+    b.textContent = it.label;
+    b.addEventListener("mousedown", (e)=>{ e.preventDefault(); }); // keep focus
+    b.addEventListener("click", ()=> onPick(it));
+    frag.appendChild(b);
+  });
+  menu.appendChild(frag);
+  menu.classList.remove("hidden");
+}
+
+function __attachAutocomplete(input, provider, onPick){
+  if(!input || input.__acWired) return;
+  input.__acWired = true;
+  const menu = __acEnsureMenu(input);
+  if(!menu) return;
+
+  const close = ()=> menu.classList.add("hidden");
+  let blurT = null;
+
+  const refresh = ()=>{
+    const q = __acNorm(input.value);
+    if(!q){ close(); return; }
+    const items = provider(q);
+    __acRender(menu, items, (it)=>{
+      onPick(it);
+      close();
+    });
+  };
+
+  input.addEventListener("input", refresh);
+  input.addEventListener("focus", refresh);
+  input.addEventListener("blur", ()=>{
+    clearTimeout(blurT);
+    blurT = setTimeout(close, 120);
+  });
+  // close on scroll inside sheet
+  const sheet = document.getElementById("eventSheetBody");
+  if(sheet) sheet.addEventListener("scroll", close, { passive:true });
+  window.addEventListener("resize", close, { passive:true });
+}
+
+function __cityProvider(q){
+  const out = [];
+  // prefer prefix, then contains
+  for(const c of __AC_CITY_LIST){
+    if(c.norm.startsWith(q)) out.push(c);
+    if(out.length>=8) break;
+  }
+  if(out.length<8){
+    for(const c of __AC_CITY_LIST){
+      if(out.includes(c)) continue;
+      if(c.norm.includes(q)) out.push(c);
+      if(out.length>=8) break;
+    }
+  }
+  return out;
+}
+
+function __airportProvider(q){
+  const out = [];
+  const isIata = /^[a-z]{1,3}$/.test(q);
+  if(isIata){
+    for(const a of __AC_AIRPORT_LIST){
+      if(a.normIATA.startsWith(q)) out.push(a);
+      if(out.length>=10) break;
+    }
+  }
+  if(out.length<10){
+    for(const a of __AC_AIRPORT_LIST){
+      if(out.includes(a)) continue;
+      if(a.normName.includes(q) || a.normCity.includes(q) || a.normIATA===q) out.push(a);
+      if(out.length>=10) break;
+    }
+  }
+  return out;
+}
+
+function __dispatchInputChange(el){
+  try{ el.dispatchEvent(new Event("input",{bubbles:true})); }catch{}
+  try{ el.dispatchEvent(new Event("change",{bubbles:true})); }catch{}
+}
+
+// WIRING per sheet kind (safe, no side effects outside filling inputs)
+function __wireLegAutocomplete(wrap){
+  if(!wrap) return;
+  const fromCity = wrap.querySelector('[data-sheet-leg="from"]');
+  const toCity   = wrap.querySelector('[data-sheet-leg="to"]');
+  const outPlace = wrap.querySelector('[data-sheet-leg="placeOut"]');
+  const inPlace  = wrap.querySelector('[data-sheet-leg="placeIn"]');
+
+  __attachAutocomplete(fromCity, __cityProvider, (it)=>{
+    fromCity.value = it.label; __dispatchInputChange(fromCity);
+  });
+  __attachAutocomplete(toCity, __cityProvider, (it)=>{
+    toCity.value = it.label; __dispatchInputChange(toCity);
+  });
+
+  __attachAutocomplete(outPlace, __airportProvider, (it)=>{
+    outPlace.value = it.iata; __dispatchInputChange(outPlace);
+    // bonus: if city empty, fill it
+    if(fromCity && !String(fromCity.value||"").trim()){
+      fromCity.value = it.city; __dispatchInputChange(fromCity);
+    }
+  });
+  __attachAutocomplete(inPlace, __airportProvider, (it)=>{
+    inPlace.value = it.iata; __dispatchInputChange(inPlace);
+    if(toCity && !String(toCity.value||"").trim()){
+      toCity.value = it.city; __dispatchInputChange(toCity);
+    }
+  });
+}
+
+function __wireStayAutocomplete(wrap){
+  if(!wrap) return;
+  const city = wrap.querySelector('[data-sheet-stay="city"]');
+  __attachAutocomplete(city, __cityProvider, (it)=>{ city.value = it.label; __dispatchInputChange(city); });
+}
+function __wireActAutocomplete(wrap){
+  if(!wrap) return;
+  const city = wrap.querySelector('[data-sheet-act="city"]');
+  __attachAutocomplete(city, __cityProvider, (it)=>{ city.value = it.label; __dispatchInputChange(city); });
+}
+
+
 function __tzOffsetMinutes(timeZone, date){
   try{
     const dtf = new Intl.DateTimeFormat("en-US", {
@@ -2395,6 +2574,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("to").value = v(legObj.to);
   qs("placeOut").value = v(legObj.placeOut || "");
   qs("placeIn").value = v(legObj.placeIn || "");
+  try{ __wireLegAutocomplete(wrap); }catch{}
   qs("dateOut").value = v(legObj.date || "");
   qs("timeOut").value = v(legObj.time || "");
   qs("dateIn").value = v(legObj.arriveDate || "");
@@ -2674,6 +2854,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   // Init values
   qs("city").value = v(stayObj.city);
+  try{ __wireStayAutocomplete(wrap); }catch{}
   qs("name").value = v(stayObj.name);
   qs("date").value = v(stayObj.date || "");
   qs("time").value = v(stayObj.time || "");
@@ -2841,6 +3022,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
 
   qs("title").value = v(actObj.title);
   qs("city").value = v(actObj.city);
+  try{ __wireActAutocomplete(wrap); }catch{}
   qs("date").value = v(actObj.date || "");
   qs("time").value = v(actObj.time || "");
   qs("duration").value = v(actObj.duration || "");
