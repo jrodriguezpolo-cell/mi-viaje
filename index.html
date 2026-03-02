@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100X_AUTOCOMP_LOCAL</title>
+<title>V100W_LEGS_TZ_SUMDUR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100X_AUTOCOMP_LOCAL</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100Y_DATA_EXPAND</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1214,67 +1214,342 @@ function calcDurationTextTZ(departDate, departTime, arriveDate, arriveTime, tzFr
 
 // --- TZ auto (no API): derive UTC offset from city + date/time using Intl timeZone ---
 const __CITY_TZ_MAP = {
-  "madrid":"Europe/Madrid",
-  "barcelona":"Europe/Madrid",
-  "valencia":"Europe/Madrid",
-  "sevilla":"Europe/Madrid",
-  "seville":"Europe/Madrid",
-  "bilbao":"Europe/Madrid",
-  "lisboa":"Europe/Lisbon",
-  "lisbon":"Europe/Lisbon",
-  "paris":"Europe/Paris",
-  "londres":"Europe/London",
-  "london":"Europe/London",
-  "roma":"Europe/Rome",
-  "rome":"Europe/Rome",
-  "berlin":"Europe/Berlin",
+  "a coruña":"Europe/Madrid",
+  "abu dhabi":"Asia/Dubai",
+  "alicante":"Europe/Madrid",
+  "amberes":"Europe/Brussels",
   "amsterdam":"Europe/Amsterdam",
-  "bruselas":"Europe/Brussels",
-  "brussels":"Europe/Brussels",
-  "zurich":"Europe/Zurich",
-  "ginebra":"Europe/Zurich",
-  "geneva":"Europe/Zurich",
-  "viena":"Europe/Vienna",
-  "vienna":"Europe/Vienna",
-  "praga":"Europe/Prague",
-  "prague":"Europe/Prague",
+  "anchorage":"America/Anchorage",
+  "antwerp":"Europe/Brussels",
   "atenas":"Europe/Athens",
   "athens":"Europe/Athens",
-  "helsinki":"Europe/Helsinki",
-  "estocolmo":"Europe/Stockholm",
-  "stockholm":"Europe/Stockholm",
-  "copenhague":"Europe/Copenhagen",
-  "copenhagen":"Europe/Copenhagen",
-  "oslo":"Europe/Oslo",
-  "dublin":"Europe/Dublin",
-  "reykjavik":"Atlantic/Reykjavik",
-  "nueva york":"America/New_York",
-  "new york":"America/New_York",
-  "nyc":"America/New_York",
-  "miami":"America/New_York",
+  "atlanta":"America/New_York",
+  "auckland":"Pacific/Auckland",
+  "austin":"America/Chicago",
+  "azores":"Atlantic/Azores",
+  "bangkok":"Asia/Bangkok",
+  "barcelona":"Europe/Madrid",
+  "basel":"Europe/Zurich",
+  "beijing":"Asia/Shanghai",
+  "belfast":"Europe/London",
+  "berlin":"Europe/Berlin",
+  "bilbao":"Europe/Madrid",
+  "birmingham":"Europe/London",
+  "bogota":"America/Bogota",
+  "bogotá":"America/Bogota",
+  "bologna":"Europe/Rome",
+  "bordeaux":"Europe/Paris",
   "boston":"America/New_York",
+  "bratislava":"Europe/Bratislava",
+  "bristol":"Europe/London",
+  "bruselas":"Europe/Brussels",
+  "brussels":"Europe/Brussels",
+  "bucarest":"Europe/Bucharest",
+  "bucharest":"Europe/Bucharest",
+  "budapest":"Europe/Budapest",
+  "buenos aires":"America/Argentina/Buenos_Aires",
+  "burdeos":"Europe/Paris",
+  "cairo":"Africa/Cairo",
+  "calgary":"America/Edmonton",
+  "cancun":"America/Cancun",
+  "cancún":"America/Cancun",
+  "cannes":"Europe/Paris",
+  "cape town":"Africa/Johannesburg",
+  "cardiff":"Europe/London",
+  "casablanca":"Africa/Casablanca",
+  "catania":"Europe/Rome",
   "chicago":"America/Chicago",
-  "dallas":"America/Chicago",
-  "houston":"America/Chicago",
-  "denver":"America/Denver",
-  "phoenix":"America/Phoenix",
-  "los angeles":"America/Los_Angeles",
-  "la":"America/Los_Angeles",
-  "san francisco":"America/Los_Angeles",
-  "seattle":"America/Los_Angeles",
-  "mexico":"America/Mexico_City",
   "ciudad de mexico":"America/Mexico_City",
-  "méxico":"America/Mexico_City",
-  "tokio":"Asia/Tokyo",
-  "tokyo":"Asia/Tokyo",
-  "seul":"Asia/Seoul",
-  "seoul":"Asia/Seoul",
-  "singapur":"Asia/Singapore",
-  "singapore":"Asia/Singapore",
+  "ciudad de méxico":"America/Mexico_City",
+  "ciudad del cabo":"Africa/Johannesburg",
+  "cologne":"Europe/Berlin",
+  "copenhagen":"Europe/Copenhagen",
+  "copenhague":"Europe/Copenhagen",
+  "cordoba":"Europe/Madrid",
+  "coruna":"Europe/Madrid",
+  "cracovia":"Europe/Warsaw",
+  "córdoba":"Europe/Madrid",
+  "dallas":"America/Chicago",
+  "delhi":"Asia/Kolkata",
+  "den haag":"Europe/Amsterdam",
+  "denver":"America/Denver",
+  "doha":"Asia/Qatar",
+  "donostia":"Europe/Madrid",
+  "dresden":"Europe/Berlin",
+  "dubai":"Asia/Dubai",
+  "dublin":"Europe/Dublin",
+  "dubái":"Asia/Dubai",
+  "dusseldorf":"Europe/Berlin",
+  "düsseldorf":"Europe/Berlin",
+  "edimburgo":"Europe/London",
+  "edinburgh":"Europe/London",
+  "eivissa":"Europe/Madrid",
+  "el cairo":"Africa/Cairo",
+  "estambul":"Europe/Istanbul",
+  "estocolmo":"Europe/Stockholm",
+  "estraburgo":"Europe/Paris",
+  "faro":"Europe/Lisbon",
+  "firenze":"Europe/Rome",
+  "florence":"Europe/Rome",
+  "florencia":"Europe/Rome",
+  "fort lauderdale":"America/New_York",
+  "frankfurt":"Europe/Berlin",
+  "frankfurt am main":"Europe/Berlin",
+  "funchal":"Atlantic/Madeira",
+  "geneva":"Europe/Zurich",
+  "ginebra":"Europe/Zurich",
+  "glasgow":"Europe/London",
+  "gran canaria":"Atlantic/Canary",
+  "granada":"Europe/Madrid",
+  "guadalajara":"America/Mexico_City",
+  "hamburg":"Europe/Berlin",
+  "havana":"America/Havana",
+  "hawaii":"Pacific/Honolulu",
+  "helsinki":"Europe/Helsinki",
   "hong kong":"Asia/Hong_Kong",
+  "honolulu":"Pacific/Honolulu",
+  "houston":"America/Chicago",
+  "ibiza":"Europe/Madrid",
+  "istanbul":"Europe/Istanbul",
+  "jakarta":"Asia/Jakarta",
+  "johannesburg":"Africa/Johannesburg",
+  "koln":"Europe/Berlin",
+  "krakow":"Europe/Warsaw",
+  "kuala lumpur":"Asia/Kuala_Lumpur",
+  "köln":"Europe/Berlin",
+  "la":"America/Los_Angeles",
+  "la coruña":"Europe/Madrid",
+  "la habana":"America/Havana",
+  "la haya":"Europe/Amsterdam",
+  "las palmas":"Atlantic/Canary",
+  "las vegas":"America/Los_Angeles",
+  "leipzig":"Europe/Berlin",
+  "lille":"Europe/Paris",
+  "lima":"America/Lima",
+  "lisboa":"Europe/Lisbon",
+  "lisbon":"Europe/Lisbon",
+  "liverpool":"Europe/London",
+  "ljubljana":"Europe/Ljubljana",
+  "london":"Europe/London",
+  "londres":"Europe/London",
+  "los angeles":"America/Los_Angeles",
+  "luxembourg":"Europe/Luxembourg",
+  "lyon":"Europe/Paris",
+  "madeira":"Atlantic/Madeira",
+  "madrid":"Europe/Madrid",
+  "malaga":"Europe/Madrid",
+  "manchester":"Europe/London",
+  "manila":"Asia/Manila",
+  "marrakech":"Africa/Casablanca",
+  "marrakesh":"Africa/Casablanca",
+  "marseille":"Europe/Paris",
+  "marsella":"Europe/Paris",
+  "melbourne":"Australia/Melbourne",
+  "mexico city":"America/Mexico_City",
+  "miami":"America/New_York",
+  "milan":"Europe/Rome",
+  "milano":"Europe/Rome",
+  "montpellier":"Europe/Paris",
+  "montreal":"America/Toronto",
+  "montréal":"America/Toronto",
+  "mumbai":"Asia/Kolkata",
+  "munchen":"Europe/Berlin",
+  "munich":"Europe/Berlin",
+  "murcia":"Europe/Madrid",
+  "málaga":"Europe/Madrid",
+  "münchen":"Europe/Berlin",
+  "nantes":"Europe/Paris",
+  "naples":"Europe/Rome",
+  "napoles":"Europe/Rome",
+  "new delhi":"Asia/Kolkata",
+  "new orleans":"America/Chicago",
+  "new york":"America/New_York",
+  "nice":"Europe/Paris",
+  "niza":"Europe/Paris",
+  "nuernberg":"Europe/Berlin",
+  "nueva orleans":"America/Chicago",
+  "nueva york":"America/New_York",
+  "nuremberg":"Europe/Berlin",
+  "nyc":"America/New_York",
+  "nápoles":"Europe/Rome",
+  "nürnberg":"Europe/Berlin",
+  "oporto":"Europe/Lisbon",
+  "orlando":"America/New_York",
+  "osaka":"Asia/Tokyo",
+  "oslo":"Europe/Oslo",
+  "ottawa":"America/Toronto",
+  "oviedo":"Europe/Madrid",
+  "palermo":"Europe/Rome",
+  "palma":"Europe/Madrid",
+  "palma de mallorca":"Europe/Madrid",
+  "pamplona":"Europe/Madrid",
+  "panama":"America/Panama",
+  "panama city":"America/Panama",
+  "panamá":"America/Panama",
+  "paris":"Europe/Paris",
+  "pekin":"Asia/Shanghai",
+  "pekín":"Asia/Shanghai",
+  "phoenix":"America/Phoenix",
+  "pisa":"Europe/Rome",
+  "ponta delgada":"Atlantic/Azores",
+  "portland":"America/Los_Angeles",
+  "porto":"Europe/Lisbon",
+  "praga":"Europe/Prague",
+  "prague":"Europe/Prague",
+  "puerto vallarta":"America/Mexico_City",
+  "punta cana":"America/Santo_Domingo",
+  "reykjavik":"Atlantic/Reykjavik",
+  "rio":"America/Sao_Paulo",
+  "rio de janeiro":"America/Sao_Paulo",
+  "roma":"Europe/Rome",
+  "rome":"Europe/Rome",
+  "rotterdam":"Europe/Amsterdam",
+  "salzburg":"Europe/Vienna",
+  "san diego":"America/Los_Angeles",
+  "san francisco":"America/Los_Angeles",
+  "san juan":"America/Puerto_Rico",
+  "san sebastian":"Europe/Madrid",
+  "santa cruz de tenerife":"Atlantic/Canary",
+  "santander":"Europe/Madrid",
+  "santiago":"America/Santiago",
+  "santiago de chile":"America/Santiago",
+  "santiago de compostela":"Europe/Madrid",
+  "sao paulo":"America/Sao_Paulo",
+  "seattle":"America/Los_Angeles",
+  "seoul":"Asia/Seoul",
+  "seul":"Asia/Seoul",
+  "sevilla":"Europe/Madrid",
+  "seville":"Europe/Madrid",
+  "shanghai":"Asia/Shanghai",
+  "singapore":"Asia/Singapore",
+  "singapur":"Asia/Singapore",
+  "sofia":"Europe/Sofia",
+  "stockholm":"Europe/Stockholm",
+  "strasbourg":"Europe/Paris",
+  "stuttgart":"Europe/Berlin",
+  "sydney":"Australia/Sydney",
+  "são paulo":"America/Sao_Paulo",
   "sídney":"Australia/Sydney",
-  "sydney":"Australia/Sydney"
+  "tampa":"America/New_York",
+  "tenerife":"Atlantic/Canary",
+  "the hague":"Europe/Amsterdam",
+  "tokyo":"Asia/Tokyo",
+  "torino":"Europe/Rome",
+  "toronto":"America/Toronto",
+  "toulouse":"Europe/Paris",
+  "tunis":"Africa/Tunis",
+  "turin":"Europe/Rome",
+  "túnez":"Africa/Tunis",
+  "valencia":"Europe/Madrid",
+  "vancouver":"America/Vancouver",
+  "varsovia":"Europe/Warsaw",
+  "venecia":"Europe/Rome",
+  "venezia":"Europe/Rome",
+  "venice":"Europe/Rome",
+  "viena":"Europe/Vienna",
+  "vienna":"Europe/Vienna",
+  "vigo":"Europe/Madrid",
+  "warsaw":"Europe/Warsaw",
+  "washington":"America/New_York",
+  "washington dc":"America/New_York",
+  "zagreb":"Europe/Zagreb",
+  "zaragoza":"Europe/Madrid",
+  "zurich":"Europe/Zurich"
 };
+
+// --- Airports (local) for IATA recognition / future autocomplete ---
+const __AIRPORT_DB = [
+  { iata:"MAD", name:'Adolfo Suárez Madrid–Barajas', city:'Madrid', country:"ES", tz:"Europe/Madrid" },
+  { iata:"BCN", name:'Barcelona–El Prat', city:'Barcelona', country:"ES", tz:"Europe/Madrid" },
+  { iata:"VLC", name:'Valencia', city:'Valencia', country:"ES", tz:"Europe/Madrid" },
+  { iata:"SVQ", name:'Sevilla', city:'Sevilla', country:"ES", tz:"Europe/Madrid" },
+  { iata:"BIO", name:'Bilbao', city:'Bilbao', country:"ES", tz:"Europe/Madrid" },
+  { iata:"AGP", name:'Málaga–Costa del Sol', city:'Málaga', country:"ES", tz:"Europe/Madrid" },
+  { iata:"PMI", name:'Palma de Mallorca', city:'Palma de Mallorca', country:"ES", tz:"Europe/Madrid" },
+  { iata:"IBZ", name:'Ibiza', city:'Ibiza', country:"ES", tz:"Europe/Madrid" },
+  { iata:"LPA", name:'Gran Canaria', city:'Las Palmas', country:"ES", tz:"Atlantic/Canary" },
+  { iata:"TFS", name:'Tenerife South', city:'Tenerife', country:"ES", tz:"Atlantic/Canary" },
+  { iata:"LIS", name:'Lisbon Humberto Delgado', city:'Lisboa', country:"PT", tz:"Europe/Lisbon" },
+  { iata:"OPO", name:'Porto', city:'Porto', country:"PT", tz:"Europe/Lisbon" },
+  { iata:"FAO", name:'Faro', city:'Faro', country:"PT", tz:"Europe/Lisbon" },
+  { iata:"FNC", name:'Madeira', city:'Funchal', country:"PT", tz:"Atlantic/Madeira" },
+  { iata:"LHR", name:'London Heathrow', city:'London', country:"GB", tz:"Europe/London" },
+  { iata:"LGW", name:'London Gatwick', city:'London', country:"GB", tz:"Europe/London" },
+  { iata:"STN", name:'London Stansted', city:'London', country:"GB", tz:"Europe/London" },
+  { iata:"MAN", name:'Manchester', city:'Manchester', country:"GB", tz:"Europe/London" },
+  { iata:"EDI", name:'Edinburgh', city:'Edinburgh', country:"GB", tz:"Europe/London" },
+  { iata:"DUB", name:'Dublin', city:'Dublin', country:"IE", tz:"Europe/Dublin" },
+  { iata:"CDG", name:'Paris Charles de Gaulle', city:'Paris', country:"FR", tz:"Europe/Paris" },
+  { iata:"ORY", name:'Paris Orly', city:'Paris', country:"FR", tz:"Europe/Paris" },
+  { iata:"NCE", name:'Nice Côte d’Azur', city:'Nice', country:"FR", tz:"Europe/Paris" },
+  { iata:"LYS", name:'Lyon–Saint-Exupéry', city:'Lyon', country:"FR", tz:"Europe/Paris" },
+  { iata:"MRS", name:'Marseille Provence', city:'Marseille', country:"FR", tz:"Europe/Paris" },
+  { iata:"FCO", name:'Rome Fiumicino', city:'Rome', country:"IT", tz:"Europe/Rome" },
+  { iata:"CIA", name:'Rome Ciampino', city:'Rome', country:"IT", tz:"Europe/Rome" },
+  { iata:"MXP", name:'Milan Malpensa', city:'Milan', country:"IT", tz:"Europe/Rome" },
+  { iata:"LIN", name:'Milan Linate', city:'Milan', country:"IT", tz:"Europe/Rome" },
+  { iata:"VCE", name:'Venice Marco Polo', city:'Venice', country:"IT", tz:"Europe/Rome" },
+  { iata:"FLR", name:'Florence', city:'Florence', country:"IT", tz:"Europe/Rome" },
+  { iata:"NAP", name:'Naples', city:'Naples', country:"IT", tz:"Europe/Rome" },
+  { iata:"FRA", name:'Frankfurt', city:'Frankfurt', country:"DE", tz:"Europe/Berlin" },
+  { iata:"MUC", name:'Munich', city:'Munich', country:"DE", tz:"Europe/Berlin" },
+  { iata:"BER", name:'Berlin Brandenburg', city:'Berlin', country:"DE", tz:"Europe/Berlin" },
+  { iata:"DUS", name:'Düsseldorf', city:'Düsseldorf', country:"DE", tz:"Europe/Berlin" },
+  { iata:"HAM", name:'Hamburg', city:'Hamburg', country:"DE", tz:"Europe/Berlin" },
+  { iata:"AMS", name:'Amsterdam Schiphol', city:'Amsterdam', country:"NL", tz:"Europe/Amsterdam" },
+  { iata:"BRU", name:'Brussels', city:'Brussels', country:"BE", tz:"Europe/Brussels" },
+  { iata:"ZRH", name:'Zürich', city:'Zurich', country:"CH", tz:"Europe/Zurich" },
+  { iata:"GVA", name:'Geneva', city:'Geneva', country:"CH", tz:"Europe/Zurich" },
+  { iata:"VIE", name:'Vienna', city:'Vienna', country:"AT", tz:"Europe/Vienna" },
+  { iata:"PRG", name:'Prague Václav Havel', city:'Prague', country:"CZ", tz:"Europe/Prague" },
+  { iata:"BUD", name:'Budapest', city:'Budapest', country:"HU", tz:"Europe/Budapest" },
+  { iata:"WAW", name:'Warsaw Chopin', city:'Warsaw', country:"PL", tz:"Europe/Warsaw" },
+  { iata:"ATH", name:'Athens', city:'Athens', country:"GR", tz:"Europe/Athens" },
+  { iata:"IST", name:'Istanbul', city:'Istanbul', country:"TR", tz:"Europe/Istanbul" },
+  { iata:"JFK", name:'New York JFK', city:'New York', country:"US", tz:"America/New_York" },
+  { iata:"LGA", name:'New York LaGuardia', city:'New York', country:"US", tz:"America/New_York" },
+  { iata:"EWR", name:'Newark Liberty', city:'New York', country:"US", tz:"America/New_York" },
+  { iata:"MIA", name:'Miami', city:'Miami', country:"US", tz:"America/New_York" },
+  { iata:"MCO", name:'Orlando International', city:'Orlando', country:"US", tz:"America/New_York" },
+  { iata:"TPA", name:'Tampa International', city:'Tampa', country:"US", tz:"America/New_York" },
+  { iata:"FLL", name:'Fort Lauderdale–Hollywood', city:'Fort Lauderdale', country:"US", tz:"America/New_York" },
+  { iata:"ATL", name:'Atlanta Hartsfield–Jackson', city:'Atlanta', country:"US", tz:"America/New_York" },
+  { iata:"BOS", name:'Boston Logan', city:'Boston', country:"US", tz:"America/New_York" },
+  { iata:"IAD", name:'Washington Dulles', city:'Washington DC', country:"US", tz:"America/New_York" },
+  { iata:"DCA", name:'Washington National', city:'Washington DC', country:"US", tz:"America/New_York" },
+  { iata:"ORD", name:"Chicago O'Hare", city:'Chicago', country:"US", tz:"America/Chicago" },
+  { iata:"MDW", name:'Chicago Midway', city:'Chicago', country:"US", tz:"America/Chicago" },
+  { iata:"DFW", name:'Dallas/Fort Worth', city:'Dallas', country:"US", tz:"America/Chicago" },
+  { iata:"IAH", name:'Houston George Bush', city:'Houston', country:"US", tz:"America/Chicago" },
+  { iata:"AUS", name:'Austin', city:'Austin', country:"US", tz:"America/Chicago" },
+  { iata:"DEN", name:'Denver', city:'Denver', country:"US", tz:"America/Denver" },
+  { iata:"PHX", name:'Phoenix Sky Harbor', city:'Phoenix', country:"US", tz:"America/Phoenix" },
+  { iata:"LAS", name:'Las Vegas Harry Reid', city:'Las Vegas', country:"US", tz:"America/Los_Angeles" },
+  { iata:"LAX", name:'Los Angeles', city:'Los Angeles', country:"US", tz:"America/Los_Angeles" },
+  { iata:"SFO", name:'San Francisco', city:'San Francisco', country:"US", tz:"America/Los_Angeles" },
+  { iata:"SAN", name:'San Diego', city:'San Diego', country:"US", tz:"America/Los_Angeles" },
+  { iata:"SEA", name:'Seattle–Tacoma', city:'Seattle', country:"US", tz:"America/Los_Angeles" },
+  { iata:"PDX", name:'Portland', city:'Portland', country:"US", tz:"America/Los_Angeles" },
+  { iata:"HNL", name:'Honolulu', city:'Honolulu', country:"US", tz:"Pacific/Honolulu" },
+  { iata:"YYZ", name:'Toronto Pearson', city:'Toronto', country:"CA", tz:"America/Toronto" },
+  { iata:"YVR", name:'Vancouver', city:'Vancouver', country:"CA", tz:"America/Vancouver" },
+  { iata:"MEX", name:'Mexico City', city:'Mexico City', country:"MX", tz:"America/Mexico_City" },
+  { iata:"CUN", name:'Cancún', city:'Cancún', country:"MX", tz:"America/Cancun" },
+  { iata:"PTY", name:'Panama City Tocumen', city:'Panama City', country:"PA", tz:"America/Panama" },
+  { iata:"EZE", name:'Buenos Aires Ezeiza', city:'Buenos Aires', country:"AR", tz:"America/Argentina/Buenos_Aires" },
+  { iata:"GRU", name:'São Paulo Guarulhos', city:'São Paulo', country:"BR", tz:"America/Sao_Paulo" },
+  { iata:"GIG", name:'Rio de Janeiro Galeão', city:'Rio de Janeiro', country:"BR", tz:"America/Sao_Paulo" },
+  { iata:"DXB", name:'Dubai International', city:'Dubai', country:"AE", tz:"Asia/Dubai" },
+  { iata:"DOH", name:'Doha Hamad', city:'Doha', country:"QA", tz:"Asia/Qatar" },
+  { iata:"HND", name:'Tokyo Haneda', city:'Tokyo', country:"JP", tz:"Asia/Tokyo" },
+  { iata:"NRT", name:'Tokyo Narita', city:'Tokyo', country:"JP", tz:"Asia/Tokyo" },
+  { iata:"SIN", name:'Singapore Changi', city:'Singapore', country:"SG", tz:"Asia/Singapore" },
+  { iata:"HKG", name:'Hong Kong International', city:'Hong Kong', country:"HK", tz:"Asia/Hong_Kong" },
+  { iata:"BKK", name:'Bangkok Suvarnabhumi', city:'Bangkok', country:"TH", tz:"Asia/Bangkok" },
+  { iata:"SYD", name:'Sydney Kingsford Smith', city:'Sydney', country:"AU", tz:"Australia/Sydney" },
+  { iata:"AKL", name:'Auckland', city:'Auckland', country:"NZ", tz:"Pacific/Auckland" }
+];
+const __IATA_TZ_MAP = Object.fromEntries(__AIRPORT_DB.map(a => [a.iata, a.tz]));
 
 function __normalizeCityKey(s){
   const t = String(s||"").trim().toLowerCase();
@@ -2120,11 +2395,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   qs("to").value = v(legObj.to);
   qs("placeOut").value = v(legObj.placeOut || "");
   qs("placeIn").value = v(legObj.placeIn || "");
-  // Autocomplete (cities + airports)
-  attachAutocomplete(qs("from"), "city");
-  attachAutocomplete(qs("to"), "city");
-  attachAutocomplete(qs("placeOut"), "airport", { onPick:(a)=>{ try{ if(!qs("from").value) qs("from").value=a.city; }catch{} } });
-  attachAutocomplete(qs("placeIn"), "airport", { onPick:(a)=>{ try{ if(!qs("to").value) qs("to").value=a.city; }catch{} } });
   qs("dateOut").value = v(legObj.date || "");
   qs("timeOut").value = v(legObj.time || "");
   qs("dateIn").value = v(legObj.arriveDate || "");
@@ -2404,8 +2674,6 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   // Init values
   qs("city").value = v(stayObj.city);
-  // Autocomplete (city)
-  attachAutocomplete(qs("city"), "city");
   qs("name").value = v(stayObj.name);
   qs("date").value = v(stayObj.date || "");
   qs("time").value = v(stayObj.time || "");
@@ -2573,8 +2841,6 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
 
   qs("title").value = v(actObj.title);
   qs("city").value = v(actObj.city);
-  // Autocomplete (city)
-  attachAutocomplete(qs("city"), "city");
   qs("date").value = v(actObj.date || "");
   qs("time").value = v(actObj.time || "");
   qs("duration").value = v(actObj.duration || "");
@@ -2619,165 +2885,6 @@ function __applyLegPlaceholdersInSheet(id, mode){
   if (out) out.placeholder = __legPlacePlaceholder(mode, "from");
   if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
 }
-
-
-/* ---------------- Autocomplete (local, no APIs) ---------------- */
-const __AC_CITIES = [
-  "Madrid","Barcelona","Valencia","Sevilla","Málaga","Bilbao","Palma de Mallorca","Alicante","Granada","Zaragoza",
-  "Lisboa","Oporto","París","Londres","Roma","Milán","Berlín","Múnich","Ámsterdam","Bruselas","Ginebra","Zúrich",
-  "Nueva York","Boston","Washington","Miami","Orlando","Los Ángeles","San Francisco","Chicago","Dallas","Houston",
-  "Toronto","Montreal","Ciudad de México","Cancún","Bogotá","Lima","Santiago","Buenos Aires","São Paulo","Río de Janeiro",
-  "Tokio","Osaka","Kioto","Seúl","Bangkok","Singapur","Dubái","Doha","Estambul","Atenas"
-];
-
-const __AC_AIRPORTS = [
-  { iata:"MAD", name:"Adolfo Suárez Madrid–Barajas", city:"Madrid", country:"España", tz:"Europe/Madrid" },
-  { iata:"BCN", name:"Barcelona–El Prat", city:"Barcelona", country:"España", tz:"Europe/Madrid" },
-  { iata:"AGP", name:"Málaga–Costa del Sol", city:"Málaga", country:"España", tz:"Europe/Madrid" },
-  { iata:"PMI", name:"Palma de Mallorca", city:"Palma de Mallorca", country:"España", tz:"Europe/Madrid" },
-  { iata:"LIS", name:"Humberto Delgado", city:"Lisboa", country:"Portugal", tz:"Europe/Lisbon" },
-  { iata:"OPO", name:"Francisco Sá Carneiro", city:"Oporto", country:"Portugal", tz:"Europe/Lisbon" },
-  { iata:"CDG", name:"Charles de Gaulle", city:"París", country:"Francia", tz:"Europe/Paris" },
-  { iata:"ORY", name:"Orly", city:"París", country:"Francia", tz:"Europe/Paris" },
-  { iata:"LHR", name:"Heathrow", city:"Londres", country:"Reino Unido", tz:"Europe/London" },
-  { iata:"LGW", name:"Gatwick", city:"Londres", country:"Reino Unido", tz:"Europe/London" },
-  { iata:"FCO", name:"Fiumicino", city:"Roma", country:"Italia", tz:"Europe/Rome" },
-  { iata:"MXP", name:"Malpensa", city:"Milán", country:"Italia", tz:"Europe/Rome" },
-  { iata:"FRA", name:"Frankfurt", city:"Fráncfort", country:"Alemania", tz:"Europe/Berlin" },
-  { iata:"MUC", name:"Múnich", city:"Múnich", country:"Alemania", tz:"Europe/Berlin" },
-  { iata:"AMS", name:"Schiphol", city:"Ámsterdam", country:"Países Bajos", tz:"Europe/Amsterdam" },
-  { iata:"JFK", name:"John F. Kennedy", city:"Nueva York", country:"EE.UU.", tz:"America/New_York" },
-  { iata:"EWR", name:"Newark Liberty", city:"Nueva York", country:"EE.UU.", tz:"America/New_York" },
-  { iata:"LGA", name:"LaGuardia", city:"Nueva York", country:"EE.UU.", tz:"America/New_York" },
-  { iata:"MIA", name:"Miami International", city:"Miami", country:"EE.UU.", tz:"America/New_York" },
-  { iata:"MCO", name:"Orlando International", city:"Orlando", country:"EE.UU.", tz:"America/New_York" },
-  { iata:"LAX", name:"Los Ángeles International", city:"Los Ángeles", country:"EE.UU.", tz:"America/Los_Angeles" },
-  { iata:"SFO", name:"San Francisco International", city:"San Francisco", country:"EE.UU.", tz:"America/Los_Angeles" },
-  { iata:"YYZ", name:"Toronto Pearson", city:"Toronto", country:"Canadá", tz:"America/Toronto" },
-  { iata:"NRT", name:"Narita", city:"Tokio", country:"Japón", tz:"Asia/Tokyo" },
-  { iata:"HND", name:"Haneda", city:"Tokio", country:"Japón", tz:"Asia/Tokyo" },
-  { iata:"DXB", name:"Dubai International", city:"Dubái", country:"EAU", tz:"Asia/Dubai" },
-];
-
-function __acNorm(s){
-  return String(s||"").trim().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-}
-function __acMatchCity(q){
-  const nq = __acNorm(q);
-  if(!nq) return [];
-  const out = [];
-  for(const c of __AC_CITIES){
-    const nc = __acNorm(c);
-    if(nc.startsWith(nq) || nc.includes(nq)) out.push(c);
-    if(out.length>=7) break;
-  }
-  return out;
-}
-function __acMatchAirport(q){
-  const nq = __acNorm(q);
-  if(!nq) return [];
-  const out = [];
-  const isIata = /^[a-z]{1,3}$/i.test(String(q||"").trim());
-  for(const a of __AC_AIRPORTS){
-    const hay = __acNorm(`${a.iata} ${a.name} ${a.city} ${a.country}`);
-    const hit = isIata ? __acNorm(a.iata).startsWith(nq) : hay.includes(nq);
-    if(hit) out.push(a);
-    if(out.length>=7) break;
-  }
-  return out;
-}
-
-let __acOverlayEl = null;
-let __acActiveInput = null;
-
-function __acEnsureOverlay(){
-  if(__acOverlayEl) return __acOverlayEl;
-  const el = document.createElement("div");
-  el.id = "acOverlay";
-  el.className = "fixed z-[9000] left-0 top-0 w-full h-full pointer-events-none";
-  el.innerHTML = `<div id="acMenu" class="pointer-events-auto hidden absolute bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden"></div>`;
-  document.body.appendChild(el);
-  __acOverlayEl = el;
-  el.addEventListener("pointerdown", (e)=>{ if(e.target === el){ __acHide(); } });
-  window.addEventListener("scroll", ()=>{ if(__acActiveInput) __acPosition(__acActiveInput); }, true);
-  window.addEventListener("resize", ()=>{ if(__acActiveInput) __acPosition(__acActiveInput); });
-  return el;
-}
-function __acMenuEl(){ __acEnsureOverlay(); return document.getElementById("acMenu"); }
-function __acPosition(input){
-  const menu = __acMenuEl();
-  const r = input.getBoundingClientRect();
-  const top = Math.min(window.innerHeight - 8, r.bottom + 6);
-  const left = Math.max(8, Math.min(window.innerWidth - 8, r.left));
-  const width = Math.max(160, Math.min(window.innerWidth - 16, r.width));
-  menu.style.left = left + "px";
-  menu.style.top = top + "px";
-  menu.style.width = width + "px";
-}
-function __acHide(){
-  const menu = __acMenuEl();
-  menu.classList.add("hidden");
-  menu.innerHTML = "";
-  __acActiveInput = null;
-}
-function __acRender(input, items, renderItem, onPick){
-  const menu = __acMenuEl();
-  if(!items || !items.length){ __acHide(); return; }
-  __acActiveInput = input;
-  __acPosition(input);
-  menu.classList.remove("hidden");
-  menu.innerHTML = "";
-  const ul = document.createElement("div");
-  ul.className = "max-h-56 overflow-auto ios-scroll";
-  items.forEach((it)=>{
-    const row = document.createElement("button");
-    row.type="button";
-    row.className = "w-full text-left px-4 py-3 hover:bg-slate-50 active:bg-slate-100 tap";
-    row.innerHTML = renderItem(it);
-    row.addEventListener("click", (e)=>{
-      e.preventDefault();
-      onPick(it);
-      __acHide();
-      input.focus();
-    });
-    ul.appendChild(row);
-  });
-  menu.appendChild(ul);
-}
-
-function attachAutocomplete(input, kind, opts={}){
-  if(!input || input.dataset.acBound==="1") return;
-  input.dataset.acBound="1";
-  __acEnsureOverlay();
-
-  const minChars = opts.minChars ?? 2;
-  const onPick = opts.onPick || (()=>{});
-
-  function update(){
-    const q = input.value || "";
-    if(__acNorm(q).length < minChars){ __acHide(); return; }
-    if(kind==="city"){
-      const items = __acMatchCity(q);
-      __acRender(input, items,
-        (c)=>`<div class="font-semibold">${c}</div>`,
-        (c)=>{ input.value=c; onPick(c); input.dispatchEvent(new Event("input",{bubbles:true})); input.dispatchEvent(new Event("change",{bubbles:true})); }
-      );
-    }else if(kind==="airport"){
-      const items = __acMatchAirport(q);
-      __acRender(input, items,
-        (a)=>`<div class="flex items-baseline justify-between gap-2"><div class="font-extrabold tracking-wide">${a.iata}</div><div class="text-xs text-slate-500">${a.country}</div></div><div class="text-sm font-semibold">${a.name}</div><div class="text-xs text-slate-500">${a.city}</div>`,
-        (a)=>{ input.value=a.iata; onPick(a); input.dispatchEvent(new Event("input",{bubbles:true})); input.dispatchEvent(new Event("change",{bubbles:true})); }
-      );
-    }
-  }
-
-  input.addEventListener("input", update);
-  input.addEventListener("focus", update);
-  input.addEventListener("blur", ()=>{ setTimeout(()=>{ if(document.activeElement!==input) __acHide(); }, 120); });
-  input.addEventListener("keydown", (e)=>{ if(e.key==="Escape") __acHide(); });
-}
-/* -------------------------------------------------------------- */
 
 function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const k = __normKind(kind);
