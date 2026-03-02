@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V106_TRANSPORT_PLACES_HOTFIX</title>
+<title>V107_TRANSPORT_PLACES_RESTORE_APP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V106_TRANSPORT_PLACES_HOTFIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V107_TRANSPORT_PLACES_RESTORE_APP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1753,12 +1753,11 @@ function __cityProvider(q){
     }
     return out;
   }
-  // prefix first
+  // prefer prefix, then contains
   for(const c of __AC_CITY_LIST){
     if(c.norm.startsWith(qq)) out.push(c);
     if(out.length>=10) break;
   }
-  // then contains
   if(out.length<10){
     for(const c of __AC_CITY_LIST){
       if(out.includes(c)) continue;
@@ -1787,30 +1786,6 @@ function __airportPlaceProvider(q){
   }));
 }
 
-function __providerByMode(mode){
-  const m = String(mode||"plane").toLowerCase();
-  if(m==="plane") return __airportPlaceProvider;
-  if(m==="train") return __trainProvider;
-  if(m==="bus") return __busProvider;
-  if(m==="boat" || m==="ferry") return __portProvider;
-  // car: no menu
-  return (q)=>[];
-}
-  // prefer prefix, then contains
-  for(const c of __AC_CITY_LIST){
-    if(c.norm.startsWith(q)) out.push(c);
-    if(out.length>=8) break;
-  }
-  if(out.length<8){
-    for(const c of __AC_CITY_LIST){
-      if(out.includes(c)) continue;
-      if(c.norm.includes(q)) out.push(c);
-      if(out.length>=8) break;
-    }
-  }
-  return out;
-}
-
 function __airportProvider(q){
   const out = [];
   const isIata = /^[a-z]{1,3}$/.test(q);
@@ -1835,7 +1810,7 @@ function __airportProvider(q){
    - Does NOT touch city providers.
 ========================= */
 
-// Safe alias for normalization (V105 had __norm() but the app uses __acNorm())
+// Safe alias for normalization
 const __norm = __acNorm;
 
 // Mini DBs (local, small, stable)
@@ -7910,118 +7885,6 @@ function scrollToDateSep(viewName, iso){
 })();
 
 
-/* =========================
-   Transport places datasets (ONLY for placeOut/placeIn)
-   - Cities autocomplete untouched.
-========================= */
-const TRAIN_PLACES = [
-  {name:"Madrid-Puerta de Atocha", city:"Madrid"},
-  {name:"Madrid-Chamartín", city:"Madrid"},
-  {name:"Barcelona-Sants", city:"Barcelona"},
-  {name:"Valencia Joaquín Sorolla", city:"Valencia"},
-  {name:"Sevilla-Santa Justa", city:"Sevilla"},
-  {name:"Málaga-María Zambrano", city:"Málaga"},
-  {name:"Zaragoza-Delicias", city:"Zaragoza"},
-  {name:"Alicante-Terminal", city:"Alicante"},
-  {name:"Córdoba Central", city:"Córdoba"},
-  {name:"Granada", city:"Granada"}
-];
-
-const BUS_PLACES = [
-  {name:"Estación Sur de Autobuses (Méndez Álvaro)", city:"Madrid"},
-  {name:"Intercambiador de Avenida de América", city:"Madrid"},
-  {name:"Estació del Nord (Autobuses)", city:"Barcelona"},
-  {name:"Estación de Autobuses de Valencia", city:"Valencia"},
-  {name:"Estación de Autobuses Plaza de Armas", city:"Sevilla"},
-  {name:"Estación de Autobuses de Málaga", city:"Málaga"},
-  {name:"Estación de Autobuses de Bilbao", city:"Bilbao"},
-  {name:"Estación de Autobuses de San Sebastián", city:"San Sebastián"}
-];
-
-const BOAT_PLACES = [
-  {name:"Puerto de Barcelona", city:"Barcelona"},
-  {name:"Puerto de Valencia", city:"Valencia"},
-  {name:"Puerto de Palma", city:"Palma"},
-  {name:"Puerto de Ibiza", city:"Ibiza"},
-  {name:"Puerto de Málaga", city:"Málaga"},
-  {name:"Puerto de Cádiz", city:"Cádiz"},
-  {name:"Puerto de Las Palmas", city:"Las Palmas"},
-  {name:"Puerto de Santa Cruz de Tenerife", city:"Santa Cruz de Tenerife"}
-];
-
-function __airportPlaceProvider(q){
-  // provider for placeOut/placeIn in flight mode
-  const qq = String(q||"").trim().toLowerCase();
-  const out = [];
-  const push = (a)=> out.push({
-    kind:"flight",
-    iata: a.iata,
-    label: `${a.iata} — ${a.name} (${a.city})`,
-    value: `${a.iata} · ${a.name}`,
-    city: a.city
-  });
-
-  if(!qq){
-    for(const a of AIRPORTS){ push(a); if(out.length>=8) break; }
-    return out;
-  }
-
-  // prioritize IATA prefix 1-3 letters
-  for(const a of AIRPORTS){
-    if(out.length>=8) break;
-    const code = String(a.iata||"").toLowerCase();
-    if(code.startsWith(qq)) push(a);
-  }
-  // then name/city contains
-  if(out.length<8){
-    for(const a of AIRPORTS){
-      if(out.length>=8) break;
-      const s = (a.iata+" "+a.name+" "+a.city).toLowerCase();
-      if(!String(a.iata||"").toLowerCase().startsWith(qq) && s.includes(qq)) push(a);
-    }
-  }
-  return out.slice(0,8);
-}
-
-function __genericPlaceProvider(q, db){
-  const qq = String(q||"").trim().toLowerCase();
-  const out = [];
-  const push = (p)=> out.push({
-    kind:"place",
-    label: `${p.name}${p.city ? " ("+p.city+")" : ""}`,
-    value: p.name,
-    city: p.city || ""
-  });
-
-  if(!qq){
-    for(const p of db){ push(p); if(out.length>=8) break; }
-    return out;
-  }
-
-  for(const p of db){
-    if(out.length>=8) break;
-    const s = (p.name+" "+(p.city||"")).toLowerCase();
-    if(s.startsWith(qq)) push(p);
-  }
-  if(out.length<8){
-    for(const p of db){
-      if(out.length>=8) break;
-      const s = (p.name+" "+(p.city||"")).toLowerCase();
-      if(!s.startsWith(qq) && s.includes(qq)) push(p);
-    }
-  }
-  return out.slice(0,8);
-}
-
-function __placeProviderByMode(modeKey, q){
-  const m = String(modeKey||"flight").toLowerCase();
-  if(m==="flight") return __airportPlaceProvider(q);
-  if(m==="train") return __genericPlaceProvider(q, TRAIN_PLACES);
-  if(m==="bus") return __genericPlaceProvider(q, BUS_PLACES);
-  if(m==="boat") return __genericPlaceProvider(q, BOAT_PLACES);
-  // car/other: keep field free (no menu)
-  return [];
-}
 
 </script>
 </body>
