@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V113_PREMIUM_CITY_AIRPORTS_AND_CLEARX</title>
+<title>V114_PREMIUM_AIRPORTS_CITY_ALIAS_AND_NO_FLICKER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -618,7 +618,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V113_PREMIUM_CITY_AIRPORTS_AND_CLEARX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V114_PREMIUM_AIRPORTS_CITY_ALIAS_AND_NO_FLICKER</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1776,7 +1776,12 @@ function __attachAutocomplete(input, provider, onPick){
   let blurT=null;
   input.addEventListener("blur", ()=>{
     clearTimeout(blurT);
-    blurT = setTimeout(close, 120);
+    const myInput = input;
+    blurT = setTimeout(()=>{
+      try{
+        if(menu.__acInput === myInput) close();
+      }catch{}
+    }, 180);
   });
 }
 
@@ -1845,13 +1850,38 @@ function __airportsForCityLabel(cityLabel){
 }
 
 // Premium helper: airports for a given city (used for plane mode hints and filtering)
-function __airportsForCity(cityLabel){
+// City aliases for airport matching (small, premium)
+const __CITY_AIRPORT_ALIASES = {
+  "nueva york": ["new york","nyc"],
+  "new york": ["new york","nyc"],
+  "nyc": ["new york","nyc"],
+  "londres": ["london"],
+  "london": ["london"],
+  "roma": ["rome"],
+  "rome": ["rome"],
+  "milán": ["milan"],
+  "milan": ["milan"],
+  "bruselas": ["brussels"],
+  "brussels": ["brussels"],
+};
+
+function __airportCityKeysFromUserCity(cityLabel){
   const c = __acNorm(cityLabel);
   if(!c) return [];
+  const ali = __CITY_AIRPORT_ALIASES[c];
+  if(ali && ali.length) return ali.map(__acNorm);
+  return [c];
+}
+
+function __airportsForCity(cityLabel){
+  const keys = __airportCityKeysFromUserCity(cityLabel);
+  if(!keys.length) return [];
   const hits = [];
   for(const a of __AC_AIRPORT_LIST){
     const ac = __acNorm(a.city);
-    if(ac === c || ac.includes(c) || c.includes(ac)) hits.push(a);
+    if(keys.some(k => ac === k || ac.includes(k) || k.includes(ac))){
+      hits.push(a);
+    }
   }
   return hits.slice(0,3).map(a=>({
     kind:"plane",
@@ -2088,10 +2118,10 @@ function __wireLegAutocomplete(wrap, getModeFn){
 
       const all = __airportPlaceProvider(qq) || [];
       if(hasCity){
-        const cc = __acNorm(city);
+        const keys = __airportCityKeysFromUserCity(city);
         const filtered = all.filter(it=>{
           const ac = __acNorm(it.city || "");
-          return ac === cc || ac.includes(cc) || cc.includes(ac);
+          return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
         });
         return filtered.length ? filtered.slice(0,10) : all;
       }
@@ -2106,10 +2136,10 @@ function __wireLegAutocomplete(wrap, getModeFn){
 
       const all = __airportPlaceProvider(qq) || [];
       if(hasCity){
-        const cc = __acNorm(city);
+        const keys = __airportCityKeysFromUserCity(city);
         const filtered = all.filter(it=>{
           const ac = __acNorm(it.city || "");
-          return ac === cc || ac.includes(cc) || cc.includes(ac);
+          return keys.some(k => ac === k || ac.includes(k) || k.includes(ac));
         });
         return filtered.length ? filtered.slice(0,10) : all;
       }
@@ -3633,6 +3663,7 @@ function renderLegModeChips(container, leg, onSelect){
 
     overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
+    requestAnimationFrame(()=>{ try{ __installClearX(document.getElementById("eventSheetBody")); }catch{} });
     try { applyEventSheetMode(); } catch {}
     // In view mode we avoid focusing fields automatically
     try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
