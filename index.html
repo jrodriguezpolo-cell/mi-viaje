@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V123_TRANSPORT_TERMINAL_PLATFORM_FIELDS</title>
+<title>V124_TRANSPORT_DETAIL_FIELD_POLISH</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -635,6 +635,15 @@ div[data-acc-body="acts"]{
 
 .clearx-pad{ padding-right: 40px !important; }
 
+
+/* Transport detail small inputs (Event Sheet) */
+#eventSheetBody .sheet-leg-editor input.detailSmall{
+  height: 30px !important;
+  padding: 4px 10px !important;
+  border-radius: 12px !important;
+  max-width: 220px !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -645,7 +654,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V123_TRANSPORT_TERMINAL_PLATFORM_FIELDS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V124_TRANSPORT_DETAIL_FIELD_POLISH</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2934,6 +2943,16 @@ function legModeIcon(m){
   const v = legModeDefault(m);
   return (v==="plane") ? "✈️" : (v==="train") ? "🚆" : (v==="bus") ? "🚌" : (v==="car") ? "🚗" : "🚢";
 }
+
+function __legDetailText(mode){
+  const m = legModeDefault(mode);
+  if(m==="plane") return { label:"Terminal / Puerta", ph:"Ej: T4, Puerta H12…" };
+  if(m==="train") return { label:"Andén", ph:"Ej: Andén 7…" };
+  if(m==="bus")   return { label:"Dársena / Andén", ph:"Ej: Dársena 12…" };
+  if(m==="boat")  return { label:"Muelle / Terminal", ph:"Ej: Muelle A…" };
+  return { label:"Detalle (opcional)", ph:"Ej: Parking, punto exacto…" };
+}
+
 function legModeLabel(m){
   const v = legModeDefault(m);
   return (v==="plane") ? "Avión" : (v==="train") ? "Tren" : (v==="bus") ? "Bus" : (v==="car") ? "Coche" : "Barco";
@@ -3076,6 +3095,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <input data-sheet-leg="from" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad salida">
         <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
         <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
+      <div class="mt-2" style="max-width:220px;">
+        <label id="placeOutDetailLabel" class="text-xs text-slate-600">Terminal / Puerta</label>
+        <input data-sheet-leg="placeOutDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 detailSmall" placeholder="Ej: T4, Puerta H12…" />
+      </div>
+
         <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
         <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
@@ -3084,11 +3108,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
           <input data-sheet-leg="tzFrom" type="hidden" value="">
           <span id="legTzFromBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
-      <div class="mt-2">
-        <label class="text-xs text-slate-600">Terminal / Puerta / Andén / Muelle</label>
-        <input data-sheet-leg="placeOutDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: T4, Puerta H12, Andén 7…" />
-      </div>
-      </div>
+</div>
 
       <div class="sm:col-span-6">
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">LLEGADA</div>
@@ -3096,6 +3116,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <input data-sheet-leg="to" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad llegada">
         <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
         <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
+      <div class="mt-2" style="max-width:220px;">
+        <label id="placeInDetailLabel" class="text-xs text-slate-600">Terminal / Puerta</label>
+        <input data-sheet-leg="placeInDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 detailSmall" placeholder="Ej: T4, Puerta H12…" />
+      </div>
+
         <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
         <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
         <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
@@ -3104,11 +3129,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
           <input data-sheet-leg="tzTo" type="hidden" value="">
           <span id="legTzToBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
-      <div class="mt-2">
-        <label class="text-xs text-slate-600">Terminal / Puerta / Andén / Muelle</label>
-        <input data-sheet-leg="placeInDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: T4, Puerta H12, Andén 7…" />
-      </div>
-      </div>
+</div>
 
       <div class="sm:col-span-12">
         <label class="text-xs text-slate-600">Coste</label>
@@ -3143,6 +3164,22 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   let currentMode = legModeDefault(legObj.mode);
   updateChipUI(currentMode);
   try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+
+  // Detail field label/placeholder by mode
+  function __applyLegDetailText(){
+    try{
+      const t = __legDetailText(currentMode);
+      const poD = qs("placeOutDetail");
+      const piD = qs("placeInDetail");
+      if(poD) poD.placeholder = t.ph;
+      if(piD) piD.placeholder = t.ph;
+      const l1 = document.getElementById("placeOutDetailLabel");
+      const l2 = document.getElementById("placeInDetailLabel");
+      if(l1) l1.textContent = t.label;
+      if(l2) l2.textContent = t.label;
+    }catch{}
+  }
+  try{ __applyLegDetailText(); }catch{}
 
   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
 
@@ -3243,6 +3280,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       currentMode = c.dataset.legMode;
       updateChipUI(currentMode);
       try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+      try{ __applyLegDetailText(); }catch{}
       // persist mode + update placeholders (no global rerender)
       try { legObj.mode = currentMode; } catch {}
       // update place providers live
