@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V100V_LEGS_TZ_DUR</title>
+<title>V100W_LEGS_TZ_SUMDUR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100V_LEGS_TZ_DUR</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V100W_LEGS_TZ_SUMDUR</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1347,21 +1347,27 @@ function buildLegSummaryParts(leg) {
   const title = `${fromTxt} → ${toTxt}`;
 
   const dES = leg?.date ? formatDateES(leg.date) : "";
-  const t0 = String(leg?.time || "").trim();
-  const t1 = String(leg?.arriveTime || "").trim();
-  const tz0 = formatUTCOffset(leg?.tzFrom);
-  const tz1 = formatUTCOffset(leg?.tzTo);
-  const bt0 = t0 ? `<span class="font-semibold">${escapeHtml(t0)}</span>` : "";
-  const bt1 = t1 ? `<span class="font-semibold">${escapeHtml(t1)}</span>` : "";
-const durRaw = calcDurationTextTZ(leg?.date, leg?.time, leg?.arriveDate, leg?.arriveTime, leg?.tzFrom, leg?.tzTo);
+
+  const depDate = String(leg?.date || "").trim();
+  const depTime = String(leg?.time || "").trim();
+  const arrDate = String(leg?.arriveDate || leg?.dateIn || "").trim();
+  const arrTime = String(leg?.arriveTime || leg?.timeIn || "").trim();
+
+  const bt0 = depTime ? `<span class="font-semibold">${escapeHtml(depTime)}</span>` : "";
+  const bt1 = arrTime ? `<span class="font-semibold">${escapeHtml(arrTime)}</span>` : "";
+
+  // Prefer stored offsets; fallback to auto-derived offsets from city + date/time (no UI)
+  const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
+  const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   arrDate, arrTime);
+
+  const durRaw = calcDurationTextTZ(depDate, depTime, arrDate, arrTime, off0, off1);
   const dur = durRaw ? `<span class="mv-nb">${_mvNoBreakText(durRaw)}</span>` : "";
 
   let timeLine = "";
-  if (t0 && t1) timeLine = `${bt0} → ${bt1}${dur ? " · " + dur : ""}`;
-  else if (t0)  timeLine = `${bt0}`;
+  if (depTime && arrTime) timeLine = `${bt0} → ${bt1}${dur ? " · " + dur : ""}`;
+  else if (depTime)  timeLine = `${bt0}`;
 
   const dateHTML = dES ? `<span class="font-semibold">${escapeHtml(dES)}</span>` : "";
-
   const metaHTML = [dateHTML, timeLine].filter(Boolean).join(" · ") || "—";
 
   const p0 = String(leg?.placeOut || "").trim();
