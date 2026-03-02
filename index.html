@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V138_CONFIRM_ON_PENCIL_AND_EDIT_BASELINE</title>
+<title>V139_DELETE_CONFIRMATION_PREMIUM</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -665,7 +665,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V138_CONFIRM_ON_PENCIL_AND_EDIT_BASELINE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V139_DELETE_CONFIRMATION_PREMIUM</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2364,6 +2364,33 @@ function __confirmCloseIfDirty(){
   }catch{}
   return true;
 }
+
+function __deleteConfirmText(ctx, obj){
+  try{
+    const kind = ctx && ctx.kind ? String(ctx.kind) : "";
+    obj = obj || {};
+    if(kind==="leg"){
+      const a = String(obj.from || obj.placeOut || "").trim();
+      const b = String(obj.to   || obj.placeIn  || "").trim();
+      const line = (a && b) ? (a + " \u2192 " + b) : (a || b || "");
+      return { title: "¿Eliminar este transporte?", detail: line };
+    }
+    if(kind==="stay"){
+      const n = String(obj.name || "").trim();
+      const c = String(obj.city || "").trim();
+      const line = [n,c].filter(Boolean).join(" \u00b7 ");
+      return { title: "¿Eliminar este alojamiento?", detail: line };
+    }
+    const t = String(obj.title || obj.name || "").trim();
+    const c = String(obj.city || "").trim();
+    const line = [t,c].filter(Boolean).join(" \u00b7 ");
+    return { title: "¿Eliminar esta actividad?", detail: line };
+  }catch{
+    return { title: "¿Eliminar este elemento?", detail: "" };
+  }
+}
+
+
 
 
 
@@ -4447,7 +4474,25 @@ function __initEventSheetBindings(){
       const k = String(ctx.kind || trashBtn.dataset.kind || "");
       const id = String(ctx.id || trashBtn.dataset.id || "");
       if (!k || !id) return;
-      if (!confirm("¿Eliminar este elemento?")) return;
+            // Premium delete confirmation (contextual)
+      try{
+        const ctx2 = __eventSheetCtx || {};
+        const sc = (typeof curScenario==="function") ? curScenario() : (typeof curScenario === "function" ? curScenario() : null);
+        // curScenario() exists in app; fall back to ctx.scenarioId not needed
+        let obj = null;
+        try{
+          if(sc){
+            if(k === "leg") obj = (sc.legs||[]).find(x=>String(x.id)===String(id)) || null;
+            if(k === "stay") obj = (sc.stays||[]).find(x=>String(x.id)===String(id)) || null;
+            if(k === "act") obj = (sc.activities||[]).find(x=>String(x.id)===String(id)) || null;
+          }
+        }catch{}
+        const t = __deleteConfirmText({kind:k}, obj||{});
+        const msg = (t.detail ? (t.title + "\\n" + t.detail + "\\n\\nEsta acción no se puede deshacer.") : (t.title + "\\n\\nEsta acción no se puede deshacer."));
+        if(!confirm(msg)) return;
+      }catch{
+        if(!confirm("¿Eliminar este elemento?")) return;
+      }
       try { deleteItemById(k, id); } catch {}
       try { if (typeof saveState === "function") saveState(); } catch {}
       try { closeEventSheet(); } catch {}
