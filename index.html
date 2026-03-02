@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V109_TRANSPORT_SHEET_RESTORE</title>
+<title>V110_TRANSPORT_AC_OVERLAY_ANCHOR_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -594,7 +594,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V109_TRANSPORT_SHEET_RESTORE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V110_TRANSPORT_AC_OVERLAY_ANCHOR_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1624,9 +1624,12 @@ function __acPosition(menu, input){
     input = input || menu.__acInput;
     if(!input) return;
 
+    // Keep track of the active input
+    menu.__acInput = input;
+
     const r = input.getBoundingClientRect();
 
-    // iOS: visualViewport offsets keep fixed overlays anchored with keyboard/pinch
+    // Use visualViewport offsets on iOS so fixed overlay tracks the visual viewport (keyboard, pinch)
     const vv = window.visualViewport || null;
     const vvOffTop = vv ? vv.offsetTop : 0;
     const vvOffLeft = vv ? vv.offsetLeft : 0;
@@ -1635,28 +1638,28 @@ function __acPosition(menu, input){
     const w = Math.max(180, Math.round(r.width));
     const left = Math.round(r.left + vvOffLeft);
 
-    // NO GAP: menu must touch the input (border-to-border)
+    // No visual gap: menu must touch the input
     const gap = 0;
 
-    // Temporarily show to apply geometry safely
     const prevHidden = menu.classList.contains("hidden");
     if(prevHidden) menu.classList.remove("hidden");
 
     const vw = (vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 390));
     const vh = (vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight || 700));
 
-    // Tailwind max-h-52 = 13rem = 208px (keep as hard cap, but shrink if needed)
-    const HARD_CAP = 208;
+    // Size: aim for ~3 visible items with scroll if more
+    const HARD_CAP = 260;
+    const MIN_H = 168; // ~3 rows with padding
     const EDGE = 8;
 
-    // ALWAYS open BELOW the active input
-    const top = Math.round(r.bottom + vvOffTop + gap);
+    // ALWAYS open below the active input
+    let top = Math.round(r.bottom + vvOffTop + gap);
 
-    // Reduce max-height to fit BELOW; never flip above and never overlap the input
-    const spaceBelow = (vh - EDGE) - top;
-    const maxH = Math.max(0, Math.min(HARD_CAP, Math.floor(spaceBelow)));
+    const spaceBelow = (vh - EDGE) - (top);
+    // Prefer fit below; keep a reasonable minimum so it doesn't look like a line.
+    let maxH = Math.min(HARD_CAP, Math.floor(spaceBelow));
+    if(maxH < MIN_H) maxH = MIN_H;
 
-    // Clamp within viewport horizontally
     const maxLeft = Math.max(EDGE, vw - w - EDGE);
     const clLeft = Math.min(Math.max(EDGE, left), maxLeft);
 
@@ -1676,10 +1679,10 @@ function __acRender(menu, items, onPick){
     return;
   }
   const frag = document.createDocumentFragment();
-  items.forEach((it, idx)=>{
+  items.slice(0,10).forEach((it, idx)=>{
     const b = document.createElement("button");
     b.type="button";
-    b.className = "w-full text-left px-3 py-2 text-sm hover:bg-slate-50 active:bg-slate-100";
+    b.className = "w-full text-left px-3 py-3 text-base hover:bg-slate-50 active:bg-slate-100";
     b.textContent = it.label;
     b.addEventListener("pointerdown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
     b.addEventListener("mousedown",(e)=>{ e.preventDefault(); e.stopPropagation(); });
@@ -1703,17 +1706,36 @@ function __attachAutocomplete(input, provider, onPick){
   const menu = __acEnsureMenu(input);
   if(!menu) return;
 
-  // Prevent autocomplete interactions from bubbling to sheet/overlay handlers
-  menu.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); });
-  menu.addEventListener("mousedown",(e)=>{ e.stopPropagation(); });
-  menu.addEventListener("click",(e)=>{ e.stopPropagation(); });
+  // Bind global reposition listeners ONCE (avoid closure capturing wrong input)
+  if(!menu.__acBound){
+    menu.__acBound = true;
+
+    const reposition = ()=>{ try{ __acPosition(menu); }catch{} };
+
+    // Prevent autocomplete interactions from bubbling to sheet/overlay handlers
+    menu.addEventListener("pointerdown",(e)=>{ e.stopPropagation(); });
+    menu.addEventListener("mousedown",(e)=>{ e.stopPropagation(); });
+    menu.addEventListener("click",(e)=>{ e.stopPropagation(); });
+
+    const sheet = document.getElementById("eventSheetBody");
+    if(sheet) sheet.addEventListener("scroll", reposition, {passive:true});
+    window.addEventListener("resize", reposition, {passive:true});
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize", reposition, {passive:true});
+      window.visualViewport.addEventListener("scroll", reposition, {passive:true});
+    }
+  }
 
   const close = ()=> menu.classList.add("hidden");
 
   const refresh = ()=>{
-    const q = String(input.value||"").trim();
+    // Always track the truly active input for correct anchoring
+    menu.__acInput = input;
+
+    const qRaw = String(input.value||"").trim();
+    const q = qRaw.toLowerCase();
     const prov = input.__acProvider;
-    const items = (prov ? (prov(q.toLowerCase())||[]) : []);
+    const items = (prov ? (prov(q)||[]) : []);
     __acRender(menu, items, (it)=>{
       const pick = input.__acOnPick;
       try{ pick && pick(it); }catch{}
@@ -1721,7 +1743,7 @@ function __attachAutocomplete(input, provider, onPick){
       // keep focus for iPhone sheet
       try{ input.focus({preventScroll:true}); }catch{ try{ input.focus(); }catch{} }
     });
-    __acPosition(menu, input);
+    __acPosition(menu); // use menu.__acInput internally
   };
 
   input.addEventListener("input", refresh);
@@ -1732,15 +1754,6 @@ function __attachAutocomplete(input, provider, onPick){
     clearTimeout(blurT);
     blurT = setTimeout(close, 120);
   });
-
-  // Position updates
-  const sheet = document.getElementById("eventSheetBody");
-  if(sheet) sheet.addEventListener("scroll", ()=>__acPosition(menu, input), {passive:true});
-  window.addEventListener("resize", ()=>__acPosition(menu, input), {passive:true});
-  if(window.visualViewport){
-    window.visualViewport.addEventListener("resize", ()=>__acPosition(menu, input), {passive:true});
-    window.visualViewport.addEventListener("scroll", ()=>__acPosition(menu, input), {passive:true});
-  }
 }
 
 function __cityProvider(q){
