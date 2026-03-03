@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V160_NOTES_UI_POLISH_ZINDEX_AND_ICON_UNIFY</title>
+<title>V161_UNIFY_EVENT_NOTE_ICON_POSITION_AND_BEHAVIOR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V160_NOTES_UI_POLISH_ZINDEX_AND_ICON_UNIFY</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V161_UNIFY_EVENT_NOTE_ICON_POSITION_AND_BEHAVIOR</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1313,6 +1313,14 @@ function getPersistedFilesCount(item) {
 }
 
 
+
+function __notesIndicatorBtnHTML(kind, id, hasNotes){
+  if(!hasNotes) return "";
+  const k = escapeHtml(String(kind||""));
+  const i = escapeHtml(String(id||""));
+  return `<button type="button" class="notePeekBtn" data-item-notes-type="${k}" data-item-notes-id="${i}" title="Notas">🗒️<span class="noteDot"></span></button>`;
+}
+
 function __hasNotes(obj){
   const s = String(obj?.notes || obj?.note || "").trim();
   return s.length > 0;
@@ -1401,14 +1409,7 @@ function __noteTitleForKind(kind){
 }
 
 // Delegation for 🗒️ quick view buttons (do not open events)
-try{
-  if(!document.__notePeekDelegationBound){
-    document.__notePeekDelegationBound = true;
-    document.addEventListener("click", (e)=>{
-      const btn = e.target && e.target.closest ? e.target.closest(".notePeekBtn") : null;
-      if(!btn) return;
-      try{ if (window.__suppressNotePeekUntil && Date.now() < window.__suppressNotePeekUntil) return; }catch{}
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+try{ e.preventDefault(); e.stopPropagation(); }catch{}
       const kind = btn.getAttribute("data-kind") || "";
       const id = btn.getAttribute("data-id") || "";
       const obj = __getEventObjByKindId(kind, id) || {};
@@ -1424,13 +1425,37 @@ function buildEventIndicatorsHTML(item, kind) {
   if (!note && !files) return ``;
   const parts = [];
   if(note){
-    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></button>`);
+    parts.push(__notesIndicatorBtnHTML(k, item.id, true));
   }
   if(files){
     parts.push(`<span class="nfBadge" title="Archivos">📎</span>`);
   }
   return parts.join("");
 }
+
+// Global delegation: open notes editor from any list icon (editable)
+try{
+  if(!document.__itemNotesDelegationBound){
+    document.__itemNotesDelegationBound = true;
+    document.addEventListener("click", (e)=>{
+      const btn = e.target && e.target.closest ? e.target.closest("[data-item-notes-type][data-item-notes-id]") : null;
+      if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const t = btn.getAttribute("data-item-notes-type");
+      const id = btn.getAttribute("data-item-notes-id");
+      try{
+        if(typeof openItemNotesModalByTypeId === "function"){
+          openItemNotesModalByTypeId(t, id, { readOnly: false });
+          return;
+        }
+        if(typeof openItemNotesModal === "function"){
+          openItemNotesModal(t, id);
+        }
+      }catch{}
+    }, true);
+  }
+}catch{}
+
 
 function _mvNoBreakText(s) {
   // Ensures "2h 35m" behaves as a single visual unit (no line break between tokens)
