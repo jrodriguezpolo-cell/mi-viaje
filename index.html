@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V155_NOTES_PERSISTENCE_DAY_AND_EVENT</title>
+<title>V156_NOTES_PERSISTENCE_USING_WORKING_GLOBAL_MODALS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -721,7 +721,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V155_NOTES_PERSISTENCE_DAY_AND_EVENT</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V156_NOTES_PERSISTENCE_USING_WORKING_GLOBAL_MODALS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4591,60 +4591,6 @@ function closeEventSheet({ silent } = {}) {
 
 
 
-
-function __activeScenario(){
-  try{ return (typeof curScenario === "function") ? curScenario() : null; }catch{ return null; }
-}
-function __dailyNoteDateKey(){
-  try{
-    const sel = document.getElementById("dateJumpSelect");
-    const v = String(sel && sel.value ? sel.value : "").trim();
-    if(v) return v;
-  }catch{}
-  try{ if(typeof todayYMD==="function") return todayYMD(); }catch{}
-  try{ return new Date().toISOString().slice(0,10); }catch{}
-  return "";
-}
-function __getDailyNote(dateKey){
-  try{
-    const sc = __activeScenario();
-    if(!sc) return "";
-    const map = sc.dailyNotesByDate || {};
-    return String(map[dateKey] || "");
-  }catch{ return ""; }
-}
-function __setDailyNote(dateKey, text){
-  try{
-    const sc = __activeScenario();
-    if(!sc || !dateKey) return;
-    if(!sc.dailyNotesByDate) sc.dailyNotesByDate = {};
-    const t = String(text||"").trim();
-    if(!t){
-      try{ delete sc.dailyNotesByDate[dateKey]; }catch{}
-    }else{
-      sc.dailyNotesByDate[dateKey] = t;
-    }
-    try{ if(typeof saveState==="function") saveState(); }catch{}
-  }catch{}
-}
-function __getEventNotes(ctx){
-  try{
-    if(!ctx) return "";
-    const obj = (typeof __getEventObjByKindId==="function") ? __getEventObjByKindId(ctx.kind, ctx.id) : null;
-    return String((obj && obj.notes) ? obj.notes : "");
-  }catch{ return ""; }
-}
-function __setEventNotes(ctx, text){
-  try{
-    if(!ctx) return;
-    const obj = (typeof __getEventObjByKindId==="function") ? __getEventObjByKindId(ctx.kind, ctx.id) : null;
-    if(!obj) return;
-    const t = String(text||"").trim();
-    obj.notes = t;
-    try{ if(typeof saveState==="function") saveState(); }catch{}
-  }catch{}
-}
-
 function __getActiveDateKey(){
   try{
     const sel = document.getElementById("dateJumpSelect");
@@ -4679,12 +4625,18 @@ function __setTimelineNote(dateKey, text){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : null;
     if(!sc) return;
-    if(!sc.timelineNotesByDate) sc.timelineNotesByDate = {};
+    if(!sc.dailyNotesByDate) sc.dailyNotesByDate = (sc.dailyNotes || {});
+    if(!sc.dailyNotes) sc.dailyNotes = sc.dailyNotesByDate;
+    if(!sc.timelineNotesByDate) sc.timelineNotesByDate = sc.dailyNotesByDate;
     const t = String(text||"").trim();
     if(!t){
-      try{ delete sc.timelineNotesByDate[dateKey]; }catch{}
+      try{ try{ delete sc.timelineNotesByDate[dateKey]; }catch{}
+      try{ delete sc.dailyNotesByDate[dateKey]; }catch{}
+      try{ delete sc.dailyNotes[dateKey]; }catch{} }catch{}
     }else{
       sc.timelineNotesByDate[dateKey] = t;
+      sc.dailyNotesByDate[dateKey] = t;
+      sc.dailyNotes[dateKey] = t;
     }
     try{ if (typeof saveState === "function") saveState(); }catch{}
   }catch{}
@@ -4724,7 +4676,7 @@ function __openTimelineNotesModal(){
   const ta = document.getElementById("timelineNotesText");
   if(!modal || !ta) return;
   const k = __getActiveDateKey();
-  ta.value = k ? __getDailyNote(k) : "";
+  ta.value = k ? __getTimelineNote(k) : "";
   modal.classList.remove("hidden");
   try{ ta.focus({preventScroll:true}); }catch{ try{ ta.focus(); }catch{} }
 }
@@ -4748,15 +4700,7 @@ function __initTimelineNotesFab(){
 
     if(fab && !fab.__tn_bound){
       fab.__tn_bound = true;
-      fab.addEventListener("click", (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const k = __dailyNoteDateKey();
-    const ta = document.getElementById("timelineNotesText");
-    __setDailyNote(k, ta ? ta.value : "");
-    try{ __updateTimelineNotesBadge && __updateTimelineNotesBadge(); }catch{}
-    const modal = document.getElementById("timelineNotesModal");
-    if(modal) modal.classList.add("hidden");
-  });
+      fab.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); openDailyNoteModal(__getActiveDateKey() || (typeof todayYMD==='function'? todayYMD(): new Date().toISOString().slice(0,10))); });
     }
     const closeAny = (e)=>{ try{ e && (e.preventDefault(), e.stopPropagation()); }catch{}; __closeTimelineNotesModal(); };
     if(backdrop && !backdrop.__tn_bound){ backdrop.__tn_bound=true; backdrop.addEventListener("click", closeAny); }
@@ -4769,7 +4713,7 @@ function __initTimelineNotesFab(){
         e.preventDefault(); e.stopPropagation();
         const k = __getActiveDateKey();
         if(!k){ __closeTimelineNotesModal(); return; }
-        __setDailyNote(k, ta ? ta.value : "");
+        __setTimelineNote(k, ta ? ta.value : "");
         __updateTimelineNotesBadge();
         __closeTimelineNotesModal();
       });
@@ -6389,12 +6333,14 @@ function openItemNotesModal(type, id) {
 
 function openDailyNoteModal(dateKey) {
   const sc = curScenario();
-  if (!sc.dailyNotes) sc.dailyNotes = {};
+  if (!sc.dailyNotesByDate) sc.dailyNotesByDate = (sc.dailyNotes || {});
+  if (!sc.dailyNotes) sc.dailyNotes = sc.dailyNotesByDate;
+  if (!sc.timelineNotesByDate) sc.timelineNotesByDate = sc.dailyNotesByDate;
   const key = String(dateKey || "").trim();
   if (!key) return;
 
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
-  const current = String(sc.dailyNotes[key] || "");
+  const current = String((sc.dailyNotesByDate && sc.dailyNotesByDate[key]) || (sc.dailyNotes && sc.dailyNotes[key]) || "");
 
   const html = `
     <div class="text-sm text-slate-600 mb-2">Notas del día (${escapeHtml(key)})</div>
@@ -6459,9 +6405,15 @@ function openDailyNoteModal(dateKey) {
         const v = String(ta?.value || "").trim();
         if (!v) {
           // Guardar vacío => borrar key
-          delete sc.dailyNotes[key];
+          try{ delete sc.dailyNotesByDate[key]; }catch{}
+        try{ try{ delete sc.dailyNotesByDate[key]; }catch{}
+        try{ delete sc.dailyNotes[key]; }catch{}
+        try{ delete sc.timelineNotesByDate[key]; }catch{} }catch{}
+        try{ delete sc.timelineNotesByDate[key]; }catch{}
         } else {
+          sc.dailyNotesByDate[key] = v;
           sc.dailyNotes[key] = v;
+          sc.timelineNotesByDate[key] = v;
         }
         saveState();
         renderTimeline();
@@ -8732,8 +8684,8 @@ QA checklist (V89D1):
 <button class="sheetMiniClose" id="sheetNotesClose" type="button">✕</button>
 </div>
 <div class="sheetMiniBody">
-<textarea id="sheetNotesDraft" placeholder="Escribe una nota…" style="width:100%;min-height:120px;"></textarea>
-<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;"><button id="sheetNotesCancelBtn" type="button" class="tap" style="height:40px;padding:0 14px;border-radius:14px;border:1px solid #e2e8f0;background:#fff;font-weight:700;">Cancelar</button><button id="sheetNotesSaveBtn" type="button" class="tap" style="height:40px;padding:0 14px;border-radius:14px;border:0;background:#0f172a;color:#fff;font-weight:800;">Guardar</button></div><p style="opacity:.6;font-size:12px;margin-top:8px;">(Se guarda en el viaje)</p>
+<textarea id="sheetNotesDraft" placeholder="Escribe una nota… (no se guarda aún)" style="width:100%;min-height:120px;"></textarea>
+<p style="opacity:.6;font-size:12px;margin-top:8px;">(Fase actual: UI solamente, sin persistencia)</p>
 </div>
 </div>
 <script>
@@ -8753,15 +8705,7 @@ overlay.classList.remove("hidden");
     notes.classList.add("hidden");
 
     if(which === "attach") attach.classList.remove("hidden");
-    if(which === "notes") {
-      notes.classList.remove("hidden");
-      try{
-        var ta = $("sheetNotesDraft");
-        var ctx = window.__eventSheetCtx || {};
-        if(ta) ta.value = __getEventNotes(ctx);
-      }catch(e){}
-    }
-
+    if(which === "notes") notes.classList.remove("hidden");
   }
 
   function closeSheetMiniModals(){
@@ -8786,42 +8730,20 @@ overlay.classList.remove("hidden");
     if(btnAttach) btnAttach.addEventListener("click", function(e){
       try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(err){}
       openSheetMiniModal("attach");
-
-    // Persisted Event Notes (sheet mini modal)
-    var notesSave = $("sheetNotesSaveBtn");
-    var notesCancel = $("sheetNotesCancelBtn");
-    var notesClose = $("sheetNotesClose");
-    if(notesSave && !notesSave.__bound){
-      notesSave.__bound = true;
-      notesSave.addEventListener("click", function(e){
-        try{ e.preventDefault(); e.stopPropagation(); }catch(err){}
-        try{
-          var ta = $("sheetNotesDraft");
-          var ctx = window.__eventSheetCtx || {};
-          __setEventNotes(ctx, ta ? ta.value : "");
-        }catch(err){}
-        closeSheetMiniModals();
-      }, true);
-    }
-    if(notesCancel && !notesCancel.__bound){
-      notesCancel.__bound = true;
-      notesCancel.addEventListener("click", function(e){
-        try{ e.preventDefault(); e.stopPropagation(); }catch(err){}
-        closeSheetMiniModals();
-      }, true);
-    }
-    // Close X acts as cancel (no save)
-    if(notesClose && !notesClose.__bound2){
-      notesClose.__bound2 = true;
-      notesClose.addEventListener("click", function(e){
-        try{ e.preventDefault(); e.stopPropagation(); }catch(err){}
-        closeSheetMiniModals();
-      }, true);
-    }
     }, true);
     if(btnNotes)  btnNotes.addEventListener("click", function(e){
       try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(err){}
-      openSheetMiniModal("notes");
+            try{
+        const ctx = window.__eventSheetCtx || {};
+        const sc = (typeof curScenario==="function") ? curScenario() : null;
+        if(!sc) return;
+        let obj = null;
+        let label = "Evento";
+        if(ctx.kind==="leg"){ obj = (sc.legs||[]).find(x=>String(x.id)===String(ctx.id)); label="Transporte"; }
+        else if(ctx.kind==="stay"){ obj = (sc.stays||[]).find(x=>String(x.id)===String(ctx.id)); label="Alojamiento"; }
+        else if(ctx.kind==="act"){ obj = (sc.activities||[]).find(x=>String(x.id)===String(ctx.id)); label="Actividad"; }
+        if(obj) openItemNotesModal(obj, label);
+      }catch(err){}
     }, true);
 
     if(ov)      ov.addEventListener("click", closeSheetMiniModals);
