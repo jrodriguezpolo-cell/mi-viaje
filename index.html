@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V169_STAYS_NOTES_ICON_ALIGN</title>
+<title>V172_TRANSPORT_TRIPTYPE_ONEWAY_ROUNDTRIP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V169_STAYS_NOTES_ICON_ALIGN</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V172_TRANSPORT_TRIPTYPE_ONEWAY_ROUNDTRIP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1125,6 +1125,15 @@ function setView(viewName){
   if (viewName === "legs") {
     __ensureAccordionOpen("legs");
     if (typeof renderLegs === "function") renderLegs();
+      try{
+        const body = document.querySelector('[data-acc-body="legs"]');
+        if(body){
+          body.classList.remove("hidden");
+          body.style.display = "";
+          body.removeAttribute("hidden");
+        }
+      }catch{}
+
   }
   if (viewName === "stays") {
     __ensureAccordionOpen("stays");
@@ -1424,7 +1433,7 @@ function buildEventIndicatorsHTML(item, kind) {
   if (!note && !files) return ``;
   const parts = [];
   if(note){
-    parts.push(`<span class="notePeekBtn" role="button" tabindex="0" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></span>`);
+    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></button>`);
   }
   if(files){
     parts.push(`<span class="nfBadge" title="Archivos">📎</span>`);
@@ -3669,6 +3678,16 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
   wrap.className = "sheet-leg-editor";
   wrap.innerHTML = `
+    <div class="mb-3">
+      <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">TIPO</div>
+      <div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1">
+        <input class="sr-only" type="radio" name="legTripType" id="legTripOneway" value="oneway" data-leg-triptype-radio>
+        <label for="legTripOneway" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn" data-leg-triptype-btn="oneway">Ida</label>
+        <input class="sr-only" type="radio" name="legTripType" id="legTripRoundtrip" value="roundtrip" data-leg-triptype-radio>
+        <label for="legTripRoundtrip" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn" data-leg-triptype-btn="roundtrip">Ida y vuelta</label>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
       <div class="sm:col-span-6">
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
@@ -3776,7 +3795,37 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   const v = (x) => (x == null ? "" : String(x));
   const qs = (k) => wrap.querySelector(`[data-sheet-leg="${k}"]`);
 
-  qs("from").value = v(legObj.from);
+  
+  // Trip type (Ida / Ida y vuelta) — default oneway
+  try{
+    if(!legObj.tripType) legObj.tripType = "oneway";
+    const getTrip = ()=> (String(legObj.tripType||"oneway")==="roundtrip" ? "roundtrip" : "oneway");
+    const setTripUI = (val)=>{
+      const v = (String(val)==="roundtrip") ? "roundtrip" : "oneway";
+      const btns = wrap.querySelectorAll('[data-leg-triptype-btn]');
+      btns.forEach(b=>{
+        const isOn = (b.getAttribute("data-leg-triptype-btn")===v);
+        b.classList.toggle("seg-active", isOn);
+        b.classList.toggle("seg-inactive", !isOn);
+      });
+      const radios = wrap.querySelectorAll('input[data-leg-triptype-radio]');
+      radios.forEach(r=>{ try{ r.checked = (r.value===v); }catch{} });
+    };
+    setTripUI(getTrip());
+    wrap.querySelectorAll('input[data-leg-triptype-radio]').forEach(r=>{
+      if(r.__boundTrip) return;
+      r.__boundTrip = true;
+      r.addEventListener("change", ()=>{
+        try{
+          if(!r.checked) return;
+          const v = (r.value==="roundtrip") ? "roundtrip" : "oneway";
+          legObj.tripType = v;
+          setTripUI(v);
+        }catch{}
+      });
+    });
+  }catch{}
+qs("from").value = v(legObj.from);
   qs("to").value = v(legObj.to);
   qs("placeOut").value = v(legObj.placeOut || "");
   qs("placeOutDetail").value = v(legObj.placeOutDetail || "");
@@ -5189,7 +5238,10 @@ function legCard(leg, idx) {
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
-  const __sp = buildLegSummaryParts(leg);
+    const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
+  const __rtBadge = (__tt==="roundtrip") ? `<span class="text-xs font-semibold text-slate-500" title="Ida y vuelta">↩︎</span>` : ``;
+
+const __sp = buildLegSummaryParts(leg);
 
   // UX 2.1: list = consultation only (no internal accordion, no inline edit)
   return `
@@ -5203,8 +5255,9 @@ function legCard(leg, idx) {
         <div class="text-xs text-slate-600 mt-0.5 truncate">${__sp.metaHTML}</div>
         ${__sp.placeLineHTML}
       </div>
-      <div class="shrink-0 flex items-center gap-2">
+      <div class="shrink-0 flex items-center gap-2">${indicatorsHTML}
         ${buildEventIndicatorsHTML(leg,"leg")}
+        ${__rtBadge}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
         ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
       </div>
@@ -5267,7 +5320,7 @@ function staySummaryLinesHTML(stay, opts){
 
   return `
     <div class="text-sm font-semibold truncate">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></div>
-    <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckIn}${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
   `;
 }
@@ -5318,6 +5371,7 @@ function stayCard(stay) {
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
         ${staySummaryLinesHTML(stay)}</div>
+      </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
         ${buildEventIndicatorsHTML(stay,"stay")}
@@ -5679,13 +5733,21 @@ function __focusNextInSection(section){
   } catch {}
 }
 function __ensureAccordionOpen(accKey){
-  const btn = document.querySelector(`[data-acc="${accKey}"]`);
-  const body = document.querySelector(`[data-acc-body="${accKey}"]`);
-  if (!btn || !body) return;
-  const isHidden = body.classList.contains("hidden") || body.style.display === "none" || body.hasAttribute("hidden");
-  if (isHidden){
-    try { btn.click(); } catch {}
-  }
+  try{
+    const key = String(accKey||"").trim();
+    const body = document.querySelector(`[data-acc-body="${key}"]`);
+    if(body){
+      body.classList.remove("hidden");
+      body.style.display = "";
+      body.removeAttribute("hidden");
+    }
+    // icono (opcional)
+    const btn = document.querySelector(`[data-acc="${key}"]`);
+    if(btn){
+      const icon = btn.querySelector(".accIcon");
+      if(icon) icon.textContent = "▴";
+    }
+  }catch{}
 }
 
 
@@ -6032,6 +6094,7 @@ const line1 = `<div class="text-sm font-semibold truncate">
   <span>${escapeHtml(line1Title)}</span>
   <span class="text-slate-400"> · </span>
   <span class="font-medium">${escapeHtml(line1City)}</span>
+  ${hasNotes ? ` <span class="ml-1">🗒️</span>` : ``}
   ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
 </div>`;
 
@@ -8314,7 +8377,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, currency:(state.displayCurrency||"EUR"), tzFrom:null, tzTo:null });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, currency:(state.displayCurrency||"EUR"), tzFrom:null, tzTo:null, tripType:"oneway" });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
@@ -8814,11 +8877,25 @@ overlay.classList.remove("hidden");
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  try { document.body.dataset.view = activeView || ""; } catch {}
-  try { updateSubSectionHeader(activeView); } catch {}
-});
+  try {
+    // Vista inicial coherente
+    const v = (typeof activeView !== "undefined" && activeView) ? activeView : "timeline";
+    document.body.dataset.view = v;
+    try { updateSubSectionHeader(v); } catch {}
 
-/* ---------------- DateJumpUI (optional, manual only) ----------------
+    // Forzar render inicial (sin tocar setView ni acordeones)
+    requestAnimationFrame(() => {
+      try {
+        // Cronograma
+        try { timelineViewMode = "global"; activeDayISO = ""; } catch {}
+        if (typeof renderTimeline === "function") renderTimeline();
+
+        // Transporte (para que al entrar ya esté pintado)
+        if (typeof renderLegs === "function") renderLegs();
+      } catch {}
+    });
+  } catch {}
+});/* ---------------- DateJumpUI (optional, manual only) ----------------
    Baseline: V97_HYGIENE (no auto-jumps on section entry)
    This module only updates UI on view change and jumps when user interacts.
 --------------------------------------------------------------------- */
