@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V165_FIX_BOOT_RENDER_TIMELINE_AND_LEGS</title>
+<title>V166_FIX_NAV_SECTIONS_RENDER_BY_FORCE_OPEN_ACCORDIONS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V165_FIX_BOOT_RENDER_TIMELINE_AND_LEGS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V166_FIX_NAV_SECTIONS_RENDER_BY_FORCE_OPEN_ACCORDIONS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1149,6 +1149,7 @@ function setView(viewName){
 
 }
 
+
 try{
   if(!window.__setViewBootPatched && typeof setView === "function"){
     window.__setViewBootPatched = true;
@@ -1157,9 +1158,28 @@ try{
       const r = __origSetView.apply(this, arguments);
       try{
         const v = String(viewName||"");
+        if(v === "timeline" || v === "cronograma" || v === "schedule"){
+          try{ __ensureAccordionOpen("timeline"); }catch{}
+          try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+        }
         if(v === "legs" || v === "transport" || v === "transporte"){
           try{ __ensureAccordionOpen("legs"); }catch{}
           try{ if(typeof renderLegs==="function") renderLegs(); }catch{}
+        }
+        if(v === "stays" || v === "stay" || v === "alojamiento"){
+          try{ __ensureAccordionOpen("stays"); }catch{}
+          try{ if(typeof renderStays==="function") renderStays(); }catch{}
+        }
+        if(v === "acts" || v === "act" || v === "actividades"){
+          try{ __ensureAccordionOpen("acts"); }catch{}
+          try{ if(typeof renderActivities==="function") renderActivities(); }catch{}
+        }
+      }catch{}
+      return r;
+    };
+  }
+}catch{}
+try{ if(typeof renderLegs==="function") renderLegs(); }catch{}
         }
       }catch{}
       return r;
@@ -5715,14 +5735,20 @@ function __focusNextInSection(section){
   } catch {}
 }
 function __ensureAccordionOpen(accKey){
-  try{
-    const k = String(key||"").trim();
-    if(!k) return;
-    const body = document.querySelector(`[data-acc-body="${k}"]`);
-    if(body) body.classList.remove("hidden");
-    const icon = document.querySelector(`[data-acc-icon="${k}"]`);
-    if(icon) icon.textContent = "▾";
-  }catch{}
+  const body = document.querySelector(`[data-acc-body="${accKey}"]`);
+  if(!body) return;
+
+  // Abrir SIEMPRE quitando hidden (sin depender de listeners)
+  body.classList.remove("hidden");
+  body.style.display = "";
+  body.removeAttribute("hidden");
+
+  // Actualizar icono si existe (opcional, sin riesgo)
+  const btn = document.querySelector(`[data-acc="${accKey}"]`);
+  if(btn){
+    const icon = btn.querySelector(".accIcon");
+    if(icon) icon.textContent = "▴";
+  }
 }
 
 
@@ -9184,6 +9210,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }catch{}
   try{ if(typeof loadState==="function") loadState(); }catch{}
   try{ if(typeof renderTabs==="function") renderTabs(); }catch{}
+  try{ if(typeof setupAccordion==="function") setupAccordion(); }catch{}
   try{ if(typeof calcSummary==="function") calcSummary(); }catch{}
   try{ if(typeof setView==="function") setView("timeline"); }catch{}
   // Defensive renders to avoid blank initial screens
