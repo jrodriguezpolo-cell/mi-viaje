@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V143_NOTES_FILES_BADGES_IN_LISTS</title>
+<title>V144_TIMELINE_FLOATING_NOTES_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -664,6 +664,40 @@ div[data-acc-body="acts"]{
   line-height: 1;
 }
 
+
+/* Timeline Notes floating button */
+#timelineNotesFab.fabBtn{
+  position: fixed;
+  right: 14px;
+  bottom: 86px; /* above bottom nav */
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  border: 1px solid rgb(226 232 240);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#timelineNotesFab .fabIcon{ font-size: 20px; line-height: 1; }
+#timelineNotesFab .fabBadge{
+  position:absolute;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: rgb(15 23 42);
+  color: white;
+  font-size: 11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border: 2px solid white;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -674,7 +708,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V143_NOTES_FILES_BADGES_IN_LISTS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V144_TIMELINE_FLOATING_NOTES_BUTTON</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4444,6 +4478,155 @@ function closeEventSheet({ silent } = {}) {
   }
 }
 
+
+
+function __getActiveDateKey(){
+  try{
+    const sel = document.getElementById("dateJumpSelect");
+    const v = String(sel && sel.value ? sel.value : "").trim();
+    if(v) return v;
+  }catch{}
+  // fallback: try relevant date if selector empty
+  try{
+    if(typeof getActiveViewName==="function"){
+      const v = getActiveViewName("");
+      // best-effort: pick today iso
+      const d = new Date();
+      const iso = d.toISOString().slice(0,10);
+      return iso;
+    }
+  }catch{}
+  return "";
+}
+
+function __getTimelineNote(dateKey){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return "";
+    const map = sc.timelineNotesByDate || {};
+    return String(map[dateKey] || "");
+  }catch{
+    return "";
+  }
+}
+
+function __setTimelineNote(dateKey, text){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return;
+    if(!sc.timelineNotesByDate) sc.timelineNotesByDate = {};
+    const t = String(text||"").trim();
+    if(!t){
+      try{ delete sc.timelineNotesByDate[dateKey]; }catch{}
+    }else{
+      sc.timelineNotesByDate[dateKey] = t;
+    }
+    try{ if (typeof saveState === "function") saveState(); }catch{}
+  }catch{}
+}
+
+function __updateTimelineNotesBadge(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    const badge = document.getElementById("timelineNotesBadge");
+    if(!fab || !badge) return;
+    const k = __getActiveDateKey();
+    const note = k ? __getTimelineNote(k) : "";
+    if(note && String(note).trim()){
+      badge.classList.remove("hidden");
+    }else{
+      badge.classList.add("hidden");
+    }
+  }catch{}
+}
+
+function __updateTimelineNotesFabVisibility(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    if(!fab) return;
+    const v = (typeof getActiveViewName==="function") ? String(getActiveViewName("")||"") : "";
+    if(v === "timeline" || v === "cronograma" || v === "schedule"){
+      fab.classList.remove("hidden");
+      __updateTimelineNotesBadge();
+    }else{
+      fab.classList.add("hidden");
+    }
+  }catch{}
+}
+
+function __openTimelineNotesModal(){
+  const modal = document.getElementById("timelineNotesModal");
+  const ta = document.getElementById("timelineNotesText");
+  if(!modal || !ta) return;
+  const k = __getActiveDateKey();
+  ta.value = k ? __getTimelineNote(k) : "";
+  modal.classList.remove("hidden");
+  try{ ta.focus({preventScroll:true}); }catch{ try{ ta.focus(); }catch{} }
+}
+
+function __closeTimelineNotesModal(){
+  const modal = document.getElementById("timelineNotesModal");
+  if(!modal) return;
+  modal.classList.add("hidden");
+}
+
+function __initTimelineNotesFab(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    const modal = document.getElementById("timelineNotesModal");
+    const backdrop = document.getElementById("timelineNotesBackdrop");
+    const btnClose = document.getElementById("timelineNotesClose");
+    const btnCancel = document.getElementById("timelineNotesCancel");
+    const btnSave = document.getElementById("timelineNotesSave");
+    const ta = document.getElementById("timelineNotesText");
+    const sel = document.getElementById("dateJumpSelect");
+
+    if(fab && !fab.__tn_bound){
+      fab.__tn_bound = true;
+      fab.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __openTimelineNotesModal(); });
+    }
+    const closeAny = (e)=>{ try{ e && (e.preventDefault(), e.stopPropagation()); }catch{}; __closeTimelineNotesModal(); };
+    if(backdrop && !backdrop.__tn_bound){ backdrop.__tn_bound=true; backdrop.addEventListener("click", closeAny); }
+    if(btnClose && !btnClose.__tn_bound){ btnClose.__tn_bound=true; btnClose.addEventListener("click", closeAny); }
+    if(btnCancel && !btnCancel.__tn_bound){ btnCancel.__tn_bound=true; btnCancel.addEventListener("click", closeAny); }
+
+    if(btnSave && !btnSave.__tn_bound){
+      btnSave.__tn_bound=true;
+      btnSave.addEventListener("click",(e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const k = __getActiveDateKey();
+        if(!k){ __closeTimelineNotesModal(); return; }
+        __setTimelineNote(k, ta ? ta.value : "");
+        __updateTimelineNotesBadge();
+        __closeTimelineNotesModal();
+      });
+    }
+
+    // Keep badge updated when changing day
+    if(sel && !sel.__tn_bound){
+      sel.__tn_bound = true;
+      sel.addEventListener("change", ()=>{ __updateTimelineNotesBadge(); }, {passive:true});
+    }
+
+    // Patch setView to update visibility (safe)
+    try{
+      const orig = window.setView;
+      if(typeof orig === "function" && !orig.__tn_patched){
+        function patched(viewName){
+          const r = orig.apply(this, arguments);
+          try{ __updateTimelineNotesFabVisibility(); }catch{}
+          return r;
+        }
+        patched.__tn_patched = true;
+        patched.__dj_patched = orig.__dj_patched; // preserve flags if any
+        window.setView = patched;
+      }
+    }catch{}
+
+    __updateTimelineNotesFabVisibility();
+  }catch{}
+}
+
 function __initEventSheetBindings(){
   const overlay = document.getElementById("eventSheetOverlay");
   const closeBtn = document.getElementById("eventSheetClose");
@@ -6245,13 +6428,7 @@ function renderTimeline() {
     items.push({ date: (a.date || "9999-99-99"), time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
   }
 
-  // Add note markers as timeline items so you can see notes even if there was no event that day
-  Object.keys(notes).forEach(d => {
-    const txt = String(notes[d] || "").trim();
-    if (!d || !txt) return;
-    items.push({ date: d, type:"Nota", title: "Notas del día", cost: null, isNote: true, uid: `note:${d}` });
-  });
-
+  
   // Meals is a budget line, not a timeline event. Drop any legacy meal items safely.
   for (let i = items.length - 1; i >= 0; i--) {
     const t = String(items[i]?.type || "").toLowerCase();
@@ -8725,5 +8902,27 @@ function scrollToDateSep(viewName, iso){
 
 
 </script>
+
+<!-- Timeline Notes FAB + Modal -->
+<button id="timelineNotesFab" class="fabBtn hidden" type="button" title="Nota del día" aria-label="Nota del día">
+  <span class="fabIcon">📝</span>
+  <span class="fabBadge hidden" id="timelineNotesBadge">1</span>
+</button>
+
+<div id="timelineNotesModal" class="hidden fixed inset-0 z-[80]">
+  <div id="timelineNotesBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute left-1/2 top-1/2 w-[92%] max-w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-4 shadow-xl">
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-sm font-extrabold text-slate-900">Nota del día</div>
+      <button id="timelineNotesClose" type="button" class="tap h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">✕</button>
+    </div>
+    <textarea id="timelineNotesText" class="w-full min-h-[140px] rounded-2xl border border-slate-200 p-3 text-base" placeholder="Escribe aquí tu nota del día..."></textarea>
+    <div class="mt-3 flex gap-2 justify-end">
+      <button id="timelineNotesCancel" type="button" class="tap h-10 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">Cancelar</button>
+      <button id="timelineNotesSave" type="button" class="tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold">Guardar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
