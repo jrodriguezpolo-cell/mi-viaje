@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V149_WIRE_TIMELINE_NOTES_FAB_AND_SAFE_NOTE_PEEK</title>
+<title>V152_BLOCK_NOTEPEEK_WHILE_SHEET_OPEN</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -721,7 +721,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V149_WIRE_TIMELINE_NOTES_FAB_AND_SAFE_NOTE_PEEK</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V152_BLOCK_NOTEPEEK_WHILE_SHEET_OPEN</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1310,6 +1310,10 @@ function __notesFilesBadge(obj){
 }
 
 
+try{ window.__suppressNotePeekUntil = 0; }catch{}
+try{ window.__sheetOpen = false; }catch{}
+
+
 function showNotePeek(text, title){
   try{
     const s = String(text||"");
@@ -1377,7 +1381,11 @@ try{
     document.addEventListener("click", (e)=>{
       const btn = e.target && e.target.closest ? e.target.closest(".notePeekBtn") : null;
       if(!btn) return;
-      try{ if (window.__suppressNotePeekUntil && Date.now() < window.__suppressNotePeekUntil) return; }catch{}
+      try{ if(window.__sheetOpen) return; }catch{}
+      try{ if(document.body && document.body.classList && document.body.classList.contains("sheet-open")) return; }catch{}
+      try{
+        if (window.__suppressNotePeekUntil && Date.now() < window.__suppressNotePeekUntil) return;
+      }catch{}
       try{ e.preventDefault(); e.stopPropagation(); }catch{}
       const kind = btn.getAttribute("data-kind") || "";
       const id = btn.getAttribute("data-id") || "";
@@ -3359,7 +3367,6 @@ const __sectionExpanded = {
 
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
 let __eventSheetCtx = null;
-window.__suppressNotePeekUntil = 0;
 
 // Event Sheet mode: single source of truth lives in __eventSheetCtx.mode ("view" | "edit")
 function getEventSheetMode(){
@@ -3368,6 +3375,8 @@ function getEventSheetMode(){
 }
 
 function applyEventSheetMode(){
+  try{ window.__sheetOpen = true; }catch{}
+
   const mode = getEventSheetMode();
   const overlay = document.getElementById("eventSheetOverlay");
   const body = document.getElementById("eventSheetBody");
@@ -4360,6 +4369,7 @@ function renderLegModeChips(container, leg, onSelect){
     if (!ok) { alert("No se pudo abrir el editor"); return; }
 
     overlay.classList.remove("hidden");
+    try{ window.__sheetOpen = true; }catch{}
     document.body.classList.add("sheet-open");
     requestAnimationFrame(()=>{ try{ __installClearX(document.getElementById("eventSheetBody")); }catch{} });
     try { applyEventSheetMode(); } catch {}
@@ -4523,8 +4533,11 @@ function renderLegModeChips(container, leg, onSelect){
 
 }
 
-function closeEventSheet({ silent } = {}) {
+function closeEventSheet({
+  try{ window.__sheetOpen = false; }catch{}
+
   try{ window.__suppressNotePeekUntil = Date.now() + 450; }catch{}
+ silent } = {}) {
   const overlay = document.getElementById("eventSheetOverlay");
   const body = document.getElementById("eventSheetBody");
   const mainScroll = document.getElementById("mainScroll");
