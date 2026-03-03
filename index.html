@@ -4,12 +4,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V148_FIX_V147_STRAY_CATCH_BLOCK</title>
+<title>V149_WIRE_TIMELINE_NOTES_FAB_AND_SAFE_NOTE_PEEK</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
-<script src="https://cdn.tailwindcss.com">
-try{ __initTimelineNotesFab(); }catch{}
-</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script>
 // Data-based delete (global)
 function getActiveScenario() {
@@ -723,7 +721,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V148_FIX_V147_STRAY_CATCH_BLOCK</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V149_WIRE_TIMELINE_NOTES_FAB_AND_SAFE_NOTE_PEEK</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1314,16 +1312,30 @@ function __notesFilesBadge(obj){
 
 function showNotePeek(text, title){
   try{
+    const s = String(text||"");
+    const trimmed = s.trim();
     const modal = document.getElementById("notePeekModal");
+    if(!modal){
+      // fallback estable
+      try{
+        const safe = (typeof escapeHtml === "function") ? escapeHtml(trimmed || "Sin notas") : (trimmed || "Sin notas");
+        if(typeof showModal === "function"){
+          showModal(String(title||"Nota"), `<div class="whitespace-pre-wrap text-sm">${safe}</div>`);
+          return;
+        }
+      }catch{}
+      alert((trimmed || "Sin notas"));
+      return;
+    }
+
     const bd = document.getElementById("notePeekBackdrop");
     const btn = document.getElementById("notePeekClose");
     const t = document.getElementById("notePeekTitle");
     const body = document.getElementById("notePeekBody");
-    if(!modal || !t || !body) return;
+    if(!t || !body) return;
 
     t.textContent = String(title || "Nota");
-    const s = String(text || "");
-    body.textContent = s.trim().length ? s : "Sin notas";
+    body.textContent = trimmed.length ? trimmed : "Sin notas";
 
     modal.classList.remove("hidden");
 
@@ -9024,6 +9036,8 @@ function scrollToDateSep(viewName, iso){
 
 
 
+
+window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab(); }catch{} });
 </script>
 
 <!-- Timeline Notes FAB + Modal -->
