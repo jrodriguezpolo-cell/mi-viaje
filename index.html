@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V172_FIX_LEGS_RENDER_AND_TOTALS_SAFE</title>
+<title>V168_NOTES_ICON_FIX_TRANSPORTE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V172_FIX_LEGS_RENDER_AND_TOTALS_SAFE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V168_NOTES_ICON_FIX_TRANSPORTE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1123,24 +1123,9 @@ function setView(viewName){
     if (typeof renderTimeline === "function") renderTimeline();
   }
   if (viewName === "legs") {
-      try{
-        const body = document.querySelector('[data-acc-body="legs"]');
-        if(body){
-          body.classList.remove("hidden");
-          body.style.display = "";
-          body.removeAttribute("hidden");
-        }
-      }catch{}
-
-      try{
-        if(typeof renderLegs==="function") renderLegs();
-        // retry suave por si el DOM aún no está listo o algún render previo pisa el HTML
-        setTimeout(()=>{ try{ if(typeof renderLegs==="function") renderLegs(); }catch{} }, 50);
-      }catch{}
-
     __ensureAccordionOpen("legs");
     if (typeof renderLegs === "function") renderLegs();
-      }
+  }
   if (viewName === "stays") {
     __ensureAccordionOpen("stays");
     if (typeof renderStays === "function") renderStays();
@@ -1162,8 +1147,6 @@ function setView(viewName){
   // Simple & deterministic: always reset scroll to top on entry (no date auto-jumps)
   try { scrollMainToTop(); } catch(_){ const ms = document.getElementById("mainScroll"); if (ms) ms.scrollTop = 0; }
 
-
-  try{ if(typeof calcSummary==="function") calcSummary(); }catch{}
 }
 
 
@@ -1441,7 +1424,7 @@ function buildEventIndicatorsHTML(item, kind) {
   if (!note && !files) return ``;
   const parts = [];
   if(note){
-    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></button>`);
+    parts.push(`<span class="notePeekBtn" role="button" tabindex="0" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></span>`);
   }
   if(files){
     parts.push(`<span class="nfBadge" title="Archivos">📎</span>`);
@@ -5220,7 +5203,7 @@ function legCard(leg, idx) {
         <div class="text-xs text-slate-600 mt-0.5 truncate">${__sp.metaHTML}</div>
         ${__sp.placeLineHTML}
       </div>
-      <div class="shrink-0 flex items-center gap-2">${indicatorsHTML}
+      <div class="shrink-0 flex items-center gap-2">
         ${buildEventIndicatorsHTML(leg,"leg")}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
         ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
@@ -5697,21 +5680,13 @@ function __focusNextInSection(section){
   } catch {}
 }
 function __ensureAccordionOpen(accKey){
-  try{
-    const key = String(accKey||"").trim();
-    const body = document.querySelector(`[data-acc-body="${key}"]`);
-    if(body){
-      body.classList.remove("hidden");
-      body.style.display = "";
-      body.removeAttribute("hidden");
-    }
-    // icono (opcional)
-    const btn = document.querySelector(`[data-acc="${key}"]`);
-    if(btn){
-      const icon = btn.querySelector(".accIcon");
-      if(icon) icon.textContent = "▴";
-    }
-  }catch{}
+  const btn = document.querySelector(`[data-acc="${accKey}"]`);
+  const body = document.querySelector(`[data-acc-body="${accKey}"]`);
+  if (!btn || !body) return;
+  const isHidden = body.classList.contains("hidden") || body.style.display === "none" || body.hasAttribute("hidden");
+  if (isHidden){
+    try { btn.click(); } catch {}
+  }
 }
 
 
@@ -8841,28 +8816,11 @@ overlay.classList.remove("hidden");
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  try {
-    // Vista inicial coherente
-    const v = (typeof activeView !== "undefined" && activeView) ? activeView : "timeline";
-    document.body.dataset.view = v;
-    try { updateSubSectionHeader(v); } catch {}
+  try { document.body.dataset.view = activeView || ""; } catch {}
+  try { updateSubSectionHeader(activeView); } catch {}
+});
 
-    // Forzar render inicial (sin tocar setView ni acordeones)
-    requestAnimationFrame(() => {
-      try {
-        // Cronograma
-        try { timelineViewMode = "global"; activeDayISO = ""; } catch {}
-        if (typeof renderTimeline === "function") renderTimeline();
-
-        // Transporte (para que al entrar ya esté pintado)
-        if (typeof renderLegs === "function") renderLegs();
-
-        // Totales
-        try{ if(typeof calcSummary==="function") calcSummary(); }catch{}
-      } catch {}
-    });
-  } catch {}
-});/* ---------------- DateJumpUI (optional, manual only) ----------------
+/* ---------------- DateJumpUI (optional, manual only) ----------------
    Baseline: V97_HYGIENE (no auto-jumps on section entry)
    This module only updates UI on view change and jumps when user interacts.
 --------------------------------------------------------------------- */
