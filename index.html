@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V144_TIMELINE_FLOATING_NOTES_BUTTON</title>
+<title>V146_EVENT_NOTES_QUICKVIEW_AND_VIEWMODE_ACCESS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -698,6 +698,19 @@ div[data-acc-body="acts"]{
   border: 2px solid white;
 }
 
+
+/* Note quick-view button (lists) */
+.notePeekBtn{
+  border:none;
+  background:transparent;
+  padding:0 4px;
+  margin-left:6px;
+  font-size:14px;
+  line-height:1;
+  opacity:0.95;
+}
+.notePeekBtn:active{ transform: scale(0.98); }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -708,7 +721,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V144_TIMELINE_FLOATING_NOTES_BUTTON</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V146_EVENT_NOTES_QUICKVIEW_AND_VIEWMODE_ACCESS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1296,10 +1309,82 @@ function __notesFilesBadge(obj){
   return "📎";
 }
 
-function buildEventIndicatorsHTML(item) {
-  const badge = __notesFilesBadge(item);
-  if (!badge) return ``;
-  return `<span class="nfBadge" title="Notas/Archivos">${badge}</span>`;
+
+function showNotePeek(text, title){
+  try{
+    const modal = document.getElementById("notePeekModal");
+    const bd = document.getElementById("notePeekBackdrop");
+    const btn = document.getElementById("notePeekClose");
+    const t = document.getElementById("notePeekTitle");
+    const body = document.getElementById("notePeekBody");
+    if(!modal || !t || !body) return;
+
+    t.textContent = String(title || "Nota");
+    const s = String(text || "");
+    body.textContent = s.trim().length ? s : "Sin notas";
+
+    modal.classList.remove("hidden");
+
+    const close = (e)=>{
+      try{ e && (e.preventDefault(), e.stopPropagation()); }catch{}
+      modal.classList.add("hidden");
+    };
+
+    if(bd && !bd.__np_bound){ bd.__np_bound = true; bd.addEventListener("click", close); }
+    if(btn && !btn.__np_bound){ btn.__np_bound = true; btn.addEventListener("click", close); }
+  }catch{}
+}
+
+function __getEventObjByKindId(kind, id){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return null;
+    const k = String(kind||"");
+    const sid = String(id||"");
+    if(k==="leg") return (sc.legs||[]).find(x=>String(x&&x.id)===sid) || null;
+    if(k==="stay") return (sc.stays||[]).find(x=>String(x&&x.id)===sid) || null;
+    if(k==="act") return (sc.activities||[]).find(x=>String(x&&x.id)===sid) || null;
+  }catch{}
+  return null;
+}
+
+function __noteTitleForKind(kind){
+  const k = String(kind||"");
+  if(k==="leg") return "Nota (Transporte)";
+  if(k==="stay") return "Nota (Alojamiento)";
+  if(k==="act") return "Nota (Actividad)";
+  return "Nota";
+}
+
+// Delegation for 🗒️ quick view buttons (do not open events)
+try{
+  if(!document.__notePeekDelegationBound){
+    document.__notePeekDelegationBound = true;
+    document.addEventListener("click", (e)=>{
+      const btn = e.target && e.target.closest ? e.target.closest(".notePeekBtn") : null;
+      if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const kind = btn.getAttribute("data-kind") || "";
+      const id = btn.getAttribute("data-id") || "";
+      const obj = __getEventObjByKindId(kind, id) || {};
+      showNotePeek(obj.notes || obj.note || "", __noteTitleForKind(kind));
+    }, true);
+  }
+}catch{}
+
+function buildEventIndicatorsHTML(item, kind) {
+  const k = String(kind||"");
+  const note = __hasNotes(item);
+  const files = __hasFiles(item);
+  if (!note && !files) return ``;
+  const parts = [];
+  if(note){
+    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️</button>`);
+  }
+  if(files){
+    parts.push(`<span class="nfBadge" title="Archivos">📎</span>`);
+  }
+  return parts.join("");
 }
 
 function _mvNoBreakText(s) {
@@ -3320,6 +3405,14 @@ function applyEventSheetMode(){
 
   // Ensure guards are installed (capture blockers) once
   try { __ensureEventSheetViewGuards(); } catch {}
+
+  // keep notes/attach enabled in view (read-only access)
+  try{
+    const nb = document.getElementById("eventSheetNotes");
+    const ab = document.getElementById("eventSheetAttach");
+    if(nb) nb.removeAttribute("disabled");
+    if(ab) ab.removeAttribute("disabled");
+  }catch{}
 }
 
 function setEventSheetMode(mode){
@@ -4633,6 +4726,37 @@ function __initEventSheetBindings(){
   const sheet = document.getElementById("eventSheet");
   if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); if(!__confirmCloseIfDirty()) return; closeEventSheet(); });
 
+  const notesBtn = document.getElementById("eventSheetNotes");
+  if(notesBtn && !notesBtn.__bound){
+    notesBtn.__bound = true;
+    notesBtn.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const mode = (typeof getEventSheetMode==="function") ? getEventSheetMode() : "view";
+      const ctx = __eventSheetCtx || {};
+      const obj = __getEventObjByKindId(ctx.kind, ctx.id) || {};
+      // view: always read-only quick view
+      if(mode === "view"){
+        showNotePeek(obj.notes || obj.note || "", __noteTitleForKind(ctx.kind));
+        return;
+      }
+      // edit: if there's an editor, use it; else fallback to read-only
+      try{ if(typeof openNotesEditor === "function"){ openNotesEditor(ctx.kind, ctx.id); return; } }catch{}
+      showNotePeek(obj.notes || obj.note || "", __noteTitleForKind(ctx.kind));
+    });
+  }
+
+  const attachBtn = document.getElementById("eventSheetAttach");
+  if(attachBtn && !attachBtn.__bound){
+    attachBtn.__bound = true;
+    attachBtn.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const mode = (typeof getEventSheetMode==="function") ? getEventSheetMode() : "view";
+      // If there is a panel, open it; otherwise show safe message.
+      try{ if(typeof openFilesPanel === "function"){ openFilesPanel(); return; } }catch{}
+      alert("Archivos: función en desarrollo");
+    });
+  }
+
 
   const editBtn = document.getElementById("eventSheetEdit");
   if (editBtn && !editBtn.__bound) {
@@ -5013,7 +5137,7 @@ function legCard(leg, idx) {
         ${__sp.placeLineHTML}
       </div>
       <div class="shrink-0 flex items-center gap-2">
-        ${buildEventIndicatorsHTML(leg)}
+        ${buildEventIndicatorsHTML(leg,"leg")}
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
         ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
       </div>
@@ -5130,7 +5254,7 @@ function stayCard(stay) {
       </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        ${buildEventIndicatorsHTML(stay)}
+        ${buildEventIndicatorsHTML(stay,"stay")}
       </div>
     </button>
 
@@ -5878,7 +6002,7 @@ function actCard(act) {
       </div>
       <div class="shrink-0 flex items-center gap-2"><div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        ${buildEventIndicatorsHTML(act)}
+        ${buildEventIndicatorsHTML(act,"act")}
       </div>
     </button>
 
@@ -6560,6 +6684,7 @@ function renderTimeline() {
     else if (it.stayId != null) { kind = "stay"; itemObj = stayById.get(String(it.stayId)); }
 
     if (itemObj && !it.isNote) {
+      const __notePeek = __hasNotes(itemObj) ? `<button type="button" class="notePeekBtn" data-kind="${kind}" data-id="${itemObj.id}" title="Ver nota">🗒️</button>` : ``;
       const dateKey = (kind === "stay") ? "" : String(itemObj.date || it.date || "");
       const st = (kind === "act") ? computeDoneState(itemObj) : computeDoneStateGeneric(itemObj, dateKey);
       const isToday = (dateKey && String(dateKey) === todayKey());
@@ -6567,6 +6692,9 @@ function renderTimeline() {
       // Badges
       if (st.skipped) tlBadges = `<span class="text-xs font-semibold skipped-badge">No realizado</span>`;
       else if (st.auto && st.done) tlBadges = `<span class="text-xs auto-badge">Asumido</span>`;
+
+      // Note quick view (event notes)
+      try{ if(__notePeek) tlBadges = (tlBadges ? (tlBadges + " " + __notePeek) : __notePeek); }catch{}
 
       // Clases visuales
       if (st.skipped) visualClass = " tl-skipped";
@@ -8921,6 +9049,19 @@ function scrollToDateSep(viewName, iso){
       <button id="timelineNotesCancel" type="button" class="tap h-10 px-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">Cancelar</button>
       <button id="timelineNotesSave" type="button" class="tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold">Guardar</button>
     </div>
+  </div>
+</div>
+
+
+<!-- Note Peek Modal (read-only) -->
+<div id="notePeekModal" class="hidden fixed inset-0 z-[85]">
+  <div id="notePeekBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute left-1/2 top-1/2 w-[92%] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-4 shadow-xl">
+    <div class="flex items-center justify-between mb-2">
+      <div id="notePeekTitle" class="text-sm font-extrabold text-slate-900">Nota</div>
+      <button id="notePeekClose" type="button" class="tap h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">✕</button>
+    </div>
+    <div id="notePeekBody" class="rounded-2xl border border-slate-200 p-3 text-base" style="white-space: pre-wrap; max-height: 55vh; overflow:auto;"></div>
   </div>
 </div>
 
