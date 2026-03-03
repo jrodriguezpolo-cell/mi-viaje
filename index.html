@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V159_FIX_V158_DUPLICATE_NOTESBTN_DECLARATION</title>
+<title>V160_NOTES_UI_POLISH_ZINDEX_AND_ICON_UNIFY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -711,6 +711,35 @@ div[data-acc-body="acts"]{
 }
 .notePeekBtn:active{ transform: scale(0.98); }
 
+
+/* Notes UI polish: ensure global modal above Event Sheet */
+#modalBackdrop{ z-index: 9000 !important; }
+#modalBox{ z-index: 9100 !important; }
+
+/* Note icon + blue dot */
+.notePeekBtn{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  margin-left: 6px;
+  font-size: 14px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+}
+.noteDot{
+  position:absolute;
+  right:-2px;
+  top:-2px;
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#3b82f6;
+  border:2px solid #fff;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -721,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V159_FIX_V158_DUPLICATE_NOTESBTN_DECLARATION</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V160_NOTES_UI_POLISH_ZINDEX_AND_ICON_UNIFY</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1395,7 +1424,7 @@ function buildEventIndicatorsHTML(item, kind) {
   if (!note && !files) return ``;
   const parts = [];
   if(note){
-    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️</button>`);
+    parts.push(`<button type="button" class="notePeekBtn" data-kind="${k}" data-id="${item.id}" title="Ver nota">🗒️<span class="noteDot"></span></button>`);
   }
   if(files){
     parts.push(`<span class="nfBadge" title="Archivos">📎</span>`);
