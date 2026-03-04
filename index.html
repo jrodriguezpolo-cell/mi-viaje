@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V185_TIMELINE_DAY_HEADER_NOTE_MARKER</title>
+<title>V186_FIX_DAILY_NOTES_MARKERS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V185_TIMELINE_DAY_HEADER_NOTE_MARKER</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V186_FIX_DAILY_NOTES_MARKERS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5007,8 +5007,14 @@ function __getTimelineNote(dateKey){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : null;
     if(!sc) return "";
-    const map = sc.timelineNotesByDate || {};
-    return String(map[dateKey] || "");
+    // Backward/forward compatible: notes may live in timelineNotesByDate OR dailyNotes/dailyNotesByDate
+    const map1 = sc.timelineNotesByDate || null;
+    const map2 = sc.dailyNotesByDate || null;
+    const map3 = sc.dailyNotes || null;
+    if(map1 && (map1[dateKey] != null)) return String(map1[dateKey] || "");
+    if(map2 && (map2[dateKey] != null)) return String(map2[dateKey] || "");
+    if(map3 && (map3[dateKey] != null)) return String(map3[dateKey] || "");
+    return "";
   }catch{
     return "";
   }
