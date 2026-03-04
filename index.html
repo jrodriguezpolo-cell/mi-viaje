@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V175_TRANSPORT_TRIPTYPE_ONEWAY_ROUNDTRIP</title>
+<title>V176_TRANSPORT_ROUNDTRIP_LINKED_RETURN_LEG</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V175_TRANSPORT_TRIPTYPE_ONEWAY_ROUNDTRIP</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V176_TRANSPORT_ROUNDTRIP_LINKED_RETURN_LEG</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3700,6 +3700,14 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       </div>
     </div>
 
+    <div class="mb-3" id="legRtSwitchRow" style="display:none">
+      <button type="button" class="tap w-full border border-slate-200 bg-white rounded-2xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              data-leg-rt-switch>
+        Ir a vuelta
+      </button>
+      <div class="text-xs text-slate-500 mt-1" id="legRtSwitchHint" style="display:none">Trayectos vinculados (ida/vuelta).</div>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
       <div class="sm:col-span-6">
         <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
@@ -3808,11 +3816,15 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
   const qs = (k) => wrap.querySelector(`[data-sheet-leg="${k}"]`);
 
   
-  // Trip type (Ida / Ida y vuelta) — default oneway
+  // Trip type (Ida / Ida y vuelta) — default oneway + V176 linked return leg
   try{
-    if(!legObj.tripType) legObj.tripType = "oneway";
-    const getTrip = ()=> (String(legObj.tripType||"oneway")==="roundtrip" ? "roundtrip" : "oneway");
-    const setTripUI = (val)=>{
+    const sc = (typeof curScenario==="function") ? curScenario() : (typeof getActiveScenario==="function" ? getActiveScenario() : null);
+
+    // Helpers (kept local to sheet)
+    const __ensureTripType = (o)=>{ if(o && !o.tripType) o.tripType="oneway"; };
+    const __getTrip = ()=> (String(legObj.tripType||"oneway")==="roundtrip" ? "roundtrip" : "oneway");
+
+    const __setTripUI = (val)=>{
       const v = (String(val)==="roundtrip") ? "roundtrip" : "oneway";
       const btns = wrap.querySelectorAll('[data-leg-triptype-btn]');
       btns.forEach(b=>{
@@ -3823,17 +3835,162 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
       const radios = wrap.querySelectorAll('input[data-leg-triptype-radio]');
       radios.forEach(r=>{ try{ r.checked = (r.value===v); }catch{} });
     };
-    setTripUI(getTrip());
+
+    const __setRtSwitchUI = ()=>{
+      try{
+        const row = wrap.querySelector("#legRtSwitchRow");
+        const btn = wrap.querySelector("[data-leg-rt-switch]");
+        if(!row || !btn) return;
+        const tt = __getTrip();
+        const peer = String(legObj.rtPeerId||"");
+        const role = String(legObj.rtRole||"");
+        if(tt==="roundtrip" && peer){
+          row.style.display = "";
+          btn.textContent = (role==="return") ? "Ir a ida" : "Ir a vuelta";
+          try{ const hint = wrap.querySelector("#legRtSwitchHint"); if(hint) hint.style.display=""; }catch{}
+        } else {
+          row.style.display = "none";
+        }
+      }catch{}
+    };
+
+    const __genRtGroupId = ()=> "rt_" + (typeof nowId==="function" ? nowId() : Math.random().toString(36).slice(2,10));
+    const __cloneBaseLegShape = ()=> ({
+      id: (typeof nowId==="function" ? nowId() : Math.random().toString(36).slice(2,10)),
+      mode: legObj.mode || "plane",
+      from: "",
+      to: "",
+      placeOut: "",
+      placeIn: "",
+      date: "",
+      time: "",
+      arriveDate: "",
+      arriveTime: "",
+      cost: null,
+      currency: (legObj.currency || (typeof state!=="undefined" && state.displayCurrency) || "EUR"),
+      tzFrom: null,
+      tzTo: null,
+      tripType: "roundtrip"
+    });
+
+    const __createLinkedReturnIfMissing = ()=>{
+      if(!sc || !Array.isArray(sc.legs)) return;
+      if(String(legObj.rtPeerId||"")) return; // already linked
+      const groupId = __genRtGroupId();
+      const ret = __cloneBaseLegShape();
+      // Copy requested fields
+      ret.mode = legObj.mode || ret.mode;
+      ret.currency = legObj.currency || ret.currency;
+
+      // Invert from/to
+      ret.from = (legObj.to || "");
+      ret.to   = (legObj.from || "");
+
+      // Mark roles + link
+      __ensureTripType(legObj);
+      legObj.tripType = "roundtrip";
+      ret.tripType = "roundtrip";
+
+      legObj.rtGroupId = groupId;
+      ret.rtGroupId = groupId;
+      legObj.rtRole = "outbound";
+      ret.rtRole = "return";
+
+      legObj.rtPeerId = String(ret.id);
+      ret.rtPeerId = String(legObj.id);
+
+      // Insert return leg just after current leg if possible (keeps list readable)
+      const i = sc.legs.findIndex(x=>String(x && x.id)===String(legObj.id));
+      if(i>=0) sc.legs.splice(i+1, 0, ret);
+      else sc.legs.unshift(ret);
+
+      // Mark dirty (so Save persists)
+      try{
+        const body = document.getElementById("eventSheetBody");
+        if(body){ body.dataset.dirty = "1"; body.classList.add("dirty"); }
+      }catch{}
+    };
+
+    const __deleteLinkedReturnIfConfirmed = ()=>{
+      const peerId = String(legObj.rtPeerId||"");
+      if(!peerId) return true;
+      const ok = confirm("Eliminar trayecto de vuelta vinculado?");
+      if(!ok) return false;
+
+      // Delete peer
+      try{
+        if(sc && Array.isArray(sc.legs)){
+          const j = sc.legs.findIndex(x=>String(x && x.id)===peerId);
+          if(j>=0) sc.legs.splice(j,1);
+        }
+      }catch{}
+
+      // Clean outbound
+      try{
+        delete legObj.rtPeerId; delete legObj.rtGroupId; delete legObj.rtRole;
+      }catch{}
+      try{
+        const body = document.getElementById("eventSheetBody");
+        if(body){ body.dataset.dirty = "1"; body.classList.add("dirty"); }
+      }catch{}
+      return true;
+    };
+
+    // Init
+    __ensureTripType(legObj);
+    __setTripUI(__getTrip());
+    __setRtSwitchUI();
+
+    // Bind triptype radios
     wrap.querySelectorAll('input[data-leg-triptype-radio]').forEach(r=>{
       if(r.__boundTrip) return;
       r.__boundTrip = true;
       r.addEventListener("change", ()=>{
         try{
           if(!r.checked) return;
-          const v = (r.value==="roundtrip") ? "roundtrip" : "oneway";
-          legObj.tripType = v;
-          setTripUI(v);
+          const next = (r.value==="roundtrip") ? "roundtrip" : "oneway";
+          const prev = __getTrip();
+
+          if(next==="roundtrip"){
+            legObj.tripType = "roundtrip";
+            __createLinkedReturnIfMissing();
+            __setTripUI("roundtrip");
+            __setRtSwitchUI();
+            return;
+          }
+
+          // next === oneway
+          if(String(legObj.rtPeerId||"")){
+            const ok = __deleteLinkedReturnIfConfirmed();
+            if(!ok){
+              // revert selector back to roundtrip
+              legObj.tripType = "roundtrip";
+              __setTripUI("roundtrip");
+              __setRtSwitchUI();
+              return;
+            }
+          }
+          legObj.tripType = "oneway";
+          __setTripUI("oneway");
+          __setRtSwitchUI();
         }catch{}
+      });
+    });
+
+    // Bind "Ir a ida/vuelta"
+    const rtBtn = wrap.querySelector("[data-leg-rt-switch]");
+    if(rtBtn && !rtBtn.__boundRtNav){
+      rtBtn.__boundRtNav = true;
+      rtBtn.addEventListener("click", (e)=>{
+        try{ e.preventDefault(); e.stopPropagation(); }catch{}
+        const peerId = String(legObj.rtPeerId||"");
+        if(!peerId) return;
+        try{
+          openEventSheet({ kind:"leg", id: peerId, sourceView:"legs" });
+        }catch{}
+      });
+    }
+  }catch{}
       });
     });
   }catch{}
@@ -5278,7 +5435,12 @@ function legCard(leg, idx) {
 
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
     const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
-  const __rtBadge = (__tt==="roundtrip") ? `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb" title="Ida y vuelta">↩︎&nbsp;Ida&nbsp;y&nbsp;vuelta</span>` : ``;
+  const __role = String(leg && leg.rtRole || "");
+  const __rtBadge = (__role==="return")
+    ? `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb" title="Vuelta">Vuelta</span>`
+    : (__tt==="roundtrip")
+      ? `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb" title="Ida y vuelta">Ida y vuelta</span>`
+      : ``;
 
 const __sp = buildLegSummaryParts(leg);
 
