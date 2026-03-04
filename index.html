@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V188_NOTE_ONLY_DAYS_NO_EMPTY_CARD</title>
+<title>V189_NOTAS_DEL_VIAJE_INDEX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V188_NOTE_ONLY_DAYS_NO_EMPTY_CARD</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V189_NOTAS_DEL_VIAJE_INDEX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6868,6 +6868,10 @@ function openDailyNoteModal(dateKey){
   const modalHtml = `
     <div class="flex items-center justify-between gap-2 mb-2">
       <div class="text-sm text-slate-600 font-semibold">Nota del día</div>
+      <div class="flex items-center gap-2">
+      <button id="dailyNotesIndexBtn" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+        Notas del viaje
+      </button>
       <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}" ${minAttr} ${maxAttr}
         class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm"
         style="font-size:16px; line-height:1.2;">
@@ -6903,6 +6907,7 @@ function openDailyNoteModal(dateKey){
     const btnSave = document.getElementById("dailyNoteModalSave");
     const btnDel = document.getElementById("dailyNoteModalDelete");
     const btnCancel = document.getElementById("dailyNoteModalCancel");
+    const btnIdx = document.getElementById("dailyNotesIndexBtn");
 
     const updateForKey = (k)=>{
       const cur = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
@@ -6911,6 +6916,10 @@ function openDailyNoteModal(dateKey){
     };
 
     if(btnCancel) btnCancel.onclick = () => { closeModal(); };
+
+    if(btnIdx){
+      btnIdx.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} closeModal(); openDailyNotesIndexModal(); };
+    }
 
     if(datePick && !datePick.__dn_bound){
       datePick.__dn_bound = true;
@@ -6951,6 +6960,102 @@ function openDailyNoteModal(dateKey){
     }
   }, 0);
 }
+
+/* ============================
+   Daily Notes: "Notas del viaje" index (V189)
+   ============================ */
+
+function __formatDayLong(iso){
+  const v = String(iso||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return v || "—";
+  try{
+    const d = new Date(v+"T00:00:00");
+    return d.toLocaleDateString("es-ES",{weekday:"short", day:"2-digit", month:"short", year:"numeric"}).replace(".", "");
+  }catch{
+    return v;
+  }
+}
+
+function openDailyNoteViewModal(dateKey){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if(!sc) return;
+  __ensureDailyNotes(sc);
+  const k = String(dateKey||"").trim();
+  const txt = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
+  const body = `
+    <div class="text-sm text-slate-600 font-semibold mb-1">${escapeHtml(__formatDayLong(k))}</div>
+    <div class="px-3 py-2 rounded-xl border border-slate-200 bg-white whitespace-pre-wrap" style="font-size:16px; line-height:1.35;">
+      ${txt ? escapeHtml(txt) : '<span class="text-slate-400">Sin nota.</span>'}
+    </div>
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <button id="dnViewEdit" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">Editar</button>
+      <button id="dnViewClose" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
+    </div>
+  `;
+  showModal("Nota del día", body);
+  setTimeout(()=>{
+    const btnE = document.getElementById("dnViewEdit");
+    const btnC = document.getElementById("dnViewClose");
+    if(btnC) btnC.onclick = ()=>closeModal();
+    if(btnE) btnE.onclick = ()=>{
+      closeModal();
+      openDailyNoteModal(k);
+    };
+  },0);
+}
+
+function openDailyNotesIndexModal(){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if(!sc) return;
+  __ensureDailyNotes(sc);
+
+  const entries = [];
+  try{
+    for(const [k,v] of Object.entries(sc.dailyNotes||{})){
+      const vv = String(v||"").trim();
+      if(vv) entries.push([String(k), vv]);
+    }
+  }catch{}
+  entries.sort((a,b)=> (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+
+  const listHtml = entries.length ? entries.map(([k,v])=>{
+    const snippet = v.replace(/\s+/g," ").trim().slice(0, 90);
+    return `
+      <button class="tap w-full text-left px-3 py-2 rounded-xl border border-slate-200 bg-white dnIdxRow" data-k="${escapeHtml(k)}">
+        <div class="flex items-center justify-between gap-2">
+          <div class="text-sm font-semibold text-slate-900">${escapeHtml(__formatDayLong(k))}</div>
+          <div class="text-xs text-slate-500">${escapeHtml(k)}</div>
+        </div>
+        <div class="text-sm text-slate-600 mt-1">${escapeHtml(snippet)}${v.length>90?"…":""}</div>
+      </button>
+    `;
+  }).join("") : `<div class="text-sm text-slate-500">Aún no hay notas del día.</div>`;
+
+  const body = `
+    <div class="text-sm text-slate-600 mb-2">Todas las notas del día (por fecha)</div>
+    <div class="flex flex-col gap-2 max-h-[55vh] overflow-auto pr-1">
+      ${listHtml}
+    </div>
+    <div class="mt-3 flex items-center justify-end">
+      <button id="dnIdxClose" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
+    </div>
+  `;
+  showModal("Notas del viaje", body);
+
+  setTimeout(()=>{
+    const btnC = document.getElementById("dnIdxClose");
+    if(btnC) btnC.onclick = ()=>closeModal();
+    document.querySelectorAll(".dnIdxRow").forEach(el=>{
+      el.addEventListener("click",(e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const k = el.getAttribute("data-k") || "";
+        closeModal();
+        openDailyNoteViewModal(k);
+      });
+    });
+  },0);
+}
+
 
 
 /* ---------------- /Timeline: jump to item ---------------- */
