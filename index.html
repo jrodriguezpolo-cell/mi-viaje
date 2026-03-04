@@ -1438,6 +1438,21 @@ try{
   }
 }catch{}
 
+// Delegation for roundtrip jump badge (Ida/Vuelta)
+try{
+  if(!document.__rtJumpDelegationBound){
+    document.__rtJumpDelegationBound = true;
+    document.addEventListener("click", (e)=>{
+      const btn = e.target && e.target.closest ? e.target.closest("[data-rt-jump]") : null;
+      if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const id = btn.getAttribute("data-rt-jump") || "";
+      if(!id) return;
+      try{ openEventSheet({ kind:"leg", id, sourceView:"legs" }); }catch{}
+    }, { capture: true });
+  }
+}catch{}
+
 function buildEventIndicatorsHTML(item, kind) {
   const k = String(kind||"");
   const note = __hasNotes(item);
@@ -4098,6 +4113,38 @@ qs("from").value = v(legObj.from);
   });
 
 
+  // Roundtrip helper: keep peer route swapped (ida <-> vuelta)
+  const __syncPeerRoute = ()=>{
+    try{
+      if(String(legObj.tripType||"oneway")!=="roundtrip") return;
+      const peerId = String(legObj.rtPeerId||"");
+      if(!peerId) return;
+      const peer = (sc && Array.isArray(sc.legs)) ? sc.legs.find(x=>String(x.id)===peerId) : null;
+      if(!peer) return;
+      // Swap from/to
+      peer.from = String(legObj.to||"");
+      peer.to   = String(legObj.from||"");
+      // Return leg should not carry cost (total is on outbound)
+      if(String(peer.rtRole||"")==="return") peer.cost = null;
+      if(String(legObj.rtRole||"")==="return") legObj.cost = null;
+      try{ if(typeof saveState==="function") saveState(); }catch{}
+    }catch{}
+  };
+
+  // Lock cost in return leg (UI + data)
+  try{
+    if(String(legObj.tripType||"oneway")==="roundtrip" && String(legObj.rtRole||"")==="return"){
+      const c = qs("cost");
+      if(c){
+        c.disabled = true;
+        c.value = "";
+        c.placeholder = "— (incluido en ida)";
+        try{ c.classList.add("opacity-60"); }catch{}
+      }
+      legObj.cost = null;
+    }
+  }catch{}
+
   // Bindings (write directly to the same object reference)
   const bind = (key, fn) => {
     const el = qs(key);
@@ -4106,8 +4153,8 @@ qs("from").value = v(legObj.from);
     el.addEventListener("change", () => { try { fn(el.value); } catch {} });
   };
 
-  bind("from", (val)=>{ legObj.from = val; try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} });
-  bind("to", (val)=>{ legObj.to = val;   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} });
+  bind("from", (val)=>{ legObj.from = val; try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} try{ __syncPeerRoute(); }catch{} });
+  bind("to", (val)=>{ legObj.to = val;   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} try{ __syncPeerRoute(); }catch{} });
   bind("placeOut", (val)=>{ legObj.placeOut = val; });
   bind("placeIn", (val)=>{ legObj.placeIn = val; });
   bind("placeOutDetail", (val)=>{ legObj.placeOutDetail = val; });
@@ -4124,7 +4171,7 @@ qs("from").value = v(legObj.from);
     legObj.timeIn = val;        // compat legacy para timeline/summary
   });
   bind("tzTo", (val)=>{ const s = String(val||"").trim(); legObj.tzTo = (s===""? null : parseInt(s,10)); });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); legObj.cost = (s === "") ? null : parseMoney(s); });
+  bind("cost", (val)=>{ if(String(legObj.tripType||"oneway")==="roundtrip" && String(legObj.rtRole||"")==="return"){ legObj.cost = null; try{ qs("cost").value=""; }catch{} return; } const s = String(val||"").trim(); legObj.cost = (s === "") ? null : parseMoney(s); });
   bind("currency", (val)=>{ legObj.currency = val; });
   return true;
 }
@@ -5435,11 +5482,13 @@ function legCard(leg, idx) {
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
     const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
   const __role = String(leg && leg.rtRole || "");
-  const __rtBadge = (__role==="return")
-    ? `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb" title="Vuelta">Vuelta</span>`
-    : (__tt==="roundtrip")
-      ? `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb" title="Ida y vuelta">Ida y vuelta</span>`
-      : ``;
+  const __peer = String(leg && leg.rtPeerId || "");
+  const __rtBadge = (__tt==="roundtrip" && __peer)
+    ? (__role==="return"
+        ? `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</button>`
+        : `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a vuelta">Ida</button>`
+      )
+    : ``;
 
 const __sp = buildLegSummaryParts(leg);
 
@@ -5570,7 +5619,6 @@ function stayCard(stay) {
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
         ${staySummaryLinesHTML(stay)}</div>
-      </div>
       <div class="shrink-0 flex items-center gap-2">
         ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
         ${buildEventIndicatorsHTML(stay,"stay")}
@@ -7034,9 +7082,6 @@ function renderTimeline() {
       // Badges
       if (st.skipped) tlBadges = `<span class="text-xs font-semibold skipped-badge">No realizado</span>`;
       else if (st.auto && st.done) tlBadges = `<span class="text-xs auto-badge">Asumido</span>`;
-
-      // Note quick view (event notes)
-      try{ if(__notePeek) tlBadges = (tlBadges ? (tlBadges + " " + __notePeek) : __notePeek); }catch{}
 
       // Clases visuales
       if (st.skipped) visualClass = " tl-skipped";
