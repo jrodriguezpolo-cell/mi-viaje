@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V190C_FIX_FAB_NOTES_OPEN</title>
+<title>V190D_FIX_NOTES_MODAL_LAYOUT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190C_FIX_FAB_NOTES_OPEN</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190D_FIX_NOTES_MODAL_LAYOUT</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -9644,59 +9644,122 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
 // ---- V190B hotfix: missing openDailyNoteModal (wire FAB to premium daily notes) ----
 function openDailyNoteModal(dateKey){
   try{
-    const modal = document.getElementById("dailyNotePremiumModal");
-    if(modal){
-      const box = document.getElementById("dailyNotesBox");
-      if(box){
-        if(dateKey) box.dataset.selDate = String(dateKey);
-        if(typeof renderDailyNotes==="function") renderDailyNotes();
-      }
-      modal.classList.remove("hidden");
-      return;
-    }
-    // Build lightweight premium modal and reuse existing #dailyNotesBox renderer
-    const m = document.createElement("div");
-    m.id = "dailyNotePremiumModal";
-    m.className = "hidden fixed inset-0 z-[80]";
-    m.innerHTML = `
-      <div class="absolute inset-0 bg-black/40" id="dailyNotePremiumBackdrop"></div>
-      <div class="absolute left-1/2 top-1/2 w-[92%] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-4 shadow-xl">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-sm font-extrabold text-slate-900">Nota del día</div>
-          <button type="button" id="dailyNotePremiumClose" class="tap h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">✕</button>
+    const sc = curScenario();
+    if(!sc.dailyNotes) sc.dailyNotes = {};
+    // Resolve date key (YYYY-MM-DD)
+    const today = (function(){
+      const d=new Date();
+      const y=d.getFullYear();
+      const m=String(d.getMonth()+1).padStart(2,"0");
+      const dd=String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${dd}`;
+    })();
+    const key0 = String(dateKey || __getActiveDateKey?.() || today);
+
+    const getNote = (k)=> String((sc.dailyNotes||{})[k] || "").trim();
+    const setNote = (k, v)=>{ sc.dailyNotes[k] = String(v||""); saveState?.(); };
+
+    const modalHtml = `
+      <div class="flex items-center gap-2 flex-wrap mb-2">
+        <button id="dailyNotesIndexBtn" class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-sm whitespace-nowrap">
+          Notas del viaje
+        </button>
+
+        <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}"
+          class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white text-sm flex-1 min-w-[150px]"
+          style="font-size:16px; line-height:1.2;">
+      </div>
+
+      <div class="text-[11px] text-slate-500 -mt-1 mb-2">Puedes escribir notas para días pasados o futuros.</div>
+
+      <textarea id="dailyNoteModalText" rows="6"
+        class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+        style="font-size:16px; line-height:1.3;"
+        placeholder="Escribe aquí...">${escapeHtml(getNote(key0))}</textarea>
+
+      <div class="mt-3 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <button id="dailyNoteModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+            Guardar
+          </button>
+          <button id="dailyNoteModalDelete" style="display:${getNote(key0) ? 'inline-flex' : 'none'}"
+            class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+            Borrar
+          </button>
         </div>
-        <div class="flex items-center gap-2 mb-3">
-          <button type="button" id="dailyNotePremiumIndexBtn" class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-sm">Notas del viaje</button>
-          <div class="text-xs text-slate-500">Puedes escribir notas para días pasados o futuros.</div>
-        </div>
-        <div id="dailyNotesBox" class="p-3 rounded-2xl border border-slate-200 bg-white"></div>
+        <button id="dailyNoteModalCancel" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          Cancelar
+        </button>
       </div>
     `;
-    document.body.appendChild(m);
 
-    const closeModal = ()=>{
-      try{ m.classList.add("hidden"); }catch{}
-    };
-    const bd = document.getElementById("dailyNotePremiumBackdrop");
-    const x = document.getElementById("dailyNotePremiumClose");
-    if(bd) bd.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); });
-    if(x) x.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); });
+    showModal("Nota del día", modalHtml);
 
-    const idxBtn = document.getElementById("dailyNotePremiumIndexBtn");
-    if(idxBtn) idxBtn.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); if(typeof openDailyNotesIndexModal==="function") openDailyNotesIndexModal(); });
+    setTimeout(()=>{
+      const ta = document.getElementById("dailyNoteModalText");
+      const datePick = document.getElementById("dailyNoteDatePick");
+      const btnSave = document.getElementById("dailyNoteModalSave");
+      const btnDel = document.getElementById("dailyNoteModalDelete");
+      const btnCancel = document.getElementById("dailyNoteModalCancel");
+      const btnIdx = document.getElementById("dailyNotesIndexBtn");
 
-    // Render initial content
-    const box = document.getElementById("dailyNotesBox");
-    if(box){
-      if(dateKey) box.dataset.selDate = String(dateKey);
-    }
-    if(typeof renderDailyNotes==="function") renderDailyNotes();
-    m.classList.remove("hidden");
+      const loadForKey = (k)=>{
+        const cur = getNote(k);
+        if(ta) ta.value = cur;
+        if(btnDel) btnDel.style.display = cur ? "inline-flex" : "none";
+        try{ __refreshTimelineNotesBadge?.(); }catch{}
+        try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+      };
+
+      if(datePick){
+        datePick.addEventListener("change", (e)=>{
+          const k = String(e.target.value||"").trim();
+          if(!k) return;
+          loadForKey(k);
+        }, {passive:true});
+      }
+
+      if(btnSave){
+        btnSave.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          const k = String((datePick && datePick.value) || key0);
+          setNote(k, (ta && ta.value) || "");
+          loadForKey(k);
+          // keep modal open
+        });
+      }
+
+      if(btnDel){
+        btnDel.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          const k = String((datePick && datePick.value) || key0);
+          if(!confirm("¿Borrar la nota de este día?")) return;
+          delete sc.dailyNotes[k];
+          saveState?.();
+          loadForKey(k);
+        });
+      }
+
+      if(btnCancel){
+        btnCancel.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          closeModal?.();
+        });
+      }
+
+      if(btnIdx){
+        btnIdx.addEventListener("click",(e)=>{
+          e.preventDefault(); e.stopPropagation();
+          if(typeof openDailyNotesIndexModal==="function") openDailyNotesIndexModal();
+        });
+      }
+    }, 50);
+
   }catch(err){
     console.error(err);
   }
 }
-// ------------------------------------------------------------------------------------------------
+ // ------------------------------------------------------------------------------------------------
 
 </script>
 
