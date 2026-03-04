@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V187_SHOW_NOTE_DAYS_WITHOUT_EVENTS</title>
+<title>V187_SHOW_NOTE_DAYS_WITHOUT_EVENTS_FIXED</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V187_SHOW_NOTE_DAYS_WITHOUT_EVENTS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V187_SHOW_NOTE_DAYS_WITHOUT_EVENTS_FIXED</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6019,41 +6019,24 @@ function __dateSeparatorHTML(label, iso){
       </div>
     </div>
   `;
-}function __renderGroupedByDate(list, getDateFn, renderItemFn, extraDates){
-  // extraDates: optional array of ISO dates to show even if they have no events (e.g., days with daily notes)
-  const arr = Array.isArray(list) ? list : [];
+}function __renderGroupedByDate(list, getDateFn, renderItemFn){
+  if (!Array.isArray(list) || !list.length) return "";
   const valid = [];
   const invalid = [];
-  for (const it of arr){
+  for (const it of list){
     const d = getDateFn ? getDateFn(it) : "";
     if (__isValidISODate(d)) valid.push(it); else invalid.push(it);
   }
-
-  // Group valid items by date
-  const byDate = new Map();
-  for (const it of valid){
-    const d = String(getDateFn(it) || "").trim();
-    if (!byDate.has(d)) byDate.set(d, []);
-    byDate.get(d).push(it);
-  }
-
-  // Dates to render = union of dates in events + extraDates (note-only days)
-  const dateSet = new Set(Array.from(byDate.keys()));
-  if (Array.isArray(extraDates)){
-    for (const d of extraDates){
-      const k = String(d || "").trim();
-      if (__isValidISODate(k)) dateSet.add(k);
-    }
-  }
-  const dates = Array.from(dateSet).sort((a,b)=>String(a).localeCompare(String(b)));
-
   let out = "";
-  for (const d of dates){
-    out += __dateSeparatorHTML(__fmtDateES(d), d);
-    const items = byDate.get(d) || [];
-    for (const it of items) out += renderItemFn(it);
+  let cur = "";
+  for (const it of valid){
+    const d = String(getDateFn(it)||"").trim();
+    if (d !== cur){
+      cur = d;
+      out += __dateSeparatorHTML(__fmtDateES(d), d);
+    }
+    out += renderItemFn(it);
   }
-
   if (invalid.length){
     out += __dateSeparatorHTML("Sin fecha", "");
     for (const it of invalid) out += renderItemFn(it);
@@ -7154,32 +7137,47 @@ function renderTimeline() {
     }
     visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
     if (!visibleItems.length) {
-      const __hasDaily = !!(activeDayISO && (typeof __getTimelineNote === "function") && String(__getTimelineNote(activeDayISO) || "").trim());
-      box.innerHTML = (__hasDaily
-        ? (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`)
-        : `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro 
-
-  // V187: ensure days with daily notes appear in the global timeline even if they have no events
-  const __noteDateSet = new Set();
-  try{
-    const sources = [sc.timelineNotesByDate, sc.dailyNotesByDate, sc.dailyNotes];
-    for (const src of sources){
-      if (!src) continue;
-      for (const k of Object.keys(src)){
-        const dk = String(k || "").trim();
-        if (!__isValidISODate(dk)) continue;
-        const txt = (typeof __getTimelineNote === "function") ? String(__getTimelineNote(dk) || "") : String(src[dk] || "");
-        if (txt.trim()) __noteDateSet.add(dk);
-      }
-    }
-  }catch{}
-  const __noteOnlyDates = Array.from(__noteDateSet).sort((a,b)=>String(a).localeCompare(String(b)));
-
-día o quita filtros.</div>`);
+      box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
       return;
     }
   }
+
+  // V187B: ensure days with daily notes appear even if they have no events (Global mode)
+  if (timelineViewMode === "global") {
+    try{
+      const datesInItems = new Set((visibleItems||[]).map(it => String(it.date||"")).filter(d => __isValidISODate(d)));
+      const noteDates = new Set();
+      const sources = [sc.timelineNotesByDate, sc.dailyNotesByDate, sc.dailyNotes];
+      for (const srcObj of sources){
+        if (!srcObj) continue;
+        for (const k of Object.keys(srcObj)){
+          const dk = String(k||"").trim();
+          if (!__isValidISODate(dk)) continue;
+          const txt = (typeof __getTimelineNote === "function") ? String(__getTimelineNote(dk) || "") : String(srcObj[dk] || "");
+          if (txt.trim()) noteDates.add(dk);
+        }
+      }
+      // Add a single "note-only" placeholder item per note date without events
+      const extra = [];
+      for (const dk of noteDates){
+        if (datesInItems.has(dk)) continue;
+        extra.push({ date: dk, time: "", type: "__noteOnly", uid: `noteOnly:${dk}` });
+      }
+      if (extra.length) {
+        visibleItems = (visibleItems || []).concat(extra);
+        // keep chronological order
+        visibleItems.sort((a,b)=>{
+          if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
+          const ta = timeSortKey(a.time);
+          const tb = timeSortKey(b.time);
+          if (ta !== tb) return ta - tb;
+          return String(a.uid||"").localeCompare(String(b.uid||""));
+        });
+      }
+    }catch{}
+  }
+
 
   if (!visibleItems.length) {
     box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para este filtro." : "No hay eventos todavía.")}</div>`;
@@ -7339,7 +7337,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 };
 
   box.innerHTML = (timelineViewMode === "global")
-    ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem, __noteOnlyDates)
+    ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
