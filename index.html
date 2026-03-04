@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V181_FIX_RT_JUMP_AND_REMOVE_DAILY_NOTES</title>
+<title>V182_FIX_RT_BADGE_NESTED_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -756,7 +756,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V181_FIX_RT_JUMP_AND_REMOVE_DAILY_NOTES</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V182_FIX_RT_BADGE_NESTED_BUTTON</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5541,8 +5541,8 @@ function legCard(leg, idx) {
   const __peer = String(leg && leg.rtPeerId || "");
   const __rtBadge = (__tt==="roundtrip" && __peer)
     ? (__role==="return"
-        ? `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</button>`
-        : `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a vuelta">Ida</button>`
+        ? `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</span>`
+        : `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a vuelta">Ida</span>`
       )
     : ``;
 
@@ -7102,8 +7102,8 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     const __role = (__leg && __leg.rtRole) ? String(__leg.rtRole) : "";
     const rtBadgeHTML = (__tt==="roundtrip" && __peer)
       ? (__role==="return"
-          ? `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</button>`
-          : `<button type="button" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ver vuelta">Ida</button>`
+          ? `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</span>`
+          : `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ver vuelta">Ida</span>`
         )
       : ``;
     const notesBtn = (it.isNote && isDated)
