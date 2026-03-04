@@ -9630,6 +9630,64 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
     }
     try{ __refreshTimelineNotesBadge(); }catch{}
   }catch{} });
+
+// ---- V190B hotfix: missing openDailyNoteModal (wire FAB to premium daily notes) ----
+function openDailyNoteModal(dateKey){
+  try{
+    const modal = document.getElementById("dailyNotePremiumModal");
+    if(modal){
+      const box = document.getElementById("dailyNotesBox");
+      if(box){
+        if(dateKey) box.dataset.selDate = String(dateKey);
+        if(typeof renderDailyNotes==="function") renderDailyNotes();
+      }
+      modal.classList.remove("hidden");
+      return;
+    }
+    // Build lightweight premium modal and reuse existing #dailyNotesBox renderer
+    const m = document.createElement("div");
+    m.id = "dailyNotePremiumModal";
+    m.className = "hidden fixed inset-0 z-[80]";
+    m.innerHTML = `
+      <div class="absolute inset-0 bg-black/40" id="dailyNotePremiumBackdrop"></div>
+      <div class="absolute left-1/2 top-1/2 w-[92%] max-w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-4 shadow-xl">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-extrabold text-slate-900">Nota del día</div>
+          <button type="button" id="dailyNotePremiumClose" class="tap h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50">✕</button>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+          <button type="button" id="dailyNotePremiumIndexBtn" class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-sm">Notas del viaje</button>
+          <div class="text-xs text-slate-500">Puedes escribir notas para días pasados o futuros.</div>
+        </div>
+        <div id="dailyNotesBox" class="p-3 rounded-2xl border border-slate-200 bg-white"></div>
+      </div>
+    `;
+    document.body.appendChild(m);
+
+    const closeModal = ()=>{
+      try{ m.classList.add("hidden"); }catch{}
+    };
+    const bd = document.getElementById("dailyNotePremiumBackdrop");
+    const x = document.getElementById("dailyNotePremiumClose");
+    if(bd) bd.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); });
+    if(x) x.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); });
+
+    const idxBtn = document.getElementById("dailyNotePremiumIndexBtn");
+    if(idxBtn) idxBtn.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); if(typeof openDailyNotesIndexModal==="function") openDailyNotesIndexModal(); });
+
+    // Render initial content
+    const box = document.getElementById("dailyNotesBox");
+    if(box){
+      if(dateKey) box.dataset.selDate = String(dateKey);
+    }
+    if(typeof renderDailyNotes==="function") renderDailyNotes();
+    m.classList.remove("hidden");
+  }catch(err){
+    console.error(err);
+  }
+}
+// ------------------------------------------------------------------------------------------------
+
 </script>
 
 <!-- Timeline Notes FAB + Modal -->
