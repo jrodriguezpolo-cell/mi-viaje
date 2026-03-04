@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V174_SHEET_RETURN_CONTEXT_STABLE</title>
+<title>V174B_SHEET_RETURN_CONTEXT_FIXED</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -750,7 +750,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V174_SHEET_RETURN_CONTEXT_STABLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V174B_SHEET_RETURN_CONTEXT_FIXED</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3409,7 +3409,7 @@ const __sectionExpanded = {
 };
 
 /* ---------------- Event Detail Sheet (V89D1) ---------------- */
-let __eventSheetCtx = null; try{ window.__eventSheetCtx = null; }catch{}
+let __eventSheetCtx = null;
 window.__suppressNotePeekUntil = 0;
 
 // Event Sheet mode: single source of truth lives in __eventSheetCtx.mode ("view" | "edit")
@@ -4326,26 +4326,14 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const m = (mode === "view") ? "view" : "edit";
   const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
 
-  // V174: Persist Event Sheet return-context (view + scroll) ASAP
-  window.__eventSheetCtx = window.__eventSheetCtx || {};
-  (function(){
+  // V174 (quirúrgico): guardar contexto para volver a la vista origen al cerrar el sheet
+  try{
     const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
-    // sourceView priority: explicit param -> activeView -> visible view in DOM
-    let v = (sourceView ? String(sourceView) : "") || ((typeof activeView !== "undefined" && activeView) ? String(activeView) : "");
-    if (!v) {
-      try {
-        const candidates = ["timeline","legs","stays","acts","meals"];
-        for (const k of candidates) {
-          const el = document.getElementById("view-" + k);
-          if (el && !el.classList.contains("hidden")) { v = k; break; }
-        }
-      } catch {}
-    }
-    window.__eventSheetCtx.sourceView = v || "";
-    try { window.__eventSheetCtx.sourceScrollTop = scroller ? scroller.scrollTop : 0; } catch { window.__eventSheetCtx.sourceScrollTop = 0; }
-  })();
-  // Keep legacy global ref used by sheet internals
-  __eventSheetCtx = window.__eventSheetCtx;
+    window.__eventSheetReturnCtx = {
+      sourceView: __srcView || (typeof activeView !== "undefined" ? String(activeView) : ""),
+      sourceScrollTop: scroller ? (scroller.scrollTop || 0) : 0
+    };
+  }catch{}
   if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
 
   const overlay = document.getElementById("eventSheetOverlay");
@@ -4355,7 +4343,7 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   const mainScroll = document.getElementById("mainScroll");
   if (!overlay || !sheet || !titleEl || !body) return;
   // Event Sheet context (single source of truth)
-  Object.assign(__eventSheetCtx, { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView });
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView };
 
   // V89E5D: bind sheet trash context
   try {
@@ -4378,7 +4366,7 @@ function renderLegModeChips(container, leg, onSelect){
     const cls = "tap px-3 py-2 rounded-full text-sm font-semibold border flex items-center gap-2 " +
       (active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200");
     return `<button type="button" class="${cls}" data-legmode="${val}" aria-pressed="${active ? "true" : "false"}">${icon} ${txt}</button>`;
-  });
+  };
   container.innerHTML =
     `<div class="flex gap-2 overflow-x-auto pb-1">` +
       mk("plane","✈️","Avión") +
@@ -4466,7 +4454,7 @@ function renderLegModeChips(container, leg, onSelect){
 
   // LEG: render isolated editor HTML (no DOM move from section)
   if (k === "leg") {
-    Object.assign(__eventSheetCtx, { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 });
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
     const ok = __renderLegEditorInSheet(body, legObj, itemId, !!isNew);
   try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
     if (!ok) { alert("No se pudo abrir el editor"); return; }
@@ -4507,7 +4495,7 @@ function renderLegModeChips(container, leg, onSelect){
   
   // STAY/ACT: render isolated premium editor HTML (no DOM move from section)
   if (k === "stay") {
-    Object.assign(__eventSheetCtx, { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 });
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
     const ok = __renderStayEditorInSheet(body, stayObj, itemId, !!isNew);
   try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
     if (!ok) { alert("No se pudo abrir el editor"); return; }
@@ -4519,7 +4507,7 @@ function renderLegModeChips(container, leg, onSelect){
     return;
   }
   if (k === "act") {
-    Object.assign(__eventSheetCtx, { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 });
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
     const ok = __renderActEditorInSheet(body, actObj, itemId, !!isNew);
   try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
     if (!ok) { alert("No se pudo abrir el editor"); return; }
@@ -4558,7 +4546,7 @@ function renderLegModeChips(container, leg, onSelect){
   // Move node into sheet body
   const parent = node.parentNode;
   const next = node.nextSibling;
-  Object.assign(__eventSheetCtx, { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : "") });
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : "") };
   window.__sheetCtx = { kind: k, id: itemId };
   try {
     const trash = document.getElementById("eventSheetTrash");
@@ -4678,25 +4666,19 @@ function closeEventSheet({ silent } = {}) {
     if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
   } catch {}
 
-  // V174: Restore view context (always return to origin if known)
+  // Restore view context (only if changed while sheet open)
   try {
     const src = ctx && ctx.sourceView ? String(ctx.sourceView) : "";
-    if (src && typeof setView === "function") {
+    if (src && typeof setView === "function" && (typeof activeView !== "undefined") && String(activeView) !== src) {
       setView(src);
     }
   } catch {}
 
-// V174: Restore scroll of origin list (optional but easy)
+// Restore scroll position (no aggressive jumps)
   try {
-    const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
-    const y = (ctx && typeof ctx.sourceScrollTop === "number") ? ctx.sourceScrollTop
-            : (ctx && typeof ctx.prevScrollTop === "number") ? ctx.prevScrollTop
-            : null;
-    if (scroller && typeof y === "number") {
-      try { scroller.scrollTop = y; } catch {}
-      try { requestAnimationFrame(() => { try { scroller.scrollTop = y; } catch {} }); } catch {}
-    }
-  } catch {}
+    if (mainScroll && typeof ctx?.prevScrollTop === "number") {
+      const y = ctx.prevScrollTop;
+      try { mainScroll.scrollTop = y; } catch {}
       try { requestAnimationFrame(() => { try { mainScroll.scrollTop = y; } catch {} }); } catch {}
     }
   } catch {}
@@ -4864,6 +4846,24 @@ function __initTimelineNotesFab(){
 
     __updateTimelineNotesFabVisibility();
   }catch{}
+  // V174 (quirúrgico): volver a la vista origen al cerrar el sheet (sin tocar NAV/arranque)
+  try{
+    const ctx = window.__eventSheetReturnCtx;
+    if(ctx && ctx.sourceView){
+      const v = String(ctx.sourceView||"").trim();
+      const st = Number(ctx.sourceScrollTop);
+      // limpiar antes para evitar loops si setView abre/cierra algo
+      window.__eventSheetReturnCtx = null;
+      if(v && typeof setView === "function"){
+        setView(v);
+      }
+      const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+      if(scroller && Number.isFinite(st)){
+        requestAnimationFrame(()=>{ try{ scroller.scrollTop = st; }catch{} });
+      }
+    }
+  }catch{}
+
 }
 
 function __initEventSheetBindings(){
