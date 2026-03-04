@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V190E_NOTES_INDEX_BTN_FIX</title>
+<title>V189B_NOTAS_DEL_VIAJE_STABLE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190E_NOTES_INDEX_BTN_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V189B_NOTAS_DEL_VIAJE_STABLE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5003,16 +5003,6 @@ function __getActiveDateKey(){
   return "";
 }
 
-
-// Alias for legacy callers (some builds referenced __getActiveDailyNoteKey)
-function __getActiveDailyNoteKey(){
-  try{
-    if(typeof __getActiveDateKey === "function") return __getActiveDateKey();
-  }catch{}
-  return "";
-}
-
-
 function __getTimelineNote(dateKey){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : null;
@@ -5111,7 +5101,7 @@ function __initTimelineNotesFab(){
       fab.__tn_bound = true;
       fab.addEventListener("click", (e)=>{
     e.preventDefault(); e.stopPropagation();
-        const k = (typeof __getActiveDateKey==='function') ? __getActiveDateKey() : '';
+        const k = __getActiveDailyNoteKey();
     openDailyNoteModal(k);
   });
     }
@@ -6737,20 +6727,153 @@ function openItemNotesModal(item, kindLabel, opts){
   const ro = !!opts.readOnly || (localStorage.getItem("miviaje.readonly") === "1");
   const current = String(it.notes || "").trim();
 
-  
+  const modalHtml = `
+    <div class="text-sm text-slate-600 mb-2">Observaciones · ${escapeHtml(label)}</div>
+    <textarea id="itemNotesModalText" rows="6"
+      class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+      style="font-size:16px; line-height:1.3;"
+      placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
+
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button id="itemNotesModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+          Guardar
+        </button>
+        ${current ? `
+          <button id="itemNotesModalDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+            Borrar
+          </button>
+        ` : ``}
+      </div>
+      <button id="itemNotesModalCancel" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+        Cancelar
+      </button>
+    </div>
+  `;
+
+  showModal("Observaciones", modalHtml);
+
+  setTimeout(() => {
+    const ta = document.getElementById("itemNotesModalText");
+    const btnSave = document.getElementById("itemNotesModalSave");
+    const btnDel = document.getElementById("itemNotesModalDelete");
+    const btnCancel = document.getElementById("itemNotesModalCancel");
+
+    if (ro) {
+      try{ if(ta) ta.disabled = true; }catch{}
+      try{ if(btnSave) btnSave.disabled = true; }catch{}
+      try{ if(btnDel) btnDel.disabled = true; }catch{}
+    }
+
+    if (btnCancel) btnCancel.onclick = () => { closeModal(); };
+
+    if (btnSave && !ro) {
+      btnSave.onclick = () => {
+        const v = String(ta?.value || "").trim();
+        it.notes = v;
+        try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ __refreshTimelineNotesBadge(); }catch{}
+        closeModal();
+      };
+    }
+
+    if (btnDel && !ro) {
+      btnDel.onclick = () => {
+        const ok = confirm("¿Borrar esta nota?");
+        if (!ok) return;
+        it.notes = "";
+        try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ __refreshTimelineNotesBadge(); }catch{}
+        closeModal();
+      };
+    }
+  }, 0);
+}
+
+function openItemNotesModalByTypeId(type, id, opts){
+  try{
+    const item = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId(type, id) : null;
+    if(!item) return;
+    const t = String(type||"");
+    const label = (t==="leg") ? "Transporte" : (t==="stay") ? "Alojamiento" : (t==="act") ? "Actividad" : "Evento";
+    openItemNotesModal(item, label, opts || {});
+  }catch{}
+}
+
+
+
+function __ensureDailyNotes(sc){
+  try{
+    if(!sc) return;
+    if(!sc.dailyNotes && sc.dailyNotesByDate){
+      sc.dailyNotes = sc.dailyNotesByDate;
+      try{ delete sc.dailyNotesByDate; }catch{}
+      try{ if(typeof saveState==="function") saveState(); }catch{}
+    }
+    if(!sc.dailyNotes) sc.dailyNotes = {};
+  }catch{}
+}
+
+function __getActiveDailyNoteKey(){
+  try{
+    if (typeof timelineViewMode !== "undefined" && timelineViewMode === "day" && typeof activeDayISO !== "undefined" && String(activeDayISO||"").trim()){
+      return String(activeDayISO).trim();
+    }
+    const sel = document.getElementById("dateJumpSelect");
+    const v = String((sel && sel.value) ? sel.value : "").trim();
+    if (v) return v;
+    return (typeof todayYMD==="function") ? todayYMD() : new Date().toISOString().slice(0,10);
+  }catch{
+    return (typeof todayYMD==="function") ? todayYMD() : new Date().toISOString().slice(0,10);
+  }
+}
+
+function __refreshTimelineNotesBadge(){
+  try{
+    const badge = document.getElementById("timelineNotesBadge");
+    const fab = document.getElementById("timelineNotesFab");
+    if(!badge || !fab) return;
+        const key = __getActiveDailyNoteKey();
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    __ensureDailyNotes(sc);
+    const has = !!String((sc && sc.dailyNotes && sc.dailyNotes[key]) || "").trim();
+    badge.style.display = has ? "inline-flex" : "none";
+    badge.textContent = has ? "1" : "";
+  }catch{}
+}
+
+function openDailyNoteModal(dateKey){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if(!sc) return;
+  __ensureDailyNotes(sc);
+
+  const key0 = String(dateKey || "").trim() || __getActiveDailyNoteKey();
+
+  // Bounds for date picker (best effort): use timeline days if available, else scan scenario items.
+  let days = (typeof __tlDays !== "undefined" && Array.isArray(__tlDays) && __tlDays.length) ? __tlDays.slice() : [];
+  if(!days.length){
+    const tmp = [];
+    for (const leg of (sc.legs || [])) { if (leg && leg.date) tmp.push({date: leg.date}); if (leg && leg.arriveDate) tmp.push({date: leg.arriveDate}); }
+    for (const s of (sc.stays || [])) { if (s && s.date) tmp.push({date: s.date}); }
+    for (const a of (sc.activities || [])) { if (a && a.date) tmp.push({date: a.date}); }
+    try{ days = getTimelineDays(tmp); }catch{ days = []; }
+  }
+  const minDay = days.length ? String(days[0]) : "";
+  const maxDay = days.length ? String(days[days.length - 1]) : "";
+  const minAttr = minDay ? `min="${minDay}"` : "";
+  const maxAttr = maxDay ? `max="${maxDay}"` : "";
+
+  const cur0 = String((sc.dailyNotes && sc.dailyNotes[key0]) || "").trim();
+
   const modalHtml = `
     <div class="flex items-center justify-between gap-2 mb-2">
-      <div class="text-sm text-slate-600 font-semibold">Nota del día</div>
       <div class="flex items-center gap-2">
-        <button id="dailyNotesIndexBtn" class="tap px-2.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold whitespace-nowrap">
-          Notas del viaje
-        </button>
-        <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}" ${minAttr} ${maxAttr}
-          class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm"
-          style="font-size:16px; line-height:1.2;">
-      </div>
+      <button id="dailyNotesIndexBtn" type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Notas del viaje</button>
+      <div class="text-sm text-slate-600 font-semibold">Nota del día</div>
+      <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}" ${minAttr} ${maxAttr}
+        class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm"
+        style="font-size:16px; line-height:1.2;">
     </div>
-
     <div class="text-[11px] text-slate-500 -mt-1 mb-2">Puedes escribir notas para días pasados o futuros.</div>
 
     <textarea id="dailyNoteModalText" rows="6"
@@ -6782,7 +6905,7 @@ function openItemNotesModal(item, kindLabel, opts){
     const btnSave = document.getElementById("dailyNoteModalSave");
     const btnDel = document.getElementById("dailyNoteModalDelete");
     const btnCancel = document.getElementById("dailyNoteModalCancel");
-    const btnIdx = document.getElementById("dailyNotesIndexBtn");
+    const btnIndex = document.getElementById("dailyNotesIndexBtn");
 
     const updateForKey = (k)=>{
       const cur = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
@@ -6792,9 +6915,7 @@ function openItemNotesModal(item, kindLabel, opts){
 
     if(btnCancel) btnCancel.onclick = () => { closeModal(); };
 
-    if(btnIdx){
-      btnIdx.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} closeModal(); openDailyNotesIndexModal(); };
-    }
+    if(btnIndex) btnIndex.onclick = (e) => { try{ e && (e.preventDefault(), e.stopPropagation()); }catch{}; openDailyNotesIndexModal(); };
 
     if(datePick && !datePick.__dn_bound){
       datePick.__dn_bound = true;
@@ -6836,102 +6957,6 @@ function openItemNotesModal(item, kindLabel, opts){
   }, 0);
 }
 
-/* ============================
-   Daily Notes: "Notas del viaje" index (V189)
-   ============================ */
-
-function __formatDayLong(iso){
-  const v = String(iso||"").trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return v || "—";
-  try{
-    const d = new Date(v+"T00:00:00");
-    return d.toLocaleDateString("es-ES",{weekday:"short", day:"2-digit", month:"short", year:"numeric"}).replace(".", "");
-  }catch{
-    return v;
-  }
-}
-
-function openDailyNoteViewModal(dateKey){
-  const sc = (typeof curScenario === "function") ? curScenario() : null;
-  if(!sc) return;
-  __ensureDailyNotes(sc);
-  const k = String(dateKey||"").trim();
-  const txt = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
-  const body = `
-    <div class="text-sm text-slate-600 font-semibold mb-1">${escapeHtml(__formatDayLong(k))}</div>
-    <div class="px-3 py-2 rounded-xl border border-slate-200 bg-white whitespace-pre-wrap" style="font-size:16px; line-height:1.35;">
-      ${txt ? escapeHtml(txt) : '<span class="text-slate-400">Sin nota.</span>'}
-    </div>
-    <div class="mt-3 flex items-center justify-between gap-2">
-      <button id="dnViewEdit" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">Editar</button>
-      <button id="dnViewClose" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
-    </div>
-  `;
-  showModal("Nota del día", body);
-  setTimeout(()=>{
-    const btnE = document.getElementById("dnViewEdit");
-    const btnC = document.getElementById("dnViewClose");
-    if(btnC) btnC.onclick = ()=>closeModal();
-    if(btnE) btnE.onclick = ()=>{
-      closeModal();
-      openDailyNoteModal(k);
-    };
-  },0);
-}
-
-function openDailyNotesIndexModal(){
-  const sc = (typeof curScenario === "function") ? curScenario() : null;
-  if(!sc) return;
-  __ensureDailyNotes(sc);
-
-  const entries = [];
-  try{
-    for(const [k,v] of Object.entries(sc.dailyNotes||{})){
-      const vv = String(v||"").trim();
-      if(vv) entries.push([String(k), vv]);
-    }
-  }catch{}
-  entries.sort((a,b)=> (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
-
-  const listHtml = entries.length ? entries.map(([k,v])=>{
-    const snippet = v.replace(/\s+/g," ").trim().slice(0, 90);
-    return `
-      <button class="tap w-full text-left px-3 py-2 rounded-xl border border-slate-200 bg-white dnIdxRow" data-k="${escapeHtml(k)}">
-        <div class="flex items-center justify-between gap-2">
-          <div class="text-sm font-semibold text-slate-900">${escapeHtml(__formatDayLong(k))}</div>
-          <div class="text-xs text-slate-500">${escapeHtml(k)}</div>
-        </div>
-        <div class="text-sm text-slate-600 mt-1">${escapeHtml(snippet)}${v.length>90?"…":""}</div>
-      </button>
-    `;
-  }).join("") : `<div class="text-sm text-slate-500">Aún no hay notas del día.</div>`;
-
-  const body = `
-    <div class="text-sm text-slate-600 mb-2">Todas las notas del día (por fecha)</div>
-    <div class="flex flex-col gap-2 max-h-[55vh] overflow-auto pr-1">
-      ${listHtml}
-    </div>
-    <div class="mt-3 flex items-center justify-end">
-      <button id="dnIdxClose" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
-    </div>
-  `;
-  showModal("Notas del viaje", body);
-
-  setTimeout(()=>{
-    const btnC = document.getElementById("dnIdxClose");
-    if(btnC) btnC.onclick = ()=>closeModal();
-    document.querySelectorAll(".dnIdxRow").forEach(el=>{
-      el.addEventListener("click",(e)=>{
-        e.preventDefault(); e.stopPropagation();
-        const k = el.getAttribute("data-k") || "";
-        closeModal();
-        openDailyNoteViewModal(k);
-      });
-    });
-  },0);
-}
-
-
 
 /* ---------------- /Timeline: jump to item ---------------- */
 const __tlExpanded = new Set();
@@ -6946,6 +6971,100 @@ function formatDayLabel(iso) {
     return d.toLocaleDateString("es-ES", { weekday: "short", day: "2-digit", month: "short" }).replace(".", "");
   } catch {
     return v;
+  }
+}
+
+function openDailyNotesIndexModal(){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if(!sc) return;
+  __ensureDailyNotes(sc);
+
+  const items = Object.keys(sc.dailyNotes || {})
+    .filter(k => String(sc.dailyNotes[k] || "").trim())
+    .sort((a,b)=>String(a).localeCompare(String(b)))
+    .map(k => {
+      const t = String(sc.dailyNotes[k] || "").trim();
+      const snippet = t.length > 80 ? (t.slice(0,80) + "…") : t;
+      return {k, t, snippet};
+    });
+
+  const html = `
+    <div class="text-[12px] text-slate-600 mb-2">Notas guardadas por fecha</div>
+    <div class="max-h-[55vh] overflow-auto ios-scroll rounded-2xl border border-slate-200">
+      ${items.length ? items.map(it => `
+        <button type="button" class="w-full tap text-left px-4 py-3 border-b border-slate-100 hover:bg-slate-50"
+          data-note-date="${escapeHtml(it.k)}">
+          <div class="font-semibold text-sm">${formatDateHuman(it.k)}</div>
+          <div class="text-xs text-slate-600 mt-1">${escapeHtml(it.snippet || "")}</div>
+        </button>
+      `).join("") : `
+        <div class="px-4 py-6 text-sm text-slate-500">Aún no has creado notas.</div>
+      `}
+    </div>
+    <div class="mt-3 flex justify-end">
+      <button id="dailyNotesIndexClose" type="button"
+        class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
+    </div>
+  `;
+
+  showModal("Notas del viaje", html);
+
+  setTimeout(()=>{
+    const closeBtn = document.getElementById("dailyNotesIndexClose");
+    if(closeBtn) closeBtn.onclick = ()=>closeModal();
+
+    document.querySelectorAll("[data-note-date]").forEach(btn=>{
+      btn.addEventListener("click",(e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const k = btn.getAttribute("data-note-date") || "";
+        openDailyNoteViewModal(k);
+      });
+    });
+  },0);
+}
+
+function openDailyNoteViewModal(dateKey){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  if(!sc) return;
+  __ensureDailyNotes(sc);
+  const k = String(dateKey||"").trim();
+  const txt = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
+
+  const html = `
+    <div class="text-[12px] text-slate-600 mb-2">${formatDateHuman(k)}</div>
+    <div class="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white p-3 text-sm">${escapeHtml(txt || "")}</div>
+    <div class="mt-3 flex items-center justify-between gap-2">
+      <button id="dailyNoteViewBack" type="button"
+        class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Volver</button>
+      <div class="flex items-center gap-2">
+        <button id="dailyNoteViewEdit" type="button"
+          class="tap px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">Editar</button>
+        <button id="dailyNoteViewClose" type="button"
+          class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">Cerrar</button>
+      </div>
+    </div>
+  `;
+  showModal("Nota del día", html);
+
+  setTimeout(()=>{
+    const b1=document.getElementById("dailyNoteViewBack");
+    const b2=document.getElementById("dailyNoteViewEdit");
+    const b3=document.getElementById("dailyNoteViewClose");
+    if(b1) b1.onclick=()=>openDailyNotesIndexModal();
+    if(b3) b3.onclick=()=>closeModal();
+    if(b2) b2.onclick=()=>openDailyNoteModal(k);
+  },0);
+}
+
+function formatDateHuman(dateKey){
+  // Input YYYY-MM-DD -> "04 mar 2026" (es)
+  try{
+    const [y,m,d] = String(dateKey).split("-").map(x=>parseInt(x,10));
+    const dt = new Date(y, (m||1)-1, d||1);
+    const months=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    return `${String(d).padStart(2,"0")} ${months[dt.getMonth()]} ${dt.getFullYear()}`;
+  }catch{
+    return String(dateKey||"");
   }
 }
 
@@ -9640,127 +9759,6 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
     }
     try{ __refreshTimelineNotesBadge(); }catch{}
   }catch{} });
-
-// ---- V190B hotfix: missing openDailyNoteModal (wire FAB to premium daily notes) ----
-function openDailyNoteModal(dateKey){
-  try{
-    const sc = curScenario();
-    if(!sc.dailyNotes) sc.dailyNotes = {};
-    // Resolve date key (YYYY-MM-DD)
-    const today = (function(){
-      const d=new Date();
-      const y=d.getFullYear();
-      const m=String(d.getMonth()+1).padStart(2,"0");
-      const dd=String(d.getDate()).padStart(2,"0");
-      return `${y}-${m}-${dd}`;
-    })();
-    const key0 = String(dateKey || __getActiveDateKey?.() || today);
-
-    const getNote = (k)=> String((sc.dailyNotes||{})[k] || "").trim();
-    const setNote = (k, v)=>{ sc.dailyNotes[k] = String(v||""); saveState?.(); };
-
-    const modalHtml = `
-      <div class="flex items-center gap-2 flex-wrap mb-2">
-        <button id="dailyNotesIndexBtn" class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-sm whitespace-nowrap">
-          Notas del viaje
-        </button>
-
-        <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}"
-          class="tap h-9 px-3 rounded-xl border border-slate-200 bg-white text-sm flex-1 min-w-[150px]"
-          style="font-size:16px; line-height:1.2;">
-      </div>
-
-      <div class="text-[11px] text-slate-500 -mt-1 mb-2">Puedes escribir notas para días pasados o futuros.</div>
-
-      <textarea id="dailyNoteModalText" rows="6"
-        class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
-        style="font-size:16px; line-height:1.3;"
-        placeholder="Escribe aquí...">${escapeHtml(getNote(key0))}</textarea>
-
-      <div class="mt-3 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <button id="dailyNoteModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
-            Guardar
-          </button>
-          <button id="dailyNoteModalDelete" style="display:${getNote(key0) ? 'inline-flex' : 'none'}"
-            class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
-            Borrar
-          </button>
-        </div>
-        <button id="dailyNoteModalCancel" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
-          Cancelar
-        </button>
-      </div>
-    `;
-
-    showModal("Nota del día", modalHtml);
-
-    setTimeout(()=>{
-      const ta = document.getElementById("dailyNoteModalText");
-      const datePick = document.getElementById("dailyNoteDatePick");
-      const btnSave = document.getElementById("dailyNoteModalSave");
-      const btnDel = document.getElementById("dailyNoteModalDelete");
-      const btnCancel = document.getElementById("dailyNoteModalCancel");
-      const btnIdx = document.getElementById("dailyNotesIndexBtn");
-
-      const loadForKey = (k)=>{
-        const cur = getNote(k);
-        if(ta) ta.value = cur;
-        if(btnDel) btnDel.style.display = cur ? "inline-flex" : "none";
-        try{ __refreshTimelineNotesBadge?.(); }catch{}
-        try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
-      };
-
-      if(datePick){
-        datePick.addEventListener("change", (e)=>{
-          const k = String(e.target.value||"").trim();
-          if(!k) return;
-          loadForKey(k);
-        }, {passive:true});
-      }
-
-      if(btnSave){
-        btnSave.addEventListener("click",(e)=>{
-          e.preventDefault(); e.stopPropagation();
-          const k = String((datePick && datePick.value) || key0);
-          setNote(k, (ta && ta.value) || "");
-          loadForKey(k);
-          // keep modal open
-        });
-      }
-
-      if(btnDel){
-        btnDel.addEventListener("click",(e)=>{
-          e.preventDefault(); e.stopPropagation();
-          const k = String((datePick && datePick.value) || key0);
-          if(!confirm("¿Borrar la nota de este día?")) return;
-          delete sc.dailyNotes[k];
-          saveState?.();
-          loadForKey(k);
-        });
-      }
-
-      if(btnCancel){
-        btnCancel.addEventListener("click",(e)=>{
-          e.preventDefault(); e.stopPropagation();
-          closeModal?.();
-        });
-      }
-
-      if(btnIdx){
-        btnIdx.addEventListener("click",(e)=>{
-          e.preventDefault(); e.stopPropagation();
-          if(typeof openDailyNotesIndexModal==="function") openDailyNotesIndexModal();
-        });
-      }
-    }, 50);
-
-  }catch(err){
-    console.error(err);
-  }
-}
- // ------------------------------------------------------------------------------------------------
-
 </script>
 
 <!-- Timeline Notes FAB + Modal -->
