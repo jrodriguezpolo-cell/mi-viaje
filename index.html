@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V190_BASELINE_HYGIENE</title>
+<title>V191_COMIDAS_Y_MAS_GASTOS_VARIOS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
   ============================================================
-  V190_BASELINE_HYGIENE
+  V191_COMIDAS_Y_MAS_GASTOS_VARIOS
   Limpieza mínima (sin cambios funcionales): helpers + guardrails
   ZONA ROJA: NO tocar arranque, NAV, setView, renders principales.
   ============================================================
@@ -791,7 +791,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190_BASELINE_HYGIENE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V191_COMIDAS_Y_MAS_GASTOS_VARIOS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -857,7 +857,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="flex justify-between"><span class="text-slate-600">Transporte</span><span class="font-semibold" id="sumTransport">0.00</span></div>
 <div class="flex justify-between"><span class="text-slate-600">Alojamiento</span><span class="font-semibold" id="sumStay">0.00</span></div>
 <div class="flex justify-between"><span class="text-slate-600">Actividades</span><span class="font-semibold" id="sumActs">0.00</span></div>
-<div class="flex justify-between"><span class="text-slate-600">Comidas</span><span class="font-semibold" id="sumMeals">0.00</span></div>
+<div class="flex justify-between"><span class="text-slate-600">Comidas y más</span><span class="font-semibold" id="sumMeals">0.00</span></div>
 <hr class="my-2"/>
 <div class="flex justify-between text-base"><span class="font-extrabold">TOTAL</span><span class="font-extrabold" id="sumTotal">0.00</span></div>
 <div class="text-xs text-slate-500">Moneda de visualización: <span class="hidden" id="sumCur">EUR</span></div>
@@ -948,7 +948,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-amber-50 items-center justify-center">🍽️</span>
 <div class="text-left">
-<div class="font-extrabold">Comida</div>
+<div class="font-extrabold">Comidas y más</div>
 </div>
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
@@ -972,6 +972,22 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <span class="text-slate-600">Total comidas:</span>
 <span class="font-extrabold" id="mealTotal">0.00</span>
 <span class="text-slate-500" id="mealCur">EUR</span>
+
+<div class="mt-5 border-t border-slate-200 pt-4">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <div class="font-extrabold text-sm">Gastos varios</div>
+      <div class="text-xs text-slate-500">Metro, bus, taxi, alquiler coche, parking, etc.</div>
+    </div>
+    <button id="addMiscExpense" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold">+ Añadir</button>
+  </div>
+  <div id="miscExpensesList" class="mt-3 space-y-2"></div>
+  <div class="mt-3 text-sm">
+    <span class="text-slate-600">Total varios:</span>
+    <span class="font-extrabold" id="miscTotal">0.00</span>
+    <span class="text-slate-500" id="miscCur">EUR</span>
+  </div>
+</div>
 </div>
 </div>
 </div>
@@ -1025,7 +1041,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">✈️<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comida</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comidas y más</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
@@ -1116,7 +1132,7 @@ function updateSubSectionHeader(viewName){
     legs: "Transporte",
     stays: "Alojamiento",
     acts: "Actividades",
-    meals: "Comida",
+    meals: "Comidas y más",
   };
 
   const txt = map[String(viewName || "")] || "";
@@ -5488,8 +5504,8 @@ const emptyScenario = () => ({
   legs: [],
   stays: [],
   meals: { daily: 0, people: "", days: "" },
-  activities: []
-,
+  miscExpenses: [],
+  activities: [],
   dailyNotes: {}
 });
 
@@ -5909,20 +5925,62 @@ function renderStays() {
 }
 
 
+
 function renderMeals() {
   const sc = curScenario();
+  // Ensure data containers exist (backward compatible)
+  if (!sc.meals) sc.meals = { daily: 0, people: "", days: "" };
+  if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
+
   $("mealDaily").value = (sc.meals.daily == null || String(sc.meals.daily).trim()==="") ? "" : sc.meals.daily;
 
   // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
   $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
   $("mealDays").value = (sc.meals.days === "" || sc.meals.days == null) ? "" : sc.meals.days;
 
-  const total = (
+  const totalMeals = (
     parseMoney(sc.meals.daily) *
     (parseInt(sc.meals.people || 1, 10)) *
     (parseInt(sc.meals.days || 1, 10))
   );
-  $("mealTotal").textContent = total.toFixed(2);
+  $("mealTotal").textContent = totalMeals.toFixed(2);
+
+  // --- Gastos varios (Comidas y más) ---
+  const targetCur = (state.displayCurrency || (document.getElementById("displayCurrency")?.value) || "EUR");
+  const miscTotal = (sc.miscExpenses || []).reduce((acc, it) => {
+    const c = parseMoney(it?.cost);
+    if (!c) return acc;
+    const fromCur = it?.currency ? String(it.currency) : targetCur;
+    return acc + convertMoney(c, fromCur, targetCur);
+  }, 0);
+
+  const miscCurEl = document.getElementById("miscCur");
+  if (miscCurEl) miscCurEl.textContent = targetCur;
+  const miscTotalEl = document.getElementById("miscTotal");
+  if (miscTotalEl) miscTotalEl.textContent = miscTotal.toFixed(2);
+
+  const list = document.getElementById("miscExpensesList");
+  if (list) {
+    if (!sc.miscExpenses.length) {
+      list.innerHTML = `<div class="text-xs text-slate-500">Añade aquí gastos pequeños que no son un evento (metro, bus, taxi, peajes...).</div>`;
+    } else {
+      list.innerHTML = sc.miscExpenses.map((it) => `
+        <div class="flex items-center gap-2 p-2 rounded-2xl border border-slate-200 bg-white">
+          <input class="w-full min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm"
+                 placeholder="Concepto (ej: Metro 10 viajes)"
+                 value="${escapeHtml(String(it.title || ""))}"
+                 data-misc-title="${escapeHtml(String(it.id||""))}">
+          <input class="w-28 px-3 py-2 rounded-xl border border-slate-200 text-sm text-right"
+                 placeholder="0.00"
+                 inputmode="decimal"
+                 value="${escapeHtml(String(it.cost ?? ""))}"
+                 data-misc-cost="${escapeHtml(String(it.id||""))}">
+          <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-red-600"
+                  data-misc-del="${escapeHtml(String(it.id||""))}">✕</button>
+        </div>
+      `).join("");
+    }
+  }
 }
 
 /* ---------------- Activities: smart done ---------------- */
@@ -7893,11 +7951,15 @@ function calcSummary() {
   const mealsFromCur = (sc.meals && sc.meals.currency) ? String(sc.meals.currency) : (state.displayCurrency || targetCur);
   const meals = convertMoney(mealsRaw, mealsFromCur, targetCur);
 
+  // "Comidas y más": add misc expenses (small transport, taxi, etc.)
+  const misc = sumConverted(sc.miscExpenses || [], "EUR");
+  const mealsPlus = meals + misc;
+
   $("sumTransport").textContent = transport.toFixed(2);
   $("sumStay").textContent = stay.toFixed(2);
   $("sumActs").textContent = acts.toFixed(2);
-  $("sumMeals").textContent = meals.toFixed(2);
-  $("sumTotal").textContent = (transport + stay + acts + meals).toFixed(2);
+  $("sumMeals").textContent = mealsPlus.toFixed(2);
+  $("sumTotal").textContent = (transport + stay + acts + mealsPlus).toFixed(2);
 
   const stickyVal = document.getElementById("stickyTotalValue");
   if (stickyVal) stickyVal.textContent = `${$("sumTotal").textContent}`;
@@ -9016,6 +9078,75 @@ $("addAct").addEventListener("click", ()=>{
     saveState(); renderMeals(); calcSummary();
   });
 });
+
+
+// --- Gastos varios (Comidas y más) bindings ---
+try {
+  const addBtn = document.getElementById("addMiscExpense");
+  if (addBtn && !addBtn.__bound) {
+    addBtn.__bound = 1;
+    addBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const sc = curScenario();
+      if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
+      sc.miscExpenses.unshift({
+        id: nowId(),
+        title: "",
+        cost: "",
+        currency: (state.displayCurrency || "EUR")
+      });
+      saveState();
+      renderMeals();
+      calcSummary();
+    });
+  }
+} catch {}
+
+try {
+  const list = document.getElementById("miscExpensesList");
+  if (list && !list.__bound) {
+    list.__bound = 1;
+
+    list.addEventListener("input", (e) => {
+      const t = e.target;
+      const sc = curScenario();
+      if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
+
+      if (t && t.hasAttribute("data-misc-title")) {
+        const id = t.getAttribute("data-misc-title");
+        const it = sc.miscExpenses.find(x => String(x.id) === String(id));
+        if (!it) return;
+        it.title = String(t.value || "").trim();
+        saveState();
+      }
+
+      if (t && t.hasAttribute("data-misc-cost")) {
+        const id = t.getAttribute("data-misc-cost");
+        const it = sc.miscExpenses.find(x => String(x.id) === String(id));
+        if (!it) return;
+        it.cost = parseMoney(t.value);
+        if (!it.currency) it.currency = (state.displayCurrency || "EUR");
+        saveState();
+        renderMeals();
+        calcSummary();
+      }
+    });
+
+    list.addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("[data-misc-del]");
+      if (!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      const id = btn.getAttribute("data-misc-del");
+      const ok = confirm("¿Borrar este gasto?");
+      if (!ok) return;
+      const sc = curScenario();
+      sc.miscExpenses = (sc.miscExpenses || []).filter(x => String(x.id) !== String(id));
+      saveState();
+      renderMeals();
+      calcSummary();
+    });
+  }
+} catch {}
 
 $("btnKey").addEventListener("click", ()=>{
   const cur = getGeminiKey();
