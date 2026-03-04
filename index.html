@@ -4,11 +4,27 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V189B6_FIX_FAB_HIDE_CSS_BRACE</title>
+<title>V190_BASELINE_HYGIENE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
+/*
+  ============================================================
+  V190_BASELINE_HYGIENE
+  Limpieza mínima (sin cambios funcionales): helpers + guardrails
+  ZONA ROJA: NO tocar arranque, NAV, setView, renders principales.
+  ============================================================
+*/
+(function(){
+  // Guardrails: no cambian la app, pero ayudan a detectar "pantalla en blanco"
+  window.addEventListener("error", function(ev){
+    try{ console.error("[mi-viaje] error", ev.error || ev.message || ev); }catch{}
+  });
+  window.addEventListener("unhandledrejection", function(ev){
+    try{ console.error("[mi-viaje] unhandledrejection", ev.reason || ev); }catch{}
+  });
+})();
 // Data-based delete (global)
 function getActiveScenario() {
   // Active scenario (A/B)
@@ -775,7 +791,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V189B6_FIX_FAB_HIDE_CSS_BRACE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190_BASELINE_HYGIENE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5044,6 +5060,27 @@ function __setTimelineNote(dateKey, text){
     try{ if (typeof saveState === "function") saveState(); }catch{}
   }catch{}
 }
+/* Helpers (fuente de verdad) — usar estos en adelante para notas del día */
+function getDailyNote(dateKey){
+  return __getTimelineNote(dateKey);
+}
+function setDailyNote(dateKey, text){
+  __setTimelineNote(dateKey, text);
+}
+function deleteDailyNote(dateKey){
+  __setTimelineNote(dateKey, "");
+}
+function listDailyNotesKeys(){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return [];
+    const map = sc.dailyNotesByDate || sc.timelineNotesByDate || sc.dailyNotes || {};
+    return Object.keys(map||{}).filter(k=>String(map[k]||"").trim()).sort();
+  }catch{
+    return [];
+  }
+}
+
 
 function __updateTimelineNotesBadge(){
   try{
