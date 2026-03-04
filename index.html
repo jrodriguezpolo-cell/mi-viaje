@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V191_FIX_NOTES_INDEX_AND_EVENT_NOTES</title>
+<title>V190E_NOTES_INDEX_BTN_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -772,7 +772,7 @@ div[data-acc-body="acts"]{
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V191_FIX_NOTES_INDEX_AND_EVENT_NOTES</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V190E_NOTES_INDEX_BTN_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3503,22 +3503,6 @@ function closeModal() {
 }
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
-
-// V191: "Notas del viaje" dentro del modal de Nota del día (abre el índice sin cerrar el modal primero)
-document.addEventListener("click", (e) => {
-  const btn = e.target && (e.target.closest ? e.target.closest("#dailyNotesIndexBtn") : null);
-  if (!btn) return;
-  try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch{}
-  // Abrir en el siguiente tick para evitar que el mismo click cierre el modal (iOS/backdrop)
-  setTimeout(() => {
-    try{
-      if (typeof openDailyNotesIndexModal === "function") openDailyNotesIndexModal();
-    }catch(err){
-      try{ console.warn(err); }catch{}
-    }
-  }, 0);
-}, true);
-
 
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
@@ -6753,91 +6737,104 @@ function openItemNotesModal(item, kindLabel, opts){
   const ro = !!opts.readOnly || (localStorage.getItem("miviaje.readonly") === "1");
   const current = String(it.notes || "").trim();
 
+  
   const modalHtml = `
-    <div class="text-sm text-slate-600 mb-2">Observaciones · ${escapeHtml(label)}</div>
-    <textarea id="itemNotesModalText" rows="6"
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <div class="text-sm text-slate-600 font-semibold">Nota del día</div>
+      <div class="flex items-center gap-2">
+        <button id="dailyNotesIndexBtn" class="tap px-2.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold whitespace-nowrap">
+          Notas del viaje
+        </button>
+        <input id="dailyNoteDatePick" type="date" value="${escapeHtml(key0)}" ${minAttr} ${maxAttr}
+          class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm"
+          style="font-size:16px; line-height:1.2;">
+      </div>
+    </div>
+
+    <div class="text-[11px] text-slate-500 -mt-1 mb-2">Puedes escribir notas para días pasados o futuros.</div>
+
+    <textarea id="dailyNoteModalText" rows="6"
       class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
       style="font-size:16px; line-height:1.3;"
-      placeholder="Escribe aquí...">${escapeHtml(current)}</textarea>
+      placeholder="Escribe aquí...">${escapeHtml(cur0)}</textarea>
 
     <div class="mt-3 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <button id="itemNotesModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
+        <button id="dailyNoteModalSave" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">
           Guardar
         </button>
-        ${current ? `
-          <button id="itemNotesModalDelete" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
-            Borrar
-          </button>
-        ` : ``}
+        <button id="dailyNoteModalDelete" style="display:${cur0 ? 'inline-flex' : 'none'}"
+          class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-red-600">
+          Borrar
+        </button>
       </div>
-      <button id="itemNotesModalCancel" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+      <button id="dailyNoteModalCancel" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
         Cancelar
       </button>
     </div>
   `;
 
-  showModal("Observaciones", modalHtml);
+  showModal("Nota del día", modalHtml);
 
   setTimeout(() => {
-    const ta = document.getElementById("itemNotesModalText");
-    const btnSave = document.getElementById("itemNotesModalSave");
-    const btnDel = document.getElementById("itemNotesModalDelete");
-    const btnCancel = document.getElementById("itemNotesModalCancel");
+    const ta = document.getElementById("dailyNoteModalText");
+    const datePick = document.getElementById("dailyNoteDatePick");
+    const btnSave = document.getElementById("dailyNoteModalSave");
+    const btnDel = document.getElementById("dailyNoteModalDelete");
+    const btnCancel = document.getElementById("dailyNoteModalCancel");
+    const btnIdx = document.getElementById("dailyNotesIndexBtn");
 
-    if (ro) {
-      try{ if(ta) ta.disabled = true; }catch{}
-      try{ if(btnSave) btnSave.disabled = true; }catch{}
-      try{ if(btnDel) btnDel.disabled = true; }catch{}
+    const updateForKey = (k)=>{
+      const cur = String((sc.dailyNotes && sc.dailyNotes[k]) || "").trim();
+      try{ if(ta) ta.value = cur; }catch{}
+      try{ if(btnDel) btnDel.style.display = cur ? "inline-flex" : "none"; }catch{}
+    };
+
+    if(btnCancel) btnCancel.onclick = () => { closeModal(); };
+
+    if(btnIdx){
+      btnIdx.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} closeModal(); openDailyNotesIndexModal(); };
     }
 
-    if (btnCancel) btnCancel.onclick = () => { closeModal(); };
+    if(datePick && !datePick.__dn_bound){
+      datePick.__dn_bound = true;
+      datePick.addEventListener("change", ()=>{
+        const k = String(datePick.value || "").trim();
+        if(!k) return;
+        updateForKey(k);
+      });
+    }
 
-    if (btnSave && !ro) {
+    if(btnSave){
       btnSave.onclick = () => {
+        const k = String(datePick?.value || key0 || "").trim() || key0;
         const v = String(ta?.value || "").trim();
-        it.notes = v;
+        if(!v){
+          try{ delete sc.dailyNotes[k]; }catch{}
+        }else{
+          sc.dailyNotes[k] = v;
+        }
         try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ renderTimeline(); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
     }
 
-    if (btnDel && !ro) {
+    if(btnDel){
       btnDel.onclick = () => {
-        const ok = confirm("¿Borrar esta nota?");
-        if (!ok) return;
-        it.notes = "";
+        const ok = confirm("¿Borrar esta nota del día?");
+        if(!ok) return;
+        const k = String(datePick?.value || key0 || "").trim() || key0;
+        try{ delete sc.dailyNotes[k]; }catch{}
         try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ renderTimeline(); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
     }
   }, 0);
 }
-
-function openItemNotesModalByTypeId(kind, id, opts){
-  try{
-    const sc = (typeof curScenario==="function") ? curScenario() : null;
-    if(!sc) return;
-    const k = String(kind||"").trim();
-    const targetId = String(id||"").trim();
-    let item=null, label="Evento";
-    if(k==="leg"){
-      item = (sc.legs||[]).find(x=>String(x.id||"")===targetId);
-      label = "Transporte";
-    }else if(k==="stay"){
-      item = (sc.stays||[]).find(x=>String(x.id||"")===targetId);
-      label = "Alojamiento";
-    }else if(k==="act"){
-      item = (sc.acts||[]).find(x=>String(x.id||"")===targetId);
-      label = "Actividad";
-    }
-    if(!item) return;
-    if (typeof openItemNotesModal === "function") openItemNotesModal(item, label, opts||{});
-  }catch{}
-}
-
 
 /* ============================
    Daily Notes: "Notas del viaje" index (V189)
@@ -7375,17 +7372,13 @@ box.querySelectorAll("[data-item-notes-type][data-item-notes-id]").forEach(btn =
   });
 
 
-// Notas del día desde el cronograma (🗒️ en cabecera de fecha)
-box.querySelectorAll(".dayNotePeekBtn").forEach(btn => {
+// Notas del día desde el cronograma (🗒️)
+box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
   btn.addEventListener("click", (e) => {
-    try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch{}
-    const k = btn.getAttribute("data-date-key") || "";
-    if(!k) return;
-    if (typeof openDailyNoteViewModal === "function") openDailyNoteViewModal(k);
-    else if (typeof openDailyNoteModal === "function") openDailyNoteModal(k);
+    e.stopPropagation();
+    openDailyNoteModal(btn.dataset.dailyNoteOpen);
   });
 });
-;
 });
 
 
