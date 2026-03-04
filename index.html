@@ -1129,6 +1129,7 @@ function setView(viewName){
   });
 
   activeView = viewName;
+  try{ if(typeof __updateTimelineNotesFabVisibility==="function") __updateTimelineNotesFabVisibility(); }catch{}
 
   // Allow CSS top offsets by active view (timeline exception)
   document.body.dataset.view = String(viewName || "");
@@ -5060,7 +5061,7 @@ function __updateTimelineNotesFabVisibility(){
   try{
     const fab = document.getElementById("timelineNotesFab");
     if(!fab) return;
-    const v = (typeof getActiveViewName==="function") ? String(getActiveViewName("")||"") : "";
+    let v = (typeof getActiveViewName==="function") ? String(getActiveViewName("")||"") : ""; if(!v) v = String(activeView||"");
     if(v === "timeline" || v === "cronograma" || v === "schedule"){
       fab.classList.remove("hidden");
       __updateTimelineNotesBadge();
@@ -6015,7 +6016,7 @@ function __dateSeparatorHTML(label, iso){
         <div class="px-3 py-1 rounded-full inline-flex items-center text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
           ${label}
         </div>
-        ${hasDaily ? `<button type="button" class="dayNotePeekBtn" data-date-key="${key}" title="Ver nota del día">🗒️<span class="noteDot"></span></button>` : ``}
+        ${(hasDaily && String(activeView||"")==="timeline") ? `<button type="button" class="dayNotePeekBtn" data-date-key="${key}" title="Ver nota del día">🗒️<span class="noteDot"></span></button>` : ``}
       </div>
     </div>
   `;
@@ -9753,6 +9754,7 @@ function scrollToDateSep(viewName, iso){
 
 
 window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab(); }catch{}
+  try{ if(typeof __updateTimelineNotesFabVisibility==="function") __updateTimelineNotesFabVisibility(); }catch{}
   try{
     const sel = document.getElementById("dateJumpSelect");
     if(sel && !sel.__tn_badge){
