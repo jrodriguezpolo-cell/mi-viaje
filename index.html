@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX</title>
+<title>V195_COMIDAS_INPUT_VISIBILITY_AND_ZOOM_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
   ============================================================
-  V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX
+  V195_COMIDAS_INPUT_VISIBILITY_AND_ZOOM_FIX
   Limpieza mínima (sin cambios funcionales): helpers + guardrails
   ZONA ROJA: NO tocar arranque, NAV, setView, renders principales.
   ============================================================
@@ -781,6 +781,15 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 /* V181: hide legacy Daily Notes accordion (replaced by FAB) */
 [data-acc="dailyNotes"], [data-acc-body="dailyNotes"]{display:none !important;}
+
+/* V195: meals editor visibility + iOS zoom fix */
+#view-meals input,
+#view-meals select,
+#view-meals textarea,
+#miscExpensesList input,
+#miscExpensesList select{
+  font-size:16px !important;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -791,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V195_COMIDAS_INPUT_VISIBILITY_AND_ZOOM_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -10067,5 +10076,68 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
   </div>
 </div>
 
+
+<script>
+/* V195: keep Meals editor visible under sticky totals and avoid iOS stuck zoom */
+(function(){
+  function __v195TopStack(){
+    try{ if(typeof getTopStackHeight === 'function') return Number(getTopStackHeight())||0; }catch(e){}
+    try{ return Number(getComputedStyle(document.documentElement).getPropertyValue('--top-stack-h').replace('px','').trim())||0; }catch(e){}
+    return 0;
+  }
+  function __v195MealsField(el){
+    if(!el || !el.closest) return false;
+    return !!el.closest('#view-meals');
+  }
+  function __v195KeepVisible(el){
+    const ms = document.getElementById('mainScroll');
+    if(!ms || !el || !__v195MealsField(el)) return;
+    const topStack = __v195TopStack();
+    const rect = el.getBoundingClientRect();
+    const viewportBottom = window.innerHeight - 110;
+    let nextTop = null;
+    if(rect.top < topStack + 18){
+      nextTop = ms.scrollTop + (rect.top - (topStack + 18));
+    }else if(rect.bottom > viewportBottom){
+      nextTop = ms.scrollTop + (rect.bottom - viewportBottom) + 12;
+    }
+    if(nextTop != null){
+      ms.scrollTo({top: Math.max(0, nextTop), behavior:'auto'});
+    }
+  }
+  function __v195SyncAndKeep(el){
+    try{ if(typeof scheduleSyncTopStackHeights==='function') scheduleSyncTopStackHeights(); }catch(e){}
+    requestAnimationFrame(function(){ __v195KeepVisible(el); });
+    setTimeout(function(){
+      try{ if(typeof syncTopStackHeights==='function') syncTopStackHeights(); }catch(e){}
+      __v195KeepVisible(el);
+    }, 80);
+    setTimeout(function(){ __v195KeepVisible(el); }, 220);
+  }
+  document.addEventListener('focusin', function(e){
+    const t = e.target;
+    if(!__v195MealsField(t)) return;
+    __v195SyncAndKeep(t);
+  }, true);
+  document.addEventListener('input', function(e){
+    const t = e.target;
+    if(!__v195MealsField(t)) return;
+    __v195SyncAndKeep(t);
+  }, true);
+  document.addEventListener('change', function(e){
+    const t = e.target;
+    if(!__v195MealsField(t)) return;
+    __v195SyncAndKeep(t);
+  }, true);
+  window.addEventListener('resize', function(){
+    const a = document.activeElement;
+    if(__v195MealsField(a)) __v195SyncAndKeep(a);
+  });
+  document.addEventListener('touchend', function(){
+    const a = document.activeElement;
+    if(__v195MealsField(a)) __v195SyncAndKeep(a);
+  }, {passive:true});
+})();
+</script>
 </body>
 </html>
