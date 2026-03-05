@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V198E_NAV_ORDER_AND_NOTE_VIEW</title>
+<title>V199_TIMELINE_ADD_BUTTON_TYPE_PICKER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198E_NAV_ORDER_AND_NOTE_VIEW</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V199_TIMELINE_ADD_BUTTON_TYPE_PICKER</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1205,11 +1205,83 @@ function triggerAddForView(view){
 function updateFabForView(view){
   const fab = document.getElementById("fabAdd");
   if (!fab) return;
-  const show = (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
+
+  // V199: In timeline, FAB opens a type picker. Other views keep legacy behavior.
+  const isTimeline = (String(view||"") === "timeline");
+  const show = isTimeline || (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
+
   fab.classList.toggle("hidden", !show);
   if (!show) { fab.onclick = null; return; }
-  fab.onclick = () => { if (!triggerAddForView(view)) alert("No se pudo añadir"); };
+
+  if (isTimeline) {
+    fab.onclick = (e) => {
+      try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
+      try{ openTimelineAddTypePicker(); }catch{}
+    };
+    return;
+  }
+
+  fab.onclick = () => {
+    if (!triggerAddForView(view)) alert("No se pudo añadir");
+  };
 }
+
+/* ---------------- Timeline FAB: Add type picker (V199) ---------------- */
+function openTimelineAddTypePicker(){
+  try{
+    if (typeof showModal !== "function") return;
+
+    const bodyHtml = `
+      <div class="space-y-3">
+        <div class="text-sm text-slate-600 font-semibold">¿Qué quieres añadir?</div>
+        <button type="button" id="tlAddTypeLeg"
+          class="tap w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-left font-extrabold">
+          ✈️ Transporte
+        </button>
+        <button type="button" id="tlAddTypeStay"
+          class="tap w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-left font-extrabold">
+          🏨 Alojamiento
+        </button>
+        <button type="button" id="tlAddTypeAct"
+          class="tap w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-left font-extrabold">
+          🎯 Actividades
+        </button>
+        <button type="button" id="tlAddTypeMisc"
+          class="tap w-full px-4 py-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-left font-extrabold">
+          🍽️ Varios
+        </button>
+      </div>
+    `;
+
+    showModal("Añadir", bodyHtml, []);
+
+    setTimeout(()=>{
+      const bind = (id, fn)=>{
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.onclick = (e)=>{
+          try{ e.preventDefault(); e.stopPropagation(); }catch{}
+          try{ closeModal(); }catch{}
+          try{ fn(); }catch{}
+        };
+      };
+
+      bind("tlAddTypeLeg", ()=>{ try{ triggerAddForView("legs"); }catch{} });
+      bind("tlAddTypeStay", ()=>{ try{ triggerAddForView("stays"); }catch{} });
+      bind("tlAddTypeAct", ()=>{ try{ triggerAddForView("acts"); }catch{} });
+      bind("tlAddTypeMisc", ()=>{ 
+        // "Varios" uses the existing Comidas y más editor
+        if (typeof openMiscEditorModal === "function") { openMiscEditorModal(); return; }
+        // Fallback: open meals view, then open misc
+        try{ if(typeof setView==="function") setView("meals"); }catch{}
+        setTimeout(()=>{ try{ if(typeof openMiscEditorModal==="function") openMiscEditorModal(); }catch{} }, 0);
+      });
+    },0);
+
+  }catch{}
+}
+/* ---------------- /Timeline FAB: Add type picker (V199) ---------------- */
+
 
 
 /* ------------------------ Trip name (modal + export/import) ------------------------ */
