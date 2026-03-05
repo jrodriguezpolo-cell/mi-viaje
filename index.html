@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V201B_EVENT_ATTACHMENTS_WIRED</title>
+<title>V202_ATTACHMENTS_EXTERNAL_COPY_FILENAME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V201B_EVENT_ATTACHMENTS_WIRED</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V202_ATTACHMENTS_EXTERNAL_COPY_FILENAME</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1531,6 +1531,35 @@ function openAttachmentsModal(obj){
   }
 }
 
+
+function __copyToClipboard(text){
+  const t = String(text||"");
+  if(!t) return Promise.resolve(false);
+  // Prefer modern clipboard API
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(t).then(()=>true).catch(()=>__copyToClipboardFallback(t));
+  }
+  return __copyToClipboardFallback(t);
+}
+function __copyToClipboardFallback(t){
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = t;
+    ta.setAttribute("readonly","");
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    ta.style.top="-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return Promise.resolve(!!ok);
+  }catch(err){
+    return Promise.resolve(false);
+  }
+}
+
 function __renderAttachmentsModal(){
   const ctx = window.__attachmentsCtx || {};
   const obj = ctx.obj;
@@ -1542,7 +1571,9 @@ function __renderAttachmentsModal(){
   const listHtml = has ? files.map(f=>{
     const kind = f?.kind || "external";
     const name = String(f?.name|| (kind==="link"?"Enlace":"Archivo")).trim() || (kind==="link"?"Enlace":"Archivo");
-    const sub = (kind==="link") ? `<div class="text-xs opacity-70 truncate">${__eh(String(f?.url||""))}</div>` : `<div class="text-xs opacity-60">Guardado externamente</div>`;
+    const sub = (kind==="link")
+      ? `<div class="text-xs opacity-70 truncate">${__eh(String(f?.url||""))}</div>`
+      : `<div class="text-xs opacity-60">Busca este nombre en Archivos (iCloud). Pega este nombre en el buscador.</div>`;
     return `
       <div class="flex items-start justify-between gap-3 py-2 border-b border-slate-200/40">
         <button class="tap flex-1 text-left" data-att-id="${__eh(String(f.id||""))}" data-att-action="open">
@@ -1550,6 +1581,7 @@ function __renderAttachmentsModal(){
           ${sub}
         </button>
         <div class="flex items-center gap-2 shrink-0">
+          ${kind==="external" ? `<button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="copy">Copiar nombre</button>` : ""}
           <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="rename">Renombrar</button>
           <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="delete">Borrar</button>
         </div>
@@ -1621,7 +1653,15 @@ function __handleAttachmentAction(action, id){
     }
     return;
   }
-  if(action === "rename"){
+  
+  if(action === "copy"){
+    const name = String(f.name||"").trim() || "Adjunto";
+    __copyToClipboard(name).then((ok)=>{
+      try{ toast(ok ? "Nombre copiado" : "No se pudo copiar"); }catch{}
+    });
+    return;
+  }
+if(action === "rename"){
     const cur = String(f.name||"").trim() || (f.kind==="link"?"Enlace":"Adjunto");
     const v = prompt("Nuevo nombre:", cur);
     if(v==null) return;
@@ -10263,7 +10303,7 @@ QA checklist (V89D1):
 <button class="sheetMiniClose" id="sheetAttachClose" type="button">✕</button>
 </div>
 <div class="sheetMiniBody">
-<p style="opacity:.8">Adjuntos activos: usa Foto / Archivo / Enlace para guardar en Archivos/iCloud y/o vincular un enlace.</p>
+<p style="opacity:.8">Próxima fase: aquí irá selección de archivo (PDF, imagen, etc.).</p>
 </div>
 </div>
 <div class="hidden sheetMiniModal" id="sheetNotesModal">
@@ -10317,24 +10357,7 @@ overlay.classList.remove("hidden");
 
     if(btnAttach) btnAttach.addEventListener("click", function(e){
       try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(err){}
-      try{
-      // V201B: open real attachments modal (ShareSheet + links)
-      var obj = (typeof __getEventSheetObj === "function") ? __getEventSheetObj() : null;
-      if(!obj){
-        try{
-          var ctx = (window.__eventSheetCtx || {});
-          obj = (ctx && ctx.kind && ctx.id && typeof __getEventObjByKindId==="function") ? __getEventObjByKindId(ctx.kind, ctx.id) : null;
-        }catch(_){}
-      }
-      if(obj && typeof openAttachmentsModal==="function"){
-        try{ closeSheetMiniModals(); }catch(_){}
-        openAttachmentsModal(obj);
-      } else {
-        alert("No se pudo abrir Adjuntos");
-      }
-    }catch(_){
-      alert("No se pudo abrir Adjuntos");
-    }
+      openSheetMiniModal("attach");
     }, true);
     if(btnNotes)  btnNotes.addEventListener("click", function(e){
       try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch(err){}
