@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V198B_FIX_MEALS_CARDS_RENDER</title>
+<title>V198C_CURRENCY_UI_UNIFY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198B_FIX_MEALS_CARDS_RENDER</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198C_CURRENCY_UI_UNIFY</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -814,14 +814,14 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   <div class="flex items-center gap-2 min-w-0">
     <span class="text-xs font-extrabold tracking-wide text-slate-500">TOTAL</span>
     <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
-    <select aria-label="Moneda" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
+    
+  </div>
+  <select aria-label="Moneda" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
 <option value="EUR">€</option>
 <option value="USD">$</option>
 <option value="GBP">£</option>
 <option value="JPY">¥</option>
-</select>
-  </div>
-  <button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
+</select><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
@@ -1016,7 +1016,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">✈️<div>Transporte</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Comidas y más</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Varios</div></button>
 <button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
 </div>
 </nav>
@@ -3893,10 +3893,10 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <label class="text-xs text-slate-600">Coste</label>
         <div class="mt-1 flex items-center gap-2">
           <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
-          <select data-sheet-leg="currency" class="shrink-0 px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
-            <option value="EUR">EUR €</option>
-            <option value="USD">USD $</option>
-            <option value="GBP">GBP £</option>
+          <select data-sheet-leg="currency" class="shrink-0 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+            <option value="EUR">€</option>
+            <option value="USD">$</option>
+            <option value="GBP">£</option>
             <option value="CHF">CHF</option>
           </select>
         </div>
@@ -4420,10 +4420,10 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
           class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
         <label class="sr-only">Moneda</label>
         <select data-stay-currency="${escapeHtml(String(itemId))}" data-sheet-stay="currency"
-          class="shrink-0 px-3 py-2 h-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
-          <option value="EUR">EUR €</option>
-          <option value="USD">USD $</option>
-          <option value="GBP">GBP £</option>
+          class="shrink-0 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          <option value="EUR">€</option>
+          <option value="USD">$</option>
+          <option value="GBP">£</option>
           <option value="CHF">CHF</option>
         </select>
       </div>
@@ -4576,12 +4576,12 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
       <div class="min-w-0">
         <label class="text-xs text-slate-600">Moneda</label>
         <select data-act-currency="${escapeHtml(String(itemId))}" data-sheet-act="currency"
-          class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white">
-          <option value="EUR">EUR €</option>
-          <option value="USD">USD $</option>
-          <option value="GBP">GBP £</option>
+          class="mt-1 w-full px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          <option value="EUR">€</option>
+          <option value="USD">$</option>
+          <option value="GBP">£</option>
           <option value="CHF">CHF</option>
-          <option value="JPY">JPY ¥</option>
+          <option value="JPY">¥</option>
           <option value="CAD">CAD</option>
           <option value="AUD">AUD</option>
           <option value="MXN">MXN</option>
@@ -6033,11 +6033,11 @@ function openMealsEditorModal(){
       </div>
       <div>
         <label class="text-xs text-slate-600">Moneda</label>
-        <select id="mMealsCur" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold">
-          <option value="EUR" ${tmp.currency==="EUR"?"selected":""}>EUR €</option>
-          <option value="USD" ${tmp.currency==="USD"?"selected":""}>USD $</option>
-          <option value="GBP" ${tmp.currency==="GBP"?"selected":""}>GBP £</option>
-          <option value="JPY" ${tmp.currency==="JPY"?"selected":""}>JPY ¥</option>
+        <select id="mMealsCur" aria-label="Moneda" class="mt-1 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold w-auto">
+          <option value="EUR" ${tmp.currency==="EUR"?"selected":""}>€</option>
+          <option value="USD" ${tmp.currency==="USD"?"selected":""}>$</option>
+          <option value="GBP" ${tmp.currency==="GBP"?"selected":""}>£</option>
+          <option value="JPY" ${tmp.currency==="JPY"?"selected":""}>¥</option>
           <option value="CHF" ${tmp.currency==="CHF"?"selected":""}>CHF</option>
         </select>
       </div>
@@ -8686,7 +8686,7 @@ function openTripsModal() {
       <div class="mb-4">
         <label class="text-xs text-slate-600">Nombre del viaje</label>
         <input id="tripNameInput"
-               class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white"
+               class="mt-1 w-full px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
                placeholder="Ej: Nueva York"
                autocapitalize="words"
                autocomplete="off"
