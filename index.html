@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V192_COMIDAS_LAYOUT_AND_MISC_INPUT_FIX</title>
+<title>V193_FIX_COMIDAS_CURRENCY_AND_TOTALS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
   ============================================================
-  V192_COMIDAS_LAYOUT_AND_MISC_INPUT_FIX
+  V193_FIX_COMIDAS_CURRENCY_AND_TOTALS
   Limpieza mínima (sin cambios funcionales): helpers + guardrails
   ZONA ROJA: NO tocar arranque, NAV, setView, renders principales.
   ============================================================
@@ -791,7 +791,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V192_COMIDAS_LAYOUT_AND_MISC_INPUT_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V193_FIX_COMIDAS_CURRENCY_AND_TOTALS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -969,9 +969,14 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 </div>
 <div>
 <label class="text-xs text-slate-600">Total comidas</label>
-<div class="mt-1 h-[42px] px-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-sm">
+<div class="mt-1 h-[42px] px-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 text-sm">
 <span class="font-extrabold" id="mealTotal">0.00</span>
-<span class="text-slate-500" id="mealCur">EUR</span>
+<select id="mealCurrency" class="min-w-[84px] bg-transparent text-right text-slate-500 font-semibold outline-none">
+<option value="EUR">EUR €</option>
+<option value="USD">USD $</option>
+<option value="GBP">GBP £</option>
+<option value="JPY">JPY ¥</option>
+</select>
 </div>
 </div>
 </div>
@@ -5581,7 +5586,14 @@ function setDisplayCurrency(cur) {
   state.displayCurrency = cur;
   try { const sc = curScenario(); if (sc && sc.meals && !sc.meals.currency) sc.meals.currency = cur; } catch {}
   $("sumCur").textContent = cur;
-  $("mealCur").textContent = cur;
+  const mcSel = document.getElementById("mealCurrency");
+  if (mcSel) {
+    try {
+      const sc = curScenario();
+      if (sc && sc.meals && !sc.meals.currency) sc.meals.currency = cur;
+      mcSel.value = (sc && sc.meals && sc.meals.currency) ? sc.meals.currency : cur;
+    } catch {}
+  }
   saveState();
   renderAll();
   syncStickyTotalsHeightVar();
@@ -5639,8 +5651,11 @@ function renderTabs() {
   if (dc) dc.value = state.displayCurrency;
   const sc = document.getElementById("sumCur");
   if (sc) sc.textContent = state.displayCurrency;
-  const mc = document.getElementById("mealCur");
-  if (mc) mc.textContent = state.displayCurrency;
+  const mc = document.getElementById("mealCurrency");
+  if (mc) {
+    const scn = curScenario();
+    mc.value = (scn && scn.meals && scn.meals.currency) ? scn.meals.currency : state.displayCurrency;
+  }
 }
 
 function legCard(leg, idx) {
@@ -5931,7 +5946,8 @@ function renderStays() {
 function renderMeals() {
   const sc = curScenario();
   // Ensure data containers exist (backward compatible)
-  if (!sc.meals) sc.meals = { daily: 0, people: "", days: "" };
+  if (!sc.meals) sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
+  if (!sc.meals.currency) sc.meals.currency = (state.displayCurrency || "EUR");
   if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
 
   $("mealDaily").value = (sc.meals.daily == null || String(sc.meals.daily).trim()==="") ? "" : sc.meals.daily;
@@ -5939,6 +5955,8 @@ function renderMeals() {
   // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
   $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
   $("mealDays").value = (sc.meals.days === "" || sc.meals.days == null) ? "" : sc.meals.days;
+  const mealCurSel = document.getElementById("mealCurrency");
+  if (mealCurSel) mealCurSel.value = sc.meals.currency || (state.displayCurrency || "EUR");
 
   const totalMeals = (
     parseMoney(sc.meals.daily) *
@@ -7822,9 +7840,11 @@ function applySummaryFold() {
                        (parseInt(sc.meals?.days || 1, 10));
       const mealsFromCur = (sc.meals && sc.meals.currency) ? String(sc.meals.currency) : (state.displayCurrency || targetCur);
       const meals = convertMoney(mealsRaw, mealsFromCur, targetCur);
+      const misc = sumConverted(sc.miscExpenses || [], "EUR");
+      const mealsPlus = meals + misc;
 
-      const total = transport + stay + acts + meals;
-      return { transport, stay, meals, acts, total };
+      const total = transport + stay + acts + mealsPlus;
+      return { transport, stay, meals: mealsPlus, acts, total };
     };
 
 
@@ -7852,7 +7872,7 @@ function applySummaryFold() {
     const rows = [
       ["Transporte", aS.transport, bS.transport],
       ["Alojamiento", aS.stay, bS.stay],
-      ["Comida", aS.meals, bS.meals],
+      ["Comidas y más", aS.meals, bS.meals],
       ["Actividades", aS.acts, bS.acts],
       ["TOTAL", aS.total, bS.total]
     ];
@@ -7861,7 +7881,7 @@ function applySummaryFold() {
       inner.innerHTML = `
         <div class="row"><span class="lbl">Transporte</span><span class="val">${fmt(aS.transport)}</span></div>
         <div class="row"><span class="lbl">Alojamiento</span><span class="val">${fmt(aS.stay)}</span></div>
-        <div class="row"><span class="lbl">Comida</span><span class="val">${fmt(aS.meals)}</span></div>
+        <div class="row"><span class="lbl">Comidas y más</span><span class="val">${fmt(aS.meals)}</span></div>
         <div class="row"><span class="lbl">Actividades</span><span class="val">${fmt(aS.acts)}</span></div>
         <hr class="my-2 border-slate-200"/>
         <div class="row"><span class="total">TOTAL</span><span class="total">${fmt(aS.total)}</span></div>
@@ -9069,17 +9089,39 @@ $("addAct").addEventListener("click", ()=>{
 ["mealDaily","mealPeople","mealDays"].forEach(id=>{
   $(id).addEventListener("input", ()=>{
     const sc = curScenario();
+    if (!sc.meals) sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
     const rawDaily = $("mealDaily").value;
     sc.meals.daily = (String(rawDaily).trim() === "") ? null : parseMoney(rawDaily);
-    if (!sc.meals.currency) sc.meals.currency = (state.displayCurrency || "EUR");
+    if (!sc.meals.currency) sc.meals.currency = (document.getElementById("mealCurrency")?.value || state.displayCurrency || "EUR");
     const rawP = $("mealPeople").value;
     const rawD = $("mealDays").value;
 
     sc.meals.people = (String(rawP).trim() === "") ? "" : Math.max(1, parseInt(rawP || "1",10));
     sc.meals.days = (String(rawD).trim() === "") ? "" : Math.max(1, parseInt(rawD || "1",10));
-    saveState(); renderMeals(); calcSummary();
+
+    const totalMeals = (
+      parseMoney(sc.meals.daily) *
+      (parseInt(sc.meals.people || 1, 10)) *
+      (parseInt(sc.meals.days || 1, 10))
+    );
+    const mealTotalEl = document.getElementById("mealTotal");
+    if (mealTotalEl) mealTotalEl.textContent = totalMeals.toFixed(2);
+    saveState(); calcSummary();
   });
 });
+
+try {
+  const mealCurrency = document.getElementById("mealCurrency");
+  if (mealCurrency && !mealCurrency.__bound) {
+    mealCurrency.__bound = 1;
+    mealCurrency.addEventListener("change", ()=>{
+      const sc = curScenario();
+      if (!sc.meals) sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
+      sc.meals.currency = mealCurrency.value || "EUR";
+      saveState(); renderMeals(); calcSummary();
+    });
+  }
+} catch {}
 
 
 // --- Gastos varios (Comidas y más) bindings ---
