@@ -4,14 +4,14 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V193_FIX_COMIDAS_CURRENCY_AND_TOTALS</title>
+<title>V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
   ============================================================
-  V193_FIX_COMIDAS_CURRENCY_AND_TOTALS
+  V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX
   Limpieza mínima (sin cambios funcionales): helpers + guardrails
   ZONA ROJA: NO tocar arranque, NAV, setView, renders principales.
   ============================================================
@@ -791,7 +791,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V193_FIX_COMIDAS_CURRENCY_AND_TOTALS</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V194_COMIDAS_MISC_CURRENCY_LAYOUT_AND_STICKY_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -969,14 +969,14 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 </div>
 <div>
 <label class="text-xs text-slate-600">Total comidas</label>
-<div class="mt-1 h-[42px] px-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 text-sm">
-<span class="font-extrabold" id="mealTotal">0.00</span>
-<select id="mealCurrency" class="min-w-[84px] bg-transparent text-right text-slate-500 font-semibold outline-none">
-<option value="EUR">EUR €</option>
-<option value="USD">USD $</option>
-<option value="GBP">GBP £</option>
-<option value="JPY">JPY ¥</option>
-</select>
+<div class="mt-1 flex items-center gap-2">
+  <input class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold" id="mealTotal" readonly value="0.00"/>
+  <select aria-label="Moneda comidas" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="mealCurrency">
+    <option value="EUR">€</option>
+    <option value="USD">$</option>
+    <option value="GBP">£</option>
+    <option value="JPY">¥</option>
+  </select>
 </div>
 </div>
 </div>
@@ -5915,14 +5915,14 @@ function renderStays() {
     const it = sc.stays.find(x => x.id === id);
     if (!it) return;
     it.nights = Math.max(1, parseInt(inp.value || "1",10));
-    saveState(); calcSummary();
+    saveState(); calcSummary(); try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
   }));
   box.querySelectorAll("[data-stay-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-stay-cost");
     const it = sc.stays.find(x => x.id === id);
     if (!it) return;
     it.cost = parseMoney(inp.value);
-    saveState(); calcSummary();
+    saveState(); calcSummary(); try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
   }));
   box.querySelectorAll("[data-stay-notes]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-stay-notes");
@@ -5963,7 +5963,7 @@ function renderMeals() {
     (parseInt(sc.meals.people || 1, 10)) *
     (parseInt(sc.meals.days || 1, 10))
   );
-  $("mealTotal").textContent = totalMeals.toFixed(2);
+  $("mealTotal").value = totalMeals.toFixed(2);
 
   // --- Gastos varios (Comidas y más) ---
   const targetCur = (state.displayCurrency || (document.getElementById("displayCurrency")?.value) || "EUR");
@@ -5986,15 +5986,22 @@ function renderMeals() {
     } else {
       list.innerHTML = sc.miscExpenses.map((it) => `
         <div class="flex items-center gap-2 p-2 rounded-2xl border border-slate-200 bg-white">
-          <input class="w-full min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm"
+          <input class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm"
                  placeholder="Concepto (ej: Metro 10 viajes)"
                  value="${escapeHtml(String(it.title || ""))}"
                  data-misc-title="${escapeHtml(String(it.id||""))}">
-          <input class="w-28 px-3 py-2 rounded-xl border border-slate-200 text-sm text-right"
+          <input class="w-20 px-3 py-2 rounded-xl border border-slate-200 text-sm text-right"
                  placeholder="0.00"
                  inputmode="decimal"
                  value="${escapeHtml(String(it.cost ?? ""))}"
                  data-misc-cost="${escapeHtml(String(it.id||""))}">
+          <select aria-label="Moneda gasto" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
+                  data-misc-cur="${escapeHtml(String(it.id||""))}">
+            <option value="EUR" ${String(it.currency||"")=="EUR"?"selected":""}>€</option>
+            <option value="USD" ${String(it.currency||"")=="USD"?"selected":""}>$</option>
+            <option value="GBP" ${String(it.currency||"")=="GBP"?"selected":""}>£</option>
+            <option value="JPY" ${String(it.currency||"")=="JPY"?"selected":""}>¥</option>
+          </select>
           <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-red-600"
                   data-misc-del="${escapeHtml(String(it.id||""))}">✕</button>
         </div>
@@ -6716,7 +6723,7 @@ function renderActivities() {
     const it = sc.activities.find(x => x.id === id);
     if (!it) return;
     it.cost = parseMoney(inp.value);
-    saveState(); calcSummary();
+    saveState(); calcSummary(); try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
   }));
   box.querySelectorAll("[data-act-notes]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-act-notes");
@@ -9105,8 +9112,8 @@ $("addAct").addEventListener("click", ()=>{
       (parseInt(sc.meals.days || 1, 10))
     );
     const mealTotalEl = document.getElementById("mealTotal");
-    if (mealTotalEl) mealTotalEl.textContent = totalMeals.toFixed(2);
-    saveState(); calcSummary();
+    if (mealTotalEl) mealTotalEl.value = totalMeals.toFixed(2);
+    saveState(); calcSummary(); try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
   });
 });
 
@@ -9186,7 +9193,31 @@ try {
       }
     });
 
-    list.addEventListener("click", (e) => {
+    
+    list.addEventListener("change", (e) => {
+      const t = e.target;
+      if (!(t && t.hasAttribute && t.hasAttribute("data-misc-cur"))) return;
+      const sc = curScenario();
+      if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
+      const id = t.getAttribute("data-misc-cur");
+      const it = sc.miscExpenses.find(x => String(x.id) === String(id));
+      if (!it) return;
+      it.currency = String(t.value || "").trim() || (state.displayCurrency || "EUR");
+      saveState();
+      // Update misc total display without re-render to avoid keyboard blur
+      const targetCur = (state.displayCurrency || (document.getElementById("displayCurrency")?.value) || "EUR");
+      const miscTotal = (sc.miscExpenses || []).reduce((acc, item) => {
+        const c = parseMoney(item?.cost);
+        if (!c) return acc;
+        const fromCur = item?.currency ? String(item.currency) : targetCur;
+        return acc + convertMoney(c, fromCur, targetCur);
+      }, 0);
+      const miscTotalEl = document.getElementById("miscTotal");
+      if (miscTotalEl) miscTotalEl.textContent = miscTotal.toFixed(2);
+      calcSummary();
+      try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
+    });
+list.addEventListener("click", (e) => {
       const btn = e.target?.closest?.("[data-misc-del]");
       if (!btn) return;
       e.preventDefault(); e.stopPropagation();
