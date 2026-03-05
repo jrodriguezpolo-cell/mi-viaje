@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</title>
+<title>V207_TIMELINE_NOW_NEXT_BANNER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -790,6 +790,22 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 #miscExpensesList select{
   font-size:16px !important;
 }
+
+/* V207: Timeline Now/Next banner */
+#timelineNowNextBanner{ display:none; }
+body[data-view="timeline"] #timelineNowNextBanner{ display:block; }
+#timelineNowNextBanner .nnLabel{ font-size:11px; font-weight:900; letter-spacing:.02em; color: rgb(100 116 139); }
+#timelineNowNextBanner .nnMain{ font-size:13px; font-weight:900; color: rgb(15 23 42); }
+#timelineNowNextBanner .nnSub{ font-size:12px; font-weight:800; color: rgb(30 41 59); opacity: .9; }
+#timelineNowNextBanner button:active{ transform: scale(0.98); }
+
+.nnFlash{ box-shadow: 0 0 0 3px rgba(234,179,8,.35) !important; transition: box-shadow .15s ease; }
+
+/* Add breathing room under fixed subsection header when banner is visible */
+body[data-view="timeline"] div[data-acc-body="timeline"]{
+  padding-top: calc(1rem + var(--now-next-h, 0px)) !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -800,7 +816,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V207_TIMELINE_NOW_NEXT_BANNER</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -848,6 +864,22 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
       <button id="dateJumpNowBtn" class="hidden h-8 rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900 whitespace-nowrap">Hoy</button>
     </div>
   </div>
+
+  <!-- V207: Now/Next banner (timeline only) -->
+  <div id="timelineNowNextBanner" class="mt-2">
+    <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur">
+      <button id="nnTapTarget" class="tap flex-1 text-left min-w-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="nnDayLabel" class="nnLabel whitespace-nowrap">HOY</span>
+          <span class="text-[11px] font-extrabold text-slate-500">·</span>
+          <span id="nnDayDate" class="text-[11px] font-extrabold text-slate-500 truncate">—</span>
+        </div>
+        <div id="nnLine" class="nnSub mt-0.5 truncate">—</div>
+      </button>
+      <button id="nnToggleDay" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-extrabold whitespace-nowrap" title="Alternar día">→</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- Main -->
@@ -1156,6 +1188,7 @@ function setView(viewName){
     timelineViewMode = "global";
     activeDayISO = "";
     if (typeof renderTimeline === "function") renderTimeline();
+    try{ if(typeof __updateNowNextBanner==="function") __updateNowNextBanner(); }catch{}
   }
   if (viewName === "legs") {
     __ensureAccordionOpen("legs");
@@ -3671,6 +3704,209 @@ function getStickyOffset() {
 offset += 12; // margin
   return offset;
 }
+
+
+/* ---------------- V207: Timeline Now/Next banner ---------------- */
+window.__nnDayMode = window.__nnDayMode || "today"; // "today" | "tomorrow"
+
+function __nnYMD(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const da = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
+}
+
+function __nnFormatDayLabel(dateKey, mode){
+  try{
+    const d = new Date(String(dateKey||"") + "T00:00:00");
+    const wd = d.toLocaleDateString("es-ES", { weekday:"short" }).replace(/\./g,"").trim();
+    const pretty = d.toLocaleDateString("es-ES", { day:"2-digit", month:"short", year:"numeric" }).replace(/\./g,"").trim();
+    const top = (mode==="tomorrow") ? "MAÑANA" : "HOY";
+    return { top, pretty: `${wd} ${pretty}` };
+  }catch{
+    return { top: (mode==="tomorrow"?"MAÑANA":"HOY"), pretty: String(dateKey||"") };
+  }
+}
+
+function __nnMakeKey(it){
+  try{
+    if(it && it.isNote) return `note:${String(it.date||"")}`;
+    return `${it && it.actId ? "act" : (it && it.legId ? "leg" : (it && it.stayId ? "stay" : ""))}:${String((it && (it.actId || it.legId || it.stayId)) || "")}`;
+  }catch{
+    return "";
+  }
+}
+
+function __nnGetEndDateTime(it){
+  // Per spec: only events with explicit endTime count as "AHORA".
+  // We consider legs with arriveDate+arriveTime (or endDate/endTime if present).
+  try{
+    const d = String(it?.arriveDate || it?.endDate || "").trim();
+    const t = String(it?.arriveTime || it?.endTime || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+    if(!/^\d{2}:\d{2}$/.test(t)) return null;
+    const dt = new Date(`${d}T${t}:00`);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }catch{
+    return null;
+  }
+}
+
+function __nnPickNowOrNextForDay(dateKey, mode){
+  const items = Array.isArray(window.__tlLastFilteredItems) ? window.__tlLastFilteredItems : [];
+  const dayItems = items.filter(it => String(it?.date||"") === String(dateKey||"") && !it.isNote);
+  const timed = dayItems.filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it?.time||"")));
+
+  // Sort by start datetime
+  timed.sort((a,b)=>{
+    const da = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(a) : null;
+    const db = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(b) : null;
+    return (da?.getTime()||0) - (db?.getTime()||0);
+  });
+
+  if(!timed.length) return { kind:"none", item:null };
+
+  const now = new Date();
+
+  // AHORA: start<=now<end (requires explicit end)
+  if(mode === "today"){
+    for(const it of timed){
+      const start = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(it) : null;
+      const end = __nnGetEndDateTime(it);
+      if(start && end && start.getTime() <= now.getTime() && now.getTime() < end.getTime()){
+        return { kind:"now", item: it };
+      }
+    }
+
+    // PRÓXIMO: first start>now
+    for(const it of timed){
+      const start = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(it) : null;
+      if(start && start.getTime() > now.getTime()){
+        return { kind:"next", item: it };
+      }
+    }
+    return { kind:"empty", item:null }; // no more today
+  }
+
+  // tomorrow: first event of the day
+  return { kind:"next", item: timed[0] };
+}
+
+function __nnSetBannerHeightVar(){
+  try{
+    const el = document.getElementById("timelineNowNextBanner");
+    const root = document.documentElement;
+    if(!el || el.offsetParent === null){
+      root.style.setProperty("--now-next-h","0px");
+      return;
+    }
+    const h = el.getBoundingClientRect().height || 0;
+    root.style.setProperty("--now-next-h", Math.max(0, Math.round(h)) + "px");
+  }catch{}
+}
+
+function __updateNowNextBanner(){
+  try{
+    const banner = document.getElementById("timelineNowNextBanner");
+    if(!banner) return;
+
+    // Only meaningful in timeline view
+    const isTl = (String(window.activeView || "") === "timeline") || (document.body && document.body.dataset.view === "timeline");
+    banner.style.display = isTl ? "" : "none";
+    if(!isTl){ try{ document.documentElement.style.setProperty("--now-next-h","0px"); }catch{} return; }
+
+    const mode = (window.__nnDayMode === "tomorrow") ? "tomorrow" : "today";
+    const now = new Date();
+    const dateKey = (mode === "tomorrow") ? __nnYMD(new Date(now.getFullYear(), now.getMonth(), now.getDate()+1)) : __nnYMD(now);
+
+    const labels = __nnFormatDayLabel(dateKey, mode);
+    const topEl = document.getElementById("nnDayLabel");
+    const dateEl = document.getElementById("nnDayDate");
+    const lineEl = document.getElementById("nnLine");
+    const tapEl = document.getElementById("nnTapTarget");
+
+    if(topEl) topEl.textContent = labels.top;
+    if(dateEl) dateEl.textContent = labels.pretty;
+
+    const picked = __nnPickNowOrNextForDay(dateKey, mode);
+
+    let line = "";
+    let key = "";
+    if(picked.kind === "now" && picked.item){
+      line = "AHORA: " + String(picked.item.title || picked.item.type || "Evento");
+      key = __nnMakeKey(picked.item);
+    } else if(picked.kind === "next" && picked.item){
+      line = "PRÓXIMO: " + String(picked.item.title || picked.item.type || "Evento");
+      key = __nnMakeKey(picked.item);
+    } else if(picked.kind === "empty"){
+      line = "No hay más eventos hoy";
+    } else {
+      line = (mode==="tomorrow") ? "No hay eventos mañana" : "No hay más eventos hoy";
+    }
+
+    if(lineEl) lineEl.textContent = line;
+    if(tapEl){
+      tapEl.dataset.nnKey = key || "";
+      tapEl.classList.toggle("opacity-50", !key);
+    }
+
+    // ensure padding compensation
+    requestAnimationFrame(__nnSetBannerHeightVar);
+  }catch(err){
+    console.error(err);
+  }
+}
+
+function __nnScrollAndFlashByKey(tlKey){
+  const key = String(tlKey||"");
+  if(!key) return;
+  try{
+    if(typeof __tlEnsureTimelineOpen === "function") __tlEnsureTimelineOpen();
+  }catch{}
+  // Scroll
+  let ok = false;
+  try{ if(typeof __tlScrollToItemByKey === "function") ok = __tlScrollToItemByKey(key); }catch{}
+  if(!ok){
+    try{
+      const el = Array.from(document.querySelectorAll("#timelineList .timelineItem")).find(x => (x.getAttribute("data-tl-key")||"")===key);
+      if(el) { try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} ok = true; }
+    }catch{}
+  }
+  // Flash
+  try{
+    const el = Array.from(document.querySelectorAll("#timelineList .timelineItem")).find(x => (x.getAttribute("data-tl-key")||"")===key);
+    if(el){
+      el.classList.add("nnFlash");
+      setTimeout(()=>{ try{ el.classList.remove("nnFlash"); }catch{} }, 800);
+    }
+  }catch{}
+}
+
+function __bindNowNextBanner(){
+  if(document.__nnBound) return;
+  document.__nnBound = true;
+
+  document.addEventListener("click", (e)=>{
+    const t = e.target;
+    const btn = t && t.closest ? t.closest("#nnToggleDay") : null;
+    if(btn){
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      window.__nnDayMode = (window.__nnDayMode === "tomorrow") ? "today" : "tomorrow";
+      __updateNowNextBanner();
+      return;
+    }
+    const tap = t && t.closest ? t.closest("#nnTapTarget") : null;
+    if(tap){
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const key = tap.dataset.nnKey || "";
+      if(key) __nnScrollAndFlashByKey(key);
+      return;
+    }
+  }, true);
+}
+
+try{ __bindNowNextBanner(); }catch{}
+/* ---------------- /V207: Timeline Now/Next banner ---------------- */
 
 
 function calibrateViewStartGap(){
@@ -8433,6 +8669,8 @@ box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
   renderDailyNotes();
 
   try{ __refreshTimelineNotesBadge(); }catch{}
+
+  try{ if(typeof __updateNowNextBanner==="function") __updateNowNextBanner(); }catch{}
 }
 
 function renderDailyNotes() {
