@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V199_TIMELINE_ADD_BUTTON_TYPE_PICKER</title>
+<title>V200_TIMELINE_ADD_VARIOS_WITH_COMIDAS_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V199_TIMELINE_ADD_BUTTON_TYPE_PICKER</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V200_TIMELINE_ADD_VARIOS_WITH_COMIDAS_BUTTON</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1270,6 +1270,8 @@ function openTimelineAddTypePicker(){
       bind("tlAddTypeStay", ()=>{ try{ triggerAddForView("stays"); }catch{} });
       bind("tlAddTypeAct", ()=>{ try{ triggerAddForView("acts"); }catch{} });
       bind("tlAddTypeMisc", ()=>{ 
+        // V200: mark context so misc modal shows "Comidas" shortcut when opened from Timeline
+        try{ window.__timelineAddContext = "misc"; }catch{}
         // "Varios" uses the existing Comidas y más editor
         if (typeof openMiscEditorModal === "function") { openMiscEditorModal(); return; }
         // Fallback: open meals view, then open misc
@@ -6219,7 +6221,16 @@ function openMiscEditorModal(){
 
   const targetCur = (document.getElementById("displayCurrency")?.value) || (state.displayCurrency || "EUR");
 
+  const fromTimeline = (typeof window !== "undefined" && window.__timelineAddContext === "misc");
+
+  const tlBtnHtml = fromTimeline ? `
+    <div class="mb-3 flex items-center justify-start">
+      <button type="button" id="goMealsFromMisc" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold">Comidas</button>
+    </div>
+  ` : "";
+
   const bodyHtml = `
+    ${tlBtnHtml}
     <div class="text-xs text-slate-500 mb-3">Metro, bus, taxi, alquiler coche, parking, etc.</div>
     <div id="mMiscList" class="space-y-2"></div>
 
@@ -6240,6 +6251,20 @@ function openMiscEditorModal(){
   btnSave.textContent = "Guardar";
 
   showModal("Gastos varios", bodyHtml, [btnClose, btnSave]);
+
+  // V200: shortcut button only when opened from Timeline → + → Varios
+  try{
+    const go = document.getElementById("goMealsFromMisc");
+    if (go) {
+      go.onclick = (e)=>{
+        try{ e.preventDefault(); e.stopPropagation(); }catch{}
+        try{ window.__timelineAddContext = null; }catch{}
+        try{ closeModal(); }catch{}
+        try{ if (typeof openMealsEditorModal === "function") openMealsEditorModal(); }catch{}
+      };
+    }
+  }catch{}
+
 
   const list = document.getElementById("mMiscList");
   const addBtn = document.getElementById("mMiscAdd");
@@ -6344,7 +6369,7 @@ function openMiscEditorModal(){
     };
   }
 
-  btnClose.onclick = ()=>{ closeModal(); };
+  btnClose.onclick = ()=>{ try{ window.__timelineAddContext = null; }catch{} closeModal(); };
 
   btnSave.onclick = ()=>{
     // Persist back to existing state (no migration)
@@ -6355,6 +6380,7 @@ function openMiscEditorModal(){
       currency: String(x.currency || targetCur)
     })).filter(x => x.title || x.cost);
     saveState();
+    try{ window.__timelineAddContext = null; }catch{}
     closeModal();
     renderMeals();
     try{ calcSummary(); }catch{}
