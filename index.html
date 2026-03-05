@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V200_TIMELINE_ADD_VARIOS_WITH_COMIDAS_BUTTON</title>
+<title>V201_EVENT_ATTACHMENTS_SHARE_SHEET_AND_LINKS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V200_TIMELINE_ADD_VARIOS_WITH_COMIDAS_BUTTON</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V201_EVENT_ATTACHMENTS_SHARE_SHEET_AND_LINKS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1491,6 +1491,262 @@ function showNotePeek(text, title){
     if(btn && !btn.__np_bound){ btn.__np_bound = true; btn.addEventListener("click", close); }
   }catch{}
 }
+
+
+// ---------------- Attachments (📎) - Premium-lite (V201) ----------------
+function __eh(s){ try{ if(typeof escapeHtml==="function") return escapeHtml(String(s||"")); }catch{} return String(s||""); }
+
+function __getEventSheetObj(){
+  try{
+    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : (window.__eventSheetCtx || null);
+    if(ctx && ctx.objRef) return ctx.objRef;
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc || !ctx) return null;
+    const id = String(ctx.id||"");
+    if(ctx.kind === "leg") return Array.isArray(sc.legs) ? sc.legs.find(x=>String(x&&x.id)===id) : null;
+    if(ctx.kind === "stay") return Array.isArray(sc.stays) ? sc.stays.find(x=>String(x&&x.id)===id) : null;
+    if(ctx.kind === "act") return Array.isArray(sc.activities) ? sc.activities.find(x=>String(x&&x.id)===id) : null;
+  }catch{}
+  return null;
+}
+
+function __ensureFilesArray(obj){
+  try{ if(!obj) return []; }catch{}
+  if(!Array.isArray(obj.files)) obj.files = [];
+  return obj.files;
+}
+
+function __fileId(){
+  return "f_" + Math.random().toString(36).slice(2,9) + "_" + Date.now().toString(36);
+}
+
+function openAttachmentsModal(obj){
+  try{
+    if(!obj) return;
+    window.__attachmentsCtx = { obj };
+    __renderAttachmentsModal();
+  }catch(err){
+    console.error(err);
+    alert("No se pudieron abrir los adjuntos");
+  }
+}
+
+function __renderAttachmentsModal(){
+  const ctx = window.__attachmentsCtx || {};
+  const obj = ctx.obj;
+  if(!obj) return;
+
+  const files = __ensureFilesArray(obj).slice().sort((a,b)=>(a?.createdAt||0)-(b?.createdAt||0));
+  const has = files.length>0;
+
+  const listHtml = has ? files.map(f=>{
+    const kind = f?.kind || "external";
+    const name = String(f?.name|| (kind==="link"?"Enlace":"Archivo")).trim() || (kind==="link"?"Enlace":"Archivo");
+    const sub = (kind==="link") ? `<div class="text-xs opacity-70 truncate">${__eh(String(f?.url||""))}</div>` : `<div class="text-xs opacity-60">Guardado externamente</div>`;
+    return `
+      <div class="flex items-start justify-between gap-3 py-2 border-b border-slate-200/40">
+        <button class="tap flex-1 text-left" data-att-id="${__eh(String(f.id||""))}" data-att-action="open">
+          <div class="font-extrabold text-sm">${__eh(name)}</div>
+          ${sub}
+        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="rename">Renombrar</button>
+          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="delete">Borrar</button>
+        </div>
+      </div>
+    `;
+  }).join("") : `<div class="opacity-70 text-sm py-6 text-center">Aún no hay adjuntos</div>`;
+
+  const bodyHtml = `
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button id="attAddPhoto" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold">Foto</button>
+        <button id="attAddFile" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold">Archivo</button>
+        <button id="attAddLink" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold">Enlace</button>
+      </div>
+    </div>
+    <div class="mt-3">${listHtml}</div>
+  `;
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
+  closeBtn.textContent = "Cerrar";
+  closeBtn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} window.__attachmentsCtx=null; closeModal(); };
+
+  showModal("Adjuntos", bodyHtml, [closeBtn]);
+
+  // Bind top buttons
+  const bPhoto = document.getElementById("attAddPhoto");
+  const bFile = document.getElementById("attAddFile");
+  const bLink = document.getElementById("attAddLink");
+
+  if(bPhoto) bPhoto.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __pickAndShareFile({ accept:"image/*", capture:"environment", label:"Foto" }); };
+  if(bFile) bFile.onclick  = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __pickAndShareFile({ accept:"*/*", label:"Archivo" }); };
+  if(bLink) bLink.onclick  = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __renderAddLinkForm({}); };
+
+  // Bind list actions (delegated inside modalBody)
+  const mb = document.getElementById("modalBody");
+  if(mb && !mb.__att_bound){
+    mb.__att_bound = true;
+    mb.addEventListener("click", (e)=>{
+      const t = e.target;
+      const btn = t && t.closest ? t.closest("[data-att-action]") : null;
+      if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const action = btn.getAttribute("data-att-action");
+      const id = btn.getAttribute("data-att-id");
+      if(!action || !id) return;
+      __handleAttachmentAction(action, id);
+    }, { capture: true });
+  }
+}
+
+function __handleAttachmentAction(action, id){
+  const ctx = window.__attachmentsCtx || {};
+  const obj = ctx.obj;
+  if(!obj) return;
+  const files = __ensureFilesArray(obj);
+  const i = files.findIndex(x=>String(x&&x.id)===String(id));
+  if(i<0) return;
+  const f = files[i] || {};
+  if(action === "open"){
+    if(f.kind === "link" && String(f.url||"").trim()){
+      window.open(String(f.url).trim(), "_blank");
+      return;
+    }
+    // external
+    const want = confirm("Guardado en Archivos/iCloud. Si quieres abrirlo desde la app, añade un enlace.\n\n¿Añadir enlace ahora?");
+    if(want){
+      __renderAddLinkForm({ prefillName: String(f.name||"") || "Adjunto" });
+    }
+    return;
+  }
+  if(action === "rename"){
+    const cur = String(f.name||"").trim() || (f.kind==="link"?"Enlace":"Adjunto");
+    const v = prompt("Nuevo nombre:", cur);
+    if(v==null) return;
+    f.name = String(v||"").trim() || cur;
+    files[i] = f;
+    try{ if(typeof saveState==="function") saveState(); }catch{}
+    __renderAttachmentsModal();
+    return;
+  }
+  if(action === "delete"){
+    const ok = confirm("¿Borrar este adjunto?");
+    if(!ok) return;
+    files.splice(i,1);
+    try{ if(typeof saveState==="function") saveState(); }catch{}
+    __renderAttachmentsModal();
+    return;
+  }
+}
+
+function __renderAddLinkForm({ prefillName } = {}){
+  const ctx = window.__attachmentsCtx || {};
+  const obj = ctx.obj;
+  if(!obj) return;
+  const name0 = String(prefillName||"").trim();
+
+  const bodyHtml = `
+    <div class="space-y-3">
+      <div class="text-sm font-extrabold">Nuevo enlace</div>
+      <div class="space-y-2">
+        <label class="block text-xs font-extrabold opacity-70">Nombre</label>
+        <input id="attLinkName" class="w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="Billete / Reserva / Web…" value="${__eh(name0)}">
+      </div>
+      <div class="space-y-2">
+        <label class="block text-xs font-extrabold opacity-70">URL</label>
+        <input id="attLinkUrl" class="w-full px-3 py-2 rounded-xl border border-slate-300" placeholder="https://…" value="">
+      </div>
+    </div>
+  `;
+
+  const btnCancel = document.createElement("button");
+  btnCancel.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
+  btnCancel.textContent = "Cancelar";
+  btnCancel.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __renderAttachmentsModal(); };
+
+  const btnSave = document.createElement("button");
+  btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 text-white font-extrabold";
+  btnSave.textContent = "Guardar";
+  btnSave.onclick = (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    const n = String((document.getElementById("attLinkName")||{}).value||"").trim() || "Enlace";
+    const u = String((document.getElementById("attLinkUrl")||{}).value||"").trim();
+    if(!u){ alert("Pon una URL"); return; }
+    const files = __ensureFilesArray(obj);
+    files.push({ id: __fileId(), name: n, kind: "link", url: u, createdAt: Date.now() });
+    try{ if(typeof saveState==="function") saveState(); }catch{}
+    __renderAttachmentsModal();
+  };
+
+  showModal("Adjuntos", bodyHtml, [btnCancel, btnSave]);
+}
+
+async function __pickAndShareFile({ accept, capture, label } = {}){
+  const ctx = window.__attachmentsCtx || {};
+  const obj = ctx.obj;
+  if(!obj) return;
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = accept || "*/*";
+  if(capture) input.setAttribute("capture", capture);
+  input.style.position = "fixed";
+  input.style.left = "-9999px";
+  document.body.appendChild(input);
+
+  input.onchange = async ()=>{
+    try{
+      const file = input.files && input.files[0];
+      document.body.removeChild(input);
+      if(!file) return;
+
+      await __shareOrDownloadFile(file);
+
+      // Register as external (no URL)
+      const files = __ensureFilesArray(obj);
+      const suggested = (label==="Foto")
+        ? ("Foto " + new Date().toLocaleString())
+        : (file.name || (label||"Archivo"));
+      files.push({ id: __fileId(), name: String(suggested||"Adjunto"), kind: "external", url: "", createdAt: Date.now() });
+      try{ if(typeof saveState==="function") saveState(); }catch{}
+
+      alert("Guardado externamente. Si quieres abrirlo desde la app, añade un enlace.");
+      __renderAttachmentsModal();
+    }catch(err){
+      console.error(err);
+      try{ alert("No se pudo añadir el adjunto"); }catch{}
+      try{ __renderAttachmentsModal(); }catch{}
+    }
+  };
+
+  input.click();
+}
+
+async function __shareOrDownloadFile(file){
+  // iOS ShareSheet (when supported)
+  try{
+    if(navigator && navigator.canShare && navigator.share){
+      const can = navigator.canShare({ files: [file] });
+      if(can){
+        await navigator.share({ files: [file], title: "Adjunto" });
+        return;
+      }
+    }
+  }catch{}
+  // Fallback: download
+  try{
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name || "adjunto";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} try{ a.remove(); }catch{} }, 800);
+  }catch{}
+}
+// ------------------------------------------------------------------------
 
 function __getEventObjByKindId(kind, id){
   try{
@@ -4866,6 +5122,9 @@ function renderLegModeChips(container, leg, onSelect){
     if (k === "act") actObj = sc && Array.isArray(sc.activities) ? sc.activities.find(x => String(x && x.id) === String(itemId)) : null;
   } catch {}
 
+  // V201: keep a direct reference to the edited object for sheet-only tools (e.g., attachments)
+  try{ __eventSheetCtx.objRef = (k==="leg"?legObj:(k==="stay"?stayObj:actObj)) || null; }catch{}
+
   if (k === "leg" && !legObj) { alert("No se encontró el evento"); return; }
   if (k === "stay" && !stayObj) { alert("No se encontró el evento"); return; }
   if (k === "act" && !actObj) { alert("No se encontró el evento"); return; }
@@ -5090,6 +5349,7 @@ function closeEventSheet({ silent } = {}) {
   if (body) body.innerHTML = "";
   const ctx = __eventSheetCtx;
 
+  try{ if(__eventSheetCtx) __eventSheetCtx.objRef = null; }catch{}
   try { if (ctx && ctx.node) ctx.node.classList.remove("sheet-leg-editor"); } catch {}
   __eventSheetCtx = null;
 
@@ -5380,7 +5640,14 @@ function __initEventSheetBindings(){
     attachBtn.__bound = true;
     attachBtn.addEventListener("click", (e)=>{
       try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      alert("Archivos: función en desarrollo");
+      try{
+        const obj = __getEventSheetObj();
+        if(!obj){ alert("No se encontró el evento"); return; }
+        openAttachmentsModal(obj);
+      }catch(err){
+        console.error(err);
+        alert("No se pudieron abrir los adjuntos");
+      }
       return;
     });
   }
