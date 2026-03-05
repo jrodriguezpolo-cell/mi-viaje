@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V198C_CURRENCY_UI_UNIFY</title>
+<title>V198D_CURRENCY_UI_FIXES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198C_CURRENCY_UI_UNIFY</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198D_CURRENCY_UI_FIXES</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -810,18 +810,20 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 </header>
 <!-- Sticky mini total bar -->
 <div class="bg-white/95 backdrop-blur border-b border-slate-200" id="stickyTotalBar">
-<div class="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+<div class="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3">
   <div class="flex items-center gap-2 min-w-0">
     <span class="text-xs font-extrabold tracking-wide text-slate-500">TOTAL</span>
     <span class="text-sm font-semibold text-slate-900 truncate" id="stickyTotalValue">—</span>
     
-  </div>
-  <select aria-label="Moneda" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
+  
+    <select aria-label="Moneda" class="ml-1 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="displayCurrency">
 <option value="EUR">€</option>
 <option value="USD">$</option>
 <option value="GBP">£</option>
 <option value="JPY">¥</option>
-</select><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
+</select>
+  </div>
+<button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
@@ -4576,7 +4578,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
       <div class="min-w-0">
         <label class="text-xs text-slate-600">Moneda</label>
         <select data-act-currency="${escapeHtml(String(itemId))}" data-sheet-act="currency"
-          class="mt-1 w-full px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          class="mt-1 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
           <option value="EUR">€</option>
           <option value="USD">$</option>
           <option value="GBP">£</option>
@@ -8134,8 +8136,8 @@ function applySummaryFold() {
         <div class="row"><span class="lbl">Comidas y más</span><span class="val">${fmt(aS.meals)}</span></div>
         <div class="row"><span class="lbl">Actividades</span><span class="val">${fmt(aS.acts)}</span></div>
         <hr class="my-2 border-slate-200"/>
-        <div class="row"><span class="total">TOTAL</span><span class="total">${fmt(aS.total)}</span></div>
-        <div class="mt-1 text-xs text-slate-500">${curSym ? curSym : ""}</div>
+        <div class="row"><span class="total">TOTAL ${curSym ? curSym : ""}</span><span class="total">${fmt(aS.total)}</span></div>
+        
       `;
     } else {
       inner.innerHTML = `
@@ -8155,7 +8157,7 @@ function applySummaryFold() {
                 const isTot = r[0]==="TOTAL";
                 return `
                   <tr class="${isTot ? "border-t border-slate-200" : ""}">
-                    <td class="py-1 ${isTot ? "font-extrabold" : "text-slate-600"}">${escapeHtml(r[0])}</td>
+                    <td class="py-1 ${isTot ? "font-extrabold" : "text-slate-600"}">${escapeHtml(r[0] === "TOTAL" ? ("TOTAL " + (curSym ? curSym : "")) : r[0])}</td>
                     <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${fmt(r[1])}</td>
                     <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${fmt(r[2])}</td>
                     <td class="py-1 text-right ${isTot ? "font-extrabold" : "font-semibold"}">${difTxt(dif)}</td>
@@ -8164,7 +8166,7 @@ function applySummaryFold() {
             </tbody>
           </table>
         </div>
-        <div class="mt-1 text-xs text-slate-500">${curSym ? curSym : ""}</div>
+        
       `;
     }
   }
