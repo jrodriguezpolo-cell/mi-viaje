@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V197_TOPSTACK_RESIZE_OBSERVER_FIX</title>
+<title>V198_COMIDAS_Y_MAS_AS_CARDS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -800,7 +800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V197_TOPSTACK_RESIZE_OBSERVER_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V198_COMIDAS_Y_MAS_AS_CARDS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -963,48 +963,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <span class="accIcon text-slate-400 text-xl">▾</span>
 </button>
 <div class="px-5 pb-5 hidden" data-acc-body="meals">
-<div class="grid grid-cols-2 gap-3">
-<div>
-<label class="text-xs text-slate-600">Gasto diario x persona</label>
-<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealDaily" min="0" placeholder="Ej: 30" step="0.01" type="number"/>
-</div>
-<div>
-<label class="text-xs text-slate-600">Nº personas</label>
-<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealPeople" min="1" placeholder="Ej: 2" step="1" type="number"/>
-</div>
-<div>
-<label class="text-xs text-slate-600">Días totales</label>
-<input class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" id="mealDays" min="1" placeholder="Ej: 20" step="1" type="number"/>
-</div>
-<div>
-<label class="text-xs text-slate-600">Total comidas</label>
-<div class="mt-1 flex items-center gap-2">
-  <input class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm font-extrabold" id="mealTotal" readonly value="0.00"/>
-  <select aria-label="Moneda comidas" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold" id="mealCurrency">
-    <option value="EUR">€</option>
-    <option value="USD">$</option>
-    <option value="GBP">£</option>
-    <option value="JPY">¥</option>
-  </select>
-</div>
-</div>
-</div>
-
-<div class="mt-5 border-t border-slate-200 pt-4">
-  <div class="flex items-center justify-between gap-3">
-    <div>
-      <div class="font-extrabold text-sm">Gastos varios</div>
-      <div class="text-xs text-slate-500">Metro, bus, taxi, alquiler coche, parking, etc.</div>
-    </div>
-    <button id="addMiscExpense" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold">+ Añadir</button>
-  </div>
-  <div id="miscExpensesList" class="mt-3 space-y-2"></div>
-  <div class="mt-3 text-sm">
-    <span class="text-slate-600">Total varios:</span>
-    <span class="font-extrabold" id="miscTotal">0.00</span>
-    <span class="text-slate-500" id="miscCur">EUR</span>
-  </div>
-</div>
+<div id=\"mealsCardsHost\" class=\"space-y-3\"></div>
 </div>
 </div>
 </div>
@@ -1238,12 +1197,7 @@ function triggerAddForView(view){
   if (view === "legs") return clickId("addLeg");
   if (view === "stays") return clickId("addStay");
   if (view === "acts") return clickId("addAct");
-  if (view === "meals") {
-    // No dedicated add button in meals; focus daily input as the primary action
-    const el = document.getElementById("mealDaily");
-    if (el) { try { el.focus(); } catch {} return true; }
-    return false;
-  }
+  if (view === "meals") { return false; }
   return false;
 }
 function updateFabForView(view){
@@ -5976,6 +5930,7 @@ function renderStays() {
 
 
 
+
 function renderMeals() {
   const sc = curScenario();
   // Ensure data containers exist (backward compatible)
@@ -5983,23 +5938,18 @@ function renderMeals() {
   if (!sc.meals.currency) sc.meals.currency = (state.displayCurrency || "EUR");
   if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
 
-  $("mealDaily").value = (sc.meals.daily == null || String(sc.meals.daily).trim()==="") ? "" : sc.meals.daily;
+  const host = document.getElementById("mealsCardsHost");
+  if (!host) return;
 
-  // Permitir vacío en UI (si está vacío, el cálculo tratará como 1)
-  $("mealPeople").value = (sc.meals.people === "" || sc.meals.people == null) ? "" : sc.meals.people;
-  $("mealDays").value = (sc.meals.days === "" || sc.meals.days == null) ? "" : sc.meals.days;
-  const mealCurSel = document.getElementById("mealCurrency");
-  if (mealCurSel) mealCurSel.value = sc.meals.currency || (state.displayCurrency || "EUR");
+  const mealDaily = parseMoney(sc.meals.daily);
+  const mealPeople = parseInt(String(sc.meals.people || 0), 10) || 0;
+  const mealDays = parseInt(String(sc.meals.days || 0), 10) || 0;
+  const mealCur = String(sc.meals.currency || (state.displayCurrency || "EUR"));
 
-  const totalMeals = (
-    parseMoney(sc.meals.daily) *
-    (parseInt(sc.meals.people || 1, 10)) *
-    (parseInt(sc.meals.days || 1, 10))
-  );
-  $("mealTotal").value = totalMeals.toFixed(2);
+  const mealsTotal = mealDaily * mealPeople * mealDays;
 
-  // --- Gastos varios (Comidas y más) ---
-  const targetCur = (state.displayCurrency || (document.getElementById("displayCurrency")?.value) || "EUR");
+  // Misc totals in Summary currency (Totales)
+  const targetCur = (document.getElementById("displayCurrency")?.value) || (state.displayCurrency || "EUR");
   const miscTotal = (sc.miscExpenses || []).reduce((acc, it) => {
     const c = parseMoney(it?.cost);
     if (!c) return acc;
@@ -6007,42 +5957,302 @@ function renderMeals() {
     return acc + convertMoney(c, fromCur, targetCur);
   }, 0);
 
-  const miscCurEl = document.getElementById("miscCur");
-  if (miscCurEl) miscCurEl.textContent = targetCur;
-  const miscTotalEl = document.getElementById("miscTotal");
-  if (miscTotalEl) miscTotalEl.textContent = miscTotal.toFixed(2);
+  const mealSub = `${mealDaily || 0} ${mealCur}/día · ${mealPeople || 0} pers · ${mealDays || 0} días`;
 
-  const list = document.getElementById("miscExpensesList");
-  if (list) {
-    if (!sc.miscExpenses.length) {
-      list.innerHTML = `<div class="text-xs text-slate-500">Añade aquí gastos pequeños que no son un evento (metro, bus, taxi, peajes...).</div>`;
-    } else {
-      list.innerHTML = sc.miscExpenses.map((it) => `
-        <div class="flex items-center gap-2 p-2 rounded-2xl border border-slate-200 bg-white">
-          <input class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm"
-                 placeholder="Concepto (ej: Metro 10 viajes)"
-                 value="${escapeHtml(String(it.title || ""))}"
-                 data-misc-title="${escapeHtml(String(it.id||""))}">
-          <input class="w-20 px-3 py-2 rounded-xl border border-slate-200 text-sm text-right"
-                 placeholder="0.00"
-                 inputmode="decimal"
-                 value="${escapeHtml(String(it.cost ?? ""))}"
-                 data-misc-cost="${escapeHtml(String(it.id||""))}">
-          <select aria-label="Moneda gasto" class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
-                  data-misc-cur="${escapeHtml(String(it.id||""))}">
-            <option value="EUR" ${String(it.currency||"")=="EUR"?"selected":""}>€</option>
-            <option value="USD" ${String(it.currency||"")=="USD"?"selected":""}>$</option>
-            <option value="GBP" ${String(it.currency||"")=="GBP"?"selected":""}>£</option>
-            <option value="JPY" ${String(it.currency||"")=="JPY"?"selected":""}>¥</option>
-          </select>
-          <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-red-600"
-                  data-misc-del="${escapeHtml(String(it.id||""))}">✕</button>
-        </div>
-      `).join("");
-    }
+  // Misc subtitle: compact list of titles
+  const titles = (sc.miscExpenses || []).map(x => String(x?.title || "").trim()).filter(Boolean);
+  let miscSub = "—";
+  if (titles.length) {
+    const showN = Math.min(3, titles.length);
+    miscSub = titles.slice(0, showN).join(", ");
+    if (titles.length > showN) miscSub += ` +${titles.length - showN} más`;
   }
+
+  host.innerHTML = `
+    <button type="button" id="mealsCardMeals" class="tap w-full text-left bg-white border border-slate-200 rounded-3xl p-4 flex items-center justify-between gap-3 hover:bg-slate-50">
+      <div class="min-w-0">
+        <div class="font-extrabold">Comidas</div>
+        <div class="text-xs text-slate-600 mt-1 truncate">${escapeHtml(mealSub)}</div>
+      </div>
+      <div class="shrink-0 text-right">
+        <div class="text-lg font-extrabold">${escapeHtml(mealsTotal.toFixed(2))}</div>
+        <div class="text-xs text-slate-500">${escapeHtml(mealCur)}</div>
+      </div>
+    </button>
+
+    <button type="button" id="mealsCardMisc" class="tap w-full text-left bg-white border border-slate-200 rounded-3xl p-4 flex items-center justify-between gap-3 hover:bg-slate-50">
+      <div class="min-w-0">
+        <div class="font-extrabold">Gastos varios</div>
+        <div class="text-xs text-slate-600 mt-1 truncate">${escapeHtml(miscSub)}</div>
+      </div>
+      <div class="shrink-0 text-right">
+        <div class="text-lg font-extrabold">${escapeHtml(miscTotal.toFixed(2))}</div>
+        <div class="text-xs text-slate-500">${escapeHtml(targetCur)}</div>
+      </div>
+    </button>
+  `;
+
+  const btnMeals = document.getElementById("mealsCardMeals");
+  const btnMisc = document.getElementById("mealsCardMisc");
+
+  if (btnMeals) btnMeals.onclick = () => { try{ openMealsEditorModal(); }catch{} };
+  if (btnMisc) btnMisc.onclick = () => { try{ openMiscEditorModal(); }catch{} };
+
+  // Keep Summary synced
+  try { calcSummary(); } catch {}
 }
 
+/* ---------------- Meals & Misc modals (V198) ---------------- */
+
+function openMealsEditorModal(){
+  const sc = curScenario();
+  if (!sc.meals) sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
+  if (!sc.meals.currency) sc.meals.currency = (state.displayCurrency || "EUR");
+
+  // temp state (do not re-render on every keystroke)
+  const tmp = {
+    daily: (sc.meals.daily == null ? "" : String(sc.meals.daily)),
+    people: (sc.meals.people == null ? "" : String(sc.meals.people)),
+    days: (sc.meals.days == null ? "" : String(sc.meals.days)),
+    currency: String(sc.meals.currency || (state.displayCurrency || "EUR"))
+  };
+
+  const bodyHtml = `
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="text-xs text-slate-600">Gasto diario por persona</label>
+        <input id="mMealsDaily" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(tmp.daily)}" placeholder="0">
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Nº personas</label>
+        <input id="mMealsPeople" type="number" min="0" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(tmp.people)}" placeholder="0">
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Días totales</label>
+        <input id="mMealsDays" type="number" min="0" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(tmp.days)}" placeholder="0">
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Moneda</label>
+        <select id="mMealsCur" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-semibold">
+          <option value="EUR" ${tmp.currency==="EUR"?"selected":""}>EUR €</option>
+          <option value="USD" ${tmp.currency==="USD"?"selected":""}>USD $</option>
+          <option value="GBP" ${tmp.currency==="GBP"?"selected":""}>GBP £</option>
+          <option value="JPY" ${tmp.currency==="JPY"?"selected":""}>JPY ¥</option>
+          <option value="CHF" ${tmp.currency==="CHF"?"selected":""}>CHF</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 p-3 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+      <div class="text-sm font-semibold text-slate-700">Total</div>
+      <div class="text-lg font-extrabold" id="mMealsTotal">0.00</div>
+    </div>
+  `;
+
+  const btnCancel = document.createElement("button");
+  btnCancel.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+  btnCancel.textContent = "Cerrar";
+
+  const btnSave = document.createElement("button");
+  btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold";
+  btnSave.textContent = "Guardar";
+
+  showModal("Comidas", bodyHtml, [btnCancel, btnSave]);
+
+  const elDaily = document.getElementById("mMealsDaily");
+  const elPeople = document.getElementById("mMealsPeople");
+  const elDays = document.getElementById("mMealsDays");
+  const elCur = document.getElementById("mMealsCur");
+  const elTotal = document.getElementById("mMealsTotal");
+
+  const recalc = ()=>{
+    const d = parseMoney(elDaily?.value);
+    const p = parseInt(String(elPeople?.value||0),10) || 0;
+    const n = parseInt(String(elDays?.value||0),10) || 0;
+    const total = d * p * n;
+    if (elTotal) elTotal.textContent = total.toFixed(2) + " " + String(elCur?.value || tmp.currency);
+  };
+
+  ["input","change"].forEach(ev=>{
+    try{ elDaily?.addEventListener(ev,recalc); }catch{}
+    try{ elPeople?.addEventListener(ev,recalc); }catch{}
+    try{ elDays?.addEventListener(ev,recalc); }catch{}
+    try{ elCur?.addEventListener(ev,recalc); }catch{}
+  });
+  recalc();
+
+  btnCancel.onclick = ()=>{ closeModal(); };
+
+  btnSave.onclick = ()=>{
+    // Persist into existing state shape (no migration)
+    sc.meals.daily = String(elDaily?.value||"").trim();
+    sc.meals.people = String(elPeople?.value||"").trim();
+    sc.meals.days = String(elDays?.value||"").trim();
+    sc.meals.currency = String(elCur?.value || tmp.currency);
+    saveState();
+    closeModal();
+    renderMeals();
+    try{ calcSummary(); }catch{}
+  };
+}
+
+function openMiscEditorModal(){
+  const sc = curScenario();
+  if (!Array.isArray(sc.miscExpenses)) sc.miscExpenses = [];
+
+  // clone list for editing (do not touch sc until Save)
+  const tmp = (sc.miscExpenses || []).map(x=>({
+    id: String(x.id || nowId()),
+    title: String(x.title || ""),
+    cost: String(x.cost ?? ""),
+    currency: String(x.currency || (state.displayCurrency || "EUR"))
+  }));
+
+  const targetCur = (document.getElementById("displayCurrency")?.value) || (state.displayCurrency || "EUR");
+
+  const bodyHtml = `
+    <div class="text-xs text-slate-500 mb-3">Metro, bus, taxi, alquiler coche, parking, etc.</div>
+    <div id="mMiscList" class="space-y-2"></div>
+
+    <button type="button" id="mMiscAdd" class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">+ Añadir gasto</button>
+
+    <div class="mt-4 p-3 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+      <div class="text-sm font-semibold text-slate-700">Total (${escapeHtml(targetCur)})</div>
+      <div class="text-lg font-extrabold" id="mMiscTotal">0.00</div>
+    </div>
+  `;
+
+  const btnClose = document.createElement("button");
+  btnClose.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+  btnClose.textContent = "Cerrar";
+
+  const btnSave = document.createElement("button");
+  btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold";
+  btnSave.textContent = "Guardar";
+
+  showModal("Gastos varios", bodyHtml, [btnClose, btnSave]);
+
+  const list = document.getElementById("mMiscList");
+  const addBtn = document.getElementById("mMiscAdd");
+  const totalEl = document.getElementById("mMiscTotal");
+
+  const rowHTML = (it)=>`
+    <div class="flex items-center gap-2 p-2 rounded-2xl border border-slate-200 bg-white" data-mr="${escapeHtml(it.id)}">
+      <input class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm"
+             placeholder="Concepto"
+             value="${escapeHtml(it.title)}"
+             data-mr-title>
+      <input class="w-24 px-3 py-2 rounded-xl border border-slate-200 text-sm text-right"
+             placeholder="0.00"
+             inputmode="decimal"
+             value="${escapeHtml(it.cost)}"
+             data-mr-cost>
+      <select class="px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
+              data-mr-cur>
+        <option value="EUR" ${(it.currency==="EUR")?"selected":""}>€</option>
+        <option value="USD" ${(it.currency==="USD")?"selected":""}>$</option>
+        <option value="GBP" ${(it.currency==="GBP")?"selected":""}>£</option>
+        <option value="JPY" ${(it.currency==="JPY")?"selected":""}>¥</option>
+        <option value="CHF" ${(it.currency==="CHF")?"selected":""}>CHF</option>
+      </select>
+      <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-red-600" data-mr-del>✕</button>
+    </div>
+  `;
+
+  const renderList = ()=>{
+    if(!list) return;
+    if(!tmp.length){
+      list.innerHTML = `<div class="text-xs text-slate-500">—</div>`;
+      return;
+    }
+    list.innerHTML = tmp.map(rowHTML).join("");
+  };
+
+  const recalc = ()=>{
+    const total = tmp.reduce((acc, it)=>{
+      const c = parseMoney(it.cost);
+      if(!c) return acc;
+      const fromCur = String(it.currency || targetCur);
+      return acc + convertMoney(c, fromCur, targetCur);
+    }, 0);
+    if(totalEl) totalEl.textContent = total.toFixed(2);
+  };
+
+  renderList();
+  recalc();
+
+  // Delegated handlers inside modal (no global listeners)
+  if(list){
+    list.addEventListener("input", (e)=>{
+      const row = e.target?.closest?.("[data-mr]");
+      if(!row) return;
+      const id = row.getAttribute("data-mr");
+      const it = tmp.find(x=>String(x.id)===String(id));
+      if(!it) return;
+      if(e.target.hasAttribute("data-mr-title")) it.title = String(e.target.value||"");
+      if(e.target.hasAttribute("data-mr-cost")) it.cost = String(e.target.value ?? "");
+      recalc();
+    });
+
+    list.addEventListener("change", (e)=>{
+      const row = e.target?.closest?.("[data-mr]");
+      if(!row) return;
+      const id = row.getAttribute("data-mr");
+      const it = tmp.find(x=>String(x.id)===String(id));
+      if(!it) return;
+      if(e.target.hasAttribute("data-mr-cur")) it.currency = String(e.target.value||targetCur);
+      recalc();
+    });
+
+    list.addEventListener("click", (e)=>{
+      const btn = e.target?.closest?.("[data-mr-del]");
+      if(!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      const row = btn.closest("[data-mr]");
+      const id = row?.getAttribute("data-mr");
+      if(!id) return;
+      const ok = confirm("¿Borrar este gasto?");
+      if(!ok) return;
+      const idx = tmp.findIndex(x=>String(x.id)===String(id));
+      if(idx>=0) tmp.splice(idx,1);
+      renderList();
+      recalc();
+    });
+  }
+
+  if(addBtn){
+    addBtn.onclick = ()=>{
+      tmp.push({ id: nowId(), title:"", cost:"", currency: (state.displayCurrency || targetCur) });
+      renderList();
+      recalc();
+      // focus new title
+      try{
+        const rows = list.querySelectorAll("[data-mr]");
+        const last = rows[rows.length-1];
+        const inp = last?.querySelector("[data-mr-title]");
+        inp?.focus();
+      }catch{}
+    };
+  }
+
+  btnClose.onclick = ()=>{ closeModal(); };
+
+  btnSave.onclick = ()=>{
+    // Persist back to existing state (no migration)
+    sc.miscExpenses = tmp.map(x=>({
+      id: x.id,
+      title: String(x.title||"").trim(),
+      cost: String(x.cost ?? "").trim(),
+      currency: String(x.currency || targetCur)
+    })).filter(x => x.title || x.cost);
+    saveState();
+    closeModal();
+    renderMeals();
+    try{ calcSummary(); }catch{}
+  };
+}
+
+/* ---------------- /Meals & Misc modals (V198) ---------------- */
 /* ---------------- Activities: smart done ---------------- */
 
 function todayKey() {
@@ -9129,7 +9339,9 @@ $("addAct").addEventListener("click", ()=>{
 });
 
 ["mealDaily","mealPeople","mealDays"].forEach(id=>{
-  $(id).addEventListener("input", ()=>{
+  const __el = $(id);
+  if(!__el) return;
+  __el.addEventListener("input", ()=>{
     const sc = curScenario();
     if (!sc.meals) sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
     const rawDaily = $("mealDaily").value;
@@ -9169,7 +9381,10 @@ try {
 // --- Gastos varios (Comidas y más) bindings ---
 try {
   const addBtn = document.getElementById("addMiscExpense");
-  if (addBtn && !addBtn.__bound) {
+  const list = document.getElementById("miscExpensesList");
+  if(!addBtn || !list) { /* V198: no embebido */ }
+  else {
+if (addBtn && !addBtn.__bound) {
     addBtn.__bound = 1;
     addBtn.addEventListener("click", (e) => {
       e.preventDefault(); e.stopPropagation();
@@ -9185,6 +9400,7 @@ try {
       renderMeals();
       calcSummary();
     });
+  }
   }
 } catch {}
 
