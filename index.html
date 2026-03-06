@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V210_TIMELINE_SCROLL_FRAMING_AND_NAV_ACTIVE</title>
+<title>V211_TIMELINE_TOP_ANCHOR_AND_NAV_PILL_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -794,18 +794,35 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   font-size:16px !important;
 }
 
-/* V210: Bottom NAV active state (premium) */
-#bottomNav button.navActive{
+/* V211: Bottom NAV active pill — ensure capsule fully contains icon + text (no clipping) */
+#bottomNav .grid > button{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  padding: 8px 6px;
+  min-height: 52px;
+  line-height: 1.1;
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+#bottomNav .grid > button div{
+  line-height: 1.1;
+  margin-top: 2px;
+}
+
+/* Active state */
+#bottomNav .grid > button.navActive{
   background: rgba(59,130,246,0.14) !important;
-  border: 1px solid rgba(59,130,246,0.35) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 0 0 2px rgba(59,130,246,0.10) inset;
-}
-#bottomNav button.navActive{
+  border: 1px solid rgba(59,130,246,0.38) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.75) inset, 0 0 0 2px rgba(59,130,246,0.10) inset;
   color: rgb(15 23 42) !important;
-  font-weight: 800 !important;
+  font-weight: 900 !important;
+  padding: 9px 7px; /* slight extra breathing room */
 }
-#bottomNav button.navActive div{
-  font-weight: 800 !important;
+#bottomNav .grid > button.navActive div{
+  font-weight: 900 !important;
 }
 
 </style>
@@ -818,7 +835,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V210_TIMELINE_SCROLL_FRAMING_AND_NAV_ACTIVE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V211_TIMELINE_TOP_ANCHOR_AND_NAV_PILL_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4208,11 +4225,12 @@ function __applyTimelinePersistentFoundHighlight(key){
   }
 })();
 function __scrollTimelineFoundItemIntoComfortZone(el){
+  // V211: anchor found item just below the fixed Timeline subSectionHeader (premium reading zone)
   try{
     if(!el) return;
     const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
 
-    // measure fixed top stack (header + totals + subSectionHeader) and bottom nav
+    // Measure fixed top stack (header + totals + subSectionHeader)
     let topH = 0;
     try{
       const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
@@ -4227,47 +4245,62 @@ function __scrollTimelineFoundItemIntoComfortZone(el){
            + (h2 ? h2.getBoundingClientRect().height : 0)
            + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
     }
+
+    // Measure bottom occluders (bottom nav + FABs)
     const nav = document.getElementById("bottomNav");
-    const bottomH = nav ? nav.getBoundingClientRect().height : 0;
+    const bottomNavH = nav ? nav.getBoundingClientRect().height : 0;
 
-    const vh = (scroller === document.documentElement) ? window.innerHeight : scroller.clientHeight;
+    function blockedFromBottomBy(elId){
+      try{
+        const b = document.getElementById(elId);
+        if(!b) return 0;
+        if(b.classList && b.classList.contains("hidden")) return 0;
+        const r = b.getBoundingClientRect();
+        // If element is not rendered, rect may be 0
+        if(!r || !r.height) return 0;
+        // amount of screen blocked from bottom upwards
+        return Math.max(0, window.innerHeight - r.top);
+      }catch{ return 0; }
+    }
+    const fabAddBlock = blockedFromBottomBy("fabAdd");
+    const fabNoteBlock = blockedFromBottomBy("timelineNotesFab");
+
+    // Keep a comfortable bottom safe zone (avoid FABs + nav)
+    const safeBottom = Math.max(bottomNavH, fabAddBlock, fabNoteBlock) + 12;
     const safeTop = Math.max(0, topH) + 10;
-    const safeBottom = Math.max(0, bottomH) + 10;
-    const usableH = Math.max(120, vh - safeTop - safeBottom);
 
-    // target position: slightly above center of usable zone (better reading ahead)
-    const targetTop = safeTop + (usableH * 0.35);
+    // Anchor target: just below the subSectionHeader, not centered
+    const targetTop = safeTop + 8;
 
-    // compute delta from current element position in viewport
     const r = el.getBoundingClientRect();
     let delta = (r.top - targetTop);
 
-    // If element is very tall, anchor its top just below the safeTop
+    // If item is very tall, prioritize showing its header/top
+    const vh = (scroller === document.documentElement) ? window.innerHeight : scroller.clientHeight;
+    const usableH = Math.max(140, vh - safeTop - safeBottom);
     if(r.height > usableH * 0.92){
       delta = (r.top - (safeTop + 6));
     }
 
-    // Apply scroll
-    try{
-      scroller.scrollBy({ top: delta, behavior: "smooth" });
-    }catch{
-      try{ scroller.scrollTop = (scroller.scrollTop + delta); }catch{}
-    }
+    // Apply scroll (smooth)
+    try{ scroller.scrollBy({ top: delta, behavior: "smooth" }); }
+    catch{ try{ scroller.scrollTop = (scroller.scrollTop + delta); }catch{} }
 
-    // Second pass: ensure bottom isn't covered by bottom nav
+    // Second pass: enforce constraints (not hidden under top, not too close to bottom occluders)
     requestAnimationFrame(()=>{
       try{
         const r2 = el.getBoundingClientRect();
+        const minTop = targetTop;
         const maxBottom = window.innerHeight - safeBottom;
-        if(r2.bottom > maxBottom){
-          const d2 = r2.bottom - maxBottom + 8;
-          try{ scroller.scrollBy({ top: d2, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += d2; }catch{} }
-        }
-        // ensure top isn't hidden under top stack
-        const minTop = safeTop;
+
         if(r2.top < minTop){
-          const d3 = r2.top - minTop - 6;
-          try{ scroller.scrollBy({ top: d3, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += d3; }catch{} }
+          const dUp = r2.top - minTop - 6;
+          try{ scroller.scrollBy({ top: dUp, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += dUp; }catch{} }
+        }
+
+        if(r2.bottom > maxBottom){
+          const dDown = (r2.bottom - maxBottom) + 10;
+          try{ scroller.scrollBy({ top: dDown, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += dDown; }catch{} }
         }
       }catch{}
     });
