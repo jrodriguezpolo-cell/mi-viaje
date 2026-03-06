@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V209_TIMELINE_PERSISTENT_FOUND_HIGHLIGHT</title>
+<title>V210_TIMELINE_SCROLL_FRAMING_AND_NAV_ACTIVE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -793,6 +793,21 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 #miscExpensesList select{
   font-size:16px !important;
 }
+
+/* V210: Bottom NAV active state (premium) */
+#bottomNav button.navActive{
+  background: rgba(59,130,246,0.14) !important;
+  border: 1px solid rgba(59,130,246,0.35) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 0 0 2px rgba(59,130,246,0.10) inset;
+}
+#bottomNav button.navActive{
+  color: rgb(15 23 42) !important;
+  font-weight: 800 !important;
+}
+#bottomNav button.navActive div{
+  font-weight: 800 !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -803,7 +818,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V209_TIMELINE_PERSISTENT_FOUND_HIGHLIGHT</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V210_TIMELINE_SCROLL_FRAMING_AND_NAV_ACTIVE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1135,6 +1150,18 @@ function updateSubSectionHeader(viewName){
 }
 
 
+function updateBottomNavActive(viewName){
+  try{
+    const nav = document.getElementById("bottomNav");
+    if(!nav) return;
+    const v = String(viewName||"");
+    nav.querySelectorAll('button[data-jump]').forEach(btn=>{
+      const k = String(btn.getAttribute("data-jump")||"");
+      btn.classList.toggle("navActive", k===v);
+    });
+  }catch{}
+}
+
 function setView(viewName){
   const views = {
     timeline: $("view-timeline"),
@@ -1155,6 +1182,9 @@ function setView(viewName){
 
   // Allow CSS top offsets by active view (timeline exception)
   document.body.dataset.view = String(viewName || "");
+
+  // V210: bottom nav active state
+  try{ updateBottomNavActive(viewName); }catch{}
 
   // Fixed subsection title under Totales (and under timeline controls in timeline)
   updateSubSectionHeader(viewName);
@@ -4177,6 +4207,74 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
+function __scrollTimelineFoundItemIntoComfortZone(el){
+  try{
+    if(!el) return;
+    const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+
+    // measure fixed top stack (header + totals + subSectionHeader) and bottom nav
+    let topH = 0;
+    try{
+      const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
+      const n = parseFloat(css);
+      if(!isNaN(n) && n > 0) topH = n;
+    }catch{}
+    if(!topH){
+      const h1 = document.getElementById("appHeader");
+      const h2 = document.getElementById("stickyTotalBar");
+      const h3 = document.getElementById("subSectionHeader");
+      topH = (h1 ? h1.getBoundingClientRect().height : 0)
+           + (h2 ? h2.getBoundingClientRect().height : 0)
+           + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
+    }
+    const nav = document.getElementById("bottomNav");
+    const bottomH = nav ? nav.getBoundingClientRect().height : 0;
+
+    const vh = (scroller === document.documentElement) ? window.innerHeight : scroller.clientHeight;
+    const safeTop = Math.max(0, topH) + 10;
+    const safeBottom = Math.max(0, bottomH) + 10;
+    const usableH = Math.max(120, vh - safeTop - safeBottom);
+
+    // target position: slightly above center of usable zone (better reading ahead)
+    const targetTop = safeTop + (usableH * 0.35);
+
+    // compute delta from current element position in viewport
+    const r = el.getBoundingClientRect();
+    let delta = (r.top - targetTop);
+
+    // If element is very tall, anchor its top just below the safeTop
+    if(r.height > usableH * 0.92){
+      delta = (r.top - (safeTop + 6));
+    }
+
+    // Apply scroll
+    try{
+      scroller.scrollBy({ top: delta, behavior: "smooth" });
+    }catch{
+      try{ scroller.scrollTop = (scroller.scrollTop + delta); }catch{}
+    }
+
+    // Second pass: ensure bottom isn't covered by bottom nav
+    requestAnimationFrame(()=>{
+      try{
+        const r2 = el.getBoundingClientRect();
+        const maxBottom = window.innerHeight - safeBottom;
+        if(r2.bottom > maxBottom){
+          const d2 = r2.bottom - maxBottom + 8;
+          try{ scroller.scrollBy({ top: d2, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += d2; }catch{} }
+        }
+        // ensure top isn't hidden under top stack
+        const minTop = safeTop;
+        if(r2.top < minTop){
+          const d3 = r2.top - minTop - 6;
+          try{ scroller.scrollBy({ top: d3, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += d3; }catch{} }
+        }
+      }catch{}
+    });
+  }catch{}
+}
+
+
 function __msScrollToKey(key){
   if(!key) return false;
   try{
@@ -4184,6 +4282,7 @@ function __msScrollToKey(key){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+        try{ __scrollTimelineFoundItemIntoComfortZone(el); }catch{}
         __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
         return true;
@@ -4193,9 +4292,9 @@ function __msScrollToKey(key){
   try{
     const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     if(!el) return false;
-    try{ scrollToElWithOffset(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+    try{ __scrollTimelineFoundItemIntoComfortZone(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
     __applyTimelinePersistentFoundHighlight(key);
-        __msFlashEl(el);
+    __msFlashEl(el);
     return true;
   }catch{}
   return false;
