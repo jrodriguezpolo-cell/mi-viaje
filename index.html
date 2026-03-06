@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</title>
+<title>V208_TIMELINE_MICROSUMMARY_MENU</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -778,6 +778,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 /* Roundtrip jump: highlight target summary */
 .rtFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
+.msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 
 /* V181: hide legacy Daily Notes accordion (replaced by FAB) */
 [data-acc="dailyNotes"], [data-acc-body="dailyNotes"]{display:none !important;}
@@ -800,7 +801,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V208_TIMELINE_MICROSUMMARY_MENU</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -835,17 +836,19 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <!-- Fixed subsection header (per-view) -->
 <div id="subSectionHeader" class="hidden" aria-live="polite">
   <div class="max-w-6xl mx-auto px-5 py-2">
-    <div class="grid grid-cols-[auto,1fr,auto] items-center gap-2">
+    <div class="grid grid-cols-[auto,1fr,auto,auto] items-center gap-2">
       <div id="subSectionTitle" class="font-extrabold text-slate-900 text-sm leading-tight whitespace-nowrap">—</div>
 
       <div id="dateJumpUI" class="hidden">
         <div class="flex items-center justify-center">
-          <select id="dateJumpSelect" class="h-8 w-full max-w-[200px] rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900">
+          <select id="dateJumpSelect" class="h-8 w-full max-w-[150px] rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900">
           </select>
         </div>
       </div>
 
       <button id="dateJumpNowBtn" class="hidden h-8 rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900 whitespace-nowrap">Hoy</button>
+
+      <button id="tlMicroMenuBtn" class="hidden tap h-8 w-10 rounded-xl border border-slate-200 bg-white/90 text-sm font-extrabold flex items-center justify-center" aria-label="Menú" title="Resumen">≡</button>
     </div>
   </div>
 </div>
@@ -1122,6 +1125,11 @@ function updateSubSectionHeader(viewName){
 
   title.textContent = txt;
   bar.classList.remove("hidden");
+  // V208: show timeline micro-summary menu only in Cronograma
+  try{
+    const mbtn = document.getElementById("tlMicroMenuBtn");
+    if(mbtn) mbtn.classList.toggle("hidden", String(viewName||"")!=="timeline");
+  }catch{}
 }
 
 
@@ -4044,6 +4052,305 @@ function closeModal() {
 }
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
+/* ================= V208: Timeline micro-summary menu (modal) =================
+   - Adds a menu button (≡) in the existing Cronograma subSectionHeader.
+   - Opens a micro-summary modal with Hoy / Mañana and global search.
+   - Tap result => close modal + scroll to timeline summary + highlight.
+   - Does NOT open the event sheet directly.
+============================================================================= */
+
+function __msNorm(s){
+  s = String(s||"").toLowerCase();
+  try{ s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch{}
+  return s;
+}
+function __msDateISO(d){
+  const dt = (d instanceof Date) ? d : new Date();
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,"0");
+  const day = String(dt.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function __msAddDaysISO(iso, days){
+  try{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||""))) return "";
+    const d = new Date(String(iso) + "T00:00:00");
+    d.setDate(d.getDate() + (Number(days)||0));
+    return __msDateISO(d);
+  }catch{ return ""; }
+}
+function __msFormatDateLongES(iso){
+  const s = String(iso||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s + "T00:00:00");
+  if(Number.isNaN(d.getTime())) return s;
+  try{
+    const out = d.toLocaleDateString("es-ES",{ day:"numeric", month:"long", year:"numeric" });
+    return String(out||"").replace(/\s+de\s+/g," ").replace(/\s+/g," ").trim();
+  }catch{
+    return s;
+  }
+}
+function __msMakeKey(it){
+  if(!it) return "";
+  const d = String(it.date||"");
+  if(it.isNote) return d ? `note:${d}` : "";
+  const actId = it.actId || (String(it.uid||"").startsWith("act:") ? String(it.uid).slice(4) : "");
+  const legId = it.legId || (String(it.uid||"").startsWith("leg:") ? String(it.uid).slice(4) : "");
+  const stayId = it.stayId || (String(it.uid||"").startsWith("stay:") ? String(it.uid).slice(5) : "");
+  if(actId) return `act:${actId}`;
+  if(legId) return `leg:${legId}`;
+  if(stayId) return `stay:${stayId}`;
+  if(it.uid) return String(it.uid);
+  return "";
+}
+function __msGetAllTimelineItems(){
+  try{
+    if(typeof __tlLastFilteredItems !== "undefined" && Array.isArray(__tlLastFilteredItems)) return __tlLastFilteredItems.slice();
+  }catch{}
+  try{
+    if(Array.isArray(window.__tlLastFilteredItems)) return window.__tlLastFilteredItems.slice();
+  }catch{}
+  return [];
+}
+function __msHasTime(it){
+  const t = String(it?.time||"").trim();
+  return /^\d{2}:\d{2}$/.test(t);
+}
+function __msTimeKey(t){
+  if(typeof timeSortKey === "function") return timeSortKey(t);
+  const s = String(t||"");
+  const m = s.match(/^(\d{2}):(\d{2})$/);
+  if(!m) return 9999;
+  return (parseInt(m[1],10)*60) + parseInt(m[2],10);
+}
+function __msEnsureTimelineVisible(){
+  try{
+    const cur = (document.body?.dataset?.view) || (typeof activeView!=="undefined" ? activeView : "");
+    if(String(cur) !== "timeline"){
+      if(typeof setView === "function") setView("timeline");
+    }
+  }catch{}
+  try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
+}
+function __msFlashEl(el){
+  if(!el) return;
+  try{
+    el.classList.add("msFlash");
+    setTimeout(()=>{ try{ el.classList.remove("msFlash"); }catch{} }, 850);
+  }catch{}
+}
+function __msScrollToKey(key){
+  if(!key) return false;
+  try{
+    if(typeof __tlScrollToItemByKey === "function"){
+      const ok = __tlScrollToItemByKey(key);
+      if(ok){
+        const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+        __msFlashEl(el);
+        return true;
+      }
+    }
+  }catch{}
+  try{
+    const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+    if(!el) return false;
+    try{ scrollToElWithOffset(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+    __msFlashEl(el);
+    return true;
+  }catch{}
+  return false;
+}
+
+function openTimelineMicroSummaryMenu(){
+  try{
+    window.__msState = window.__msState || { tab: "today", search: false, q: "" };
+    const st = window.__msState;
+
+    const bodyHtml = `
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1">
+            <button id="msTabToday" type="button" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn">Hoy</button>
+            <button id="msTabTomorrow" type="button" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn">Mañana</button>
+          </div>
+          <button id="msBtnSearch" type="button" class="tap ml-auto h-9 w-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-base font-extrabold flex items-center justify-center" aria-label="Buscar" title="Buscar">🔍</button>
+        </div>
+
+        <div id="msSearchBox" class="${st.search ? "" : "hidden"}">
+          <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+            <span class="text-slate-400">🔎</span>
+            <input id="msSearchInput" type="text"
+              class="w-full outline-none text-[16px] font-semibold"
+              placeholder="Buscar evento, hotel, museo, vuelo…"
+              value="${escapeHtml(st.q || "")}"
+              autocomplete="off" autocapitalize="none" />
+          </div>
+        </div>
+
+        <div id="msList" class="rounded-2xl border border-slate-200 bg-white overflow-hidden"></div>
+      </div>
+    `;
+
+    showModal("Resumen", bodyHtml, []);
+
+    setTimeout(()=>{
+      const st = window.__msState || { tab:"today", search:false, q:"" };
+
+      const btnT = document.getElementById("msTabToday");
+      const btnM = document.getElementById("msTabTomorrow");
+      const btnS = document.getElementById("msBtnSearch");
+      const box = document.getElementById("msSearchBox");
+      const inp = document.getElementById("msSearchInput");
+      const list = document.getElementById("msList");
+
+      const setSeg = ()=>{
+        const isT = (st.tab === "today");
+        if(btnT){ btnT.classList.toggle("seg-active", isT); btnT.classList.toggle("seg-inactive", !isT); }
+        if(btnM){ btnM.classList.toggle("seg-active", !isT); btnM.classList.toggle("seg-inactive", isT); }
+      };
+
+      const renderList = ()=>{
+        if(!list) return;
+
+        const all = __msGetAllTimelineItems().filter(it => it && !it.isNote);
+        const today = (typeof todayYMD === "function") ? todayYMD() : __msDateISO(new Date());
+        const tomorrow = __msAddDaysISO(today, 1);
+        const dayISO = (st.tab === "tomorrow") ? tomorrow : today;
+
+        const q = __msNorm(st.q || "");
+        const isSearching = !!(st.search && q);
+
+        let items = [];
+        if(isSearching){
+          items = all.filter(it=>{
+            const t = [
+              it.title, it.subtitle, it.from, it.to, it.placeOut, it.placeIn, it.city, it.name
+            ].filter(Boolean).join(" · ");
+            return __msNorm(t).includes(q);
+          });
+
+          items.sort((a,b)=>{
+            const da = String(a.date||"9999-99-99");
+            const db = String(b.date||"9999-99-99");
+            if(da !== db) return da.localeCompare(db);
+            return __msTimeKey(a.time) - __msTimeKey(b.time);
+          });
+
+          if(!items.length){
+            list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">No se han encontrado resultados</div>`;
+            return;
+          }
+
+          list.innerHTML = items.slice(0, 80).map(it=>{
+            const key = __msMakeKey(it);
+            const dt = __msFormatDateLongES(String(it.date||""));
+            const tm = __msHasTime(it) ? String(it.time) : "—";
+            const title = String(it.title || it.name || "Evento").trim();
+            return `
+              <button type="button" class="tap w-full px-4 py-3 text-left hover:bg-slate-50" data-ms-key="${escapeHtml(key)}">
+                <div class="text-xs font-extrabold text-slate-500">${escapeHtml(dt)} · ${escapeHtml(tm)}</div>
+                <div class="text-sm font-semibold truncate">${escapeHtml(title)}</div>
+              </button>
+            `;
+          }).join("");
+          return;
+        }
+
+        items = all.filter(it => String(it.date||"") === dayISO && __msHasTime(it));
+        items.sort((a,b)=> __msTimeKey(a.time) - __msTimeKey(b.time));
+
+        if(!items.length){
+          list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">${st.tab==="tomorrow" ? "No hay eventos para mañana" : "No hay eventos para hoy"}</div>`;
+          return;
+        }
+
+        list.innerHTML = items.map(it=>{
+          const key = __msMakeKey(it);
+          const tm = String(it.time||"").trim();
+          const title = String(it.title || it.name || "Evento").trim();
+          return `
+            <button type="button" class="tap w-full px-4 py-3 text-left hover:bg-slate-50" data-ms-key="${escapeHtml(key)}">
+              <div class="text-sm font-semibold truncate"><span class="font-extrabold">${escapeHtml(tm)}</span> · ${escapeHtml(title)}</div>
+            </button>
+          `;
+        }).join("");
+      };
+
+      setSeg();
+      renderList();
+
+      if(btnT) btnT.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); st.tab="today"; setSeg(); renderList(); };
+      if(btnM) btnM.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); st.tab="tomorrow"; setSeg(); renderList(); };
+
+      if(btnS) btnS.onclick = (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        st.search = !st.search;
+        if(box) box.classList.toggle("hidden", !st.search);
+        if(!st.search){ st.q=""; if(inp) inp.value=""; }
+        renderList();
+        if(st.search && inp){ try{ inp.focus(); }catch{} }
+      };
+
+      if(inp){
+        inp.addEventListener("input", ()=>{
+          st.q = String(inp.value||"");
+          renderList();
+        });
+      }
+
+      if(list){
+        list.addEventListener("click", (e)=>{
+          const b = e.target && e.target.closest ? e.target.closest("[data-ms-key]") : null;
+          if(!b) return;
+          try{ e.preventDefault(); e.stopPropagation(); }catch{}
+          const key = b.getAttribute("data-ms-key") || "";
+          closeModal();
+          setTimeout(()=>{
+            __msEnsureTimelineVisible();
+            try{
+              const ok = __msScrollToKey(key);
+              if(!ok){
+                requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
+              }
+            }catch{}
+          }, 0);
+        }, true);
+      }
+
+      // Clear search state on close (keep selected tab)
+      if(!window.__msClosePatched){
+        window.__msClosePatched = true;
+        const _close = window.closeModal;
+        window.closeModal = function(){
+          try{
+            window.__msState = window.__msState || {};
+            window.__msState.search = false;
+            window.__msState.q = "";
+          }catch{}
+          return _close.apply(this, arguments);
+        };
+      }
+
+    }, 0);
+  }catch(err){
+    console.error(err);
+  }
+}
+
+// Wire menu button in existing timeline subSectionHeader (no new bars)
+(function(){
+  if(window.__msMenuWired) return;
+  window.__msMenuWired = true;
+  document.addEventListener("click", (e)=>{
+    const btn = e.target && e.target.closest ? e.target.closest("#tlMicroMenuBtn") : null;
+    if(!btn) return;
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    openTimelineMicroSummaryMenu();
+  }, true);
+})();
+/* ================= /V208: Timeline micro-summary menu (modal) ================= */
+
 
 /* ----------------------------- State ----------------------------- */
 const LS_KEY = "miviaje.rewrite.v1";
