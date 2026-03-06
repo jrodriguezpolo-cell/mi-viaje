@@ -880,7 +880,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216_TRANSPORT_ARRIVAL_BADGE_AND_DURATION_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216B_TRANSPORT_TIMELINE_ARRIVAL_REFRESH_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3721,22 +3721,17 @@ function buildLegSummaryParts(leg) {
   const depTime = String(leg?.time || "").trim();
   const arrDate = String(leg?.arriveDate || leg?.dateIn || "").trim();
   const arrTime = String(leg?.arriveTime || leg?.timeIn || "").trim();
-  // V216: If arriveDate is missing but we have arrival time, assume same date as departure (safe fallback; midnight crossing handled later)
-  const arrDate2 = (!arrDate && arrTime && depDate) ? depDate : arrDate;
 
   const bt0 = depTime ? __timeBadgeHTML(depDate, depTime) : "";
-  // V216: Arrival time uses the same badge language as departure
-  const bt1 = arrTime ? __timeBadgeHTML(arrDate2 || depDate, arrTime) : "";
+  const bt1 = arrTime ? __timeBadgeHTML(arrDate || depDate, arrTime) : "";
 
   // Prefer stored offsets; fallback to auto-derived offsets from city + date/time (no UI)
   const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
-  const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   arrDate2, arrTime);
+  const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   (arrDate || depDate), arrTime);
 
-  // V216: Duration should show whenever we have enough data. Prefer TZ-aware; fallback to naive date/time.
-  let durRaw = "";
-  if (depDate && depTime && arrTime) {
-    durRaw = calcDurationTextTZ(depDate, depTime, arrDate2, arrTime, off0, off1) || "";
-    if (!durRaw) durRaw = calcDurationText(depDate, depTime, arrDate2, arrTime) || "";
+  let durRaw = calcDurationTextTZ(depDate, depTime, arrDate || depDate, arrTime, off0, off1);
+  if(!durRaw && depDate && depTime && arrTime){
+    durRaw = calcDurationText(depDate, depTime, arrDate || depDate, arrTime);
   }
   const dur = durRaw ? `<span class="mv-nb">${_mvNoBreakText(durRaw)}</span>` : "";
 
@@ -8668,28 +8663,29 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    const depD = String(leg.date || "9999-99-99");
-    const depT = String(leg.time || "");
-    const arrD0 = String(leg.arriveDate || leg.dateIn || "");
-    const arrT0 = String(leg.arriveTime || leg.timeIn || "");
-    const arrD = (!arrD0 && arrT0 && depD && depD !== "9999-99-99") ? depD : arrD0;
+    // V216B: robust arrival fields + robust duration (TZ first, fallback).
+    const depDate = String(leg.date || "9999-99-99");
+    const depTime = String(leg.time || "");
+    const arrDateRaw = String(leg.arriveDate || leg.dateIn || "");
+    const arrTimeRaw = String(leg.arriveTime || leg.timeIn || "");
+    const arrDate = (!arrDateRaw && arrTimeRaw && depDate && depDate !== "9999-99-99") ? depDate : arrDateRaw;
+    const arrTime = arrTimeRaw;
 
-    // Robust duration: prefer TZ-aware when offsets are valid; fallback to naive calc.
+    // Prefer stored offsets; fallback to auto-derived offsets from city + date/time
+    const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
+    const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   (arrDate || depDate), arrTime);
+
     let dur = "";
-    try {
-      const off0 = (leg.tzFrom != null ? Number(leg.tzFrom) : NaN);
-      const off1 = (leg.tzTo   != null ? Number(leg.tzTo)   : NaN);
-      if (depD && depT && arrD && arrT0) {
-        dur = calcDurationTextTZ(depD, depT, arrD, arrT0, off0, off1) || "";
-        if (!dur) dur = calcDurationText(depD, depT, arrD, arrT0) || "";
-      }
-    } catch {}
+    if (depDate && depTime && arrDate && arrTime) {
+      dur = calcDurationTextTZ(depDate, depTime, arrDate, arrTime, off0, off1) || "";
+      if (!dur) dur = calcDurationText(depDate, depTime, arrDate, arrTime) || "";
+    }
 
     items.push({
-      date: depD,
-      time: depT,
-      arriveDate: arrD,
-      arriveTime: arrT0,
+      date: (depDate || "9999-99-99"),
+      time: (depTime || ""),
+      arriveDate: (arrDate || ""),
+      arriveTime: (arrTime || ""),
       duration: dur,
       type: "Trayecto",
       title: `${leg.from || "—"} → ${leg.to || "—"}`,
@@ -8698,7 +8694,6 @@ function renderTimeline() {
       uid: `leg:${leg.id}`
     });
   }
-
   for (const s of sc.stays) {
     items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
   }
