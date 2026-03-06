@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218_PREFERENCES_HERRAMIENTAS_FOUNDATION</title>
+<title>V218A_PREFERENCES_CHILDREN_AND_VISITED_CITIES_SMART</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -4334,10 +4334,89 @@ $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
 /* ================= V218: Preferencias (Herramientas) ================= */
+/* ================= V218A: Preferencias smart (Niños + Ciudades visitadas) ================= */
+function __prefsParseKidsAgesLegacy(str){
+  const nums = String(str||"").match(/\d+/g) || [];
+  return nums.map(n=>Math.max(0, Math.min(17, parseInt(n,10)))).filter(n=>Number.isFinite(n));
+}
+function __prefsEnsureKidsAgesArray(group){
+  // Back-compat: kidsAges puede venir como string (V218) o array (V218A)
+  if (Array.isArray(group.kidsAges)) return;
+  const legacy = group.kidsAges;
+  group.kidsAges = __prefsParseKidsAgesLegacy(legacy);
+}
+function __prefsEnsureCitiesStruct(p){
+  // Back-compat: citiesVisited podía ser array de strings (V218)
+  const arr = Array.isArray(p.citiesVisited) ? p.citiesVisited : [];
+  if (arr.length && typeof arr[0] === "object" && arr[0] && ("city" in arr[0])) {
+    p.citiesVisited = arr.map(x=>({
+      city: String(x.city||"").trim(),
+      repeatOk: (typeof x.repeatOk==="boolean") ? x.repeatOk : true
+    })).filter(x=>x.city);
+    return;
+  }
+  p.citiesVisited = arr.map(s=>({ city: String(s||"").trim(), repeatOk: true })).filter(x=>x.city);
+}
+
+function __prefsUpsertCity(p, cityName, repeatOkDefault=true){
+  const name = String(cityName||"").trim();
+  if(!name) return;
+  const nf = __normFold(name);
+  const list = p.citiesVisited || (p.citiesVisited=[]);
+  const idx = list.findIndex(x=>__normFold(x.city)===nf);
+  if(idx>=0){
+    if(typeof list[idx].repeatOk!=="boolean") list[idx].repeatOk = !!repeatOkDefault;
+    return;
+  }
+  list.push({ city: name, repeatOk: !!repeatOkDefault });
+}
+
+function __prefsAutoAddVisitedCitiesFromDoneEvents(){
+  const p = __ensurePreferences();
+  __prefsEnsureCitiesStruct(p);
+  const sc = curScenario();
+  if(!sc) return p;
+
+  const addCity = (c)=>__prefsUpsertCity(p, c, true);
+
+  for (const leg of (sc.legs||[])) {
+    const st = computeDoneStateGeneric(leg, leg.date || "");
+    if(!st.done) continue;
+    const from = String(leg.from||"").trim();
+    const to = String(leg.to||"").trim();
+    if(from) addCity(from);
+    if(to) addCity(to);
+  }
+
+  for (const stay of (sc.stays||[])) {
+    const st = computeDoneStateGeneric(stay, stay.date || "");
+    if(!st.done) continue;
+    const c = String(stay.city||"").trim();
+    if(c) addCity(c);
+  }
+
+  for (const act of (sc.acts||[])) {
+    const st = computeDoneStateGeneric(act, act.date || "");
+    if(!st.done) continue;
+    const c = String(act.city||"").trim();
+    if(c) addCity(c);
+  }
+
+  return p;
+}
+
+/* ================= V218: Preferencias (Herramientas) ================= */
 function __ensurePreferences() {
   state.preferences = state.preferences || {};
   const p = state.preferences;
-  p.group = p.group || { adults: 2, kids: 0, kidsAges: "", pace: "Normal" };
+
+  p.group = p.group || { adults: 2, kids: 0, kidsAges: [], pace: "Normal" };
+  if (typeof p.group.adults !== "number") p.group.adults = parseInt(p.group.adults||"2",10) || 2;
+  if (typeof p.group.kids !== "number") p.group.kids = parseInt(p.group.kids||"0",10) || 0;
+  if (!p.group.pace) p.group.pace = "Normal";
+
+  __prefsEnsureKidsAgesArray(p.group);
+
   p.tastes = Array.isArray(p.tastes) ? p.tastes : [];
   p.restrictions = p.restrictions || { text: "", flags: {} };
   p.restrictions.text = p.restrictions.text || "";
@@ -4346,8 +4425,15 @@ function __ensurePreferences() {
   for (const k of ["mobility","stroller","allergies","avoidLayovers","avoidLongWalks"]) {
     if (typeof f[k] !== "boolean") f[k] = false;
   }
-  p.citiesVisited = Array.isArray(p.citiesVisited) ? p.citiesVisited : [];
+
+  __prefsEnsureCitiesStruct(p);
+
   return p;
+}
+
+function __normFold(s){
+  try{ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
+  catch{ return (s||"").toString().trim().toLowerCase(); }
 }
 
 function __normFold(s){
@@ -4384,12 +4470,23 @@ function openPreferencesModal(){
     return `<button type="button" class="prefRestr tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}" data-restr="${escapeHtml(k)}">${escapeHtml(label)}</button>`;
   }).join(" ");
 
-  const cities = (p.citiesVisited||[]).map((c,i)=>{
-    return `<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-sm">
-      <span class="truncate max-w-[180px]">${escapeHtml(c)}</span>
-      <button type="button" class="prefCityDel tap px-2 py-1 rounded-full hover:bg-slate-200" data-city-idx="${i}">✕</button>
-    </span>`;
-  }).join(" ") || `<div class="text-sm text-slate-500">Aún no hay ciudades.</div>`;
+  // Autollenado suave: añade ciudades de eventos cumplidos (sin duplicar ni pisar repeatOk manual)
+__prefsAutoAddVisitedCitiesFromDoneEvents();
+
+const cities = (p.citiesVisited||[]).map((c,i)=>{
+  const name = (typeof c==="string") ? c : (c?.city||"");
+  const rep = (typeof c==="object" && c) ? !!c.repeatOk : true;
+  return `<div class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200">
+    <div class="min-w-0 flex-1">
+      <div class="font-extrabold truncate">${escapeHtml(String(name||"—"))}</div>
+      <label class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" class="prefRepeatChk" data-city-idx="${i}" ${rep?"checked":""}>
+        Se puede repetir
+      </label>
+    </div>
+    <button type="button" class="prefCityDel tap px-2 py-1 rounded-full hover:bg-slate-200" data-city-idx="${i}">✕</button>
+  </div>`;
+}).join("") || `<div class="text-sm text-slate-500">Aún no hay ciudades.</div>`;
 
   const body = `
   <div class="space-y-5">
@@ -4406,10 +4503,10 @@ function openPreferencesModal(){
           <input id="prefKids" inputmode="numeric" type="number" min="0" class="w-full h-10 px-3 rounded-xl border border-slate-200" value="${Number(p.group.kids||0)}" />
         </label>
       </div>
-      <label class="block mt-3">
-        <div class="text-xs font-bold text-slate-600 mb-1">Edades niños (opcional)</div>
-        <input id="prefKidsAges" type="text" class="w-full h-10 px-3 rounded-xl border border-slate-200" placeholder="Ej: 3, 7" value="${escapeHtml(p.group.kidsAges||"")}" />
-      </label>
+      <div class="mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Edades de niños</div>
+        <div id="prefKidsAgesWrap" class="grid grid-cols-3 gap-2"></div>
+      </div>
       <div class="mt-3">
         <div class="text-xs font-bold text-slate-600 mb-2">Ritmo de viaje</div>
         <div class="flex flex-wrap gap-2" id="prefPaceWrap">${paceHtml}</div>
@@ -4433,8 +4530,8 @@ function openPreferencesModal(){
 
     <div class="rounded-2xl border border-slate-200 bg-white p-4">
       <div class="font-extrabold">Ciudades visitadas</div>
-      <div class="text-xs text-slate-500 mt-1">Base manual (automatización más adelante)</div>
-      <div class="mt-3 flex flex-wrap gap-2" id="prefCitiesWrap">${cities}</div>
+      <div class="text-xs text-slate-500 mt-1">Se autocompleta con eventos cumplidos. Puedes editarla aquí.</div>
+      <div class="mt-3 space-y-2" id="prefCitiesWrap">${cities}</div>
       <div class="mt-3 flex gap-2">
         <input id="prefCityInput" type="text" class="flex-1 h-10 px-3 rounded-xl border border-slate-200" placeholder="Añadir ciudad" />
         <button type="button" id="prefCityAdd" class="tap px-4 h-10 rounded-xl bg-slate-900 text-white font-extrabold">Añadir</button>
@@ -4454,6 +4551,58 @@ function openPreferencesModal(){
   btnClose.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); };
 
   showModal('Preferencias', body, [btnClose, btnSave]);
+
+// kids ages dynamic selects (V218A)
+const kidsInput = $("prefKids");
+const agesWrap = $("prefKidsAgesWrap");
+const renderKidsAges = ()=>{
+  const pp = __ensurePreferences();
+  const k = Math.max(0, parseInt(kidsInput?.value||pp.group.kids||0,10) || 0);
+  pp.group.kids = k;
+  __prefsEnsureKidsAgesArray(pp.group);
+  // recorta/expande array
+  if(pp.group.kidsAges.length > k) pp.group.kidsAges = pp.group.kidsAges.slice(0, k);
+  while(pp.group.kidsAges.length < k) pp.group.kidsAges.push(0);
+
+  if(!agesWrap) return;
+  if(k<=0){
+    agesWrap.innerHTML = `<div class="col-span-3 text-sm text-slate-500">—</div>`;
+    return;
+  }
+  const opts = Array.from({length:18},(_,i)=>`<option value="${i}">${i}</option>`).join("");
+  agesWrap.innerHTML = pp.group.kidsAges.map((age,idx)=>{
+    const a = Number.isFinite(Number(age)) ? Math.max(0, Math.min(17, parseInt(age,10))) : 0;
+    return `<label class="block">
+      <div class="text-[11px] font-extrabold text-slate-600 mb-1">Niño ${idx+1}</div>
+      <select class="prefKidAgeSel w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-[16px]" data-kid-idx="${idx}">
+        ${opts}
+      </select>
+    </label>`;
+  }).join("");
+  // set selected values
+  agesWrap.querySelectorAll('.prefKidAgeSel').forEach(sel=>{
+    const i = parseInt(sel.getAttribute('data-kid-idx')||'0',10);
+    const v = pp.group.kidsAges[i] ?? 0;
+    sel.value = String(v);
+  });
+};
+
+// initial render
+renderKidsAges();
+
+if (kidsInput) kidsInput.addEventListener('input', ()=>{
+  renderKidsAges();
+});
+if (agesWrap) agesWrap.addEventListener('change', (ev)=>{
+  const sel = ev.target.closest('.prefKidAgeSel');
+  if(!sel) return;
+  const idx = parseInt(sel.getAttribute('data-kid-idx')||'-1',10);
+  const pp = __ensurePreferences();
+  __prefsEnsureKidsAgesArray(pp.group);
+  if(idx>=0 && idx<pp.group.kidsAges.length){
+    pp.group.kidsAges[idx] = Math.max(0, Math.min(17, parseInt(sel.value||"0",10) || 0));
+  }
+});
 
   // bind chips
   const tastesWrap = $("prefTastesWrap");
@@ -4513,6 +4662,20 @@ function openPreferencesModal(){
     openPreferencesModal();
   });
 
+// toggle repeatOk (no re-render necesario)
+if (citiesWrap) citiesWrap.addEventListener('change', (ev)=>{
+  const chk = ev.target.closest('.prefRepeatChk');
+  if(!chk) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const idx = parseInt(chk.getAttribute('data-city-idx')||'-1',10);
+  const pp = __ensurePreferences();
+  __prefsEnsureCitiesStruct(pp);
+  if(idx>=0 && idx<pp.citiesVisited.length){
+    pp.citiesVisited[idx].repeatOk = !!chk.checked;
+  }
+});
+
+
   const addBtn = $("prefCityAdd");
   const addInput = $("prefCityInput");
   const addFn = (ev)=>{
@@ -4522,7 +4685,8 @@ function openPreferencesModal(){
     const pp = __ensurePreferences();
     // avoid duplicates (accent-fold)
     const nv = __normFold(v);
-    if (!pp.citiesVisited.some(c=>__normFold(c)===nv)) pp.citiesVisited.push(v);
+    __prefsEnsureCitiesStruct(pp);
+    if (!pp.citiesVisited.some(c=>__normFold(c.city)===nv)) pp.citiesVisited.push({ city: v, repeatOk: true });
     if (addInput) addInput.value = "";
     openPreferencesModal();
   };
@@ -4536,10 +4700,31 @@ function __savePreferencesFromModal(){
   const kids = parseInt($("prefKids")?.value||"0",10);
   p.group.adults = isFinite(adults)? Math.max(0,adults):0;
   p.group.kids = isFinite(kids)? Math.max(0,kids):0;
-  p.group.kidsAges = ($("prefKidsAges")?.value||"").trim();
+
+  // kids ages array from selects
+  __prefsEnsureKidsAgesArray(p.group);
+  const wrap = $("prefKidsAgesWrap");
+  if (wrap) {
+    const ages = [];
+    wrap.querySelectorAll(".prefKidAgeSel").forEach(sel=>{
+      ages.push(Math.max(0, Math.min(17, parseInt(sel.value||"0",10) || 0)));
+    });
+    // align length to kids
+    p.group.kidsAges = ages.slice(0, p.group.kids);
+    while (p.group.kidsAges.length < p.group.kids) p.group.kidsAges.push(0);
+  } else {
+    // fallback defensivo: recorta/expande según kids
+    p.group.kidsAges = (p.group.kidsAges||[]).slice(0, p.group.kids);
+    while (p.group.kidsAges.length < p.group.kids) p.group.kidsAges.push(0);
+  }
+
   p.restrictions.text = ($("prefRestrText")?.value||"").trim();
   // pace already set via chips; ensure default
   p.group.pace = p.group.pace || "Normal";
+
+  // cities already mutated live; just normalize struct
+  __prefsEnsureCitiesStruct(p);
+
   saveState();
   toast("Preferencias guardadas");
   closeModal();
