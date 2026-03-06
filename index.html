@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V213B_NAV_AND_ACTIVITIES_DIRECT_FIX</title>
+<title>V213C_NAV_AND_ACTIVITIES_FINE_TUNE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -794,107 +794,114 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   font-size:16px !important;
 }
 
-/* V213B: Actividades — layout real fix with explicit paired rows */
+/* V213C: Actividades — explicit rows + tighter control metrics */
 .sheet-act-editor .actEditorStack{
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
 .sheet-act-editor .actRow2{
-  display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  gap: 12px;
-  align-items: start;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  align-items:start;
 }
 .sheet-act-editor .actRow1{
-  display: grid;
-  grid-template-columns: minmax(0,1fr);
-  gap: 12px;
-  align-items: start;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px;
+  align-items:start;
 }
 .sheet-act-editor .fieldCell{
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+.sheet-act-editor .fieldCell--half{
+  grid-column:1 / span 1;
 }
 .sheet-act-editor .fieldCell > label{
-  display: block;
-  font-size: 12px;
-  line-height: 1.1;
-  color: rgb(71 85 105);
-  margin: 0 0 6px 0;
+  display:block;
+  font-size:12px;
+  line-height:1.1;
+  color:rgb(71 85 105);
+  margin:0 0 6px 0;
 }
-.sheet-act-editor input[type="date"],
-.sheet-act-editor input[type="time"],
-.sheet-act-editor input[data-sheet-act="duration"],
-.sheet-act-editor input[data-sheet-act="cost"],
-.sheet-act-editor select[data-sheet-act="currency"],
-.sheet-act-editor input[data-sheet-act="title"],
-.sheet-act-editor input[data-sheet-act="city"]{
-  width: 100%;
-  height: 40px !important;
-  min-height: 40px !important;
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
-  line-height: 1.2 !important;
-  box-sizing: border-box !important;
-  margin-top: 0 !important;
-  vertical-align: top;
+.sheet-act-editor .fieldCell > input,
+.sheet-act-editor .fieldCell > select{
+  display:block;
+  width:100%;
+  height:40px !important;
+  min-height:40px !important;
+  margin:0 !important;
+  padding:6px 14px !important;
+  line-height:1.2 !important;
+  box-sizing:border-box !important;
+  align-self:stretch;
+  vertical-align:top;
+}
+.sheet-act-editor input[type="time"]{
+  padding-top:5px !important;
+  padding-bottom:5px !important;
+}
+.sheet-act-editor input[type="date"]{
+  max-width:100%;
 }
 .sheet-act-editor select[data-sheet-act="currency"]{
-  -webkit-appearance: none;
-  appearance: none;
+  -webkit-appearance:none;
+  appearance:none;
 }
 
-/* V213B: Bottom NAV active pill — smaller text + cleaner capsule */
+/* V213C: Bottom NAV active pill — smaller label, slightly taller capsule */
 #bottomNav .grid{
-  align-items: start;
+  align-items:start;
 }
 #bottomNav .grid > button{
-  padding: 0;
-  min-height: 56px;
+  padding:0;
+  min-height:58px;
   display:flex;
   align-items:flex-start;
   justify-content:center;
-  border-radius: 18px;
-  box-sizing: border-box;
-  overflow: visible;
+  border-radius:18px;
+  box-sizing:border-box;
+  overflow:visible;
 }
 #bottomNav .grid > button .navPill{
-  display:flex;
+  display:inline-flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap: 2px;
-  padding: 6px 8px;
-  border-radius: 16px;
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: 100%;
-  margin-top: 2px;
+  gap:2px;
+  padding:7px 8px 8px 8px;
+  border-radius:16px;
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+  margin-top:1px;
 }
 #bottomNav .grid > button .navIcon{
-  font-size: 18px;
-  line-height: 1;
+  font-size:18px;
+  line-height:1;
 }
 #bottomNav .grid > button .navLabel{
-  font-size: 11px;
-  line-height: 1.1;
-  font-weight: 700;
-  white-space: nowrap;
-  padding: 0 2px 1px 2px;
+  font-size:10px;
+  line-height:1.05;
+  font-weight:700;
+  white-space:nowrap;
+  padding:0 1px 0 1px;
 }
 #bottomNav .grid > button:hover .navPill{
-  background: rgba(15,23,42,0.04);
+  background:rgba(15,23,42,0.04);
 }
 #bottomNav .grid > button.navActive .navPill{
-  background: rgba(59,130,246,0.18) !important;
-  border: 1px solid rgba(59,130,246,0.52) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 2px rgba(59,130,246,0.14) inset;
-  color: rgb(15 23 42) !important;
+  background:rgba(59,130,246,0.18) !important;
+  border:1px solid rgba(59,130,246,0.52) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 2px rgba(59,130,246,0.14) inset;
+  color:rgb(15 23 42) !important;
 }
 #bottomNav .grid > button.navActive .navLabel{
-  font-weight: 900 !important;
+  font-weight:900 !important;
 }
 
 </style>
@@ -907,7 +914,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V213B_NAV_AND_ACTIVITIES_DIRECT_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V213C_NAV_AND_ACTIVITIES_FINE_TUNE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -5589,7 +5596,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
       </div>
 
       <div class="actRow1">
-        <div class="fieldCell">
+        <div class="fieldCell fieldCell--half">
           <label>Fecha</label>
           <input data-act-date="${escapeHtml(String(itemId))}" data-sheet-act="date" type="date"
             class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
