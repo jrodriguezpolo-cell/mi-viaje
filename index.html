@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V214A_FIX_ATTACHMENT_ICON_TO_OPEN_FILES</title>
+<title>V215_SHARED_STATE_COHERENCE_TIMELINE_SECTIONS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -880,7 +880,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V214A_FIX_ATTACHMENT_ICON_TO_OPEN_FILES</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V215_SHARED_STATE_COHERENCE_TIMELINE_SECTIONS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3722,7 +3722,7 @@ function buildLegSummaryParts(leg) {
   const arrDate = String(leg?.arriveDate || leg?.dateIn || "").trim();
   const arrTime = String(leg?.arriveTime || leg?.timeIn || "").trim();
 
-  const bt0 = depTime ? `<span class="font-semibold">${escapeHtml(depTime)}</span>` : "";
+  const bt0 = depTime ? __timeBadgeHTML(depDate, depTime) : "";
   const bt1 = arrTime ? `<span class="font-semibold">${escapeHtml(arrTime)}</span>` : "";
 
   // Prefer stored offsets; fallback to auto-derived offsets from city + date/time (no UI)
@@ -3787,6 +3787,22 @@ function todayYMD() {
   return `${y}-${m}-${day}`;
 }
 
+
+function __tlRelForDate(iso){
+  const d = String(iso||"").trim();
+  const today = (typeof todayYMD==="function") ? todayYMD() : "";
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !today) return "";
+  if(d < today) return "past";
+  if(d > today) return "future";
+  return "today";
+}
+function __timeBadgeHTML(iso, hhmm){
+  const t = String(hhmm||"").trim();
+  if(!/^\d{2}:\d{2}$/.test(t)) return "";
+  const rel = __tlRelForDate(iso);
+  const cls = `tlTimeBadge ${rel==="today"?"tlTimeToday":(rel==="future"?"tlTimeFuture":(rel==="past"?"tlTimePast":""))}`;
+  return `<span class="${cls}">${escapeHtml(t)}</span>`;
+}
 
 function getStickyOffset() {
   const header = document.getElementById("appHeader") || document.querySelector("header");
@@ -6794,8 +6810,8 @@ function staySummaryLinesHTML(stay, opts){
 
   const hasNotes = !!(stay.notes && String(stay.notes).trim());
 
-  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` <span class="font-semibold">${escapeHtml(checkInTime)}</span>` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
-  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
+  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` ${__timeBadgeHTML(checkInISO, checkInTime)}` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
+  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
 
   return `
     <div class="text-sm font-semibold truncate">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></div>
@@ -7930,7 +7946,7 @@ function actCard(act) {
   const title = (act.title||act.name||"").trim() || "—";
   const dES = (act.date ? formatDateES(act.date) : "") || "—";
   const t = (act.time||"").trim();
-  const when = t ? `${escapeHtml(dES)} · ${escapeHtml(t)}` : `${escapeHtml(dES)}`;
+  const when = t ? `${escapeHtml(dES)} · ${__timeBadgeHTML(act.date, t)}` : `${escapeHtml(dES)}`;
   const hasNotes = !!(act.notes && String(act.notes).trim());
 
   return `
