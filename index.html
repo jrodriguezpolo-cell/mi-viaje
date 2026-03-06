@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V217_MAPS_ENTRYPOINTS_PREMIUM</title>
+<title>V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -881,7 +881,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V217_MAPS_ENTRYPOINTS_PREMIUM</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3511,27 +3511,9 @@ function __installPinBtn(input, getDestFn, getModeFn){
   }catch{}
 }
 
-function __sheetMapsBtnHTML(label, key){
-  return `<button type="button" class="tap inline-flex items-center gap-2 px-3 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50" data-sheet-maps-open="${escapeHtml(String(key||""))}"><span aria-hidden="true">📍</span><span>${escapeHtml(String(label||"Maps"))}</span></button>`;
-}
 
-function __bindSheetMapsButtons(scope, resolverMap){
-  try{
-    if(!scope || !resolverMap) return;
-    scope.querySelectorAll('[data-sheet-maps-open]').forEach(btn=>{
-      if(btn.__mapsBound) return;
-      btn.__mapsBound = true;
-      btn.addEventListener('click',(e)=>{
-        try{ e.preventDefault(); e.stopPropagation(); }catch{}
-        const key = String(btn.getAttribute('data-sheet-maps-open')||'').trim();
-        const getDest = resolverMap[key];
-        const dest = (typeof getDest === 'function' ? String(getDest()||'') : '').trim();
-        if(!dest){ alert('Completa la ubicación primero'); return; }
-        try{ __openDirectionsTo(dest, 'transit'); }catch{}
-      });
-    });
-  }catch{}
-}
+
+
 
 // WIRING per sheet kind (safe, no side effects outside filling inputs)
 function __wireLegAutocomplete(wrap, getModeFn){
@@ -5053,13 +5035,6 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
 </div>
 
       <div class="sm:col-span-12">
-        <div class="flex flex-wrap items-center gap-2 pt-1">
-          ${__sheetMapsBtnHTML('Maps salida','leg-out')}
-          ${__sheetMapsBtnHTML('Maps llegada','leg-in')}
-        </div>
-      </div>
-
-      <div class="sm:col-span-12">
         <label class="text-xs text-slate-600">Coste</label>
         <div class="mt-1 flex items-center gap-2">
           <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
@@ -5315,10 +5290,6 @@ qs("from").value = v(legObj.from);
     const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
     __installPinBtn(_po, ()=>__mapsDestWithCity((_po.value + " " + (qs("placeOutDetail")?.value||"")).trim(), _from && _from.value), _modeFn);
     __installPinBtn(_pi, ()=>__mapsDestWithCity((_pi.value + " " + (qs("placeInDetail")?.value||"")).trim(), _to && _to.value), _modeFn);
-    __bindSheetMapsButtons(wrap, {
-      'leg-out': ()=>__mapsDestWithCity(((_po && _po.value)||'') + ' ' + ((qs('placeOutDetail') && qs('placeOutDetail').value)||''), _from && _from.value),
-      'leg-in':  ()=>__mapsDestWithCity(((_pi && _pi.value)||'') + ' ' + ((qs('placeInDetail') && qs('placeInDetail').value)||''), _to && _to.value)
-    });
   }catch{}
 
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
@@ -5603,9 +5574,6 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
       </div>
     </div>
   </div>
-  <div class="mt-3 flex flex-wrap items-center gap-2">
-    ${__sheetMapsBtnHTML('Maps alojamiento','stay-main')}
-  </div>
 </div>`;
 
   body.appendChild(wrap);
@@ -5617,7 +5585,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   qs("city").value = v(stayObj.city);
   try{ __wireStayAutocomplete(wrap); }catch{}
   qs("name").value = v(stayObj.name);
-  try{ const _n=qs("name"); const _c=qs("city"); __installPinBtn(_n, ()=>__mapsDestWithCity(_n.value, _c && _c.value), ()=>"transit"); __bindSheetMapsButtons(wrap, { 'stay-main': ()=>__mapsDestWithCity(_n && _n.value, _c && _c.value) }); }catch{}
+  try{ const _n=qs("name"); const _c=qs("city"); __installPinBtn(_n, ()=>__mapsDestWithCity(_n.value, _c && _c.value), ()=>"transit"); }catch{}
   qs("date").value = v(stayObj.date || "");
   qs("time").value = v(stayObj.time || "");
   qs("nights").value = v(stayObj.nights ?? 1);
@@ -5724,10 +5692,6 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
           class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 pt-1">
-        ${__sheetMapsBtnHTML('Maps actividad','act-main')}
-      </div>
-
       <div class="actRow2">
         <div class="fieldCell">
           <label class="text-xs text-slate-600">Hora</label>
@@ -5769,7 +5733,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   const v = (x) => (x == null ? "" : String(x));
 
   qs("title").value = v(actObj.title);
-  try{ const _t=qs("title"); const _c=qs("city"); __installPinBtn(_t, ()=>__mapsDestWithCity(_t.value, _c && _c.value), ()=>"transit"); __bindSheetMapsButtons(wrap, { 'act-main': ()=>__mapsDestWithCity(_t && _t.value, _c && _c.value) }); }catch{}
+  try{ const _t=qs("title"); const _c=qs("city"); __installPinBtn(_t, ()=>__mapsDestWithCity(_t.value, _c && _c.value), ()=>"transit"); }catch{}
   qs("city").value = v(actObj.city);
   try{ __wireActAutocomplete(wrap); }catch{}
   qs("date").value = v(actObj.date || "");
