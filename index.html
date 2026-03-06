@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V208_TIMELINE_MICROSUMMARY_MENU</title>
+<title>V209_TIMELINE_PERSISTENT_FOUND_HIGHLIGHT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -779,6 +779,8 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* Roundtrip jump: highlight target summary */
 .rtFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
+.tlPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
+
 
 /* V181: hide legacy Daily Notes accordion (replaced by FAB) */
 [data-acc="dailyNotes"], [data-acc-body="dailyNotes"]{display:none !important;}
@@ -801,7 +803,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V208_TIMELINE_MICROSUMMARY_MENU</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V209_TIMELINE_PERSISTENT_FOUND_HIGHLIGHT</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4140,6 +4142,41 @@ function __msFlashEl(el){
     setTimeout(()=>{ try{ el.classList.remove("msFlash"); }catch{} }, 850);
   }catch{}
 }
+
+// V209: Persistent highlight for items reached from MicroSummary
+window.__tlPersistentFoundKey = window.__tlPersistentFoundKey || "";
+function __clearTimelinePersistentFoundHighlight(){
+  try{ window.__tlPersistentFoundKey = ""; }catch{}
+  try{
+    document.querySelectorAll("#timelineList .timelineItem.tlPersistentFound").forEach(el=>el.classList.remove("tlPersistentFound"));
+  }catch{}
+}
+function __applyTimelinePersistentFoundHighlight(key){
+  if(!key) return;
+  try{
+    // remove previous
+    document.querySelectorAll("#timelineList .timelineItem.tlPersistentFound").forEach(el=>el.classList.remove("tlPersistentFound"));
+  }catch{}
+  try{ window.__tlPersistentFoundKey = String(key); }catch{}
+  try{
+    const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
+    if(el) el.classList.add("tlPersistentFound");
+  }catch{}
+}
+
+// Clear persistent highlight when leaving timeline (without touching NAV)
+(function(){
+  if (document.body && !document.body.__tlPersistObs){
+    document.body.__tlPersistObs = true;
+    try{
+      const obs = new MutationObserver(()=>{
+        const cur = (document.body?.dataset?.view) || "";
+        if (String(cur) !== "timeline") __clearTimelinePersistentFoundHighlight();
+      });
+      obs.observe(document.body, { attributes:true, attributeFilter:["data-view"] });
+    }catch{}
+  }
+})();
 function __msScrollToKey(key){
   if(!key) return false;
   try{
@@ -4147,6 +4184,7 @@ function __msScrollToKey(key){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+        __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
         return true;
       }
@@ -4156,7 +4194,8 @@ function __msScrollToKey(key){
     const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     if(!el) return false;
     try{ scrollToElWithOffset(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
-    __msFlashEl(el);
+    __applyTimelinePersistentFoundHighlight(key);
+        __msFlashEl(el);
     return true;
   }catch{}
   return false;
@@ -6419,6 +6458,7 @@ function setDisplayCurrency(cur) {
 function setupAccordion() {
   document.querySelectorAll("[data-acc]").forEach(btn => {
     btn.addEventListener("click", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
       const key = btn.getAttribute("data-acc");
       const body = document.querySelector(`[data-acc-body="${key}"]`);
       body.classList.toggle("hidden");
@@ -6749,6 +6789,7 @@ function renderStays() {
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-stay-status]").forEach(sel => sel.addEventListener("change", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
     const id = sel.getAttribute("data-stay-status");
     const it = sc.stays.find(x => x.id === id);
     if (!it) return;
@@ -7830,6 +7871,7 @@ function renderActivities() {
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-act-status]").forEach(sel => sel.addEventListener("change", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
     const id = sel.getAttribute("data-act-status");
     const it = sc.activities.find(x => x.id === id);
     if (!it) return;
@@ -8555,6 +8597,8 @@ function renderTimeline() {
 
 // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
     const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
+    const __persistKey = (window.__tlPersistentFoundKey||"");
+    const persistCls = (__persistKey && String(__persistKey)===String(tlKey)) ? " tlPersistentFound" : "";
     const isExpanded = __tlExpanded.has(tlKey);
 
     // Línea meta en detalle (mantiene lo que ya enseñábamos arriba)
@@ -8634,7 +8678,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
 
     return `
-      <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}"
+      <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}${persistCls}"
            data-date="${escapeHtml(it.date)}"
            data-tl-jump-type="${jumpType}"
            data-tl-jump-id="${escapeHtml(jumpId)}"
@@ -8695,6 +8739,8 @@ box.querySelectorAll(".timelineItem[data-tl-key]").forEach(row => {
   row.addEventListener("click", (e) => {
     const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
     if (tag === "input" || tag === "label" || tag === "button" || tag === "textarea" || tag === "a") return;
+
+    try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
 
     const jt = row.getAttribute("data-tl-jump-type") || "";
     const jid = row.getAttribute("data-tl-jump-id") || "";
@@ -9730,6 +9776,7 @@ ${label}`)) return;
     if (root) {
       root.querySelectorAll("[data-acc]").forEach(btn => {
         btn.addEventListener("click", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
           const key = btn.getAttribute("data-acc");
           const body = root.querySelector(`[data-acc-body="${key}"]`);
           if (!body) return;
@@ -11058,6 +11105,7 @@ function scrollToDateSep(viewName, iso){
     sel.__dj_bound = true;
 
     sel.addEventListener("change", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
       const v = getActiveViewName("");
       const iso = sel.value || "";
       if (!iso) return;
@@ -11065,6 +11113,7 @@ function scrollToDateSep(viewName, iso){
     }, { passive:true });
 
     btn.addEventListener("click", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
       const v = getActiveViewName("");
       const dates = collectDates(v);
       const rel = chooseRelevant(dates);
