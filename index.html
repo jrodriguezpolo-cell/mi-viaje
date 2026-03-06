@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</title>
+<title>V217_UNIFIED_SUMMARY_CARDS_ACROSS_SECTIONS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -97,6 +97,33 @@ function deleteItemById(kind, id) {
   border-color: rgba(234,179,8,0.20) !important;
 }
 
+
+/* V217: Section summary cards reuse Timeline visual states */
+.secCard.past { opacity: 0.45; }
+.secCard.tl-today{
+  background-color: rgba(16,185,129,0.10) !important;
+  border-color: rgba(16,185,129,0.22) !important;
+}
+.secCard.tl-today-done{
+  background-color: rgba(59,130,246,0.12) !important;
+  border-color: rgba(59,130,246,0.28) !important;
+}
+.secCard.tl-auto-done{
+  background-color: rgba(100,116,139,0.08) !important;
+  border-color: rgba(100,116,139,0.18) !important;
+}
+.secCard.tl-skipped{
+  background-color: rgba(239,68,68,0.10) !important;
+  border-color: rgba(239,68,68,0.25) !important;
+}
+.secCard.tl-future{
+  background-color: rgba(234,179,8,0.08) !important;
+  border-color: rgba(234,179,8,0.20) !important;
+}
+.secDoneToggle{
+  width:18px;height:18px;
+  accent-color:#0f172a;
+}
 
     /* Timeline item notes button */
     .timelineItem .notes-has { font-weight: 700; }
@@ -881,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V217_UNIFIED_SUMMARY_CARDS_ACROSS_SECTIONS</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3868,6 +3895,25 @@ function __tlRelForDate(iso){
   if(d > today) return "future";
   return "today";
 }
+
+
+function __sectionVisualClass(kind, obj, dateKey){
+  // Mirrors timeline visual classes so sections feel identical.
+  const k = String(kind||"");
+  const dk = String(dateKey||"").trim();
+  const st = (k==="act" && typeof computeDoneState==="function") ? computeDoneState(obj)
+           : (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(obj, dk)
+           : {done:false,auto:false,skipped:false};
+  const isToday = (dk && (typeof todayKey==="function") && dk === todayKey());
+  let visual = "";
+  if (st.skipped) visual = " tl-skipped";
+  else if (isToday && st.done) visual = " tl-today-done";
+  else if (isToday && !st.done) visual = " tl-today";
+  else if (st.auto && st.done) visual = " tl-auto-done";
+  else if (dk && (typeof isFuture==="function") && isFuture(dk)) visual = " tl-future";
+  const pastCls = (dk && (typeof isPast==="function") && isPast(dk)) ? " past" : "";
+  return { st, visualClass: (visual + pastCls) };
+}
 function __timeBadgeHTML(iso, hhmm){
   const t = String(hhmm||"").trim();
   if(!/^\d{2}:\d{2}$/.test(t)) return "";
@@ -6794,12 +6840,16 @@ function renderTabs() {
   }
 }
 
-function legCard(leg, idx) {
-  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(leg, leg.date) : {done:false,auto:false,skipped:false};
-  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
 
+function legCard(leg, idx) {
+  const dateKey = String(leg?.date || "").trim();
+  const vc = __sectionVisualClass("leg", leg, dateKey);
+  const st = vc.st;
+
+  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
-    const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
+
+  const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
   const __role = String(leg && leg.rtRole || "");
   const __peer = String(leg && leg.rtPeerId || "");
   const __rtBadge = (__tt==="roundtrip" && __peer)
@@ -6809,29 +6859,31 @@ function legCard(leg, idx) {
       )
     : ``;
 
-const __sp = buildLegSummaryParts(leg);
+  const __sp = buildLegSummaryParts(leg);
 
-  // UX 2.1: list = consultation only (no internal accordion, no inline edit)
+  const badgeState = st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>`
+                  : (st.auto && st.done) ? `<span class="text-xs auto-badge">Asumido</span>` : ``;
+
   return `
-  <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
-            class="tap w-full text-left p-4 flex items-stretch justify-between gap-3"
-            data-leg-open="${leg.id}" data-sec-toggle="legs" data-sec-id="${leg.id}"
+            class="tap w-full text-left flex items-stretch justify-between gap-3"
+            data-leg-open="${leg.id}"
             aria-label="Abrir trayecto">
       <div class="min-w-0">
         <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 truncate">${__sp.metaHTML}</div>
+        <div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>
         ${__sp.placeLineHTML}
       </div>
-      <div class="shrink-0 flex flex-col items-end gap-1 justify-between self-stretch">
+
+      <div class="shrink-0 flex flex-col items-end gap-2 justify-between self-stretch">
         <div class="flex items-center gap-2">
           ${buildEventIndicatorsHTML(leg,"leg")}
-          ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
-          ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
+          <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
+          ${badgeState}
         </div>
         ${__rtBadge ? `<div class="mt-auto">${__rtBadge}</div>` : ""}
       </div>
-
     </button>
   </div>`;
 }
@@ -6847,11 +6899,19 @@ function renderLegs() {
 
   // UX 2.1: tap on summary opens sheet in view mode
   box.querySelectorAll("[data-leg-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "label" || tag === "button" || tag === "select") return;
     try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = btn.getAttribute("data-leg-open");
     if (!id) return;
     try { openEventSheet({ kind: "leg", id, mode: "view", sourceView: "legs" }); } catch {}
   }));
+
+  // V217: done toggle in section cards (same source of truth as timeline)
+  box.querySelectorAll("[data-leg-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.onchange = () => handleLegDoneToggle(cb.getAttribute('data-leg-done'), cb.checked, cb);
+  });
 }
 
 
@@ -6897,54 +6957,30 @@ function staySummaryLinesHTML(stay, opts){
 }
 
 
+
 function stayCard(stay) {
-  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(stay, stay.date || "") : {done:false,auto:false,skipped:false};
-  const city = (stay.city||"").trim() || "—";
-  const name = (stay.name||"").trim() || "—";
+  const dateKey = String(stay?.date || "").trim();
+  const vc = __sectionVisualClass("stay", stay, dateKey);
+  const st = vc.st;
 
-  // Dates / times (no timezone logic yet)
-  const checkInISO = String(stay.date||"").trim();
-  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
-  const checkInTime = (stay.time||"").trim();
+  const badgeState = st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>`
+                  : (st.auto && st.done) ? `<span class="text-xs auto-badge">Asumido</span>` : ``;
 
-  const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
-
-  const __addDaysISO_inline = (iso, days)=>{
-    const s = String(iso||"").trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
-    const d = new Date(s + "T12:00:00");
-    if (isNaN(d.getTime())) return "";
-    d.setDate(d.getDate() + (Number(days)||0));
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const da = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${da}`;
-  };
-
-  const coISO_raw = String(stay.checkout||"").trim();
-  const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
-  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
-  const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
-
-  const hasNotes = !!(stay.notes && String(stay.notes).trim());
-
-  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` <span class="font-semibold">${escapeHtml(checkInTime)}</span>` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
-  const showCheckOut = !!(checkOutISO && checkOutISO !== "—");
-  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` <span class="font-semibold">${escapeHtml(checkOutTime)}</span>` : ``}`;
-
-  // Summary (Transport-like): tap opens premium sheet; no old per-item accordion UX
-  // Keep an editor node in DOM for move-node sheet (data-sec-body/data-sec-id), but hidden.
   return `
-  <div id="stay-${stay.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+  <div id="stay-${stay.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
-            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
+            class="tap w-full text-left flex items-start justify-between gap-3"
             data-stay-open="${stay.id}"
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        ${staySummaryLinesHTML(stay)}</div>
-      <div class="shrink-0 flex items-center gap-2">
-        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        ${buildEventIndicatorsHTML(stay,"stay")}
+        ${staySummaryLinesHTML(stay)}
+      </div>
+      <div class="shrink-0 flex flex-col items-end gap-2">
+        <div class="flex items-center gap-2">
+          ${buildEventIndicatorsHTML(stay,"stay")}
+          <input type="checkbox" class="secDoneToggle" data-stay-done="${escapeHtml(String(stay.id))}" ${st.done ? "checked" : ""} title="Hecho">
+          ${badgeState}
+        </div>
       </div>
     </button>
 
@@ -6957,38 +6993,31 @@ function stayCard(stay) {
         </div>
         <div class="sm:col-span-4">
           <label class="text-xs text-slate-600">Alojamiento</label>
-          <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Hotel / Airbnb / Camping…">
+          <input data-stay-name="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.name)}" placeholder="Hotel / Apartamento">
         </div>
         <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Fecha (check-in)</label>
-          <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date || "")}">
+          <label class="text-xs text-slate-600">Check-in</label>
+          <input data-stay-date="${stay.id}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.date)}">
         </div>
         <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Hora (opcional)</label>
-          <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time || "")}">
+          <label class="text-xs text-slate-600">Hora</label>
+          <input data-stay-time="${stay.id}" type="time" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.time||"")}">
         </div>
         <div class="sm:col-span-2">
           <label class="text-xs text-slate-600">Noches</label>
-          <input data-stay-nights="${stay.id}" type="number" min="1" step="1" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights ?? 1)}">
+          <input data-stay-nights="${stay.id}" type="number" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.nights||"1")}" min="1">
         </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Coste</label>
-          <input data-stay-cost="${stay.id}" type="number" min="0" step="0.01" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost ?? "")}">
+        <div class="sm:col-span-3">
+          <label class="text-xs text-slate-600">Coste total</label>
+          <div class="flex gap-2">
+            <input data-stay-cost="${stay.id}" type="number" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" value="${escapeHtml(stay.cost||"")}">
+            <select data-stay-cur="${stay.id}" class="mt-1 px-3 py-2 rounded-xl border border-slate-200 bg-white">
+              ${currencyOptionsHTML(stay.currency || state.displayCurrency)}
+            </select>
+          </div>
         </div>
-        <div class="sm:col-span-8">
-          <label class="text-xs text-slate-600">Notas</label>
-          <textarea data-stay-notes="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" rows="3" placeholder="Detalles (check-in, dirección, etc.)">${escapeHtml(stay.notes || "")}</textarea>
-        </div>
-        <div class="sm:col-span-2">
-          <label class="text-xs text-slate-600">Estado</label>
-          <select data-stay-status="${stay.id}" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200">
-            <option value="">—</option>
-            <option value="done" ${String(stay.status||"")==="done" ? "selected" : ""}>Hecho</option>
-            <option value="skipped" ${String(stay.status||"")==="skipped" ? "selected" : ""}>No realizado</option>
-          </select>
-        </div>
-        <div class="sm:col-span-2 flex justify-end">
-          <button data-stay-del="${stay.id}" class="tap px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-sm">🗑️</button>
+        <div class="sm:col-span-12 flex justify-end gap-2">
+          <button data-stay-del="${stay.id}" class="tap px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold">Borrar</button>
         </div>
       </div>
     </div>
@@ -7006,6 +7035,8 @@ function renderStays() {
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
   box.querySelectorAll("[data-stay-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "label" || tag === "button" || tag === "select") return;
     try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = btn.getAttribute("data-stay-open");
     if (!id) return;
@@ -7080,6 +7111,12 @@ function renderStays() {
     it.status = sel.value;
     saveState();
   }));
+
+  // V217: done toggle in section cards (same source of truth as timeline)
+  box.querySelectorAll("[data-stay-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.onchange = () => handleStayDoneToggle(cb.getAttribute('data-stay-done'), cb.checked, cb);
+  });
 }
 
 
@@ -8016,27 +8053,30 @@ const line1 = `<div class="text-sm font-semibold truncate">
   return `${line1}${line2}${line3}`;
 }
 
+
 function actCard(act) {
-  const st = (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(act, act.date || "") : {done:false,auto:false,skipped:false};
-  const city = (act.city||"").trim() || "—";
-  const title = (act.title||act.name||"").trim() || "—";
-  const dES = (act.date ? formatDateES(act.date) : "") || "—";
-  const t = (act.time||"").trim();
-  const when = t ? `${escapeHtml(dES)} · ${__timeBadgeHTML(act.date, t)}` : `${escapeHtml(dES)}`;
-  const hasNotes = !!(act.notes && String(act.notes).trim());
+  const dateKey = String(act?.date || "").trim();
+  const vc = __sectionVisualClass("act", act, dateKey);
+  const st = vc.st;
+
+  const badgeState = st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>`
+                  : (st.auto && st.done) ? `<span class="text-xs auto-badge">Asumido</span>` : ``;
 
   return `
-  <div id="act-${act.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
+  <div id="act-${act.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
-            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
+            class="tap w-full text-left flex items-start justify-between gap-3"
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
         ${actSummaryLinesHTML(act)}
       </div>
-      <div class="shrink-0 flex items-center gap-2"><div class="shrink-0 flex items-center gap-2">
-        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No realizado</span>` : (st.auto && st.done ? `<span class="text-xs auto-badge">Asumido</span>` : ``)}
-        ${buildEventIndicatorsHTML(act,"act")}
+      <div class="shrink-0 flex flex-col items-end gap-2">
+        <div class="flex items-center gap-2">
+          ${buildEventIndicatorsHTML(act,"act")}
+          <input type="checkbox" class="secDoneToggle" data-act-done="${escapeHtml(String(act.id))}" ${st.done ? "checked" : ""} title="Hecho">
+          ${badgeState}
+        </div>
       </div>
     </button>
 
@@ -8080,6 +8120,7 @@ function actCard(act) {
         </div>
       </div>
     </div>
+  
   </div>`;
 }
 
@@ -8095,6 +8136,8 @@ function renderActivities() {
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
   box.querySelectorAll("[data-act-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "label" || tag === "button" || tag === "select") return;
     try { e.preventDefault(); e.stopPropagation(); } catch {}
     const id = btn.getAttribute("data-act-open");
     if (!id) return;
@@ -8162,6 +8205,12 @@ function renderActivities() {
     it.status = sel.value;
     saveState();
   }));
+
+  // V217: done toggle in section cards (same source of truth as timeline)
+  box.querySelectorAll("[data-act-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.onchange = () => handleActDoneToggle(cb.getAttribute('data-act-done'), cb.checked, cb);
+  });
 }
 
 
