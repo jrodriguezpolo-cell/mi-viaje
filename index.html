@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V216C_TRANSPORT_SUMMARY_LAYOUT_UNCLIP_TIMES</title>
+<title>V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -785,6 +785,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .rtFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .tlPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
+.rtPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 
 
 /* V181: hide legacy Daily Notes accordion (replaced by FAB) */
@@ -880,7 +881,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216C_TRANSPORT_SUMMARY_LAYOUT_UNCLIP_TIMES</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216D_TRANSPORT_RT_BADGE_BOTTOM_RIGHT_AND_PERSISTENT_JUMP</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1715,7 +1716,7 @@ function __renderAttachmentsModal(){
       ? `<div class="text-xs opacity-70 truncate">${__eh(String(f?.url||""))}</div>`
       : `<div class="text-xs opacity-60">Busca en Archivos: pega el nombre.</div>`;
     return `
-      <div class="flex items-start justify-between gap-3 py-2 border-b border-slate-200/40">
+      <div class="flex items-stretch justify-between gap-3 py-2 border-b border-slate-200/40">
         <button class="tap flex-1 text-left" data-att-id="${__eh(String(f.id||""))}" data-att-action="open">
           <div class="font-extrabold text-sm">${__eh(name)}</div>
           ${sub}
@@ -2137,6 +2138,47 @@ try{
 
 // Roundtrip: jump badge should SCROLL to the linked summary (not open the sheet)
 try{
+  // V216D: persistent highlight for jump inside Transporte section (legs view)
+  if(!window.__clearLegsPersistentFoundHighlight){
+    window.__clearLegsPersistentFoundHighlight = function(){
+      try{ window.__legsPersistentFoundId = ""; }catch{}
+      try{
+        document.querySelectorAll('#view-legs [data-leg-open].rtPersistentFound').forEach(el=>el.classList.remove('rtPersistentFound'));
+      }catch{}
+    };
+  }
+  if(!window.__applyLegsPersistentFoundHighlight){
+    window.__applyLegsPersistentFoundHighlight = function(legId, el){
+      legId = String(legId||""); if(!legId) return;
+      try{
+        document.querySelectorAll('#view-legs [data-leg-open].rtPersistentFound').forEach(x=>x.classList.remove('rtPersistentFound'));
+      }catch{}
+      try{ window.__legsPersistentFoundId = legId; }catch{}
+      try{
+        const target = el || document.querySelector('#view-legs [data-leg-open="'+(CSS.escape?CSS.escape(legId):legId)+'"]');
+        if(target) target.classList.add('rtPersistentFound');
+      }catch{}
+    };
+  }
+  // Clear legs persistent highlight when leaving legs view
+  (function(){
+    if(document.body && !document.body.__legsPersistObs){
+      document.body.__legsPersistObs = true;
+      const obs = new MutationObserver(()=>{ 
+        const v = (document.body.dataset && document.body.dataset.view) ? document.body.dataset.view : "";
+        if(String(v) !== "legs"){ try{ window.__clearLegsPersistentFoundHighlight(); }catch{} }
+      });
+      obs.observe(document.body, {attributes:true, attributeFilter:["data-view"]});
+      document.addEventListener("click",(e)=>{
+        const v = (document.body.dataset && document.body.dataset.view) ? document.body.dataset.view : "";
+        if(String(v)!=="legs") return;
+        const btn = e.target && e.target.closest ? e.target.closest('[data-rt-jump]') : null;
+        if(btn) return;
+        const card = e.target && e.target.closest ? e.target.closest('#view-legs [data-leg-open]') : null;
+        if(card){ try{ window.__clearLegsPersistentFoundHighlight(); }catch{} }
+      }, {capture:true});
+    }
+  })();
   if(!window.__mvScrollToLegSummary){
     window.__mvScrollToLegSummary = function(legId){
       legId = String(legId||"");
@@ -2166,15 +2208,36 @@ try{
 
       if(!target) return;
 
+      // V216D: Apply persistent highlight for linked-flight jump
+      try{
+        if(curView === "timeline"){
+          const key = `leg:${legId}`;
+          if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key);
+        } else if(curView === "legs"){
+          if(typeof window.__applyLegsPersistentFoundHighlight==="function") window.__applyLegsPersistentFoundHighlight(legId, target);
+        }
+      }catch{}
+
       // Compute sticky offset (header + totals + subsection) when available
       let offset = 0;
-      try{ if(typeof getStickyOffset==="function") offset = Number(getStickyOffset())||0; }catch{}
       try{
-        const msRect = (ms && ms.getBoundingClientRect) ? ms.getBoundingClientRect() : {top:0};
-        const tRect  = target.getBoundingClientRect();
-        const top = (ms.scrollTop || 0) + (tRect.top - msRect.top) - (offset + 8);
-        if(ms && typeof ms.scrollTo==="function") ms.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-        else ms.scrollTop = Math.max(0, top);
+        // V216D: For jump, anchor the destination just below the fixed bar (subSectionHeader)
+        if(typeof __scrollTimelineFoundItemToTopAnchor==="function"){
+          __scrollTimelineFoundItemToTopAnchor(target);
+        } else {
+          // fallback to previous offset-based scroll
+          let offset = 0;
+          try{ if(typeof getStickyOffset==="function") offset = Number(getStickyOffset())||0; }catch{}
+          try{
+            const msRect = (ms && ms.getBoundingClientRect) ? ms.getBoundingClientRect() : {top:0};
+            const tRect  = target.getBoundingClientRect();
+            const top = (ms.scrollTop || 0) + (tRect.top - msRect.top) - (offset + 8);
+            if(ms && typeof ms.scrollTo==="function") ms.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+            else ms.scrollTop = Math.max(0, top);
+          }catch{
+            try{ target.scrollIntoView({behavior:"smooth", block:"center"}); }catch{}
+          }
+        }
       }catch{
         try{ target.scrollIntoView({behavior:"smooth", block:"center"}); }catch{}
       }
@@ -6752,7 +6815,7 @@ const __sp = buildLegSummaryParts(leg);
   return `
   <div id="leg-${leg.id}" class="border border-slate-200 rounded-2xl bg-slate-50 ${st.done ? "done-item" : ""} ${st.skipped ? "skipped-item" : ""}">
     <button type="button"
-            class="tap w-full text-left p-4 flex items-start justify-between gap-3"
+            class="tap w-full text-left p-4 flex items-stretch justify-between gap-3"
             data-leg-open="${leg.id}" data-sec-toggle="legs" data-sec-id="${leg.id}"
             aria-label="Abrir trayecto">
       <div class="min-w-0">
@@ -6760,11 +6823,15 @@ const __sp = buildLegSummaryParts(leg);
         <div class="text-xs text-slate-600 mt-0.5 truncate">${__sp.metaHTML}</div>
         ${__sp.placeLineHTML}
       </div>
-      <div class="shrink-0 flex items-center gap-2">${__rtBadge}
-        ${buildEventIndicatorsHTML(leg,"leg")}
-        ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
-        ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
+      <div class="shrink-0 flex flex-col items-end gap-1 justify-between self-stretch">
+        <div class="flex items-center gap-2">
+          ${buildEventIndicatorsHTML(leg,"leg")}
+          ${st.skipped ? `<span class="text-xs font-semibold skipped-badge">No hecho</span>` : ""}
+          ${st.auto ? `<span class="text-xs font-semibold auto-badge">Auto</span>` : ""}
+        </div>
+        ${__rtBadge ? `<div class="mt-auto">${__rtBadge}</div>` : ""}
       </div>
+
     </button>
   </div>`;
 }
@@ -8912,13 +8979,13 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             </div>
           </div>
 
-          <div class="shrink-0 flex flex-col items-end gap-1">
+          <div class="shrink-0 flex flex-col items-end gap-1 justify-between self-stretch">
             <div class="flex items-center gap-2">
               ${filesIconHTML || ""}
               ${tlCheckbox ? tlCheckbox : ""}
               ${notesBtn ? notesBtn : ""}
             </div>
-            ${rtBadgeHTML || ""}
+            ${rtBadgeHTML ? `<div class="mt-auto">${rtBadgeHTML}</div>` : ""}
           </div>
         </div>
 
