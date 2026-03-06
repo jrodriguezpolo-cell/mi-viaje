@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V213_NAV_PILL_AND_ACTIVITIES_ALIGNMENT_FIX</title>
+<title>V213A_NAV_AND_ACTIVITIES_LAYOUT_REAL_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -794,40 +794,72 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   font-size:16px !important;
 }
 
-/* V213: Bottom NAV active pill — capsule fully contains icon + text (no clipping) */
+/* V213A: Actividades — force paired field alignment (Hora/Duración, Importe/Moneda) */
+.sheet-act-editor input[type="date"],
+.sheet-act-editor input[type="time"],
+.sheet-act-editor input[data-sheet-act="duration"],
+.sheet-act-editor input[data-sheet-act="cost"],
+.sheet-act-editor select[data-sheet-act="currency"]{
+  height: 40px !important;
+  padding-top: 0.375rem !important;
+  padding-bottom: 0.375rem !important;
+  line-height: 1.25 !important;
+  box-sizing: border-box !important;
+}
+.sheet-act-editor select[data-sheet-act="currency"]{
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* V213A: Bottom NAV active pill — internal capsule so text never gets clipped */
 #bottomNav .grid{
   align-items: stretch;
 }
 #bottomNav .grid > button{
+  padding: 0;
+  min-height: 64px;
   display:flex;
-  flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:2px;
-  padding: 9px 8px;
-  min-height: 60px;
-  line-height: 1.2;
   border-radius: 18px;
   box-sizing: border-box;
   overflow: visible;
 }
-#bottomNav .grid > button > div{
-  line-height: 1.15;
-  margin-top: 2px;
-  padding: 0 2px;
+#bottomNav .grid > button .navPill{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 18px;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+#bottomNav .grid > button .navIcon{
+  font-size: 18px;
+  line-height: 1;
+}
+#bottomNav .grid > button .navLabel{
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
   white-space: nowrap;
+  padding: 0 2px;
 }
-#bottomNav .grid > button.navActive{
-  background: rgba(59,130,246,0.16) !important;
-  border: 1px solid rgba(59,130,246,0.45) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,0.75) inset, 0 0 0 2px rgba(59,130,246,0.12) inset;
+#bottomNav .grid > button:hover .navPill{
+  background: rgba(15,23,42,0.04);
+}
+#bottomNav .grid > button.navActive .navPill{
+  background: rgba(59,130,246,0.18) !important;
+  border: 1px solid rgba(59,130,246,0.52) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.80) inset, 0 0 0 2px rgba(59,130,246,0.14) inset;
   color: rgb(15 23 42) !important;
+}
+#bottomNav .grid > button.navActive .navLabel{
   font-weight: 900 !important;
 }
-#bottomNav .grid > button.navActive > div{
-  font-weight: 900 !important;
-}
-
 
 </style>
 </head>
@@ -839,7 +871,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V213_NAV_PILL_AND_ACTIVITIES_ALIGNMENT_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V213A_NAV_AND_ACTIVITIES_LAYOUT_REAL_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1057,10 +1089,10 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <!-- Bottom bar for mobile -->
 <nav class="safe-b fixed bottom-0 left-0 right-0 z-[2000] lg:hidden bg-white/95 backdrop-blur border-t border-slate-200" id="bottomNav">
 <div class="max-w-6xl mx-auto px-4 py-2 grid grid-cols-5 gap-2 text-xs">
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline">🗓️<div>Cronograma</div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs">✈️<div>Transporte</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays">🏨<div>Alojamiento</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts">🎯<div>Actividades</div></button>
-<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals">🍽️<div>Varios</div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="timeline"><div class="navPill"><div class="navIcon">🗓️</div><div class="navLabel">Cronograma</div></div></button><button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="legs"><div class="navPill"><div class="navIcon">✈️</div><div class="navLabel">Transporte</div></div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="stays"><div class="navPill"><div class="navIcon">🏨</div><div class="navLabel">Alojamiento</div></div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="acts"><div class="navPill"><div class="navIcon">🎯</div><div class="navLabel">Actividades</div></div></button>
+<button class="tap py-2 rounded-xl hover:bg-slate-50" data-jump="meals"><div class="navPill"><div class="navIcon">🍽️</div><div class="navLabel">Varios</div></div></button>
 </div>
 </nav>
 <!-- Modals -->
