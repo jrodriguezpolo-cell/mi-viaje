@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V211_TIMELINE_TOP_ANCHOR_AND_NAV_PILL_FIX</title>
+<title>V212_TIMELINE_TRUE_TOP_ANCHOR</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -835,7 +835,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V211_TIMELINE_TOP_ANCHOR_AND_NAV_PILL_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V212_TIMELINE_TRUE_TOP_ANCHOR</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4224,88 +4224,74 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
-function __scrollTimelineFoundItemIntoComfortZone(el){
-  // V211: anchor found item just below the fixed Timeline subSectionHeader (premium reading zone)
+function __scrollTimelineFoundItemToTopAnchor(el){
+  // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
   try{
     if(!el) return;
     const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
 
-    // Measure fixed top stack (header + totals + subSectionHeader)
-    let topH = 0;
+    // Anchor is the bottom edge of the timeline fixed bar (subSectionHeader) in viewport coords
+    let anchorBottom = 0;
     try{
-      const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
-      const n = parseFloat(css);
-      if(!isNaN(n) && n > 0) topH = n;
+      const sh = document.getElementById("subSectionHeader");
+      if(sh && !sh.classList.contains("hidden")){
+        const r = sh.getBoundingClientRect();
+        anchorBottom = r.bottom || 0;
+      }
     }catch{}
-    if(!topH){
+    if(!anchorBottom){
+      // Fallback to computed top-stack height if available
+      try{
+        const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
+        const n = parseFloat(css);
+        if(!isNaN(n) && n > 0) anchorBottom = n;
+      }catch{}
+    }
+    if(!anchorBottom){
       const h1 = document.getElementById("appHeader");
       const h2 = document.getElementById("stickyTotalBar");
       const h3 = document.getElementById("subSectionHeader");
-      topH = (h1 ? h1.getBoundingClientRect().height : 0)
-           + (h2 ? h2.getBoundingClientRect().height : 0)
-           + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
+      anchorBottom = (h1 ? h1.getBoundingClientRect().height : 0)
+                   + (h2 ? h2.getBoundingClientRect().height : 0)
+                   + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
     }
 
-    // Measure bottom occluders (bottom nav + FABs)
-    const nav = document.getElementById("bottomNav");
-    const bottomNavH = nav ? nav.getBoundingClientRect().height : 0;
+    const margin = 10; // comfortable gap below the bar
+    const targetTop = anchorBottom + margin;
 
-    function blockedFromBottomBy(elId){
-      try{
-        const b = document.getElementById(elId);
-        if(!b) return 0;
-        if(b.classList && b.classList.contains("hidden")) return 0;
-        const r = b.getBoundingClientRect();
-        // If element is not rendered, rect may be 0
-        if(!r || !r.height) return 0;
-        // amount of screen blocked from bottom upwards
-        return Math.max(0, window.innerHeight - r.top);
-      }catch{ return 0; }
-    }
-    const fabAddBlock = blockedFromBottomBy("fabAdd");
-    const fabNoteBlock = blockedFromBottomBy("timelineNotesFab");
+    // Current element top in viewport
+    const rEl = el.getBoundingClientRect();
+    const delta = (rEl.top - targetTop);
 
-    // Keep a comfortable bottom safe zone (avoid FABs + nav)
-    const safeBottom = Math.max(bottomNavH, fabAddBlock, fabNoteBlock) + 12;
-    const safeTop = Math.max(0, topH) + 10;
+    // Compute absolute target scrollTop and clamp (prevents landing low due to scroll limits)
+    let maxScroll = 0;
+    try{ maxScroll = Math.max(0, (scroller.scrollHeight || 0) - (scroller.clientHeight || window.innerHeight)); }catch{}
+    let targetScrollTop = 0;
+    try{ targetScrollTop = (scroller.scrollTop || 0) + delta; }catch{ targetScrollTop = delta; }
+    if(targetScrollTop < 0) targetScrollTop = 0;
+    if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
 
-    // Anchor target: just below the subSectionHeader, not centered
-    const targetTop = safeTop + 8;
+    // Smooth scroll to anchored position
+    try{ scroller.scrollTo({ top: targetScrollTop, behavior: "smooth" }); }
+    catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
 
-    const r = el.getBoundingClientRect();
-    let delta = (r.top - targetTop);
-
-    // If item is very tall, prioritize showing its header/top
-    const vh = (scroller === document.documentElement) ? window.innerHeight : scroller.clientHeight;
-    const usableH = Math.max(140, vh - safeTop - safeBottom);
-    if(r.height > usableH * 0.92){
-      delta = (r.top - (safeTop + 6));
-    }
-
-    // Apply scroll (smooth)
-    try{ scroller.scrollBy({ top: delta, behavior: "smooth" }); }
-    catch{ try{ scroller.scrollTop = (scroller.scrollTop + delta); }catch{} }
-
-    // Second pass: enforce constraints (not hidden under top, not too close to bottom occluders)
+    // Second pass: if after layout it drifted, re-anchor once
     requestAnimationFrame(()=>{
       try{
         const r2 = el.getBoundingClientRect();
-        const minTop = targetTop;
-        const maxBottom = window.innerHeight - safeBottom;
-
-        if(r2.top < minTop){
-          const dUp = r2.top - minTop - 6;
-          try{ scroller.scrollBy({ top: dUp, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += dUp; }catch{} }
-        }
-
-        if(r2.bottom > maxBottom){
-          const dDown = (r2.bottom - maxBottom) + 10;
-          try{ scroller.scrollBy({ top: dDown, behavior:"smooth" }); }catch{ try{ scroller.scrollTop += dDown; }catch{} }
+        const d2 = (r2.top - targetTop);
+        if(Math.abs(d2) > 6){
+          let st = 0;
+          try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
+          if(st < 0) st = 0;
+          if(maxScroll && st > maxScroll) st = maxScroll;
+          try{ scroller.scrollTo({ top: st, behavior: "smooth" }); }catch{ try{ scroller.scrollTop = st; }catch{} }
         }
       }catch{}
     });
   }catch{}
 }
+
 
 
 function __msScrollToKey(key){
@@ -4315,7 +4301,7 @@ function __msScrollToKey(key){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
-        try{ __scrollTimelineFoundItemIntoComfortZone(el); }catch{}
+        try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{}
         __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
         return true;
@@ -4325,7 +4311,7 @@ function __msScrollToKey(key){
   try{
     const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     if(!el) return false;
-    try{ __scrollTimelineFoundItemIntoComfortZone(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+    try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
     __applyTimelinePersistentFoundHighlight(key);
     __msFlashEl(el);
     return true;
