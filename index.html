@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V208A_FIX_TIMELINE_SUMMARY_VISIBILITY</title>
+<title>V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -790,67 +790,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 #miscExpensesList select{
   font-size:16px !important;
 }
-/* V207: Timeline NOW/NEXT banner */
-#tlNowNextBanner{
-  position: sticky;
-  top: 0;
-  z-index: 960; /* under fixed headers, above list cards */
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(15,23,42,0.10);
-  border-radius: 16px;
-}
-#tlNowNextBanner.hidden{ display:none !important; }
-#tlNowNextBanner .nnTag{
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  color: rgb(100 116 139);
-}
-#tlNowNextBanner .nnLine{
-  font-weight: 900;
-  color: rgb(15 23 42);
-}
-#tlNowNextBanner .nnLine small{
-  font-weight: 800;
-  color: rgb(71 85 105);
-}
-#tlNowNextBanner .nnArrow{
-  border: 1px solid rgba(15,23,42,0.12);
-  background: #fff;
-  border-radius: 14px;
-  width: 44px;
-  height: 36px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 18px;
-  font-weight: 900;
-}
-#tlNowNextBanner .nnArrow:active{ transform: scale(0.98); }
-
-
-/* V208: Timeline micro summary modal */
-#tlSummaryTabs button{ font-size:12px; font-weight:900; }
-#tlSummaryTabs .isActive{ background: rgb(15 23 42); color: white; border-color: rgb(15 23 42); }
-#tlSumSearch{ font-size:16px !important; } /* iOS no-zoom */
-.tlSumRow:active{ transform: scale(0.99); }
-
-.nnFlash{
-  animation: nnflash 0.85s ease;
-  box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important;
-}
-@keyframes nnflash{
-  0%{ transform: scale(1.0); }
-  40%{ transform: scale(1.01); }
-  100%{ transform: scale(1.0); }
-}
-
-
-/* V208A: ensure timeline banner never shows outside timeline view */
-body:not([data-view="timeline"]) #tlNowNextBanner{ display:none !important; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -861,7 +800,7 @@ body:not([data-view="timeline"]) #tlNowNextBanner{ display:none !important; }
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V208A_FIX_TIMELINE_SUMMARY_VISIBILITY</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V206_ATTACHMENTS_SIMPLIFY_FILE_PICKER</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -954,19 +893,6 @@ body:not([data-view="timeline"]) #tlNowNextBanner{ display:none !important; }
 <span class="accIcon text-slate-400 text-xl">▴</span>
 </button>
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-
-<div id="tlNowNextBanner" class="hidden mb-3 px-4 py-3">
-  <div class="flex items-center gap-3">
-    <button id="tlNNMain" class="tap flex-1 text-left min-w-0">
-      <div class="flex items-center gap-2 min-w-0">
-        <div id="tlNNDayLabel" class="nnTag whitespace-nowrap">HOY · —</div>
-      </div>
-      <div id="tlNNEventLine" class="nnLine truncate mt-1">—</div>
-    </button>
-    <button id="tlNNSummary" class="tap nnArrow" aria-label="Resumen" title="Resumen">🔍</button>
-    <button id="tlNNToggle" class="tap nnArrow" aria-label="Alternar día" title="Alternar HOY / MAÑANA">→</button>
-  </div>
-</div>
 
 <div class="space-y-3" id="timelineList"></div>
 </div>
@@ -1230,9 +1156,6 @@ function setView(viewName){
     timelineViewMode = "global";
     activeDayISO = "";
     if (typeof renderTimeline === "function") renderTimeline();
-    // V207: ensure NOW/NEXT banner is ready on entry
-    try{ __tlBindNowNextBannerOnce(); }catch{}
-    try{ __tlUpdateNowNextBanner(); }catch{}
   }
   if (viewName === "legs") {
     __ensureAccordionOpen("legs");
@@ -1601,6 +1524,7 @@ function openAttachmentsModal(obj){
   try{
     if(!obj) return;
     window.__attachmentsCtx = { obj };
+    window.__attachmentsFileCache = window.__attachmentsFileCache || {};
     __renderAttachmentsModal();
   }catch(err){
     console.error(err);
@@ -1650,17 +1574,18 @@ function __renderAttachmentsModal(){
     const name = String(f?.name|| (kind==="link"?"Enlace":"Archivo")).trim() || (kind==="link"?"Enlace":"Archivo");
     const sub = (kind==="link")
       ? `<div class="text-xs opacity-70 truncate">${__eh(String(f?.url||""))}</div>`
-      : `<div class="text-xs opacity-60">Busca este nombre en Archivos (iCloud). Pega este nombre en el buscador.</div>`;
+      : `<div class="text-xs opacity-60">Busca en Archivos: pega el nombre.</div>`;
     return `
       <div class="flex items-start justify-between gap-3 py-2 border-b border-slate-200/40">
         <button class="tap flex-1 text-left" data-att-id="${__eh(String(f.id||""))}" data-att-action="open">
           <div class="font-extrabold text-sm">${__eh(name)}</div>
           ${sub}
         </button>
-        <div class="flex items-center gap-2 shrink-0">
-          ${kind==="external" ? `<button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="copy">Copiar nombre</button>` : ""}
-          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="rename">Renombrar</button>
-          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold" data-att-id="${__eh(String(f.id||""))}" data-att-action="delete">Borrar</button>
+        <div class="grid grid-cols-2 gap-2 shrink-0">
+          ${kind==="external" ? (`<button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold w-full text-center" data-att-id="${__eh(String(f.id||""))}" data-att-action="copy">Copiar nombre</button>`
+            + ``) : ""}
+          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold w-full text-center" data-att-id="${__eh(String(f.id||""))}" data-att-action="rename">Renombrar</button>
+          <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold w-full text-center" data-att-id="${__eh(String(f.id||""))}" data-att-action="delete">Borrar</button>
         </div>
       </div>
     `;
@@ -1731,6 +1656,31 @@ function __handleAttachmentAction(action, id){
     });
     return;
   }
+
+  if(action === "share"){
+    const name = String(f.name||"").trim() || "Adjunto";
+    window.__attachmentsFileCache = window.__attachmentsFileCache || {};
+    const cached = window.__attachmentsFileCache[String(f.id||"")];
+    const doShare = async (file)=>{
+      if(!file) return;
+      try{ await __shareOrDownloadFile(file, name); }catch{}
+    };
+    if(cached){
+      doShare(cached);
+      return;
+    }
+    try{ toast("Selecciona el archivo otra vez para compartir"); }catch{}
+    __pickFileForShare({ accept: "*/*" }, (file)=>{
+      try{
+        if(file){
+          window.__attachmentsFileCache[String(f.id||"")] = file;
+          doShare(file);
+        }
+      }catch{}
+    });
+    return;
+  }
+
 if(action === "rename"){
     const cur = String(f.name||"").trim() || (f.kind==="link"?"Enlace":"Adjunto");
     const v = prompt("Nuevo nombre:", cur);
@@ -1817,7 +1767,9 @@ async function __pickAndRegisterExternalFile({ accept } = {}){
 
       const files = __ensureFilesArray(obj);
       const name = String(file.name || "Archivo").trim() || "Archivo";
-      files.push({ id: __fileId(), name, kind: "external", url: "", createdAt: Date.now() });
+      const fid = __fileId();
+      files.push({ id: fid, name, kind: "external", url: "", createdAt: Date.now() });
+      try{ window.__attachmentsFileCache = window.__attachmentsFileCache || {}; window.__attachmentsFileCache[fid] = file; }catch{}
 
       try{ if(typeof saveState==="function") saveState(); }catch{}
       try{ toast("Guardado en la lista. Busca el archivo por nombre en Archivos."); }catch{}
@@ -1834,6 +1786,9 @@ async function __pickAndRegisterExternalFile({ accept } = {}){
 }
 
 async function __pickFileForPreview({ accept } = {}){
+  // Open iOS/Android file picker so the user can locate the file in Archivos/Files.
+  // We intentionally DO NOT open an in-app preview: users can preview/share directly from the picker UI,
+  // and this avoids losing context or navigating away from the app.
   const input = document.createElement("input");
   input.type = "file";
   input.accept = accept || "*/*";
@@ -1841,27 +1796,34 @@ async function __pickFileForPreview({ accept } = {}){
   input.style.left = "-9999px";
   document.body.appendChild(input);
 
+  input.onchange = ()=>{
+    try{
+      // User can preview/share from the picker. We don't need to process the file here.
+      try{ document.body.removeChild(input); }catch{}
+    }catch{}
+  };
+
+  // Trigger picker
+  try{ input.click(); }catch{}
+}
+
+function __pickFileForShare({ accept } = {}, cb){
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = accept || "*/*";
+  input.style.position = "fixed";
+  input.style.left = "-9999px";
+  document.body.appendChild(input);
   input.onchange = async ()=>{
     try{
       const file = input.files && input.files[0];
       try{ document.body.removeChild(input); }catch{}
-      if(!file) return;
-
-      const url = URL.createObjectURL(file);
-      // Prefer new tab preview (PDF/images). If blocked, fallback to same tab.
-      let w = null;
-      try{ w = window.open(url, "_blank"); }catch{}
-      if(!w){
-        try{ window.location.href = url; }catch{}
-      }
-      // Revoke later (allow preview to load)
-      setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 60_000);
+      if(!file){ try{ cb && cb(null); }catch{} return; }
+      try{ cb && cb(file); }catch{}
     }catch(err){
-      console.error(err);
-      try{ alert("No se pudo abrir el archivo"); }catch{}
+      try{ cb && cb(null); }catch{}
     }
   };
-
   input.click();
 }
 
@@ -1906,13 +1868,13 @@ async function __pickAndShareFile({ accept, capture, label } = {}){
   input.click();
 }
 
-async function __shareOrDownloadFile(file){
+async function __shareOrDownloadFile(file, title){
   // iOS ShareSheet (when supported)
   try{
     if(navigator && navigator.canShare && navigator.share){
       const can = navigator.canShare({ files: [file] });
       if(can){
-        await navigator.share({ files: [file], title: "Adjunto" });
+        await navigator.share({ files: [file], title: String(title||file.name||"Adjunto") });
         return;
       }
     }
@@ -3685,487 +3647,6 @@ function todayYMD() {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
-/* ---------------- Timeline NOW/NEXT banner (V207) ---------------- */
-window.__tlNowNextDayOffset = 0; // 0 = hoy, 1 = mañana
-
-function __ymdFromDate(d){
-  try{
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const da = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${da}`;
-  }catch{ return ""; }
-}
-function __addDays(iso, delta){
-  try{
-    const d = new Date(String(iso||"") + "T00:00:00");
-    if(Number.isNaN(d.getTime())) return "";
-    d.setDate(d.getDate() + (delta||0));
-    return __ymdFromDate(d);
-  }catch{ return ""; }
-}
-function __fmtDayLine(iso){
-  try{
-    const d = new Date(String(iso||"") + "T00:00:00");
-    if(Number.isNaN(d.getTime())) return iso;
-    let s = d.toLocaleDateString("es-ES", { weekday:"short", day:"2-digit", month:"short", year:"numeric" });
-    s = String(s||"").replace(/\./g,"").replace(/\s+/g," ").trim();
-    // capitaliza weekday
-    s = s.replace(/^([a-záéíóúñ]+)/, (m)=> m.charAt(0).toUpperCase()+m.slice(1));
-    return s;
-  }catch{ return iso; }
-}
-function __isValidTime(t){ return /^\d{2}:\d{2}$/.test(String(t||"").trim()); }
-
-function __eventStartDate(item){
-  try{
-    const d = String(item?.date||"").trim();
-    const t = String(item?.time||"").trim();
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !__isValidTime(t)) return null;
-    const dt = new Date(d + "T" + t + ":00");
-    return Number.isNaN(dt.getTime()) ? null : dt;
-  }catch{ return null; }
-}
-function __eventEndDate(item){
-  // Only when end time exists. For legs: arriveDate+arriveTime.
-  try{
-    const d1 = String(item?.arriveDate||"").trim() || String(item?.date||"").trim();
-    const t1 = String(item?.arriveTime||"").trim();
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(d1) || !__isValidTime(t1)) return null;
-    const dt = new Date(d1 + "T" + t1 + ":00");
-    return Number.isNaN(dt.getTime()) ? null : dt;
-  }catch{ return null; }
-}
-function __tlMakeKey(it){
-  return it?.isNote ? `note:${String(it?.date||"")}` : `${it?.actId ? "act" : (it?.legId ? "leg" : (it?.stayId ? "stay" : ""))}:${(it?.actId || it?.legId || it?.stayId || "")}`;
-}
-
-function __tlComputeNowNextForDate(dateKey){
-  const all = Array.isArray(window.__tlLastFilteredItems) ? window.__tlLastFilteredItems : [];
-  const items = all.filter(it => String(it?.date||"") === String(dateKey||"") && __isValidTime(it?.time));
-  if(!items.length) return { status:"none", label:"", item:null, key:"" };
-
-  // sort by start datetime
-  items.sort((a,b)=>{
-    const da = __eventStartDate(a); const db = __eventStartDate(b);
-    return (da?da.getTime():0) - (db?db.getTime():0);
-  });
-
-  const now = new Date();
-  const todayKey = todayYMD();
-  const isToday = String(dateKey) === String(todayKey);
-
-  // "AHORA": only if endTime exists and start<=now<end
-  if(isToday){
-    for(const it of items){
-      const s = __eventStartDate(it);
-      const e = __eventEndDate(it);
-      if(!s || !e) continue;
-      if(s.getTime() <= now.getTime() && now.getTime() < e.getTime()){
-        return { status:"now", label:"AHORA", item:it, key: __tlMakeKey(it) };
-      }
-    }
-    // "PRÓXIMO": first start > now
-    for(const it of items){
-      const s = __eventStartDate(it);
-      if(!s) continue;
-      if(s.getTime() > now.getTime()){
-        return { status:"next", label:"PRÓXIMO", item:it, key: __tlMakeKey(it) };
-      }
-    }
-    return { status:"done", label:"", item:null, key:"" };
-  }
-
-  // Tomorrow/other: first item of the day
-  return { status:"next", label:"PRÓXIMO", item:items[0], key: __tlMakeKey(items[0]) };
-}
-
-function __tlUpdateNowNextBanner(){
-  try{
-    // Only visible in timeline view (robust)
-    const curView = (document.body && document.body.dataset && document.body.dataset.view) || (typeof activeView !== "undefined" ? activeView : "") || (window.activeView||"");
-    const host = document.getElementById("tlNowNextBanner");
-    if(String(curView) !== "timeline"){
-      if(host) host.classList.add("hidden");
-      return;
-    }
-    if(host) host.classList.remove("hidden")
-;
-    const dayEl = document.getElementById("tlNNDayLabel");
-    const lineEl = document.getElementById("tlNNEventLine");
-    const mainBtn = document.getElementById("tlNNMain");
-    if(!host || !dayEl || !lineEl || !mainBtn) return;
-
-    const now = new Date();
-    const todayKey = todayYMD();
-    const targetKey = (window.__tlNowNextDayOffset === 1) ? __addDays(todayKey, 1) : todayKey;
-    const isTomorrow = (window.__tlNowNextDayOffset === 1);
-
-    dayEl.textContent = (isTomorrow ? "MAÑANA · " : "HOY · ") + __fmtDayLine(targetKey);
-
-    const r = __tlComputeNowNextForDate(targetKey);
-
-    // default: no scroll target
-    host.dataset.tlKey = "";
-
-    if(r.status === "none"){
-      lineEl.textContent = isTomorrow ? "No hay eventos mañana" : "No hay eventos hoy";
-      host.classList.remove("hidden");
-      return;
-    }
-    if(r.status === "done"){
-      lineEl.textContent = "No hay más eventos hoy";
-      host.classList.remove("hidden");
-      return;
-    }
-
-    const title = String(r.item?.title || r.item?.type || "Evento").trim();
-    const t = String(r.item?.time||"").trim();
-    lineEl.innerHTML = `${r.label}: <small>${escapeHtml(t)}</small> <span class="truncate">${escapeHtml(title)}</span>`;
-    host.dataset.tlKey = String(r.key||"");
-
-    host.classList.remove("hidden");
-  }catch{}
-}
-
-function __tlBindNowNextBannerOnce(){
-  const host = document.getElementById("tlNowNextBanner");
-  if(!host || host.__nnBound) return;
-  host.__nnBound = true;
-
-  const toggle = document.getElementById("tlNNToggle");
-  const summary = document.getElementById("tlNNSummary");
-  const main = document.getElementById("tlNNMain");
-
-  if(toggle){
-    toggle.onclick = (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      window.__tlNowNextDayOffset = (window.__tlNowNextDayOffset === 1) ? 0 : 1;
-      __tlUpdateNowNextBanner();
-    };
-  }
-
-
-
-  if(summary){
-    summary.onclick = (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      const off = (window.__tlNowNextDayOffset === 1) ? 1 : 0;
-      __tlOpenSummaryModal(off===1 ? "tomorrow" : "today");
-    };
-  }
-  if(main){
-    main.onclick = (e)=>{
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      const key = String(host.dataset.tlKey||"");
-      if(!key) return;
-      // Scroll and highlight without opening sheet
-      try{
-        const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
-        const el = els.find(x => (x.getAttribute("data-tl-key")||"") === key);
-        if(!el) return;
-        scrollToElWithOffset(el);
-        el.classList.add("nnFlash");
-        setTimeout(()=>{ try{ el.classList.remove("nnFlash"); }catch{} }, 850);
-      }catch{}
-    };
-  }
-}
-/* ---------------- /Timeline NOW/NEXT banner (V207) ---------------- */
-
-/* ---------------- Timeline Day Summary modal + global search (V208) ---------------- */
-function __tlDateKeyLocal(d){
-  try{
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const da = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${da}`;
-  }catch{
-    return "";
-  }
-}
-function __tlNorm(s){
-  try{
-    return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-  }catch{
-    return String(s||"").toLowerCase().trim();
-  }
-}
-function __tlItemKey(it){
-  try{ return String(it?.key || it?.tlKey || it?.id || ""); }catch{ return ""; }
-}
-function __tlItemType(it){
-  try{
-    if(it?.type) return String(it.type);
-    if(it?.kind) return String(it.kind);
-    if(it?.legId) return "Transporte";
-    if(it?.stayId) return "Alojamiento";
-    if(it?.actId) return "Actividad";
-    return "Evento";
-  }catch{
-    return "Evento";
-  }
-}
-function __tlItemTime(it){
-  try{
-    const t = String(it?.time || it?.startTime || "").trim();
-    const end = String(it?.arriveTime || it?.endTime || it?.finishTime || "").trim();
-    if(/^\d{2}:\d{2}$/.test(t) && /^\d{2}:\d{2}$/.test(end) && end !== t) return `${t}–${end}`;
-    return (/^\d{2}:\d{2}$/.test(t)) ? t : "—";
-  }catch{
-    return "—";
-  }
-}
-function __tlItemTitle(it){
-  try{
-    if(it?.title) return String(it.title);
-    if(it?.name) return String(it.name);
-    const from = it?.from ? String(it.from) : "";
-    const to = it?.to ? String(it.to) : "";
-    if(from || to) return [from,to].filter(Boolean).join(" → ");
-    return "Evento";
-  }catch{
-    return "Evento";
-  }
-}
-function __tlItemSub(it){
-  try{
-    if(it?.subtitle) return String(it.subtitle);
-    const bits=[];
-    if(it?.from && it?.to) bits.push(`${it.from} → ${it.to}`);
-    if(it?.city) bits.push(String(it.city));
-    if(it?.place) bits.push(String(it.place));
-    return bits.filter(Boolean).join(" · ");
-  }catch{
-    return "";
-  }
-}
-function __tlScrollFlashByKey(key){
-  try{
-    const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
-    const el = els.find(x => (x.getAttribute("data-tl-key")||"") === String(key||""));
-    if(!el) return;
-    scrollToElWithOffset(el);
-    el.classList.add("nnFlash");
-    setTimeout(()=>{ try{ el.classList.remove("nnFlash"); }catch{} }, 850);
-  }catch{}
-}
-
-function __tlGetTimelineItems(){
-  try{
-    const items = Array.isArray(window.__tlLastFilteredItems) ? window.__tlLastFilteredItems : [];
-    // exclude notes & separators if present
-    return items.filter(it => it && !it.isNote && !it.isSeparator);
-  }catch{
-    return [];
-  }
-}
-
-function __tlItemsForDay(dateKey){
-  const items = __tlGetTimelineItems().filter(it => String(it?.date||"") === String(dateKey||""));
-  const timed = items.filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it?.time||"")));
-  timed.sort((a,b)=>{
-    const da = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(a) : null;
-    const db = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(b) : null;
-    return (da?.getTime()||0)-(db?.getTime()||0);
-  });
-  return timed;
-}
-
-function __tlPrettyDayTag(dateKey, mode){
-  try{
-    const [y,m,d] = String(dateKey||"").split("-").map(Number);
-    const dt = new Date(y,(m||1)-1,d||1);
-    const wd = dt.toLocaleDateString("es-ES",{weekday:"short"}).replace(/\./g,"").trim();
-    const pretty = dt.toLocaleDateString("es-ES",{day:"2-digit",month:"short"}).replace(/\./g,"").trim();
-    const top = (mode==="tomorrow") ? "MAÑANA" : "HOY";
-    return `${top} · ${wd} ${pretty}`;
-  }catch{
-    return (mode==="tomorrow"?"MAÑANA":"HOY") + " · " + String(dateKey||"");
-  }
-}
-
-function __tlRenderSummary(dayMode){
-  const list = document.getElementById("tlSumList");
-  const q = __tlNorm(document.getElementById("tlSumSearch")?.value || "");
-  if(!list) return;
-
-  const now = new Date();
-  const dkToday = __tlDateKeyLocal(now);
-  const dkTomorrow = __tlDateKeyLocal(new Date(now.getTime()+86400000));
-  const activeKey = (dayMode==="tomorrow") ? dkTomorrow : dkToday;
-
-  const all = __tlGetTimelineItems();
-
-  if(q){
-    const results=[];
-    for(const it of all){
-      const hay = __tlNorm([__tlItemTitle(it), __tlItemSub(it), it?.from, it?.to].filter(Boolean).join(" "));
-      if(!hay) continue;
-      const idx = hay.indexOf(q);
-      if(idx !== -1){
-        results.push({it, idx});
-      }
-    }
-    results.sort((a,b)=>{
-      const ab = (a.idx===0?0:(a.idx<5?1:2));
-      const bb = (b.idx===0?0:(b.idx<5?1:2));
-      if(ab!==bb) return ab-bb;
-      if(a.idx!==b.idx) return a.idx-b.idx;
-      const da = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(a.it) : null;
-      const db = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(b.it) : null;
-      return (da?.getTime()||0)-(db?.getTime()||0);
-    });
-
-    if(!results.length){
-      list.innerHTML = `<div class="text-sm font-semibold text-slate-500 px-2 py-6 text-center">No se han encontrado resultados.</div>`;
-      return;
-    }
-
-    list.innerHTML = results.slice(0,80).map(({it})=>{
-      const key = __tlItemKey(it) || (typeof __nnMakeKey === "function" ? __nnMakeKey(it) : "");
-      const dt = (typeof getEventStartDateTime === "function") ? getEventStartDateTime(it) : null;
-      let dayTag = String(it?.date||"");
-      try{
-        if(dt){
-          const wd = dt.toLocaleDateString("es-ES",{weekday:"short"}).replace(/\./g,"").trim();
-          const pretty = dt.toLocaleDateString("es-ES",{day:"2-digit",month:"short"}).replace(/\./g,"").trim();
-          dayTag = `${wd} ${pretty}`;
-        }
-      }catch{}
-      const time = __tlItemTime(it);
-      const type = __tlItemType(it);
-      const title = escapeHtml(__tlItemTitle(it));
-      const sub = escapeHtml(__tlItemSub(it));
-      return `
-        <button class="tlSumRow tap w-full text-left px-2 py-2 rounded-xl hover:bg-slate-50" data-tl-key="${escapeHtml(key)}">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <div class="text-[11px] font-extrabold text-slate-500">${escapeHtml(dayTag)}${time!=="—" ? ` · ${escapeHtml(time)}` : ""} · ${escapeHtml(type)}</div>
-              <div class="text-sm font-extrabold text-slate-900 truncate">${title}</div>
-              ${sub?`<div class="text-xs font-semibold text-slate-600 truncate">${sub}</div>`:""}
-            </div>
-            <div class="text-slate-400 font-black">›</div>
-          </div>
-        </button>`;
-    }).join("");
-    return;
-  }
-
-  const dayItems = __tlItemsForDay(activeKey);
-  if(!dayItems.length){
-    list.innerHTML = `<div class="text-sm font-semibold text-slate-500 px-2 py-6 text-center">${dayMode==="tomorrow" ? "No hay eventos para mañana." : "No hay eventos para hoy."}</div>`;
-    return;
-  }
-
-  list.innerHTML = dayItems.map((it)=>{
-    const key = __tlItemKey(it) || (typeof __nnMakeKey === "function" ? __nnMakeKey(it) : "");
-    const time = __tlItemTime(it);
-    const type = __tlItemType(it);
-    const title = escapeHtml(__tlItemTitle(it));
-    const sub = escapeHtml(__tlItemSub(it));
-    return `
-      <button class="tlSumRow tap w-full text-left px-2 py-2 rounded-xl hover:bg-slate-50" data-tl-key="${escapeHtml(key)}">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-[11px] font-extrabold text-slate-500">${escapeHtml(time)} · ${escapeHtml(type)}</div>
-            <div class="text-sm font-extrabold text-slate-900 truncate">${title}</div>
-            ${sub?`<div class="text-xs font-semibold text-slate-600 truncate">${sub}</div>`:""}
-          </div>
-          <div class="text-slate-400 font-black">›</div>
-        </div>
-      </button>`;
-  }).join("");
-}
-
-function __tlOpenSummaryModal(dayMode){
-  const mode = (dayMode==="tomorrow") ? "tomorrow" : "today";
-  window.__tlSummaryMode = mode;
-
-  const now = new Date();
-  const dkToday = __tlDateKeyLocal(now);
-  const dkTomorrow = __tlDateKeyLocal(new Date(now.getTime()+86400000));
-  const activeKey = (mode==="tomorrow") ? dkTomorrow : dkToday;
-
-  const headerTag = __tlPrettyDayTag(activeKey, mode);
-
-  const body = `
-    <div class="w-full">
-      <div class="flex items-center justify-between gap-3">
-        <div id="tlSummaryTabs" class="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
-          <button id="tlSumTabToday" class="tap px-3 py-2 rounded-xl border border-transparent ${mode==="today"?"isActive":""}">HOY</button>
-          <button id="tlSumTabTomorrow" class="tap px-3 py-2 rounded-xl border border-transparent ${mode==="tomorrow"?"isActive":""}">MAÑANA</button>
-        </div>
-        <div id="tlSumDayTag" class="text-xs font-extrabold text-slate-500 truncate">${escapeHtml(headerTag)}</div>
-      </div>
-
-      <div class="mt-3">
-        <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
-          <div class="text-slate-400 font-black">🔍</div>
-          <input id="tlSumSearch" class="w-full bg-transparent outline-none text-slate-900 font-semibold" placeholder="Buscar evento, hotel, museo, vuelo…"/>
-        </div>
-      </div>
-
-      <div id="tlSumList" class="mt-3 max-h-[60vh] overflow-auto -mx-1 px-1"></div>
-    </div>
-  `;
-  showModal("Resumen", body, []);
-
-  const tabToday = document.getElementById("tlSumTabToday");
-  const tabTomorrow = document.getElementById("tlSumTabTomorrow");
-  const dayTagEl = document.getElementById("tlSumDayTag");
-  const search = document.getElementById("tlSumSearch");
-  const list = document.getElementById("tlSumList");
-
-  function setMode(m){
-    window.__tlSummaryMode = m;
-    try{ tabToday.classList.toggle("isActive", m==="today"); }catch{}
-    try{ tabTomorrow.classList.toggle("isActive", m==="tomorrow"); }catch{}
-    try{
-      const now = new Date();
-      const dkT = __tlDateKeyLocal(now);
-      const dkM = __tlDateKeyLocal(new Date(now.getTime()+86400000));
-      const key = (m==="tomorrow") ? dkM : dkT;
-      dayTagEl.textContent = __tlPrettyDayTag(key, m);
-    }catch{}
-    __tlRenderSummary(m);
-  }
-
-  tabToday?.addEventListener("click",(e)=>{ try{e.preventDefault();e.stopPropagation();}catch{} setMode("today"); }, true);
-  tabTomorrow?.addEventListener("click",(e)=>{ try{e.preventDefault();e.stopPropagation();}catch{} setMode("tomorrow"); }, true);
-
-  search?.addEventListener("input", ()=>{ __tlRenderSummary(window.__tlSummaryMode||"today"); });
-
-  list?.addEventListener("click",(e)=>{
-    const row = e.target && e.target.closest ? e.target.closest(".tlSumRow") : null;
-    if(!row) return;
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    const key = row.getAttribute("data-tl-key")||"";
-    closeModal();
-    if(key) __tlScrollFlashByKey(key);
-  }, true);
-
-  __tlRenderSummary(mode);
-  try{ search && search.focus(); }catch{}
-}
-
-function __tlBindSummaryAccessOnce(){
-  if(document.__tlSumBound) return;
-  document.__tlSumBound = true;
-  // handled by banner summary button onclick (bound in __tlBindNowNextBannerOnce)
-  // This is just safety if banner is re-rendered without binding:
-  document.addEventListener("click",(e)=>{
-    const btn = e.target && e.target.closest ? e.target.closest("#tlNNSummary") : null;
-    if(!btn) return;
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    const off = (window.__tlNowNextDayOffset === 1) ? 1 : 0;
-    __tlOpenSummaryModal(off===1 ? "tomorrow" : "today");
-  }, true);
-}
-try{ __tlBindSummaryAccessOnce(); }catch{}
-/* ---------------- /Timeline Day Summary modal + global search (V208) ---------------- */
-
-
 
 
 function getStickyOffset() {
@@ -8952,10 +8433,6 @@ box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
   renderDailyNotes();
 
   try{ __refreshTimelineNotesBadge(); }catch{}
-
-// V207: update NOW/NEXT banner after each timeline render
-try{ __tlBindNowNextBannerOnce(); }catch{}
-try{ __tlUpdateNowNextBanner(); }catch{}
 }
 
 function renderDailyNotes() {
