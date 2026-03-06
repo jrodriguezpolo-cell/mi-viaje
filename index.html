@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V217C_REMOVE_SECTION_STATE_TEXT_BADGES</title>
+<title>V218_PREFERENCES_HERRAMIENTAS_FOUNDATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1160,6 +1160,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="toolsLoad">
             Cargar
+          </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnPrefs">
+            Preferencias
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
@@ -4329,6 +4332,219 @@ function closeModal() {
 }
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
+
+/* ================= V218: Preferencias (Herramientas) ================= */
+function __ensurePreferences() {
+  state.preferences = state.preferences || {};
+  const p = state.preferences;
+  p.group = p.group || { adults: 2, kids: 0, kidsAges: "", pace: "Normal" };
+  p.tastes = Array.isArray(p.tastes) ? p.tastes : [];
+  p.restrictions = p.restrictions || { text: "", flags: {} };
+  p.restrictions.text = p.restrictions.text || "";
+  p.restrictions.flags = p.restrictions.flags || {};
+  const f = p.restrictions.flags;
+  for (const k of ["mobility","stroller","allergies","avoidLayovers","avoidLongWalks"]) {
+    if (typeof f[k] !== "boolean") f[k] = false;
+  }
+  p.citiesVisited = Array.isArray(p.citiesVisited) ? p.citiesVisited : [];
+  return p;
+}
+
+function __normFold(s){
+  try{ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
+  catch{ return (s||"").toString().trim().toLowerCase(); }
+}
+
+function openPreferencesModal(){
+  const p = __ensurePreferences();
+  const tastesAll = [
+    "Naturaleza","Cultura","Gastronomía","Playa","Ciudad","Aventura","Relax","Roadtrip"
+  ];
+  const paceAll = ["Relax","Normal","Intenso"];
+  const restrChips = [
+    ["mobility","Movilidad reducida"],
+    ["stroller","Carrito"],
+    ["allergies","Alergias"],
+    ["avoidLayovers","Evitar escalas"],
+    ["avoidLongWalks","Evitar caminatas largas"]
+  ];
+
+  const tastesHtml = tastesAll.map(t=>{
+    const on = p.tastes.includes(t);
+    return `<button type="button" class="prefChip tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}" data-taste="${escapeHtml(t)}">${escapeHtml(t)}</button>`;
+  }).join(" ");
+
+  const paceHtml = paceAll.map(v=>{
+    const on = (p.group.pace||"Normal")===v;
+    return `<button type="button" class="prefPace tap px-3 py-2 rounded-full border text-sm font-extrabold ${on?"bg-emerald-600 text-white border-emerald-600":"bg-white border-slate-200 text-slate-800"}" data-pace="${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+  }).join(" ");
+
+  const restrHtml = restrChips.map(([k,label])=>{
+    const on = !!p.restrictions.flags[k];
+    return `<button type="button" class="prefRestr tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}" data-restr="${escapeHtml(k)}">${escapeHtml(label)}</button>`;
+  }).join(" ");
+
+  const cities = (p.citiesVisited||[]).map((c,i)=>{
+    return `<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-sm">
+      <span class="truncate max-w-[180px]">${escapeHtml(c)}</span>
+      <button type="button" class="prefCityDel tap px-2 py-1 rounded-full hover:bg-slate-200" data-city-idx="${i}">✕</button>
+    </span>`;
+  }).join(" ") || `<div class="text-sm text-slate-500">Aún no hay ciudades.</div>`;
+
+  const body = `
+  <div class="space-y-5">
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Grupo</div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Adultos</div>
+          <input id="prefAdults" inputmode="numeric" type="number" min="0" class="w-full h-10 px-3 rounded-xl border border-slate-200" value="${Number(p.group.adults||0)}" />
+        </label>
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Niños</div>
+          <input id="prefKids" inputmode="numeric" type="number" min="0" class="w-full h-10 px-3 rounded-xl border border-slate-200" value="${Number(p.group.kids||0)}" />
+        </label>
+      </div>
+      <label class="block mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Edades niños (opcional)</div>
+        <input id="prefKidsAges" type="text" class="w-full h-10 px-3 rounded-xl border border-slate-200" placeholder="Ej: 3, 7" value="${escapeHtml(p.group.kidsAges||"")}" />
+      </label>
+      <div class="mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-2">Ritmo de viaje</div>
+        <div class="flex flex-wrap gap-2" id="prefPaceWrap">${paceHtml}</div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Gustos</div>
+      <div class="text-xs text-slate-500 mt-1">Toca para seleccionar</div>
+      <div class="mt-3 flex flex-wrap gap-2" id="prefTastesWrap">${tastesHtml}</div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Restricciones</div>
+      <div class="mt-3 flex flex-wrap gap-2" id="prefRestrWrap">${restrHtml}</div>
+      <label class="block mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Notas</div>
+        <textarea id="prefRestrText" class="w-full min-h-[90px] p-3 rounded-xl border border-slate-200 text-[16px]" placeholder="Ej: movilidad, alergias, evitar caminatas largas...">${escapeHtml(p.restrictions.text||"")}</textarea>
+      </label>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Ciudades visitadas</div>
+      <div class="text-xs text-slate-500 mt-1">Base manual (automatización más adelante)</div>
+      <div class="mt-3 flex flex-wrap gap-2" id="prefCitiesWrap">${cities}</div>
+      <div class="mt-3 flex gap-2">
+        <input id="prefCityInput" type="text" class="flex-1 h-10 px-3 rounded-xl border border-slate-200" placeholder="Añadir ciudad" />
+        <button type="button" id="prefCityAdd" class="tap px-4 h-10 rounded-xl bg-slate-900 text-white font-extrabold">Añadir</button>
+      </div>
+    </div>
+
+  </div>`;
+
+  const btnSave = document.createElement('button');
+  btnSave.className = 'tap px-4 py-2 rounded-xl bg-emerald-600 text-white font-extrabold';
+  btnSave.textContent = 'Guardar';
+  btnSave.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); __savePreferencesFromModal(); };
+
+  const btnClose = document.createElement('button');
+  btnClose.className = 'tap px-4 py-2 rounded-xl border border-slate-200 bg-white font-extrabold';
+  btnClose.textContent = 'Cerrar';
+  btnClose.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); };
+
+  showModal('Preferencias', body, [btnClose, btnSave]);
+
+  // bind chips
+  const tastesWrap = $("prefTastesWrap");
+  if (tastesWrap) tastesWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefChip');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const t = b.getAttribute('data-taste')||'';
+    const pp = __ensurePreferences();
+    const i = pp.tastes.indexOf(t);
+    if(i>=0) pp.tastes.splice(i,1); else pp.tastes.push(t);
+    // toggle visual
+    b.classList.toggle('bg-slate-900');
+    b.classList.toggle('text-white');
+    b.classList.toggle('border-slate-900');
+    b.classList.toggle('bg-white');
+    b.classList.toggle('text-slate-800');
+    b.classList.toggle('border-slate-200');
+  });
+
+  const paceWrap = $("prefPaceWrap");
+  if (paceWrap) paceWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefPace');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const v = b.getAttribute('data-pace')||'Normal';
+    const pp = __ensurePreferences();
+    pp.group.pace = v;
+    // update visuals
+    paceWrap.querySelectorAll('.prefPace').forEach(x=>{
+      const on = (x.getAttribute('data-pace')||'')===v;
+      x.className = `prefPace tap px-3 py-2 rounded-full border text-sm font-extrabold ${on?"bg-emerald-600 text-white border-emerald-600":"bg-white border-slate-200 text-slate-800"}`;
+    });
+  });
+
+  const restrWrap = $("prefRestrWrap");
+  if (restrWrap) restrWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefRestr');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const k = b.getAttribute('data-restr')||'';
+    const pp = __ensurePreferences();
+    pp.restrictions.flags[k] = !pp.restrictions.flags[k];
+    const on = !!pp.restrictions.flags[k];
+    b.className = `prefRestr tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}`;
+  });
+
+  const citiesWrap = $("prefCitiesWrap");
+  if (citiesWrap) citiesWrap.addEventListener('click', (ev)=>{
+    const d = ev.target.closest('.prefCityDel');
+    if(!d) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const idx = parseInt(d.getAttribute('data-city-idx')||'-1',10);
+    const pp = __ensurePreferences();
+    if (idx>=0 && idx<pp.citiesVisited.length) pp.citiesVisited.splice(idx,1);
+    // re-open to refresh list without risking partial DOM state
+    openPreferencesModal();
+  });
+
+  const addBtn = $("prefCityAdd");
+  const addInput = $("prefCityInput");
+  const addFn = (ev)=>{
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    const v = (addInput?.value||"").trim();
+    if(!v) return;
+    const pp = __ensurePreferences();
+    // avoid duplicates (accent-fold)
+    const nv = __normFold(v);
+    if (!pp.citiesVisited.some(c=>__normFold(c)===nv)) pp.citiesVisited.push(v);
+    if (addInput) addInput.value = "";
+    openPreferencesModal();
+  };
+  if (addBtn) addBtn.onclick = addFn;
+  if (addInput) addInput.addEventListener('keydown', (ev)=>{ if(ev.key==="Enter"){ addFn(ev);} });
+}
+
+function __savePreferencesFromModal(){
+  const p = __ensurePreferences();
+  const adults = parseInt($("prefAdults")?.value||"0",10); 
+  const kids = parseInt($("prefKids")?.value||"0",10);
+  p.group.adults = isFinite(adults)? Math.max(0,adults):0;
+  p.group.kids = isFinite(kids)? Math.max(0,kids):0;
+  p.group.kidsAges = ($("prefKidsAges")?.value||"").trim();
+  p.restrictions.text = ($("prefRestrText")?.value||"").trim();
+  // pace already set via chips; ensure default
+  p.group.pace = p.group.pace || "Normal";
+  saveState();
+  toast("Preferencias guardadas");
+  closeModal();
+}
+
 /* ================= V208: Timeline micro-summary menu (modal) =================
    - Adds a menu button (≡) in the existing Cronograma subSectionHeader.
    - Opens a micro-summary modal with Hoy / Mañana and global search.
@@ -6713,7 +6929,13 @@ let state = {
   scenario: "A",
   displayCurrency: "EUR",
   scenarios: { A: emptyScenario(), B: emptyScenario() },
-  aiPick: { cities: [], items: [] } // chosen topics
+  aiPick: { cities: [], items: [] }, // chosen topics
+  preferences: {
+    group: { adults: 2, kids: 0, kidsAges: "", pace: "Normal" },
+    tastes: [],
+    restrictions: { text: "", flags: { mobility: false, stroller: false, allergies: false, avoidLayovers: false, avoidLongWalks: false } },
+    citiesVisited: []
+  }
 };
 
 function loadState() {
@@ -10745,6 +10967,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const sheet = $("toolsSheet");
   const btnOpen = $("btnTools");
   const btnClose = $("toolsClose");
+  const btnPrefs = $("btnPrefs");
 
   function openTools(){
     if (!backdrop || !sheet) return;
@@ -10847,6 +11070,8 @@ $("btnTrips").addEventListener("click", openTripsModal);
   document.addEventListener("keydown", (e)=>{
     if (e.key === "Escape" && backdrop && !backdrop.classList.contains("hidden")) closeTools();
   });
+
+  if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
 })();
 
 const __tn = $("timelineNext");
