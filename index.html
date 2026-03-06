@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V216B_TRANSPORT_TIMELINE_ARRIVAL_REFRESH_FIX</title>
+<title>V216C_TRANSPORT_SUMMARY_LAYOUT_UNCLIP_TIMES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -880,7 +880,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216B_TRANSPORT_TIMELINE_ARRIVAL_REFRESH_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V216C_TRANSPORT_SUMMARY_LAYOUT_UNCLIP_TIMES</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3756,9 +3756,15 @@ function legSummaryLinesHTML(leg, opts){
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const parts = buildLegSummaryParts(leg);
+
+  // V216C: In timeline, DO NOT truncate the meta line (date + depart + arrive + duration).
+  const metaCls = (opts.context==="timeline")
+    ? "text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug"
+    : "text-xs text-slate-600 mt-0.5 truncate";
+
   return `
     <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>
-    <div class="text-xs text-slate-600 mt-0.5 truncate">${parts.metaHTML}</div>
+    <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}`;
 }
 function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
@@ -8663,30 +8669,12 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    // V216B: robust arrival fields + robust duration (TZ first, fallback).
-    const depDate = String(leg.date || "9999-99-99");
-    const depTime = String(leg.time || "");
-    const arrDateRaw = String(leg.arriveDate || leg.dateIn || "");
-    const arrTimeRaw = String(leg.arriveTime || leg.timeIn || "");
-    const arrDate = (!arrDateRaw && arrTimeRaw && depDate && depDate !== "9999-99-99") ? depDate : arrDateRaw;
-    const arrTime = arrTimeRaw;
-
-    // Prefer stored offsets; fallback to auto-derived offsets from city + date/time
-    const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
-    const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   (arrDate || depDate), arrTime);
-
-    let dur = "";
-    if (depDate && depTime && arrDate && arrTime) {
-      dur = calcDurationTextTZ(depDate, depTime, arrDate, arrTime, off0, off1) || "";
-      if (!dur) dur = calcDurationText(depDate, depTime, arrDate, arrTime) || "";
-    }
-
     items.push({
-      date: (depDate || "9999-99-99"),
-      time: (depTime || ""),
-      arriveDate: (arrDate || ""),
-      arriveTime: (arrTime || ""),
-      duration: dur,
+      date: (leg.date || "9999-99-99"),
+      time: (leg.time || ""),
+      arriveDate: (leg.arriveDate || ""),
+      arriveTime: (leg.arriveTime || ""),
+      duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
       type: "Trayecto",
       title: `${leg.from || "—"} → ${leg.to || "—"}`,
       cost: parseMoney(leg.cost),
@@ -8924,12 +8912,13 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             </div>
           </div>
 
-          <div class="shrink-0 flex items-center gap-2">
+          <div class="shrink-0 flex flex-col items-end gap-1">
+            <div class="flex items-center gap-2">
+              ${filesIconHTML || ""}
+              ${tlCheckbox ? tlCheckbox : ""}
+              ${notesBtn ? notesBtn : ""}
+            </div>
             ${rtBadgeHTML || ""}
-
-            ${filesIconHTML || ""}
-            ${tlCheckbox ? tlCheckbox : ""}
-            ${notesBtn ? notesBtn : ""}
           </div>
         </div>
 
