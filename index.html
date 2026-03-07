@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218D1_ACCOMMODATION_UX_REFINEMENT_FIX</title>
+<title>V218C_RESTORE_STABLE_BASE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -813,31 +813,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .tlPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 .rtPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
-/* V218D: Stay UX refinement in timeline */
-.tlStayWrap{
-  position: relative;
-  padding-bottom: 18px; /* room for bottom-right badge */
-}
-.tlStayWrap.tlStayCompact{
-  padding-bottom: 6px;
-}
-.tlStayWrap.tlStayCompact .text-xs{
-  display:none;
-}
-.tlStayBadge{
-  position: absolute;
-  right: 8px;
-  bottom: 6px;
-  border: 1px solid rgba(148,163,184,0.45);
-  background: rgba(255,255,255,0.95);
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-.tlStayBadge:active{ transform: scale(0.98); }
-
 
 
 /* V181: hide legacy Daily Notes accordion (replaced by FAB) */
@@ -933,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218D1_ACCOMMODATION_UX_REFINEMENT_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218C_RESTORE_STABLE_BASE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2314,78 +2289,6 @@ try{
       const id = btn.getAttribute("data-rt-jump") || "";
       if(!id) return;
       try{ window.__mvScrollToLegSummary(id); }catch{}
-    }, { capture: true });
-  }
-}catch{}
-
-
-// V218D: Stay badge jump (Entrada <-> Salida) within timeline, without opening sheet
-try{
-  if(!window.__mvScrollToStaySummary){
-    window.__mvScrollToStaySummary = function(stayId, iso){
-      stayId = String(stayId||"");
-      iso = String(iso||"").trim();
-      if(!stayId || !iso) return;
-
-      // Ensure we are in timeline view
-      try{ if(typeof setView==="function") setView("timeline"); }catch{}
-
-      // Jump/scroll to the day separator
-      try{
-        if(typeof scrollToDateSep==="function"){
-          scrollToDateSep("timeline", iso);
-        }
-      }catch{}
-
-      // Highlight the target stay summary (best effort)
-      setTimeout(()=>{
-        try{
-          const esc = (s)=>{ try{ return CSS && CSS.escape ? CSS.escape(String(s)) : String(s).replace(/"/g,'\\\"'); }catch{ return String(s).replace(/"/g,'\\\"'); } };
-          const sid = esc(stayId);
-          const d = esc(iso);
-          const sel = `.timelineItem[data-date="${d}"][data-tl-jump-type="stay"][data-tl-jump-id="${sid}"]`;
-          const el = document.querySelector(sel) || document.querySelector(`.timelineItem[data-tl-jump-type="stay"][data-tl-jump-id="${sid}"]`);
-          if(!el) return;
-
-          // Ensure visible (in case of delayed layout)
-          try{
-            const ms = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
-            let offset = 0;
-            try{ if(typeof getStickyOffset==="function") offset = Number(getStickyOffset())||0; }catch{}
-            const msRect = (ms && ms.getBoundingClientRect) ? ms.getBoundingClientRect() : {top:0};
-            const r = el.getBoundingClientRect();
-            const top = (ms.scrollTop || 0) + (r.top - msRect.top) - (offset + 8);
-            if(ms && typeof ms.scrollTo==="function") ms.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-          }catch{}
-
-          el.classList.add("msFlash");
-          setTimeout(()=>{ try{ el.classList.remove("msFlash"); }catch{} }, 900);
-        }catch{}
-      }, 120);
-    };
-  }
-
-  if(!document.__stayBadgeJumpDelegationBound){
-    document.__stayBadgeJumpDelegationBound = true;
-    document.addEventListener("click", (e)=>{
-      const btn = e.target && e.target.closest ? e.target.closest("[data-stay-jump]") : null;
-      if(!btn) return;
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      const iso = btn.getAttribute("data-stay-jump") || "";
-      const stayId = btn.getAttribute("data-stay-id") || "";
-      if(!iso || !stayId) return;
-      try{ window.__mvScrollToStaySummary(stayId, iso); }catch{}
-    }, { capture: true });
-    document.addEventListener("keydown", (e)=>{
-      const btn = e.target && e.target.closest ? e.target.closest("[data-stay-jump]") : null;
-      if(!btn) return;
-      const key = e.key || e.code || "";
-      if(key !== "Enter" && key !== " " && key !== "Spacebar") return;
-      try{ e.preventDefault(); e.stopPropagation(); }catch{}
-      const iso = btn.getAttribute("data-stay-jump") || "";
-      const stayId = btn.getAttribute("data-stay-id") || "";
-      if(!iso || !stayId) return;
-      try{ window.__mvScrollToStaySummary(stayId, iso); }catch{}
     }, { capture: true });
   }
 }catch{}
@@ -3969,6 +3872,3510 @@ function legSummaryLinesHTML(leg, opts){
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}`;
 }
+function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
+  if (jumpType === "leg" && modelItem) {
+    const parts = buildLegSummaryParts(modelItem);
+    return {
+      title: parts.title,
+      metaHTML: parts.metaHTML,
+      placeLineHTML: parts.placeLineHTML,
+      metaClass: "text-xs text-slate-600 mt-0.5 truncate",
+      indicatorsHTML: "" // timeline uses notesBtn + optional file icon in right rail
+    };
+  }
+  return {
+    title: it.title,
+    metaHTML: dateLineHTML,
+    placeLineHTML: "",
+    metaClass: "text-xs text-slate-600 mt-0.5",
+    indicatorsHTML: ""
+  };
+}
+
+/* -------------------------- Timeline jump --------------------------- */
+function todayYMD() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+
+function __tlRelForDate(iso){
+  const d = String(iso||"").trim();
+  const today = (typeof todayYMD==="function") ? todayYMD() : "";
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !today) return "";
+  if(d < today) return "past";
+  if(d > today) return "future";
+  return "today";
+}
+
+
+function __sectionVisualClass(kind, obj, dateKey){
+  // Mirrors timeline visual classes so sections feel identical.
+  const k = String(kind||"");
+  const dk = String(dateKey||"").trim();
+  const st = (k==="act" && typeof computeDoneState==="function") ? computeDoneState(obj)
+           : (typeof computeDoneStateGeneric==="function") ? computeDoneStateGeneric(obj, dk)
+           : {done:false,auto:false,skipped:false};
+  const isToday = (dk && (typeof todayKey==="function") && dk === todayKey());
+  let visual = "";
+  if (st.skipped) visual = " tl-skipped";
+  else if (isToday && st.done) visual = " tl-today-done";
+  else if (isToday && !st.done) visual = " tl-today";
+  else if (st.auto && st.done) visual = " tl-auto-done";
+  else if (dk && (typeof isFuture==="function") && isFuture(dk)) visual = " tl-future";
+  const pastCls = (dk && (typeof isPast==="function") && isPast(dk)) ? " past" : "";
+  return { st, visualClass: (visual + pastCls) };
+}
+function __timeBadgeHTML(iso, hhmm){
+  const t = String(hhmm||"").trim();
+  if(!/^\d{2}:\d{2}$/.test(t)) return "";
+  const rel = __tlRelForDate(iso);
+  const cls = `tlTimeBadge ${rel==="today"?"tlTimeToday":(rel==="future"?"tlTimeFuture":(rel==="past"?"tlTimePast":""))}`;
+  return `<span class="${cls}">${escapeHtml(t)}</span>`;
+}
+
+function getStickyOffset() {
+  const header = document.getElementById("appHeader") || document.querySelector("header");
+  const totalBar = document.getElementById("stickyTotalBar");
+  const controls = document.getElementById("timelineControlsRow");
+
+    const subHeader = document.getElementById("subSectionHeader");
+// Prefer measured vars (kept in sync by syncTopStackHeights)
+  const root = document.documentElement;
+  const varHeader = parseFloat(getComputedStyle(root).getPropertyValue("--app-header-h")) || 0;
+  const varTotals = parseFloat(getComputedStyle(root).getPropertyValue("--sticky-totals-h")) || 0;
+
+  let offset = 0;
+  offset += varHeader || (header ? header.getBoundingClientRect().height : 0);
+  offset += varTotals || (totalBar ? totalBar.getBoundingClientRect().height : 0);
+
+  // Subsection header (fixed per-view)
+  if (subHeader && !subHeader.classList.contains("hidden")) {
+    offset += subHeader.getBoundingClientRect().height;
+  }
+offset += 12; // margin
+  return offset;
+}
+
+
+function calibrateViewStartGap(){
+  const ms = $("mainScroll");
+  const totals = $("stickyTotalBar");
+  const viewEl = $("view-" + (activeView || ""));
+  if (!ms || !totals || !viewEl) return;
+
+  // Only calibrate when user is at the top (avoid messing with contextual scroll)
+  if (ms.scrollTop > 2) return;
+
+  // Measure the real visual gap between Totales bottom and current view start
+  const totalsBottom = totals.getBoundingClientRect().bottom;
+  const viewTop = viewEl.getBoundingClientRect().top;
+
+  const gap = Math.max(0, Math.round(viewTop - totalsBottom));
+  document.documentElement.style.setProperty("--view-gap-fix", gap + "px");
+}
+
+function syncTopStackHeights(){
+  const hdr = $("appHeader");
+  const totals = $("stickyTotalBar");
+  const nav = $("bottomNav");
+  const ms = $("mainScroll");
+
+  const headerH = hdr ? hdr.getBoundingClientRect().height : 0;
+  const totalsH = totals ? totals.getBoundingClientRect().height : 0;
+  const navH = nav ? nav.getBoundingClientRect().height : 0;
+
+  // Use the real bottom edge of the fixed totals bar as the single source of truth.
+  // This avoids first-render discrepancies from borders/safe-area/transforms.
+  const topStackH = totals ? totals.getBoundingClientRect().bottom : (headerH + totalsH);
+
+  const root = document.documentElement;
+  root.style.setProperty("--app-header-h", headerH + "px");
+  root.style.setProperty("--sticky-totals-h", totalsH + "px");
+  root.style.setProperty("--top-stack-h", topStackH + "px");
+  root.style.setProperty("--bottom-nav-h", navH + "px");
+
+  if (ms){
+    ms.style.paddingTop = topStackH + "px";
+    ms.style.paddingBottom = "var(--bottom-nav-h)";
+  }
+  // Timeline fixed controls (only visible in timeline view). Reserve its height in-flow.
+  const tcr = $("timelineControlsRow");
+  if (tcr){
+    const h = tcr.getBoundingClientRect().height || 0;
+    if (h > 0) root.style.setProperty("--timeline-controls-h", h + "px");
+  }
+
+}
+
+// When editing inputs while Totales detail is expanded, re-sync top stack so content doesn't slide under it.
+document.addEventListener("focusin", (e)=>{ 
+  try { 
+    if (window.summaryExpanded) scheduleSyncTopStackHeights(); 
+  } catch {} 
+}, true);
+// Keep heights in sync on load and when viewport changes (iOS-friendly)
+let __initialScrollFixDone = false;
+let __syncTopStackPending = false;
+let __syncTopStackDidFirstReset = false;
+function scheduleSyncTopStackHeights(){
+  if (__syncTopStackPending) return;
+  __syncTopStackPending = true;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    __syncTopStackPending = false;
+    syncTopStackHeights();
+    // One-time safety: if mainScroll is born scrolled, reset once.
+    const ms = $("mainScroll");
+    if (ms && !__syncTopStackDidFirstReset && ms.scrollTop > 4){
+      __syncTopStackDidFirstReset = true;
+      ms.scrollTop = 0;
+    }
+  }));
+}
+document.addEventListener("DOMContentLoaded", ()=>{ scheduleSyncTopStackHeights(); initTopStackObserver(); });
+window.addEventListener("load", ()=>{ scheduleSyncTopStackHeights(); initTopStackObserver(); });
+window.addEventListener("resize", scheduleSyncTopStackHeights);
+
+// --- Top stack auto-anchor (root fix): keep mainScroll padding in sync with actual Totales/header height.
+// This prevents sections (e.g., Comidas y más) from sliding under Totales when Detalle is open or keyboard appears (iOS).
+let __topStackRO = null;
+function initTopStackObserver(){
+  try{
+    if(__topStackRO) return;
+    if(typeof ResizeObserver !== "function") return;
+    const totals = $("stickyTotalBar");
+    if(!totals) return;
+    __topStackRO = new ResizeObserver(()=>{ try{ syncTopStackHeights(); }catch{} });
+    __topStackRO.observe(totals);
+    const hdr = $("appHeader"); if(hdr) __topStackRO.observe(hdr);
+    const nav = $("bottomNav"); if(nav) __topStackRO.observe(nav);
+  }catch{}
+}
+
+
+
+
+function getScrollContainer(){
+  return document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+}
+
+function getScrollTop(){
+  const sc = getScrollContainer();
+  return (sc === document.documentElement) ? (window["pageYOffset"] || 0) : (sc.scrollTop || 0);
+}
+function scrollToTopValue(top, behavior="smooth"){
+  const sc = getScrollContainer();
+  if (sc === document.documentElement){
+    // fallback only
+    window["scrollTo"]({ top, behavior });
+  } else {
+    sc.scrollTo({ top, behavior });
+  }
+}
+
+function scrollToElWithOffset(el, extra = 0, smooth = true) {
+  if (!el) return;
+  // If this element belongs to a dated group, prefer scrolling to the group's date separator
+  try{
+    let p = el.previousElementSibling;
+    while (p) {
+      if (p.classList && p.classList.contains("dateSep")) { el = p; break; }
+      p = p.previousElementSibling;
+    }
+  }catch{}
+  const sc = getScrollContainer();
+  const offset = getStickyOffset() + (extra || 0);
+  const curTop = (sc === document.documentElement) ? getScrollTop() : sc.scrollTop;
+  const y = el.getBoundingClientRect().top + curTop - offset;
+  sc.scrollTo({ top: Math.max(0, y), behavior: smooth ? "smooth" : "auto" });
+}
+
+
+function getTopStackOffset() {
+  const cs = getComputedStyle(document.documentElement);
+  const headerH = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const totalsH = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return headerH + totalsH;
+}
+
+function scrollToElTopStack(el, extra = 0, smooth = true) {
+  // Keep name for compatibility; it uses current sticky offset (header + totals + timeline controls if visible).
+  return scrollToElWithOffset(el, extra, smooth);
+}
+
+
+function landUnderTotals(el, extra = 8, opts = { smooth: true }) {
+  if (!el) return;
+  const sc = getScrollContainer();
+  const behavior = (opts && opts.smooth) ? "smooth" : "auto";
+  const offset = getStickyOffset() + (extra || 0);
+  const curTop = (sc === document.documentElement) ? getScrollTop() : sc.scrollTop;
+  const y = el.getBoundingClientRect().top + curTop - offset;
+  sc.scrollTo({ top: Math.max(0, y), behavior });
+}
+
+let __tlLastActualKey = ""; // in-memory only, used to compute "Próximo" relative to "Actual"
+
+function __tlNowMinutes() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function getEstimatedDurationMinutes(item) {
+  // Transporte / Alojamiento / Actividades (fallback 60)
+  if (item && (item.legId || String(item.uid||"").startsWith("leg:"))) return 180;
+  if (item && (item.stayId || String(item.uid||"").startsWith("stay:"))) return 60;
+  if (item && (item.actId || String(item.uid||"").startsWith("act:"))) return 90;
+  return 60;
+}
+
+function getEventStartDateTime(item) {
+  // Returns a Date for today items with valid time, else null
+  const d = String(item?.date || "");
+  const t = String(item?.time || "");
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return null;
+  if (!/^[0-9]{2}:[0-9]{2}$/.test(t)) return null;
+  const dt = new Date(`${d}T${t}:00`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+function __tlPickCurrentItemForToday(items, todayISO) {
+  const nowMin = __tlNowMinutes();
+  const todays = (items || []).filter(it => String(it.date||"") === String(todayISO) && it.date !== "9999-99-99");
+  if (!todays.length) return null;
+
+  // Prefer real events over note markers when choosing "actual"
+  const main = todays.filter(it => !it.isNote);
+
+  // Only consider items with a valid time for "in progress"
+  const pool = (main.length ? main : todays).filter(it => /^[0-9]{2}:[0-9]{2}$/.test(String(it.time || "")));
+
+  if (!pool.length) return null;
+
+  // In progress: start <= now < end (estimated duration)
+  const inProgress = pool.filter(it => {
+    const startMin = timeSortKey(it.time);
+    const endMin = startMin + getEstimatedDurationMinutes(it);
+    return startMin <= nowMin && nowMin < endMin;
+  });
+
+  if (!inProgress.length) return null;
+
+  // If several: pick the one that started most recently
+  inProgress.sort((a,b) => timeSortKey(b.time) - timeSortKey(a.time));
+  return inProgress[0] || null;
+}
+
+function __tlEnsureTimelineOpen() {
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+}
+
+function __tlScrollToItemByKey(tlKey) {
+  if (!tlKey) return false;
+  const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
+  const el = els.find(x => (x.getAttribute("data-tl-key") || "") === String(tlKey));
+  if (!el) return false;
+  scrollToElWithOffset(el);
+  return true;
+}
+
+function scrollToCurrentTimelineItem() {
+  __tlEnsureTimelineOpen();
+
+  const todayISO = todayYMD();
+  timelineViewMode = "day";
+  activeDayISO = todayISO;
+  renderTimeline();
+
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  const cur = __tlPickCurrentItemForToday(items, todayISO);
+  if (!cur) {
+    alert("No hay eventos en curso ahora mismo");
+    return;
+  }
+
+  const key = cur.isNote ? `note:${todayISO}` : `${cur.actId ? "act" : (cur.legId ? "leg" : (cur.stayId ? "stay" : ""))}:${(cur.actId || cur.legId || cur.stayId || "")}`;
+  __tlLastActualKey = key;
+  __tlScrollToItemByKey(key);
+}
+
+function scrollToNextAfterCurrent() {
+  __tlEnsureTimelineOpen();
+
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  if (!items.length) { alert("No hay próximos eventos."); return; }
+
+  const now = new Date();
+
+  const makeKey = (it) => {
+    return it.isNote ? `note:${String(it.date || "")}` : `${it.actId ? "act" : (it.legId ? "leg" : (it.stayId ? "stay" : ""))}:${(it.actId || it.legId || it.stayId || "")}`;
+  };
+
+  // If we have a current "Actual" that is truly in progress now, next = item after it.
+  let actualIdx = -1;
+  if (__tlLastActualKey) {
+    actualIdx = items.findIndex(it => makeKey(it) === __tlLastActualKey);
+    if (actualIdx >= 0) {
+      const it = items[actualIdx];
+      const start = getEventStartDateTime(it);
+      if (!start) {
+        actualIdx = -1;
+      } else {
+        const durMin = getEstimatedDurationMinutes(it);
+        const end = new Date(start.getTime() + durMin * 60000);
+        if (!(start.getTime() <= now.getTime() && now.getTime() < end.getTime())) {
+          actualIdx = -1;
+        }
+      }
+    }
+  }
+
+  let next = null;
+
+  if (actualIdx >= 0) {
+    next = items[actualIdx + 1] || null;
+  } else {
+    // First future item in global ordering (can be tomorrow; includes items without time as 23:59)
+    next = items.find(it => {
+      const d = String(it.date || "");
+      if (!d || d === "9999-99-99") return false;
+
+      const start = getEventStartDateTime(it);
+      if (start) {
+        return start.getTime() >= now.getTime();
+      }
+
+      // No valid time: treat as end-of-day 23:59
+      if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(d)) return false;
+      const dt = new Date(d + "T23:59:00");
+      return dt.getTime() >= now.getTime();
+    });
+  }
+
+  if (!next) { alert("No hay próximos eventos."); return; }
+
+  const dISO = String(next.date || "");
+  if (!dISO || dISO === "9999-99-99") { alert("No hay próximos eventos."); return; }
+
+  timelineViewMode = "day";
+  activeDayISO = dISO;
+  renderTimeline();
+
+  const key = makeKey(next);
+  __tlLastActualKey = key;
+
+  // Scroll to item (fallback to first item of that day)
+  if (!__tlScrollToItemByKey(key)) {
+    const first = items.find(it => String(it.date || "") === dISO);
+    if (first) __tlScrollToItemByKey(makeKey(first));
+  }
+}
+
+function scrollToTodayTimelineItem() {
+  // Ensure the timeline accordion is open so the scroll makes sense to the user
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+  const t = todayYMD();
+  const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
+  const todayEl = els.find(el => (el.getAttribute("data-date") || "") === t);
+  if (todayEl) {
+    scrollToElWithOffset(todayEl);
+  } else {
+    alert("No hay eventos para hoy.");
+  }
+}
+
+function scrollToNextTimelineItem() {
+  // Ensure the timeline accordion is open so the scroll makes sense to the user
+  const body = document.querySelector('[data-acc-body="timeline"]');
+  if (body && body.classList.contains("hidden")) {
+    const btn = document.querySelector('[data-acc="timeline"]');
+    if (btn) btn.click();
+  }
+
+  const t = todayYMD();
+  const els = Array.from(document.querySelectorAll("#timelineList .timelineItem"));
+  const next = els.find(el => {
+    const d = el.getAttribute("data-date") || "9999-99-99";
+    return d !== "9999-99-99" && d >= t;
+  });
+
+  if (next) {
+    scrollToElWithOffset(next);
+  } else {
+    alert("No hay próximos eventos con fecha a partir de hoy.");
+  }
+}
+
+function showModal(title, bodyHtml, footerButtons = []) {
+  $("modalTitle").textContent = title;
+  $("modalBody").innerHTML = bodyHtml;
+  const footer = $("modalFooter");
+  footer.innerHTML = "";
+  for (const b of footerButtons) footer.appendChild(b);
+  $("modalBackdrop").classList.remove("hidden");
+  $("modalBox").classList.remove("hidden");
+}
+function closeModal() {
+  $("modalBackdrop").classList.add("hidden");
+  $("modalBox").classList.add("hidden");
+}
+$("modalClose").addEventListener("click", closeModal);
+$("modalBackdrop").addEventListener("click", closeModal);
+
+/* ================= V218: Preferencias (Herramientas) ================= */
+/* ================= V218A: Preferencias smart (Niños + Ciudades visitadas) ================= */
+function __prefsParseKidsAgesLegacy(str){
+  const nums = String(str||"").match(/\d+/g) || [];
+  return nums.map(n=>Math.max(0, Math.min(17, parseInt(n,10)))).filter(n=>Number.isFinite(n));
+}
+function __prefsEnsureKidsAgesArray(group){
+  // Back-compat: kidsAges puede venir como string (V218) o array (V218A)
+  if (Array.isArray(group.kidsAges)) return;
+  const legacy = group.kidsAges;
+  group.kidsAges = __prefsParseKidsAgesLegacy(legacy);
+}
+function __prefsEnsureCitiesStruct(p){
+  // Back-compat: citiesVisited podía ser array de strings (V218)
+  const arr = Array.isArray(p.citiesVisited) ? p.citiesVisited : [];
+  if (arr.length && typeof arr[0] === "object" && arr[0] && ("city" in arr[0])) {
+    p.citiesVisited = arr.map(x=>({
+      city: String(x.city||"").trim(),
+      repeatOk: (typeof x.repeatOk==="boolean") ? x.repeatOk : true
+    })).filter(x=>x.city);
+    return;
+  }
+  p.citiesVisited = arr.map(s=>({ city: String(s||"").trim(), repeatOk: true })).filter(x=>x.city);
+}
+
+function __prefsUpsertCity(p, cityName, repeatOkDefault=true){
+  const name = String(cityName||"").trim();
+  if(!name) return;
+  const nf = __normFold(name);
+  const list = p.citiesVisited || (p.citiesVisited=[]);
+  const idx = list.findIndex(x=>__normFold(x.city)===nf);
+  if(idx>=0){
+    if(typeof list[idx].repeatOk!=="boolean") list[idx].repeatOk = !!repeatOkDefault;
+    return;
+  }
+  list.push({ city: name, repeatOk: !!repeatOkDefault });
+}
+
+function __prefsAutoAddVisitedCitiesFromDoneEvents(){
+  const p = __ensurePreferences();
+  __prefsEnsureCitiesStruct(p);
+  const sc = curScenario();
+  if(!sc) return p;
+
+  const addCity = (c)=>__prefsUpsertCity(p, c, true);
+
+  for (const leg of (sc.legs||[])) {
+    const st = computeDoneStateGeneric(leg, leg.date || "");
+    if(!st.done) continue;
+    const from = String(leg.from||"").trim();
+    const to = String(leg.to||"").trim();
+    if(from) addCity(from);
+    if(to) addCity(to);
+  }
+
+  for (const stay of (sc.stays||[])) {
+    const st = computeDoneStateGeneric(stay, stay.date || "");
+    if(!st.done) continue;
+    const c = String(stay.city||"").trim();
+    if(c) addCity(c);
+  }
+
+  for (const act of (sc.acts||[])) {
+    const st = computeDoneStateGeneric(act, act.date || "");
+    if(!st.done) continue;
+    const c = String(act.city||"").trim();
+    if(c) addCity(c);
+  }
+
+  return p;
+}
+
+/* ================= V218: Preferencias (Herramientas) ================= */
+function __ensurePreferences() {
+  state.preferences = state.preferences || {};
+  const p = state.preferences;
+
+  p.group = p.group || { adults: 2, kids: 0, kidsAges: [], pace: "Normal" };
+  if (typeof p.group.adults !== "number") p.group.adults = parseInt(p.group.adults||"2",10) || 2;
+  if (typeof p.group.kids !== "number") p.group.kids = parseInt(p.group.kids||"0",10) || 0;
+  if (!p.group.pace) p.group.pace = "Normal";
+
+  __prefsEnsureKidsAgesArray(p.group);
+
+  p.tastes = Array.isArray(p.tastes) ? p.tastes : [];
+  p.restrictions = p.restrictions || { text: "", flags: {} };
+  p.restrictions.text = p.restrictions.text || "";
+  p.restrictions.flags = p.restrictions.flags || {};
+  const f = p.restrictions.flags;
+  for (const k of ["mobility","stroller","allergies","avoidLayovers","avoidLongWalks"]) {
+    if (typeof f[k] !== "boolean") f[k] = false;
+  }
+
+  __prefsEnsureCitiesStruct(p);
+
+  return p;
+}
+
+function __normFold(s){
+  try{ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
+  catch{ return (s||"").toString().trim().toLowerCase(); }
+}
+
+function __normFold(s){
+  try{ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
+  catch{ return (s||"").toString().trim().toLowerCase(); }
+}
+
+function openPreferencesModal(){
+  const p = __ensurePreferences();
+  const tastesAll = [
+    "Naturaleza","Cultura","Gastronomía","Playa","Ciudad","Aventura","Relax","Roadtrip"
+  ];
+  const paceAll = ["Relax","Normal","Intenso"];
+  const restrChips = [
+    ["mobility","Movilidad reducida"],
+    ["stroller","Carrito"],
+    ["allergies","Alergias"],
+    ["avoidLayovers","Evitar escalas"],
+    ["avoidLongWalks","Evitar caminatas largas"]
+  ];
+
+  const tastesHtml = tastesAll.map(t=>{
+    const on = p.tastes.includes(t);
+    return `<button type="button" class="prefChip tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}" data-taste="${escapeHtml(t)}">${escapeHtml(t)}</button>`;
+  }).join(" ");
+
+  const paceHtml = paceAll.map(v=>{
+    const on = (p.group.pace||"Normal")===v;
+    return `<button type="button" class="prefPace tap px-3 py-2 rounded-full border text-sm font-extrabold ${on?"bg-emerald-600 text-white border-emerald-600":"bg-white border-slate-200 text-slate-800"}" data-pace="${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+  }).join(" ");
+
+  const restrHtml = restrChips.map(([k,label])=>{
+    const on = !!p.restrictions.flags[k];
+    return `<button type="button" class="prefRestr tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}" data-restr="${escapeHtml(k)}">${escapeHtml(label)}</button>`;
+  }).join(" ");
+
+  // Autollenado suave: añade ciudades de eventos cumplidos (sin duplicar ni pisar repeatOk manual)
+__prefsAutoAddVisitedCitiesFromDoneEvents();
+
+const cities = (p.citiesVisited||[]).map((c,i)=>{
+  const name = (typeof c==="string") ? c : (c?.city||"");
+  const rep = (typeof c==="object" && c) ? !!c.repeatOk : true;
+  return `<div class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200">
+    <div class="min-w-0 flex-1">
+      <div class="font-extrabold truncate">${escapeHtml(String(name||"—"))}</div>
+      <label class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-slate-600">
+        <input type="checkbox" class="prefRepeatChk" data-city-idx="${i}" ${rep?"checked":""}>
+        Se puede repetir
+      </label>
+    </div>
+    <button type="button" class="prefCityDel tap px-2 py-1 rounded-full hover:bg-slate-200" data-city-idx="${i}">✕</button>
+  </div>`;
+}).join("") || `<div class="text-sm text-slate-500">Aún no hay ciudades.</div>`;
+
+  const body = `
+  <div class="space-y-5">
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Grupo</div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Adultos</div>
+          <input id="prefAdults" inputmode="numeric" type="number" min="0" class="w-full h-10 px-3 rounded-xl border border-slate-200" value="${Number(p.group.adults||0)}" />
+        </label>
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Niños</div>
+          <input id="prefKids" inputmode="numeric" type="number" min="0" class="w-full h-10 px-3 rounded-xl border border-slate-200" value="${Number(p.group.kids||0)}" />
+        </label>
+      </div>
+      <div class="mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Edades de niños</div>
+        <div id="prefKidsAgesWrap" class="grid grid-cols-3 gap-2"></div>
+      </div>
+      <div class="mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-2">Ritmo de viaje</div>
+        <div class="flex flex-wrap gap-2" id="prefPaceWrap">${paceHtml}</div>
+      </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Gustos</div>
+      <div class="text-xs text-slate-500 mt-1">Toca para seleccionar</div>
+      <div class="mt-3 flex flex-wrap gap-2" id="prefTastesWrap">${tastesHtml}</div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Restricciones</div>
+      <div class="mt-3 flex flex-wrap gap-2" id="prefRestrWrap">${restrHtml}</div>
+      <label class="block mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Notas</div>
+        <textarea id="prefRestrText" class="w-full min-h-[90px] p-3 rounded-xl border border-slate-200 text-[16px]" placeholder="Ej: movilidad, alergias, evitar caminatas largas...">${escapeHtml(p.restrictions.text||"")}</textarea>
+      </label>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Ciudades visitadas</div>
+      <div class="text-xs text-slate-500 mt-1">Se autocompleta con eventos cumplidos. Puedes editarla aquí.</div>
+      <div class="mt-3 space-y-2" id="prefCitiesWrap">${cities}</div>
+      <div class="mt-3 flex gap-2">
+        <input id="prefCityInput" type="text" class="flex-1 h-10 px-3 rounded-xl border border-slate-200" placeholder="Añadir ciudad" />
+        <button type="button" id="prefCityAdd" class="tap px-4 h-10 rounded-xl bg-slate-900 text-white font-extrabold">Añadir</button>
+      </div>
+    </div>
+
+  </div>`;
+
+  const btnSave = document.createElement('button');
+  btnSave.className = 'tap px-4 py-2 rounded-xl bg-emerald-600 text-white font-extrabold';
+  btnSave.textContent = 'Guardar';
+  btnSave.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); __savePreferencesFromModal(); };
+
+  const btnClose = document.createElement('button');
+  btnClose.className = 'tap px-4 py-2 rounded-xl border border-slate-200 bg-white font-extrabold';
+  btnClose.textContent = 'Cerrar';
+  btnClose.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); closeModal(); };
+
+  showModal('Preferencias', body, [btnClose, btnSave]);
+
+// kids ages dynamic selects (V218A)
+const kidsInput = $("prefKids");
+const agesWrap = $("prefKidsAgesWrap");
+const renderKidsAges = ()=>{
+  const pp = __ensurePreferences();
+  const k = Math.max(0, parseInt(kidsInput?.value||pp.group.kids||0,10) || 0);
+  pp.group.kids = k;
+  __prefsEnsureKidsAgesArray(pp.group);
+  // recorta/expande array
+  if(pp.group.kidsAges.length > k) pp.group.kidsAges = pp.group.kidsAges.slice(0, k);
+  while(pp.group.kidsAges.length < k) pp.group.kidsAges.push(0);
+
+  if(!agesWrap) return;
+  if(k<=0){
+    agesWrap.innerHTML = `<div class="col-span-3 text-sm text-slate-500">—</div>`;
+    return;
+  }
+  const opts = Array.from({length:18},(_,i)=>`<option value="${i}">${i}</option>`).join("");
+  agesWrap.innerHTML = pp.group.kidsAges.map((age,idx)=>{
+    const a = Number.isFinite(Number(age)) ? Math.max(0, Math.min(17, parseInt(age,10))) : 0;
+    return `<label class="block">
+      <div class="text-[11px] font-extrabold text-slate-600 mb-1">Niño ${idx+1}</div>
+      <select class="prefKidAgeSel w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-[16px]" data-kid-idx="${idx}">
+        ${opts}
+      </select>
+    </label>`;
+  }).join("");
+  // set selected values
+  agesWrap.querySelectorAll('.prefKidAgeSel').forEach(sel=>{
+    const i = parseInt(sel.getAttribute('data-kid-idx')||'0',10);
+    const v = pp.group.kidsAges[i] ?? 0;
+    sel.value = String(v);
+  });
+};
+
+// initial render
+renderKidsAges();
+
+if (kidsInput) kidsInput.addEventListener('input', ()=>{
+  renderKidsAges();
+});
+if (agesWrap) agesWrap.addEventListener('change', (ev)=>{
+  const sel = ev.target.closest('.prefKidAgeSel');
+  if(!sel) return;
+  const idx = parseInt(sel.getAttribute('data-kid-idx')||'-1',10);
+  const pp = __ensurePreferences();
+  __prefsEnsureKidsAgesArray(pp.group);
+  if(idx>=0 && idx<pp.group.kidsAges.length){
+    pp.group.kidsAges[idx] = Math.max(0, Math.min(17, parseInt(sel.value||"0",10) || 0));
+  }
+});
+
+  // bind chips
+  const tastesWrap = $("prefTastesWrap");
+  if (tastesWrap) tastesWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefChip');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const t = b.getAttribute('data-taste')||'';
+    const pp = __ensurePreferences();
+    const i = pp.tastes.indexOf(t);
+    if(i>=0) pp.tastes.splice(i,1); else pp.tastes.push(t);
+    // toggle visual
+    b.classList.toggle('bg-slate-900');
+    b.classList.toggle('text-white');
+    b.classList.toggle('border-slate-900');
+    b.classList.toggle('bg-white');
+    b.classList.toggle('text-slate-800');
+    b.classList.toggle('border-slate-200');
+  });
+
+  const paceWrap = $("prefPaceWrap");
+  if (paceWrap) paceWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefPace');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const v = b.getAttribute('data-pace')||'Normal';
+    const pp = __ensurePreferences();
+    pp.group.pace = v;
+    // update visuals
+    paceWrap.querySelectorAll('.prefPace').forEach(x=>{
+      const on = (x.getAttribute('data-pace')||'')===v;
+      x.className = `prefPace tap px-3 py-2 rounded-full border text-sm font-extrabold ${on?"bg-emerald-600 text-white border-emerald-600":"bg-white border-slate-200 text-slate-800"}`;
+    });
+  });
+
+  const restrWrap = $("prefRestrWrap");
+  if (restrWrap) restrWrap.addEventListener('click', (ev)=>{
+    const b = ev.target.closest('.prefRestr');
+    if(!b) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const k = b.getAttribute('data-restr')||'';
+    const pp = __ensurePreferences();
+    pp.restrictions.flags[k] = !pp.restrictions.flags[k];
+    const on = !!pp.restrictions.flags[k];
+    b.className = `prefRestr tap px-3 py-2 rounded-full border text-sm font-semibold ${on?"bg-slate-900 text-white border-slate-900":"bg-white border-slate-200 text-slate-800"}`;
+  });
+
+  const citiesWrap = $("prefCitiesWrap");
+  if (citiesWrap) citiesWrap.addEventListener('click', (ev)=>{
+    const d = ev.target.closest('.prefCityDel');
+    if(!d) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const idx = parseInt(d.getAttribute('data-city-idx')||'-1',10);
+    const pp = __ensurePreferences();
+    if (idx>=0 && idx<pp.citiesVisited.length) pp.citiesVisited.splice(idx,1);
+    // re-open to refresh list without risking partial DOM state
+    openPreferencesModal();
+  });
+
+// toggle repeatOk (no re-render necesario)
+if (citiesWrap) citiesWrap.addEventListener('change', (ev)=>{
+  const chk = ev.target.closest('.prefRepeatChk');
+  if(!chk) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const idx = parseInt(chk.getAttribute('data-city-idx')||'-1',10);
+  const pp = __ensurePreferences();
+  __prefsEnsureCitiesStruct(pp);
+  if(idx>=0 && idx<pp.citiesVisited.length){
+    pp.citiesVisited[idx].repeatOk = !!chk.checked;
+  }
+});
+
+
+  const addBtn = $("prefCityAdd");
+  const addInput = $("prefCityInput");
+  const addFn = (ev)=>{
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    const v = (addInput?.value||"").trim();
+    if(!v) return;
+    const pp = __ensurePreferences();
+    // avoid duplicates (accent-fold)
+    const nv = __normFold(v);
+    __prefsEnsureCitiesStruct(pp);
+    if (!pp.citiesVisited.some(c=>__normFold(c.city)===nv)) pp.citiesVisited.push({ city: v, repeatOk: true });
+    if (addInput) addInput.value = "";
+    openPreferencesModal();
+  };
+  if (addBtn) addBtn.onclick = addFn;
+  if (addInput) addInput.addEventListener('keydown', (ev)=>{ if(ev.key==="Enter"){ addFn(ev);} });
+}
+
+function __savePreferencesFromModal(){
+  const p = __ensurePreferences();
+  const adults = parseInt($("prefAdults")?.value||"0",10); 
+  const kids = parseInt($("prefKids")?.value||"0",10);
+  p.group.adults = isFinite(adults)? Math.max(0,adults):0;
+  p.group.kids = isFinite(kids)? Math.max(0,kids):0;
+
+  // kids ages array from selects
+  __prefsEnsureKidsAgesArray(p.group);
+  const wrap = $("prefKidsAgesWrap");
+  if (wrap) {
+    const ages = [];
+    wrap.querySelectorAll(".prefKidAgeSel").forEach(sel=>{
+      ages.push(Math.max(0, Math.min(17, parseInt(sel.value||"0",10) || 0)));
+    });
+    // align length to kids
+    p.group.kidsAges = ages.slice(0, p.group.kids);
+    while (p.group.kidsAges.length < p.group.kids) p.group.kidsAges.push(0);
+  } else {
+    // fallback defensivo: recorta/expande según kids
+    p.group.kidsAges = (p.group.kidsAges||[]).slice(0, p.group.kids);
+    while (p.group.kidsAges.length < p.group.kids) p.group.kidsAges.push(0);
+  }
+
+  p.restrictions.text = ($("prefRestrText")?.value||"").trim();
+  // pace already set via chips; ensure default
+  p.group.pace = p.group.pace || "Normal";
+
+  // cities already mutated live; just normalize struct
+  __prefsEnsureCitiesStruct(p);
+
+  saveState();
+  toast("Preferencias guardadas");
+  closeModal();
+}
+
+/* ================= V208: Timeline micro-summary menu (modal) =================
+   - Adds a menu button (≡) in the existing Cronograma subSectionHeader.
+   - Opens a micro-summary modal with Hoy / Mañana and global search.
+   - Tap result => close modal + scroll to timeline summary + highlight.
+   - Does NOT open the event sheet directly.
+============================================================================= */
+
+function __msNorm(s){
+  s = String(s||"").toLowerCase();
+  try{ s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch{}
+  return s;
+}
+function __msDateISO(d){
+  const dt = (d instanceof Date) ? d : new Date();
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,"0");
+  const day = String(dt.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function __msAddDaysISO(iso, days){
+  try{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||""))) return "";
+    const d = new Date(String(iso) + "T00:00:00");
+    d.setDate(d.getDate() + (Number(days)||0));
+    return __msDateISO(d);
+  }catch{ return ""; }
+}
+function __msFormatDateLongES(iso){
+  const s = String(iso||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s + "T00:00:00");
+  if(Number.isNaN(d.getTime())) return s;
+  try{
+    const out = d.toLocaleDateString("es-ES",{ day:"numeric", month:"long", year:"numeric" });
+    return String(out||"").replace(/\s+de\s+/g," ").replace(/\s+/g," ").trim();
+  }catch{
+    return s;
+  }
+}
+function __msMakeKey(it){
+  if(!it) return "";
+  const d = String(it.date||"");
+  if(it.isNote) return d ? `note:${d}` : "";
+  const actId = it.actId || (String(it.uid||"").startsWith("act:") ? String(it.uid).slice(4) : "");
+  const legId = it.legId || (String(it.uid||"").startsWith("leg:") ? String(it.uid).slice(4) : "");
+  const stayId = it.stayId || (String(it.uid||"").startsWith("stay:") ? String(it.uid).slice(5) : "");
+  if(actId) return `act:${actId}`;
+  if(legId) return `leg:${legId}`;
+  if(stayId) return `stay:${stayId}`;
+  if(it.uid) return String(it.uid);
+  return "";
+}
+function __msGetAllTimelineItems(){
+  try{
+    if(typeof __tlLastFilteredItems !== "undefined" && Array.isArray(__tlLastFilteredItems)) return __tlLastFilteredItems.slice();
+  }catch{}
+  try{
+    if(Array.isArray(window.__tlLastFilteredItems)) return window.__tlLastFilteredItems.slice();
+  }catch{}
+  return [];
+}
+function __msHasTime(it){
+  const t = String(it?.time||"").trim();
+  return /^\d{2}:\d{2}$/.test(t);
+}
+function __msTimeKey(t){
+  if(typeof timeSortKey === "function") return timeSortKey(t);
+  const s = String(t||"");
+  const m = s.match(/^(\d{2}):(\d{2})$/);
+  if(!m) return 9999;
+  return (parseInt(m[1],10)*60) + parseInt(m[2],10);
+}
+function __msEnsureTimelineVisible(){
+  try{
+    const cur = (document.body?.dataset?.view) || (typeof activeView!=="undefined" ? activeView : "");
+    if(String(cur) !== "timeline"){
+      if(typeof setView === "function") setView("timeline");
+    }
+  }catch{}
+  try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
+}
+function __msFlashEl(el){
+  if(!el) return;
+  try{
+    el.classList.add("msFlash");
+    setTimeout(()=>{ try{ el.classList.remove("msFlash"); }catch{} }, 850);
+  }catch{}
+}
+
+// V209: Persistent highlight for items reached from MicroSummary
+window.__tlPersistentFoundKey = window.__tlPersistentFoundKey || "";
+function __clearTimelinePersistentFoundHighlight(){
+  try{ window.__tlPersistentFoundKey = ""; }catch{}
+  try{
+    document.querySelectorAll("#timelineList .timelineItem.tlPersistentFound").forEach(el=>el.classList.remove("tlPersistentFound"));
+  }catch{}
+}
+function __applyTimelinePersistentFoundHighlight(key){
+  if(!key) return;
+  try{
+    // remove previous
+    document.querySelectorAll("#timelineList .timelineItem.tlPersistentFound").forEach(el=>el.classList.remove("tlPersistentFound"));
+  }catch{}
+  try{ window.__tlPersistentFoundKey = String(key); }catch{}
+  try{
+    const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
+    if(el) el.classList.add("tlPersistentFound");
+  }catch{}
+}
+
+// Clear persistent highlight when leaving timeline (without touching NAV)
+(function(){
+  if (document.body && !document.body.__tlPersistObs){
+    document.body.__tlPersistObs = true;
+    try{
+      const obs = new MutationObserver(()=>{
+        const cur = (document.body?.dataset?.view) || "";
+        if (String(cur) !== "timeline") __clearTimelinePersistentFoundHighlight();
+      });
+      obs.observe(document.body, { attributes:true, attributeFilter:["data-view"] });
+    }catch{}
+  }
+})();
+function __scrollTimelineFoundItemToTopAnchor(el){
+  // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
+  try{
+    if(!el) return;
+    const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+
+    // Anchor is the bottom edge of the timeline fixed bar (subSectionHeader) in viewport coords
+    let anchorBottom = 0;
+    try{
+      const sh = document.getElementById("subSectionHeader");
+      if(sh && !sh.classList.contains("hidden")){
+        const r = sh.getBoundingClientRect();
+        anchorBottom = r.bottom || 0;
+      }
+    }catch{}
+    if(!anchorBottom){
+      // Fallback to computed top-stack height if available
+      try{
+        const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
+        const n = parseFloat(css);
+        if(!isNaN(n) && n > 0) anchorBottom = n;
+      }catch{}
+    }
+    if(!anchorBottom){
+      const h1 = document.getElementById("appHeader");
+      const h2 = document.getElementById("stickyTotalBar");
+      const h3 = document.getElementById("subSectionHeader");
+      anchorBottom = (h1 ? h1.getBoundingClientRect().height : 0)
+                   + (h2 ? h2.getBoundingClientRect().height : 0)
+                   + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
+    }
+
+    const margin = 10; // comfortable gap below the bar
+    const targetTop = anchorBottom + margin;
+
+    // Current element top in viewport
+    const rEl = el.getBoundingClientRect();
+    const delta = (rEl.top - targetTop);
+
+    // Compute absolute target scrollTop and clamp (prevents landing low due to scroll limits)
+    let maxScroll = 0;
+    try{ maxScroll = Math.max(0, (scroller.scrollHeight || 0) - (scroller.clientHeight || window.innerHeight)); }catch{}
+    let targetScrollTop = 0;
+    try{ targetScrollTop = (scroller.scrollTop || 0) + delta; }catch{ targetScrollTop = delta; }
+    if(targetScrollTop < 0) targetScrollTop = 0;
+    if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
+
+    // Smooth scroll to anchored position
+    try{ scroller.scrollTo({ top: targetScrollTop, behavior: "smooth" }); }
+    catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
+
+    // Second pass: if after layout it drifted, re-anchor once
+    requestAnimationFrame(()=>{
+      try{
+        const r2 = el.getBoundingClientRect();
+        const d2 = (r2.top - targetTop);
+        if(Math.abs(d2) > 6){
+          let st = 0;
+          try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
+          if(st < 0) st = 0;
+          if(maxScroll && st > maxScroll) st = maxScroll;
+          try{ scroller.scrollTo({ top: st, behavior: "smooth" }); }catch{ try{ scroller.scrollTop = st; }catch{} }
+        }
+      }catch{}
+    });
+  }catch{}
+}
+
+
+
+function __msScrollToKey(key){
+  if(!key) return false;
+  try{
+    if(typeof __tlScrollToItemByKey === "function"){
+      const ok = __tlScrollToItemByKey(key);
+      if(ok){
+        const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+        try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{}
+        __applyTimelinePersistentFoundHighlight(key);
+        __msFlashEl(el);
+        return true;
+      }
+    }
+  }catch{}
+  try{
+    const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+    if(!el) return false;
+    try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+    __applyTimelinePersistentFoundHighlight(key);
+    __msFlashEl(el);
+    return true;
+  }catch{}
+  return false;
+}
+
+function openTimelineMicroSummaryMenu(){
+  try{
+    window.__msState = window.__msState || { tab: "today", search: false, q: "" };
+    const st = window.__msState;
+
+    const bodyHtml = `
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1">
+            <button id="msTabToday" type="button" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn">Hoy</button>
+            <button id="msTabTomorrow" type="button" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn">Mañana</button>
+          </div>
+          <button id="msBtnSearch" type="button" class="tap ml-auto h-9 w-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-base font-extrabold flex items-center justify-center" aria-label="Buscar" title="Buscar">🔍</button>
+        </div>
+
+        <div id="msSearchBox" class="${st.search ? "" : "hidden"}">
+          <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+            <span class="text-slate-400">🔎</span>
+            <input id="msSearchInput" type="text"
+              class="w-full outline-none text-[16px] font-semibold"
+              placeholder="Buscar evento, hotel, museo, vuelo…"
+              value="${escapeHtml(st.q || "")}"
+              autocomplete="off" autocapitalize="none" />
+          </div>
+        </div>
+
+        <div id="msList" class="rounded-2xl border border-slate-200 bg-white overflow-hidden"></div>
+      </div>
+    `;
+
+    showModal("Resumen", bodyHtml, []);
+
+    setTimeout(()=>{
+      const st = window.__msState || { tab:"today", search:false, q:"" };
+
+      const btnT = document.getElementById("msTabToday");
+      const btnM = document.getElementById("msTabTomorrow");
+      const btnS = document.getElementById("msBtnSearch");
+      const box = document.getElementById("msSearchBox");
+      const inp = document.getElementById("msSearchInput");
+      const list = document.getElementById("msList");
+
+      const setSeg = ()=>{
+        const isT = (st.tab === "today");
+        if(btnT){ btnT.classList.toggle("seg-active", isT); btnT.classList.toggle("seg-inactive", !isT); }
+        if(btnM){ btnM.classList.toggle("seg-active", !isT); btnM.classList.toggle("seg-inactive", isT); }
+      };
+
+      const renderList = ()=>{
+        if(!list) return;
+
+        const all = __msGetAllTimelineItems().filter(it => it && !it.isNote);
+        const today = (typeof todayYMD === "function") ? todayYMD() : __msDateISO(new Date());
+        const tomorrow = __msAddDaysISO(today, 1);
+        const dayISO = (st.tab === "tomorrow") ? tomorrow : today;
+
+        const q = __msNorm(st.q || "");
+        const isSearching = !!(st.search && q);
+
+        let items = [];
+        if(isSearching){
+          items = all.filter(it=>{
+            const t = [
+              it.title, it.subtitle, it.from, it.to, it.placeOut, it.placeIn, it.city, it.name
+            ].filter(Boolean).join(" · ");
+            return __msNorm(t).includes(q);
+          });
+
+          items.sort((a,b)=>{
+            const da = String(a.date||"9999-99-99");
+            const db = String(b.date||"9999-99-99");
+            if(da !== db) return da.localeCompare(db);
+            return __msTimeKey(a.time) - __msTimeKey(b.time);
+          });
+
+          if(!items.length){
+            list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">No se han encontrado resultados</div>`;
+            return;
+          }
+
+          list.innerHTML = items.slice(0, 80).map(it=>{
+            const key = __msMakeKey(it);
+            const dt = __msFormatDateLongES(String(it.date||""));
+            const tm = __msHasTime(it) ? String(it.time) : "—";
+            const title = String(it.title || it.name || "Evento").trim();
+            return `
+              <button type="button" class="tap w-full px-4 py-3 text-left hover:bg-slate-50" data-ms-key="${escapeHtml(key)}">
+                <div class="text-xs font-extrabold text-slate-500">${escapeHtml(dt)} · ${escapeHtml(tm)}</div>
+                <div class="text-sm font-semibold truncate">${escapeHtml(title)}</div>
+              </button>
+            `;
+          }).join("");
+          return;
+        }
+
+        items = all.filter(it => String(it.date||"") === dayISO && __msHasTime(it));
+        items.sort((a,b)=> __msTimeKey(a.time) - __msTimeKey(b.time));
+
+        if(!items.length){
+          list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">${st.tab==="tomorrow" ? "No hay eventos para mañana" : "No hay eventos para hoy"}</div>`;
+          return;
+        }
+
+        list.innerHTML = items.map(it=>{
+          const key = __msMakeKey(it);
+          const tm = String(it.time||"").trim();
+          const title = String(it.title || it.name || "Evento").trim();
+          return `
+            <button type="button" class="tap w-full px-4 py-3 text-left hover:bg-slate-50" data-ms-key="${escapeHtml(key)}">
+              <div class="text-sm font-semibold truncate"><span class="font-extrabold">${escapeHtml(tm)}</span> · ${escapeHtml(title)}</div>
+            </button>
+          `;
+        }).join("");
+      };
+
+      setSeg();
+      renderList();
+
+      if(btnT) btnT.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); st.tab="today"; setSeg(); renderList(); };
+      if(btnM) btnM.onclick = (e)=>{ e.preventDefault(); e.stopPropagation(); st.tab="tomorrow"; setSeg(); renderList(); };
+
+      if(btnS) btnS.onclick = (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        st.search = !st.search;
+        if(box) box.classList.toggle("hidden", !st.search);
+        if(!st.search){ st.q=""; if(inp) inp.value=""; }
+        renderList();
+        if(st.search && inp){ try{ inp.focus(); }catch{} }
+      };
+
+      if(inp){
+        inp.addEventListener("input", ()=>{
+          st.q = String(inp.value||"");
+          renderList();
+        });
+      }
+
+      if(list){
+        list.addEventListener("click", (e)=>{
+          const b = e.target && e.target.closest ? e.target.closest("[data-ms-key]") : null;
+          if(!b) return;
+          try{ e.preventDefault(); e.stopPropagation(); }catch{}
+          const key = b.getAttribute("data-ms-key") || "";
+          closeModal();
+          setTimeout(()=>{
+            __msEnsureTimelineVisible();
+            try{
+              const ok = __msScrollToKey(key);
+              if(!ok){
+                requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
+              }
+            }catch{}
+          }, 0);
+        }, true);
+      }
+
+      // Clear search state on close (keep selected tab)
+      if(!window.__msClosePatched){
+        window.__msClosePatched = true;
+        const _close = window.closeModal;
+        window.closeModal = function(){
+          try{
+            window.__msState = window.__msState || {};
+            window.__msState.search = false;
+            window.__msState.q = "";
+          }catch{}
+          return _close.apply(this, arguments);
+        };
+      }
+
+    }, 0);
+  }catch(err){
+    console.error(err);
+  }
+}
+
+// Wire menu button in existing timeline subSectionHeader (no new bars)
+(function(){
+  if(window.__msMenuWired) return;
+  window.__msMenuWired = true;
+  document.addEventListener("click", (e)=>{
+    const btn = e.target && e.target.closest ? e.target.closest("#tlMicroMenuBtn") : null;
+    if(!btn) return;
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    openTimelineMicroSummaryMenu();
+  }, true);
+})();
+/* ================= /V208: Timeline micro-summary menu (modal) ================= */
+
+
+/* ----------------------------- State ----------------------------- */
+const LS_KEY = "miviaje.rewrite.v1";
+
+// Section item accordion state (v80b)
+const __sectionExpanded = {
+  legs: new Set(),
+  stays: new Set(),
+  activities: new Set()
+};
+
+/* ---------------- Event Detail Sheet (V89D1) ---------------- */
+let __eventSheetCtx = null;
+window.__suppressNotePeekUntil = 0;
+
+// Event Sheet mode: single source of truth lives in __eventSheetCtx.mode ("view" | "edit")
+function getEventSheetMode(){
+  try { return (__eventSheetCtx && (__eventSheetCtx.mode === "view" || __eventSheetCtx.mode === "edit")) ? __eventSheetCtx.mode : "edit"; }
+  catch { return "edit"; }
+}
+
+function applyEventSheetMode(){
+  const mode = getEventSheetMode();
+  const overlay = document.getElementById("eventSheetOverlay");
+  const body = document.getElementById("eventSheetBody");
+  try{ if(overlay) overlay.setAttribute("data-sheet-mode", mode); }catch{}
+  try{ if(body) body.setAttribute("data-sheet-mode", mode); }catch{}
+  if (mode === "view") document.body.classList.add("eventsheet-view");
+  else document.body.classList.remove("eventsheet-view");
+
+  const btnSave = document.getElementById("eventSheetSave");
+  const btnTrash = document.getElementById("eventSheetTrash");
+  const btnEdit = document.getElementById("eventSheetEdit");
+
+  // Pencil is always available (transition to edit); never hide it
+  if (btnEdit) {
+    btnEdit.disabled = false;
+    btnEdit.classList.remove("opacity-50");
+    btnEdit.classList.toggle("is-active", mode === "edit");
+  }
+
+  // Mutating actions only in edit
+  if (btnSave) btnSave.disabled = (mode !== "edit");
+  if (btnTrash) btnTrash.disabled = (mode !== "edit");
+
+  // Hard-lock editable controls in view (real read-only)
+  if (body) {
+    const lock = (mode === "view");
+    body.querySelectorAll("input, textarea, select, [data-leg-mode], .legModeChip").forEach(el => {
+      try {
+        if (lock) {
+          el.setAttribute("data-es-was-disabled", el.disabled ? "1" : "0");
+          el.setAttribute("data-es-was-readonly", el.readOnly ? "1" : "0");
+          el.disabled = true;
+          el.readOnly = true;
+        } else {
+          // restore previous state if we captured it; default enable
+          const wasDis = el.getAttribute("data-es-was-disabled");
+          const wasRO = el.getAttribute("data-es-was-readonly");
+          el.disabled = (wasDis === "1");
+          el.readOnly = (wasRO === "1");
+          el.removeAttribute("data-es-was-disabled");
+          el.removeAttribute("data-es-was-readonly");
+        }
+      } catch {}
+    });
+
+    // Disable known mutating chips/toggles in view (but do NOT blanket-disable all buttons)
+    body.querySelectorAll("[data-legmode], [data-leg-done], [data-act-done], [data-act-skip], [data-stay-done], [data-stay-skip]").forEach(el => {
+      try { el.toggleAttribute("disabled", lock); } catch {}
+    });
+  }
+
+  // Ensure guards are installed (capture blockers) once
+  try { __ensureEventSheetViewGuards(); } catch {}
+
+  // keep notes/attach enabled in view (read-only access)
+  try{
+    const nb = document.getElementById("eventSheetNotes");
+    const ab = document.getElementById("eventSheetAttach");
+    if(nb) nb.removeAttribute("disabled");
+    if(ab) ab.removeAttribute("disabled");
+  }catch{}
+}
+
+function setEventSheetMode(mode){
+  const m = (mode === "view") ? "view" : "edit";
+  if (!__eventSheetCtx) __eventSheetCtx = { kind:"", id:"", mode:m, isNew:false, sourceView:"" };
+  __eventSheetCtx.mode = m;
+  applyEventSheetMode();
+}
+
+// Capture-phase guards: block ONLY mutators in view, never block structural tools.
+function __ensureEventSheetViewGuards(){
+  const body = document.getElementById("eventSheetBody");
+  if (!body || body.__esGuardsBound) return;
+  body.__esGuardsBound = true;
+
+  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach"]);
+  const isAllowed = (t) => {
+    if (!t) return false;
+    if (t.id && allowIds.has(t.id)) return true;
+    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach")) return true;
+    if (t.closest && t.closest("a")) return true; // navigation/links are consult
+    if (t.closest && t.closest("[data-es-allow]")) return true;
+    return false;
+  };
+
+  const isMutator = (t) => {
+    if (!t) return false;
+    const tag = (t.tagName||"").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return true;
+    if (t.closest && t.closest("input,textarea,select")) return true;
+    // known chips/toggles
+    if (t.closest && t.closest("[data-legmode],[data-leg-done],[data-act-done],[data-act-skip],[data-stay-done],[data-stay-skip]")) return true;
+    // generic mutator markers (safe)
+    if (t.closest && t.closest("[data-mutates],[data-action='mutate']")) return true;
+    return false;
+  };
+
+  const blockIfView = (e) => {
+    if (getEventSheetMode() !== "view") return;
+    const t = e.target;
+    if (isAllowed(t)) return;
+    if (!isMutator(t)) return;
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+  };
+
+  ["click","input","change","keydown","paste"].forEach(ev => {
+    body.addEventListener(ev, blockIfView, true);
+  });
+}
+
+function __normKind(k){
+  const raw = String(k||"").toLowerCase().trim();
+  if (raw === "transport") return "leg";
+  if (raw === "lodging") return "stay";
+  if (raw === "activity") return "act";
+  if (raw === "activities") return "act";
+  return raw;
+}
+
+
+function legModeDefault(m){ const v=String(m||"").trim(); return (v==="train"||v==="bus"||v==="car"||v==="boat"||v==="plane") ? v : "plane"; }
+function legModeIcon(m){
+  const v = legModeDefault(m);
+  return (v==="plane") ? "✈️" : (v==="train") ? "🚆" : (v==="bus") ? "🚌" : (v==="car") ? "🚗" : "🚢";
+}
+
+function __legDetailText(mode){
+  const m = legModeDefault(mode);
+  if(m==="plane") return { label:"Terminal", ph:"Ej: T4" };
+  if(m==="train") return { label:"Andén", ph:"Ej: Andén 7" };
+  if(m==="bus")   return { label:"Dársena", ph:"Ej: Dársena 12" };
+  if(m==="boat")  return { label:"Muelle", ph:"Ej: Muelle A" };
+  return { label:"Detalle", ph:"Ej: Parking / punto" };
+}
+
+function legModeLabel(m){
+  const v = legModeDefault(m);
+  return (v==="plane") ? "Avión" : (v==="train") ? "Tren" : (v==="bus") ? "Bus" : (v==="car") ? "Coche" : "Barco";
+}
+
+let __dirtyTimeline = false;
+let __dirtySummary = false;
+
+
+function __buildSheetBlocks(body){
+  if (!body) return null;
+  body.innerHTML = `
+    <div class="esBlock" id="esBlockA"><div class="esBlockTitle">Identidad</div><div id="esA"></div></div>
+    <div class="esBlock" id="esBlockB"><div class="esBlockTitle">Ruta / Lugar</div><div id="esB"></div></div>
+    <div class="esBlock" id="esBlockC"><div class="esBlockTitle">Tiempo</div><div id="esC"></div></div>
+    <div class="esBlock" id="esBlockD"><div class="esBlockTitle">Coste</div><div id="esD"></div></div>
+    <details class="esBlock" id="eventSheetMoreDetails">
+      <summary><div class="esBlockTitle" style="margin:0;">Más detalles</div><div style="font-weight:900;">▾</div></summary>
+      <div id="esE" style="margin-top:10px;"></div>
+    </details>
+  `;
+  return {
+    A: body.querySelector("#esA"),
+    B: body.querySelector("#esB"),
+    C: body.querySelector("#esC"),
+    D: body.querySelector("#esD"),
+    E: body.querySelector("#esE"),
+  };
+}
+
+
+function updateSheetDynamicSummary(){
+  const ctx = (window.__sheetCtx || (typeof __eventSheetCtx !== "undefined" ? __eventSheetCtx : null));
+  if (!ctx || !ctx.kind || !ctx.id) return;
+
+  const body = document.getElementById("eventSheetBody");
+  if (!body) return;
+
+  const routeEl = document.getElementById("sheetSummaryRoute");
+  const timeEl  = document.getElementById("sheetSummaryTime");
+  const costEl  = document.getElementById("sheetSummaryCost");
+  if (!routeEl || !timeEl || !costEl) return;
+
+  const id = String(ctx.id);
+  const kind = String(ctx.kind);
+
+  const qs = (sel) => body.querySelector(sel);
+  const val = (el) => el ? String(el.value || "").trim() : "";
+
+  let date = "", time = "", cost = "";
+
+  if (kind === "leg"){
+    const fromEl = qs(`[data-leg-from="${CSS.escape(id)}"]`);
+    const toEl   = qs(`[data-leg-to="${CSS.escape(id)}"]`);
+    const dateEl = qs(`[data-leg-date="${CSS.escape(id)}"]`);
+    const timeElI = qs(`[data-leg-time="${CSS.escape(id)}"]`);
+    const costElI = qs(`[data-leg-cost="${CSS.escape(id)}"]`);
+
+    const from = val(fromEl);
+    const to = val(toEl);
+    date = val(dateEl);
+    time = val(timeElI);
+    cost = val(costElI);
+
+    routeEl.textContent = (from && to) ? `${from} → ${to}` : (from || to || "—");
+  } else {
+    // stays/acts: try common inputs inside moved editor
+    const placeEl = qs(`input[data-stay-city="${CSS.escape(id)}"], input[data-act-city="${CSS.escape(id)}"], input[name="city"], input[data-field="city"]`)
+                || qs(`input[placeholder*="Ciudad"], input[placeholder*="Lugar"]`);
+    const dateEl  = qs(`input[type="date"]`);
+    const timeElI = qs(`input[type="time"]`);
+    const costElI = qs(`input[name="cost"], input[data-field="cost"], input[type="number"]`);
+
+    const place = val(placeEl);
+    date = val(dateEl);
+    time = val(timeElI);
+    cost = val(costElI);
+
+    routeEl.textContent = place || "—";
+  }
+
+  timeEl.textContent = date ? `${date}${time ? (" · "+time) : ""}` : "—";
+  costEl.textContent = cost ? `${cost}` : "—";
+}
+
+
+function __updateTransportSheetTitle(mode, from, to){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const ico = (typeof legModeIcon==="function") ? legModeIcon(mode) : "✈️";
+    const a = String(from||"").trim();
+    const b = String(to||"").trim();
+    const route = (a||b) ? `${a||"—"} → ${b||"—"}` : "Nuevo transporte";
+    t.textContent = `${ico} ${route}`.trim();
+  } catch {}
+}
+
+function __renderLegEditorInSheet(body, legObj, itemId, isNew){
+  if (!body || !legObj) return false;
+  body.innerHTML = "";
+
+  // Chips host
+  const chipsHost = document.createElement("div");
+  chipsHost.className = "mb-3";
+
+
+  const modes = [
+    { key: "plane", label: "Avión", icon: "✈️" },
+    { key: "train", label: "Tren", icon: "🚆" },
+    { key: "bus", label: "Bus", icon: "🚌" },
+    { key: "car", label: "Coche", icon: "🚗" },
+    { key: "boat", label: "Barco", icon: "🚢" }
+  ];
+
+  chipsHost.innerHTML = `
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      ${modes.map(m => `
+        <button type="button"
+          data-leg-mode="${m.key}"
+          aria-label="${m.label}"
+        class="legModeChip tap px-4 py-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold flex items-center gap-2">
+          <span class="text-xl leading-none">${m.icon}</span>
+          <span class="sr-only">${m.label}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+
+
+  // 2-column form
+  const wrap = document.createElement("div");
+  const costVal = (isNew && !legObj.cost) ? "" : (legObj.cost ?? "");
+  wrap.className = "sheet-leg-editor";
+  wrap.innerHTML = `
+    <div class="mb-3">
+      <div class="flex items-center gap-2">
+        <div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1">
+          <input class="sr-only" type="radio" name="legTripType" id="legTripOneway" value="oneway" data-leg-triptype-radio>
+          <label for="legTripOneway" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn" data-leg-triptype-btn="oneway">Ida</label>
+          <input class="sr-only" type="radio" name="legTripType" id="legTripRoundtrip" value="roundtrip" data-leg-triptype-radio>
+          <label for="legTripRoundtrip" class="tap px-3 py-1.5 rounded-xl text-sm font-semibold seg-btn" data-leg-triptype-btn="roundtrip">Ida y vuelta</label>
+        </div>
+
+        <div id="legRtSwitchRow" style="display:none" class="flex items-center">
+          <button type="button"
+                  class="tap border border-slate-200 bg-white rounded-2xl px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 whitespace-nowrap"
+                  data-leg-rt-switch>
+            Ir a vuelta
+          </button>
+          <span class="text-[10px] text-slate-500 ml-2 whitespace-nowrap" id="legRtSwitchHint" style="display:none">Vinculados (ida/vuelta)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">SALIDA</div>
+        <label class="text-xs text-slate-600">Ciudad salida</label>
+        <input data-sheet-leg="from" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad salida">
+        <label class="text-xs text-slate-600 mt-2 block">Lugar salida</label>
+        <input data-sheet-leg="placeOut" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar salida">
+      <div class="mt-2" style="max-width:220px;">
+        <label id="placeOutDetailLabel" class="text-xs text-slate-600">Terminal / Puerta</label>
+        <input data-sheet-leg="placeOutDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 detailSmall" placeholder="Ej: T4, Puerta H12…" />
+      </div>
+
+        <label class="text-xs text-slate-600 mt-2 block">Fecha salida</label>
+        <input data-sheet-leg="dateOut" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        <label class="text-xs text-slate-600 mt-2 block">Hora salida</label>
+        <div class="mt-1 flex items-center gap-1">
+          <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <input data-sheet-leg="tzFrom" type="hidden" value="">
+          <span id="legTzFromBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
+        </div>
+</div>
+
+      <div class="sm:col-span-6">
+        <div class="text-xs font-extrabold tracking-wide text-slate-500 mb-2">LLEGADA</div>
+        <label class="text-xs text-slate-600">Ciudad llegada</label>
+        <input data-sheet-leg="to" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad llegada">
+        <label class="text-xs text-slate-600 mt-2 block">Lugar llegada</label>
+        <input data-sheet-leg="placeIn" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Lugar llegada">
+      <div class="mt-2" style="max-width:220px;">
+        <label id="placeInDetailLabel" class="text-xs text-slate-600">Terminal / Puerta</label>
+        <input data-sheet-leg="placeInDetail" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200 detailSmall" placeholder="Ej: T4, Puerta H12…" />
+      </div>
+
+        <label class="text-xs text-slate-600 mt-2 block">Fecha llegada</label>
+        <input data-sheet-leg="dateIn" type="date" class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        <label class="text-xs text-slate-600 mt-2 block">Hora llegada</label>
+        <div class="mt-1 flex items-center gap-1">
+          <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+          <input data-sheet-leg="tzTo" type="hidden" value="">
+          <span id="legTzToBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
+        </div>
+</div>
+
+      <div class="sm:col-span-12">
+        <label class="text-xs text-slate-600">Coste</label>
+        <div class="mt-1 flex items-center gap-2">
+          <input data-sheet-leg="cost" type="number" min="0" step="0.01" class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+          <select data-sheet-leg="currency" class="shrink-0 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+            <option value="EUR">€</option>
+            <option value="USD">$</option>
+            <option value="GBP">£</option>
+            <option value="CHF">CHF</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const chips = chipsHost.querySelectorAll(".legModeChip");
+
+  function updateChipUI(selected){
+    chips.forEach(c => {
+      if (c.dataset.legMode === selected){
+        c.classList.remove("bg-white","border-slate-200");
+        c.classList.add("bg-slate-900","border-slate-900","text-white");
+      } else {
+        c.classList.remove("bg-slate-900","border-slate-900","text-white");
+        c.classList.add("bg-white","border-slate-200");
+      }
+    });
+  }
+
+
+  let currentMode = legModeDefault(legObj.mode);
+  updateChipUI(currentMode);
+  try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+
+  // Detail field label/placeholder by mode
+  function __applyLegDetailText(){
+    try{
+      const t = __legDetailText(currentMode);
+      const poD = qs("placeOutDetail");
+      const piD = qs("placeInDetail");
+      if(poD) poD.placeholder = t.ph;
+      if(piD) piD.placeholder = t.ph;
+      const l1 = document.getElementById("placeOutDetailLabel");
+      const l2 = document.getElementById("placeInDetailLabel");
+      if(l1) l1.textContent = t.label;
+      if(l2) l2.textContent = t.label;
+    }catch{}
+  }
+  try{ __applyLegDetailText(); }catch{}
+  try{ qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from"); }catch{}
+  try{ qs("placeIn").placeholder = __legPlacePlaceholder(currentMode, "to"); }catch{}
+
+  try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{}
+
+
+  
+
+  wrap.prepend(chipsHost);
+  body.appendChild(wrap);
+
+  // Fill values (map legacy fields)
+  const v = (x) => (x == null ? "" : String(x));
+  const qs = (k) => wrap.querySelector(`[data-sheet-leg="${k}"]`);
+
+  
+  // Trip type (Ida / Ida y vuelta) — default oneway + V176 linked return leg
+  try{
+    const sc = (typeof curScenario==="function") ? curScenario() : (typeof getActiveScenario==="function" ? getActiveScenario() : null);
+
+    // Helpers (kept local to sheet)
+    const __ensureTripType = (o)=>{ if(o && !o.tripType) o.tripType="oneway"; };
+    const __getTrip = ()=> (String(legObj.tripType||"oneway")==="roundtrip" ? "roundtrip" : "oneway");
+
+    const __setTripUI = (val)=>{
+      const v = (String(val)==="roundtrip") ? "roundtrip" : "oneway";
+      const btns = wrap.querySelectorAll('[data-leg-triptype-btn]');
+      btns.forEach(b=>{
+        const isOn = (b.getAttribute("data-leg-triptype-btn")===v);
+        b.classList.toggle("seg-active", isOn);
+        b.classList.toggle("seg-inactive", !isOn);
+      });
+      const radios = wrap.querySelectorAll('input[data-leg-triptype-radio]');
+      radios.forEach(r=>{ try{ r.checked = (r.value===v); }catch{} });
+    };
+
+    const __setRtSwitchUI = ()=>{
+      try{
+        const row = wrap.querySelector("#legRtSwitchRow");
+        const btn = wrap.querySelector("[data-leg-rt-switch]");
+        if(!row || !btn) return;
+        const tt = __getTrip();
+        const peer = String(legObj.rtPeerId||"");
+        const role = String(legObj.rtRole||"");
+        if(tt==="roundtrip" && peer){
+          row.style.display = "";
+          btn.textContent = (role==="return") ? "Ir a ida" : "Ir a vuelta";
+          try{ const hint = wrap.querySelector("#legRtSwitchHint"); if(hint) hint.style.display=""; }catch{}
+        } else {
+          row.style.display = "none";
+        }
+      }catch{}
+    };
+
+    const __genRtGroupId = ()=> "rt_" + (typeof nowId==="function" ? nowId() : Math.random().toString(36).slice(2,10));
+    const __cloneBaseLegShape = ()=> ({
+      id: (typeof nowId==="function" ? nowId() : Math.random().toString(36).slice(2,10)),
+      mode: legObj.mode || "plane",
+      from: "",
+      to: "",
+      placeOut: "",
+      placeIn: "",
+      date: "",
+      time: "",
+      arriveDate: "",
+      arriveTime: "",
+      cost: null,
+      currency: (legObj.currency || (typeof state!=="undefined" && state.displayCurrency) || "EUR"),
+      tzFrom: null,
+      tzTo: null,
+      tripType: "roundtrip"
+    });
+
+    const __createLinkedReturnIfMissing = ()=>{
+      if(!sc || !Array.isArray(sc.legs)) return;
+      if(String(legObj.rtPeerId||"")) return; // already linked
+      const groupId = __genRtGroupId();
+      const ret = __cloneBaseLegShape();
+      // Copy requested fields
+      ret.mode = legObj.mode || ret.mode;
+      ret.currency = legObj.currency || ret.currency;
+
+      // Invert from/to
+      ret.from = (legObj.to || "");
+      ret.to   = (legObj.from || "");
+
+      // Mark roles + link
+      __ensureTripType(legObj);
+      legObj.tripType = "roundtrip";
+      ret.tripType = "roundtrip";
+
+      legObj.rtGroupId = groupId;
+      ret.rtGroupId = groupId;
+      legObj.rtRole = "outbound";
+      ret.rtRole = "return";
+
+      legObj.rtPeerId = String(ret.id);
+      ret.rtPeerId = String(legObj.id);
+
+      // Insert return leg just after current leg if possible (keeps list readable)
+      const i = sc.legs.findIndex(x=>String(x && x.id)===String(legObj.id));
+      if(i>=0) sc.legs.splice(i+1, 0, ret);
+      else sc.legs.unshift(ret);
+
+      // Mark dirty (so Save persists)
+      try{
+        const body = document.getElementById("eventSheetBody");
+        if(body){ body.dataset.dirty = "1"; body.classList.add("dirty"); }
+      }catch{}
+    };
+
+    const __deleteLinkedReturnIfConfirmed = ()=>{
+      const peerId = String(legObj.rtPeerId||"");
+      if(!peerId) return true;
+      const ok = confirm("Eliminar trayecto de vuelta vinculado?");
+      if(!ok) return false;
+
+      // Delete peer
+      try{
+        if(sc && Array.isArray(sc.legs)){
+          const j = sc.legs.findIndex(x=>String(x && x.id)===peerId);
+          if(j>=0) sc.legs.splice(j,1);
+        }
+      }catch{}
+
+      // Clean outbound
+      try{
+        delete legObj.rtPeerId; delete legObj.rtGroupId; delete legObj.rtRole;
+      }catch{}
+      try{
+        const body = document.getElementById("eventSheetBody");
+        if(body){ body.dataset.dirty = "1"; body.classList.add("dirty"); }
+      }catch{}
+      return true;
+    };
+
+    // Init
+    __ensureTripType(legObj);
+    __setTripUI(__getTrip());
+    __setRtSwitchUI();
+
+    // Bind triptype radios
+    wrap.querySelectorAll('input[data-leg-triptype-radio]').forEach(r=>{
+      if(r.__boundTrip) return;
+      r.__boundTrip = true;
+      r.addEventListener("change", ()=>{
+        try{
+          if(!r.checked) return;
+          const next = (r.value==="roundtrip") ? "roundtrip" : "oneway";
+          const prev = __getTrip();
+
+          if(next==="roundtrip"){
+            legObj.tripType = "roundtrip";
+            __createLinkedReturnIfMissing();
+            __setTripUI("roundtrip");
+            __setRtSwitchUI();
+            return;
+          }
+
+          // next === oneway
+          if(String(legObj.rtPeerId||"")){
+            const ok = __deleteLinkedReturnIfConfirmed();
+            if(!ok){
+              // revert selector back to roundtrip
+              legObj.tripType = "roundtrip";
+              __setTripUI("roundtrip");
+              __setRtSwitchUI();
+              return;
+            }
+          }
+          legObj.tripType = "oneway";
+          __setTripUI("oneway");
+          __setRtSwitchUI();
+        }catch{}
+      });
+    });
+
+    // Bind "Ir a ida/vuelta"
+    const rtBtn = wrap.querySelector("[data-leg-rt-switch]");
+    if(rtBtn && !rtBtn.__boundRtNav){
+      rtBtn.__boundRtNav = true;
+      rtBtn.addEventListener("click", (e)=>{
+        try{ e.preventDefault(); e.stopPropagation(); }catch{}
+        const peerId = String(legObj.rtPeerId||"");
+        if(!peerId) return;
+        try{
+          openEventSheet({ kind:"leg", id: peerId, sourceView:"legs" });
+        }catch{}
+      });
+    }
+  }catch{}
+qs("from").value = v(legObj.from);
+  qs("to").value = v(legObj.to);
+  qs("placeOut").value = v(legObj.placeOut || "");
+  qs("placeOutDetail").value = v(legObj.placeOutDetail || "");
+  qs("placeIn").value = v(legObj.placeIn || "");
+  qs("placeInDetail").value = v(legObj.placeInDetail || "");
+  
+  // Maps pins (Transport): placeOut/placeIn → directions from my location
+  try{
+    const _from = qs("from");
+    const _to = qs("to");
+    const _po = qs("placeOut");
+    const _pi = qs("placeIn");
+    const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
+    __installPinBtn(_po, ()=>__mapsDestWithCity((_po.value + " " + (qs("placeOutDetail")?.value||"")).trim(), _from && _from.value), _modeFn);
+    __installPinBtn(_pi, ()=>__mapsDestWithCity((_pi.value + " " + (qs("placeInDetail")?.value||"")).trim(), _to && _to.value), _modeFn);
+  }catch{}
+
+  try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
+  qs("dateOut").value = v(legObj.date || "");
+  qs("timeOut").value = v(legObj.time || "");
+  qs("dateIn").value = v(legObj.arriveDate || "");
+  qs("timeIn").value = v(legObj.arriveTime || "");
+  qs("tzFrom").value = (legObj.tzFrom == null || legObj.tzFrom === "" ? "" : String(legObj.tzFrom));
+  qs("tzTo").value = (legObj.tzTo == null || legObj.tzTo === "" ? "" : String(legObj.tzTo));
+  qs("cost").value = (legObj.cost == null ? "" : String(legObj.cost));
+  qs("currency").value = v(legObj.currency || "EUR");
+
+  // Placeholders based on mode
+  try {
+    const mode = legModeDefault(legObj.mode);
+    qs("placeOut").placeholder = __legPlacePlaceholder(mode, "from");
+    qs("placeIn").placeholder  = __legPlacePlaceholder(mode, "to");
+
+  // Auto UTC offsets from city (no manual selector). Values stored in hidden tzFrom/tzTo inputs.
+  const tzBadgeFrom = document.getElementById("legTzFromBadge");
+  const tzBadgeTo   = document.getElementById("legTzToBadge");
+  function __updateLegTzBadges(){
+    try{
+      const cityFrom = qs("from").value;
+      const cityTo   = qs("to").value;
+      const d0 = qs("dateOut").value;
+      const t0 = qs("timeOut").value;
+      const d1 = qs("dateIn").value;
+      const t1 = qs("timeIn").value;
+
+      const off0 = __deriveUtcOffsetHours(cityFrom, d0, t0);
+      const off1 = __deriveUtcOffsetHours(cityTo, d1, t1);
+
+      if (Number.isFinite(off0)) {
+        qs("tzFrom").value = String(off0);
+        // keep model in sync (programmatic value changes do not trigger input events)
+        legObj.tzFrom = off0;
+        if (tzBadgeFrom) tzBadgeFrom.textContent = formatUTCOffset(off0);
+      } else {
+        qs("tzFrom").value = "";
+        legObj.tzFrom = null;
+        if (tzBadgeFrom) tzBadgeFrom.textContent = "UTC—";
+      }
+
+      if (Number.isFinite(off1)) {
+        qs("tzTo").value = String(off1);
+        // keep model in sync (programmatic value changes do not trigger input events)
+        legObj.tzTo = off1;
+        if (tzBadgeTo) tzBadgeTo.textContent = formatUTCOffset(off1);
+      } else {
+        qs("tzTo").value = "";
+        legObj.tzTo = null;
+        if (tzBadgeTo) tzBadgeTo.textContent = "UTC—";
+      }
+    } catch {}
+  }
+  // Initial paint + live updates
+  __updateLegTzBadges();
+  ["from","to","dateOut","timeOut","dateIn","timeIn"].forEach(k=>{
+    try { qs(k).addEventListener("input", __updateLegTzBadges); } catch {}
+    try { qs(k).addEventListener("change", __updateLegTzBadges); } catch {}
+  });
+
+  } catch {}
+
+
+  chips.forEach(c=>{
+    c.addEventListener("click", ()=>{
+      const newMode = (c.dataset.legMode || c.getAttribute("data-leg-mode") || c.getAttribute("data-legMode") || "").trim();
+      if(!newMode) return;
+      currentMode = newMode;
+      updateChipUI(currentMode);
+      try{ qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from"); }catch{}
+      try{ qs("placeIn").placeholder = __legPlacePlaceholder(currentMode, "to"); }catch{}
+      try{ wrap.dataset.legModeCurrent = currentMode; }catch{}
+      try{ legObj.mode = currentMode; }catch{}
+      try{ __applyLegDetailText(); }catch{}
+      // update place providers live (if wired) without breaking focus/autocomplete
+      try{ wrap.__applyPlaceProviders && wrap.__applyPlaceProviders(); }catch{}
+      try{
+        const a = document.activeElement;
+        if(a && (a.getAttribute('data-sheet-leg')==='placeOut' || a.getAttribute('data-sheet-leg')==='placeIn')){
+          a.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+      }catch{}
+    });
+  });
+
+
+  // Roundtrip helper: keep peer route swapped (ida <-> vuelta)
+  const __syncPeerRoute = ()=>{
+    try{
+      if(String(legObj.tripType||"oneway")!=="roundtrip") return;
+      const peerId = String(legObj.rtPeerId||"");
+      if(!peerId) return;
+      const peer = (sc && Array.isArray(sc.legs)) ? sc.legs.find(x=>String(x.id)===peerId) : null;
+      if(!peer) return;
+      // Swap from/to
+      peer.from = String(legObj.to||"");
+      peer.to   = String(legObj.from||"");
+      // Return leg should not carry cost (total is on outbound)
+      if(String(peer.rtRole||"")==="return") peer.cost = null;
+      if(String(legObj.rtRole||"")==="return") legObj.cost = null;
+      try{ if(typeof saveState==="function") saveState(); }catch{}
+    }catch{}
+  };
+
+  // Lock cost in return leg (UI + data)
+  try{
+    if(String(legObj.tripType||"oneway")==="roundtrip" && String(legObj.rtRole||"")==="return"){
+      const c = qs("cost");
+      if(c){
+        c.disabled = true;
+        c.value = "";
+        c.placeholder = "— (incluido en ida)";
+        try{ c.classList.add("opacity-60"); }catch{}
+      }
+      legObj.cost = null;
+    }
+  }catch{}
+
+  // Bindings (write directly to the same object reference)
+  const bind = (key, fn) => {
+    const el = qs(key);
+    if (!el) return;
+    el.addEventListener("input", () => { try { fn(el.value); } catch {} });
+    el.addEventListener("change", () => { try { fn(el.value); } catch {} });
+  };
+
+  bind("from", (val)=>{ legObj.from = val; try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} try{ __syncPeerRoute(); }catch{} });
+  bind("to", (val)=>{ legObj.to = val;   try{ __updateTransportSheetTitle(currentMode, legObj.from, legObj.to); }catch{} try{ __syncPeerRoute(); }catch{} });
+  bind("placeOut", (val)=>{ legObj.placeOut = val; });
+  bind("placeIn", (val)=>{ legObj.placeIn = val; });
+  bind("placeOutDetail", (val)=>{ legObj.placeOutDetail = val; });
+  bind("placeInDetail", (val)=>{ legObj.placeInDetail = val; });
+  bind("dateOut", (val)=>{ legObj.date = val; });
+  bind("timeOut", (val)=>{ legObj.time = val; });
+  bind("tzFrom", (val)=>{ const s = String(val||"").trim(); legObj.tzFrom = (s===""? null : parseInt(s,10)); });
+  bind("dateIn", (val)=>{
+    legObj.arriveDate = val;
+    legObj.dateIn = val;        // compat legacy para timeline/summary
+  });
+  bind("timeIn", (val)=>{
+    legObj.arriveTime = val;
+    legObj.timeIn = val;        // compat legacy para timeline/summary
+  });
+  bind("tzTo", (val)=>{ const s = String(val||"").trim(); legObj.tzTo = (s===""? null : parseInt(s,10)); });
+  bind("cost", (val)=>{ if(String(legObj.tripType||"oneway")==="roundtrip" && String(legObj.rtRole||"")==="return"){ legObj.cost = null; try{ qs("cost").value=""; }catch{} return; } const s = String(val||"").trim(); legObj.cost = (s === "") ? null : parseMoney(s); });
+  bind("currency", (val)=>{ legObj.currency = val; });
+  return true;
+}
+
+
+function __updateStaySheetTitle(city, name){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const c = String(city||"").trim();
+    const n = String(name||"").trim();
+    const detail = [c,n].filter(Boolean).join(" · ");
+    t.textContent = `🏨 ${(detail || "Alojamiento")}`.trim();
+  } catch {}
+}
+function __updateActSheetTitle(city, title){
+  try{
+    const t = document.getElementById("eventSheetTitle");
+    if (!t) return;
+    const c = String(city||"").trim();
+    const a = String(title||"").trim();
+    const detail = [c,a].filter(Boolean).join(" · ");
+    t.textContent = `🎯 ${(detail || "Actividad")}`.trim();
+  } catch {}
+}
+
+function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
+  if (!body || !stayObj) return false;
+  body.innerHTML = "";
+
+  // --- Simple, robust date helpers (no timezones yet) ---
+  const __isoToDate = (iso)=>{
+    const s = String(iso||"").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    // Use midday to avoid DST edge cases
+    const d = new Date(s + "T12:00:00");
+    return isNaN(d.getTime()) ? null : d;
+  };
+  const __dateToISO = (d)=>{
+    if (!d || isNaN(d.getTime())) return "";
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  };
+  const __addDaysISO = (iso, days)=>{
+    const d = __isoToDate(iso);
+    if (!d) return "";
+    const n = Number(days||0);
+    d.setDate(d.getDate() + (isFinite(n) ? n : 0));
+    return __dateToISO(d);
+  };
+  const __diffDaysISO = (fromISO, toISO)=>{
+    const a = __isoToDate(fromISO);
+    const b = __isoToDate(toISO);
+    if (!a || !b) return null;
+    const ms = b.getTime() - a.getTime();
+    const days = Math.round(ms / (24*60*60*1000));
+    return isFinite(days) ? days : null;
+  };
+
+  // Backwards compatible field name (new): stayObj.checkout (YYYY-MM-DD)
+  if (stayObj.checkout == null || String(stayObj.checkout||"").trim() === "") {
+    const base = String(stayObj.date||"").trim();
+    const nights = Math.max(1, parseInt(String(stayObj.nights ?? 1),10) || 1);
+    const co = __addDaysISO(base, nights);
+    if (co) stayObj.checkout = co;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-leg-editor sheet-stay-editor";
+
+  wrap.innerHTML = `<div class="grid grid-cols-2 gap-3 items-start">
+  <!-- Columna izquierda -->
+  <div class="min-w-0 space-y-3">
+    <div>
+      <label class="text-xs text-slate-600">Alojamiento / Hotel / Apartamento</label>
+      <input data-stay-name="${escapeHtml(String(itemId))}" data-sheet-stay="name"
+        class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Nombre del alojamiento">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Check-in (fecha)</label>
+      <input data-stay-date="${escapeHtml(String(itemId))}" data-sheet-stay="date" type="date"
+        class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Hora de check-in</label>
+      <input data-stay-time="${escapeHtml(String(itemId))}" data-sheet-stay="time" type="time"
+        class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Noches</label>
+      <input data-stay-nights="${escapeHtml(String(itemId))}" data-sheet-stay="nights" type="number" min="1" step="1"
+        class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="1">
+    </div>
+  </div>
+
+  <!-- Columna derecha -->
+  <div class="min-w-0 space-y-3">
+    <div>
+      <label class="text-xs text-slate-600">Ciudad</label>
+      <input data-stay-city="${escapeHtml(String(itemId))}" data-sheet-stay="city"
+        class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Check-out (fecha)</label>
+      <input data-sheet-stay="checkout" type="date"
+        class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Hora de check-out <span class="text-slate-400 font-normal">(opcional)</span></label>
+      <input data-sheet-stay="checkoutTime" type="time"
+        class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="">
+    </div>
+
+    <div>
+      <label class="text-xs text-slate-600">Coste</label>
+      <div class="mt-1 flex items-center gap-2">
+        <input data-stay-cost="${escapeHtml(String(itemId))}" data-sheet-stay="cost" type="number" min="0" step="0.01"
+          class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+        <label class="sr-only">Moneda</label>
+        <select data-stay-currency="${escapeHtml(String(itemId))}" data-sheet-stay="currency"
+          class="shrink-0 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+          <option value="EUR">€</option>
+          <option value="USD">$</option>
+          <option value="GBP">£</option>
+          <option value="CHF">CHF</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+  body.appendChild(wrap);
+
+  const qs = (k) => wrap.querySelector(`[data-sheet-stay="${k}"]`);
+  const v = (x) => (x == null ? "" : String(x));
+
+  // Init values
+  qs("city").value = v(stayObj.city);
+  try{ __wireStayAutocomplete(wrap); }catch{}
+  qs("name").value = v(stayObj.name);
+  try{ const _n=qs("name"); const _c=qs("city"); __installPinBtn(_n, ()=>__mapsDestWithCity(_n.value, _c && _c.value), ()=>"transit"); }catch{}
+  qs("date").value = v(stayObj.date || "");
+  qs("time").value = v(stayObj.time || "");
+  qs("nights").value = v(stayObj.nights ?? 1);
+  qs("checkout").value = v(stayObj.checkout || "");
+  qs("checkoutTime").value = v(stayObj.checkoutTime || stayObj.checkout_time || "");
+  qs("currency").value = v(stayObj.currency || "EUR");
+  qs("cost").value = (stayObj.cost == null ? "" : String(stayObj.cost));
+
+  try { __updateStaySheetTitle(stayObj.city, stayObj.name); } catch {}
+
+  const __syncFromCheckinAndNights = ()=>{
+    const ci = String(stayObj.date||"").trim();
+    const n = Math.max(1, parseInt(String(stayObj.nights ?? 1),10) || 1);
+    const co = __addDaysISO(ci, n);
+    if (co) {
+      stayObj.checkout = co;
+      const el = qs("checkout"); if (el) el.value = co;
+    }
+  };
+  const __syncFromCheckout = ()=>{
+    const ci = String(stayObj.date||"").trim();
+    const co = String(stayObj.checkout||"").trim();
+    const d = __diffDaysISO(ci, co);
+    if (d == null) return;
+    const nights = Math.max(1, d);
+    stayObj.nights = nights;
+    const el = qs("nights"); if (el) el.value = String(nights);
+  };
+
+  const bind = (key, fn) => {
+    const el = qs(key);
+    if (!el) return;
+    el.addEventListener("input", () => { try { fn(el.value); } catch {} });
+    el.addEventListener("change", () => { try { fn(el.value); } catch {} });
+  };
+
+  bind("city", (val)=>{ stayObj.city = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} });
+  bind("name", (val)=>{ stayObj.name = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} });
+
+  bind("date", (val)=>{
+    stayObj.date = val;
+    // keep checkout aligned when possible
+    __syncFromCheckinAndNights();
+  });
+
+  bind("time", (val)=>{ stayObj.time = val; });
+
+  bind("nights", (val)=>{
+    const n = Math.max(1, parseInt(String(val||"1"),10) || 1);
+    stayObj.nights = n;
+    __syncFromCheckinAndNights();
+  });
+
+  bind("checkout", (val)=>{
+    stayObj.checkout = val;
+    __syncFromCheckout();
+  });
+
+  bind("checkoutTime", (val)=>{ stayObj.checkoutTime = val; });
+
+  bind("currency", (val)=>{ stayObj.currency = val; });
+
+  bind("cost", (val)=>{
+    const s = String(val||"").trim();
+    stayObj.cost = (s === "") ? null : parseMoney(s);
+  });
+
+  return true;
+}
+
+
+function __renderActEditorInSheet(body, actObj, itemId, isNew){
+  if (!body || !actObj) return false;
+  body.innerHTML = "";
+
+  // Ensure optional fields exist (no currency logic yet)
+  if (actObj.duration == null) actObj.duration = "";
+  if (actObj.currency == null) actObj.currency = (state.displayCurrency || "EUR");
+
+  const wrap = document.createElement("div");
+  wrap.className = "sheet-leg-editor sheet-act-editor";
+
+  // Premium two-column layout (clean + consistent)
+  wrap.innerHTML = `
+    <div class="actEditorStack">
+      <div class="actRow2">
+        <div class="fieldCell">
+          <label class="text-xs text-slate-600">Actividad</label>
+          <input data-act-title="${escapeHtml(String(itemId))}" data-sheet-act="title"
+            class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ej: Museo / Tour / Restaurante">
+          ${actObj.fromAI ? `<div class="mt-2 text-xs text-slate-500">Añadida desde IA</div>` : ``}
+        </div>
+
+        <div class="fieldCell">
+          <label class="text-xs text-slate-600">Ciudad</label>
+          <input data-act-city="${escapeHtml(String(itemId))}" data-sheet-act="city"
+            class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Ciudad">
+        </div>
+      </div>
+
+      <div class="fieldCell halfOnly">
+        <label class="text-xs text-slate-600">Fecha</label>
+        <input data-act-date="${escapeHtml(String(itemId))}" data-sheet-act="date" type="date"
+          class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+      </div>
+
+      <div class="actRow2">
+        <div class="fieldCell">
+          <label class="text-xs text-slate-600">Hora</label>
+          <input data-act-time="${escapeHtml(String(itemId))}" data-sheet-act="time" type="time"
+            class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        </div>
+
+        <div class="fieldCell">
+          <label class="text-xs text-slate-600">Duración</label>
+          <input data-act-duration="${escapeHtml(String(itemId))}" data-sheet-act="duration"
+            class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="Ej: 1h 30m">
+        </div>
+      </div>
+
+      <div class="fieldCell halfOnly">
+        <label class="text-xs text-slate-600">Importe</label>
+        <div class="mt-1 moneyInline">
+          <input data-act-cost="${escapeHtml(String(itemId))}" data-sheet-act="cost" type="number" min="0" step="0.01"
+            class="w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="0.00">
+          <select data-act-currency="${escapeHtml(String(itemId))}" data-sheet-act="currency"
+            class="shrink-0 px-2 py-1 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+            <option value="EUR">€</option>
+            <option value="USD">$</option>
+            <option value="GBP">£</option>
+            <option value="CHF">CHF</option>
+            <option value="JPY">¥</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+            <option value="MXN">MXN</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+
+  body.appendChild(wrap);
+
+  const qs = (k) => wrap.querySelector(`[data-sheet-act="${k}"]`);
+  const v = (x) => (x == null ? "" : String(x));
+
+  qs("title").value = v(actObj.title);
+  try{ const _t=qs("title"); const _c=qs("city"); __installPinBtn(_t, ()=>__mapsDestWithCity(_t.value, _c && _c.value), ()=>"transit"); }catch{}
+  qs("city").value = v(actObj.city);
+  try{ __wireActAutocomplete(wrap); }catch{}
+  qs("date").value = v(actObj.date || "");
+  qs("time").value = v(actObj.time || "");
+  qs("duration").value = v(actObj.duration || "");
+  qs("currency").value = v(actObj.currency || "EUR");
+  qs("cost").value = (actObj.cost == null ? "" : String(actObj.cost));
+
+  try { __updateActSheetTitle(actObj.city, actObj.title); } catch {}
+
+  const bind = (key, fn) => {
+    const el = qs(key);
+    if (!el) return;
+    el.addEventListener("input", () => { try { fn(el.value); } catch {} });
+    el.addEventListener("change", () => { try { fn(el.value); } catch {} });
+  };
+
+  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
+  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
+  bind("date", (val)=>{ actObj.date = val; });
+  bind("time", (val)=>{ actObj.time = val; });
+  bind("duration", (val)=>{ actObj.duration = val; });
+  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
+
+  return true;
+}
+
+
+function __legPlacePlaceholder(mode, which){
+  const m = (typeof legModeDefault === "function") ? legModeDefault(mode) : String(mode||"plane");
+  const w = (which === "to") ? "llegada" : "salida";
+  if (m === "plane") return `Aeropuerto ${w}`;
+  if (m === "train") return `Estación ${w}`;
+  if (m === "bus") return `Estación bus ${w}`;
+  if (m === "boat") return `Puerto ${w}`;
+  return `Punto ${w}`; // car default
+}
+function __applyLegPlaceholdersInSheet(id, mode){
+  const body = document.getElementById("eventSheetBody");
+  if (!body) return;
+  const out = body.querySelector(`[data-leg-placeout="${CSS.escape(String(id))}"]`);
+  const inn = body.querySelector(`[data-leg-placein="${CSS.escape(String(id))}"]`);
+  if (out) out.placeholder = __legPlacePlaceholder(mode, "from");
+  if (inn) inn.placeholder = __legPlacePlaceholder(mode, "to");
+}
+
+function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
+  const k = __normKind(kind);
+  const itemId = String(id||"").trim();
+  const m = (mode === "view") ? "view" : "edit";
+  const __srcView = (sourceView ? String(sourceView) : (typeof activeView !== "undefined" ? String(activeView) : "")) || "";
+
+  // V174 (quirúrgico): guardar contexto para volver a la vista origen al cerrar el sheet
+  try{
+    const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+    window.__eventSheetReturnCtx = {
+      sourceView: __srcView || (typeof activeView !== "undefined" ? String(activeView) : ""),
+      sourceScrollTop: scroller ? (scroller.scrollTop || 0) : 0
+    };
+  }catch{}
+  if (!itemId || (k !== "leg" && k !== "stay" && k !== "act")) return;
+
+  const overlay = document.getElementById("eventSheetOverlay");
+  const sheet = document.getElementById("eventSheet");
+  const titleEl = document.getElementById("eventSheetTitle");
+  const body = document.getElementById("eventSheetBody");
+  const mainScroll = document.getElementById("mainScroll");
+  if (!overlay || !sheet || !titleEl || !body) return;
+  // Event Sheet context (single source of truth)
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView };
+
+  // V89E5D: bind sheet trash context
+  try {
+    const sheetTrash = document.getElementById("eventSheetTrash");
+    if (sheetTrash) { sheetTrash.dataset.kind = k; sheetTrash.dataset.id = itemId; }
+  } catch {}
+
+
+  // Reset any previous sheet-only UI fragments
+  try { body.__chipsHost = null; } catch {}
+
+  // Close any previous instance safely
+  try { closeEventSheet({ silent: true }); } catch {}
+
+function renderLegModeChips(container, leg, onSelect){
+  if (!container) return;
+  const cur = legModeDefault(leg && leg.mode);
+  const mk = (val, icon, txt) => {
+    const active = (cur === val);
+    const cls = "tap px-3 py-2 rounded-full text-sm font-semibold border flex items-center gap-2 " +
+      (active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200");
+    return `<button type="button" class="${cls}" data-legmode="${val}" aria-pressed="${active ? "true" : "false"}">${icon} ${txt}</button>`;
+  };
+  container.innerHTML =
+    `<div class="flex gap-2 overflow-x-auto pb-1">` +
+      mk("plane","✈️","Avión") +
+      mk("train","🚆","Tren") +
+      mk("bus","🚌","Bus") +
+      mk("car","🚗","Coche") +
+      mk("boat","🚢","Barco") +
+    `</div>`;
+
+  container.querySelectorAll("[data-legmode]").forEach(btn=>{
+    btn.addEventListener("click", (e)=> {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const v = btn.getAttribute("data-legmode");
+      if (!leg || !v) return;
+
+      // Set selected mode (never overwrite an existing valid mode with default unless empty)
+      leg.mode = legModeDefault(v);
+
+      try { if (typeof saveState === "function") saveState(); } catch {}
+
+      const sheetOpen = document.body.classList.contains("sheet-open");
+      const sameLegInSheet = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && __eventSheetCtx.kind === "leg" && String(__eventSheetCtx.id) === String(leg.id));
+
+      // While sheet is open (move-node editor), avoid any rerenders that rebuild lists/sections.
+      if (sheetOpen && sameLegInSheet) {
+        __dirtyTimeline = true;
+        __dirtySummary = true;
+        if (typeof onSelect === "function") onSelect(leg.mode);
+        // Update only local chips UI
+        renderLegModeChips(container, leg, onSelect);
+        return;
+      }
+
+      // If chips are ever used outside the sheet: safe refresh
+      try { if (typeof renderLegs === "function") renderLegs(); } catch {}
+      try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
+      try { if (typeof calcSummary === "function") calcSummary(); } catch {}
+      if (typeof onSelect === "function") onSelect(leg.mode);
+      renderLegModeChips(container, leg, onSelect);
+    });
+  });
+}
+
+
+  // Ensure expanded sets + rerender so editor node exists
+  try {
+    if (k === "leg") { __sectionExpanded?.legs?.add(itemId); if (typeof renderLegs === "function") renderLegs(); }
+    if (k === "stay") { __sectionExpanded?.stays?.add(itemId); if (typeof renderStays === "function") renderStays(); }
+    if (k === "act") { __sectionExpanded?.activities?.add(itemId); if (typeof renderActivities === "function") renderActivities(); }
+  } catch {}
+
+  // Find the real editor node (move-node approach: avoid duplicate IDs)
+  let node = null;
+  let legObj = null;
+  let stayObj = null;
+  let actObj = null;
+
+  try {
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if (k === "leg") legObj = sc && Array.isArray(sc.legs) ? sc.legs.find(x => String(x && x.id) === String(itemId)) : null;
+    if (k === "stay") stayObj = sc && Array.isArray(sc.stays) ? sc.stays.find(x => String(x && x.id) === String(itemId)) : null;
+    if (k === "act") actObj = sc && Array.isArray(sc.activities) ? sc.activities.find(x => String(x && x.id) === String(itemId)) : null;
+  } catch {}
+
+  // V201: keep a direct reference to the edited object for sheet-only tools (e.g., attachments)
+  try{ __eventSheetCtx.objRef = (k==="leg"?legObj:(k==="stay"?stayObj:actObj)) || null; }catch{}
+
+  if (k === "leg" && !legObj) { alert("No se encontró el evento"); return; }
+  if (k === "stay" && !stayObj) { alert("No se encontró el evento"); return; }
+  if (k === "act" && !actObj) { alert("No se encontró el evento"); return; }
+
+// Build a nice title
+  try {
+    const it = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(k, itemId) : null;
+    let label = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    let detail = "";
+    let ico = "";
+    if (it && k === "leg") ico = legModeIcon(it.mode);
+    if (it && k === "stay") ico = "🏨";
+    if (it && k === "act") ico = "🎯";
+    if (it && k === "leg") detail = `${it.from||""} → ${it.to||""}`.trim();
+    if (it && k === "stay") detail = `${it.name||it.place||""}`.trim();
+    if (it && k === "act") detail = `${it.title||it.name||""}`.trim();
+    titleEl.textContent = (isNew ? ("Nuevo " + label) : label);
+    if (ico) titleEl.textContent = `${ico} ${titleEl.textContent}`;
+    if (detail) titleEl.textContent = `${titleEl.textContent} · ${detail}`;
+  } catch { titleEl.textContent = "Evento"; }
+
+  // LEG: render isolated editor HTML (no DOM move from section)
+  if (k === "leg") {
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+    const ok = __renderLegEditorInSheet(body, legObj, itemId, !!isNew);
+  try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
+    if (!ok) { alert("No se pudo abrir el editor"); return; }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    requestAnimationFrame(()=>{ try{ __installClearX(document.getElementById("eventSheetBody")); }catch{} });
+    try { applyEventSheetMode(); } catch {}
+    // Unsaved-changes guard: snapshot + dirty tracking (edit only)
+    try{
+      const body = document.getElementById("eventSheetBody");
+      const overlay = document.getElementById("eventSheetOverlay") || body;
+      const mode = overlay?.getAttribute("data-sheet-mode") || body?.getAttribute("data-sheet-mode") || "";
+      if(mode === "edit" && body){
+        __sheetSetSnapshot();
+        if(!body.__esDirtyBound){
+          body.addEventListener("input", __sheetUpdateDirty, true);
+          body.addEventListener("change", __sheetUpdateDirty, true);
+          body.__esDirtyBound = true;
+        }
+      }
+    }catch{}
+
+    // In view mode we avoid focusing fields automatically
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+    return;
+  }
+
+  // Header type + icon
+  try {
+    const typeIconEl = document.getElementById("eventSheetTypeIcon");
+    const typeLabelEl = document.getElementById("eventSheetTypeLabel");
+    if (typeLabelEl) typeLabelEl.textContent = (k === "leg") ? "Transporte" : (k === "stay") ? "Alojamiento" : "Actividad";
+    if (typeIconEl) typeIconEl.textContent = (k === "leg") ? "🛫" : (k === "stay") ? "🏨" : "🎯";
+  } catch {}
+
+
+  
+  // STAY/ACT: render isolated premium editor HTML (no DOM move from section)
+  if (k === "stay") {
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+    const ok = __renderStayEditorInSheet(body, stayObj, itemId, !!isNew);
+  try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
+    if (!ok) { alert("No se pudo abrir el editor"); return; }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+    return;
+  }
+  if (k === "act") {
+    __eventSheetCtx = { kind: k, id: itemId, mode: m, isNew: !!isNew, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : ""), prevScrollTop: mainScroll ? mainScroll.scrollTop : 0 };
+    const ok = __renderActEditorInSheet(body, actObj, itemId, !!isNew);
+  try{ __installClearX(document.getElementById("eventSheetBody")); }catch{}
+    if (!ok) { alert("No se pudo abrir el editor"); return; }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+    return;
+  }
+
+// If leg: inject mode chips just under title
+  try {
+    if (k === "leg") {
+      const legObj = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", itemId) : null;
+      const chipsHost = document.createElement("div");
+      chipsHost.id = "legModeChipsHost";
+      chipsHost.className = "mb-3";
+      renderLegModeChips(chipsHost, legObj, (newMode)=>{
+        try { if (typeof updateSheetDynamicSummary === "function") updateSheetDynamicSummary(); } catch {}
+        try { __applyLegPlaceholdersInSheet(itemId, newMode); } catch {}
+        // Update sheet title to reflect icon change (optional)
+        try {
+          const label = "Transporte";
+          const it2 = legObj;
+          const detail2 = it2 ? `${it2.from||""} → ${it2.to||""}`.trim() : "";
+          const icon2 = legModeIcon(newMode);
+          titleEl.textContent = detail2 ? `${icon2} ${label} · ${detail2}` : `${icon2} ${label}`;
+        } catch {}
+      });
+      // Prepend into body (we'll append node after clearing body)
+      body.__chipsHost = chipsHost;
+    }
+  } catch {}
+
+  // Move node into sheet body
+  const parent = node.parentNode;
+  const next = node.nextSibling;
+  __eventSheetCtx = { kind: k, id: itemId, mode: m, node, parent, next, prevScrollTop: mainScroll ? mainScroll.scrollTop : 0, sourceView: __srcView, prevActiveView: (typeof activeView !== "undefined" ? String(activeView) : "") };
+  window.__sheetCtx = { kind: k, id: itemId };
+  try {
+    const trash = document.getElementById("eventSheetTrash");
+    if (trash) { trash.dataset.kind = k; trash.dataset.id = String(itemId); }
+  } catch {}
+
+  const blocks = (k === "leg") ? null : __buildSheetBlocks(body);
+  // Transport form-first layout: no summary blocks
+  if (k === "leg") {
+    body.innerHTML = `<div id="legSheetFormHost"></div>`;
+  }
+
+
+  try {
+    if (body.__chipsHost) {
+      if (k === "leg") {
+        const host = document.getElementById("legSheetFormHost");
+        if (host) host.appendChild(body.__chipsHost);
+      } else if (blocks && blocks.A) {
+        blocks.A.appendChild(body.__chipsHost);
+      }
+    }
+  } catch {}
+  try { node.classList.remove("hidden"); } catch {}
+  try { if (k === "leg") node.classList.add("sheet-leg-editor"); else node.classList.remove("sheet-leg-editor"); } catch {}
+  try { if (k === "leg") { const it = (typeof getItemByTypeAndId==="function") ? getItemByTypeAndId("leg", itemId) : null; __applyLegPlaceholdersInSheet(itemId, it ? it.mode : "plane"); } } catch {}
+  try {
+    if (k === "leg") {
+      const host = document.getElementById("legSheetFormHost");
+      if (host) host.appendChild(node); else body.appendChild(node);
+    } else {
+      if (blocks && blocks.E) blocks.E.appendChild(node); else body.appendChild(node);
+    }
+  } catch { body.appendChild(node); }
+  try {
+    if (blocks && blocks.E && !blocks.E.__phDone) {
+      blocks.E.__phDone = true;
+      // If no obvious notes field exists, add a small placeholder above editor
+      const ph = document.createElement("div");
+      ph.className = "text-sm text-slate-500 mb-2";
+      ph.textContent = "Notas y otros detalles";
+      blocks.E.prepend(ph);
+    }
+  } catch {}
+
+
+  overlay.classList.remove("hidden");
+    document.body.classList.add("sheet-open");
+    try { applyEventSheetMode(); } catch {}
+    // In view mode we avoid focusing fields automatically
+    try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
+  // sheetSummaryLine hidden for leg
+  try { const sl = document.getElementById("eventSheetSummaryLine"); if (sl) sl.style.display = (k === "leg") ? "none" : ""; } catch {}
+
+  // Dynamic summary wiring
+  try {
+    updateSheetDynamicSummary();
+    if (!body.__summaryBound) {
+      body.__summaryBound = true;
+      body.addEventListener("input", ()=> updateSheetDynamicSummary());
+      body.addEventListener("change", ()=> updateSheetDynamicSummary());
+    }
+  } catch {}
+
+  // Focus first input for quick edit
+  try {
+    if (m === "edit") {
+      requestAnimationFrame(() => {
+        const first = body.querySelector("input,textarea,select,button");
+        if (first && typeof first.focus === "function") first.focus({ preventScroll: true });
+      });
+    }
+  } catch {}
+
+}
+
+function closeEventSheet({ silent } = {}) {
+  try{ window.__suppressNotePeekUntil = Date.now() + 450; }catch{}
+  const overlay = document.getElementById("eventSheetOverlay");
+  const body = document.getElementById("eventSheetBody");
+  const mainScroll = document.getElementById("mainScroll");
+  if (overlay) overlay.classList.add("hidden");
+  document.body.classList.remove("sheet-open");
+  document.body.classList.remove("eventsheet-view");
+
+  // Flush deferred renders (avoid breaking move-node while sheet open)
+  try {
+    if (__dirtyTimeline && typeof renderTimeline === "function") renderTimeline();
+  } catch {}
+  try {
+    if (__dirtySummary && typeof calcSummary === "function") calcSummary();
+  } catch {}
+  __dirtyTimeline = false;
+  __dirtySummary = false;
+
+
+  // Restore moved node if any
+  if (__eventSheetCtx && __eventSheetCtx.node && __eventSheetCtx.parent) {
+    try {
+      const { node, parent, next } = __eventSheetCtx;
+      if (next && next.parentNode === parent) parent.insertBefore(node, next);
+      else parent.appendChild(node);
+    } catch {}
+  }
+
+  if (body) body.innerHTML = "";
+  const ctx = __eventSheetCtx;
+
+  try{ if(__eventSheetCtx) __eventSheetCtx.objRef = null; }catch{}
+  try { if (ctx && ctx.node) ctx.node.classList.remove("sheet-leg-editor"); } catch {}
+  __eventSheetCtx = null;
+
+  // Re-render to reflect any edits
+  try {
+    if (typeof renderTimeline === "function") renderTimeline();
+    if (ctx?.kind === "leg" && typeof renderLegs === "function") renderLegs();
+    if (ctx?.kind === "stay" && typeof renderStays === "function") renderStays();
+    if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
+  } catch {}
+
+  // Restore view context (only if changed while sheet open)
+  try {
+    const src = ctx && ctx.sourceView ? String(ctx.sourceView) : "";
+    if (src && typeof setView === "function" && (typeof activeView !== "undefined") && String(activeView) !== src) {
+      setView(src);
+    }
+  } catch {}
+
+// Restore scroll position (no aggressive jumps)
+  try {
+    if (mainScroll && typeof ctx?.prevScrollTop === "number") {
+      const y = ctx.prevScrollTop;
+      try { mainScroll.scrollTop = y; } catch {}
+      try { requestAnimationFrame(() => { try { mainScroll.scrollTop = y; } catch {} }); } catch {}
+    }
+  } catch {}
+
+  if (!silent) {
+    try { /* noop */ } catch {}
+  }
+}
+
+
+
+function __getActiveDateKey(){
+  try{
+    const sel = document.getElementById("dateJumpSelect");
+    const v = String(sel && sel.value ? sel.value : "").trim();
+    if(v) return v;
+  }catch{}
+  // fallback: try relevant date if selector empty
+  try{
+    if(typeof getActiveViewName==="function"){
+      const v = getActiveViewName("");
+      // best-effort: pick today iso
+      const d = new Date();
+      const iso = d.toISOString().slice(0,10);
+      return iso;
+    }
+  }catch{}
+  return "";
+}
+
+function __getTimelineNote(dateKey){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return "";
+    // Backward/forward compatible: notes may live in timelineNotesByDate OR dailyNotes/dailyNotesByDate
+    const map1 = sc.timelineNotesByDate || null;
+    const map2 = sc.dailyNotesByDate || null;
+    const map3 = sc.dailyNotes || null;
+    if(map1 && (map1[dateKey] != null)) return String(map1[dateKey] || "");
+    if(map2 && (map2[dateKey] != null)) return String(map2[dateKey] || "");
+    if(map3 && (map3[dateKey] != null)) return String(map3[dateKey] || "");
+    return "";
+  }catch{
+    return "";
+  }
+}
+
+function __setTimelineNote(dateKey, text){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return;
+    if(!sc.dailyNotesByDate) sc.dailyNotesByDate = (sc.dailyNotes || {});
+    if(!sc.dailyNotes) sc.dailyNotes = sc.dailyNotesByDate;
+    if(!sc.timelineNotesByDate) sc.timelineNotesByDate = sc.dailyNotesByDate;
+    const t = String(text||"").trim();
+    if(!t){
+      try{ try{ delete sc.timelineNotesByDate[dateKey]; }catch{}
+      try{ delete sc.dailyNotesByDate[dateKey]; }catch{}
+      try{ delete sc.dailyNotes[dateKey]; }catch{} }catch{}
+    }else{
+      sc.timelineNotesByDate[dateKey] = t;
+      sc.dailyNotesByDate[dateKey] = t;
+      sc.dailyNotes[dateKey] = t;
+    }
+    try{ if (typeof saveState === "function") saveState(); }catch{}
+  }catch{}
+}
+/* Helpers (fuente de verdad) — usar estos en adelante para notas del día */
+function getDailyNote(dateKey){
+  return __getTimelineNote(dateKey);
+}
+function setDailyNote(dateKey, text){
+  __setTimelineNote(dateKey, text);
+}
+function deleteDailyNote(dateKey){
+  __setTimelineNote(dateKey, "");
+}
+function listDailyNotesKeys(){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return [];
+    const map = sc.dailyNotesByDate || sc.timelineNotesByDate || sc.dailyNotes || {};
+    return Object.keys(map||{}).filter(k=>String(map[k]||"").trim()).sort();
+  }catch{
+    return [];
+  }
+}
+
+
+function __updateTimelineNotesBadge(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    const badge = document.getElementById("timelineNotesBadge");
+    if(!fab || !badge) return;
+    const k = __getActiveDateKey();
+    const note = k ? __getTimelineNote(k) : "";
+    if(note && String(note).trim()){
+      badge.classList.remove("hidden");
+    }else{
+      badge.classList.add("hidden");
+    }
+  }catch{}
+}
+
+function __updateTimelineNotesFabVisibility(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    if(!fab) return;
+
+    // Prefer the view we control (setView sets activeView). Avoid relying on helper functions
+    // that may return stale values.
+    let v = String(activeView || "");
+    if(!v){
+      try{ v = (typeof getActiveViewName==="function") ? String(getActiveViewName("")||"") : ""; }catch{}
+    }
+
+    // Final source of truth: whether the timeline container is actually visible.
+    const tl = document.getElementById("view-timeline");
+    const isTimelineVisible = !!(tl && !tl.classList.contains("hidden"));
+
+    const show = isTimelineVisible && (v === "timeline" || v === "cronograma" || v === "schedule");
+    if(show){
+      fab.classList.remove("hidden");
+      __updateTimelineNotesBadge();
+    }else{
+      fab.classList.add("hidden");
+    }
+  }catch{}
+}
+
+function __openTimelineNotesModal(){
+  const modal = document.getElementById("timelineNotesModal");
+  const ta = document.getElementById("timelineNotesText");
+  if(!modal || !ta) return;
+  const k = __getActiveDateKey();
+  ta.value = k ? __getTimelineNote(k) : "";
+  modal.classList.remove("hidden");
+  try{ ta.focus({preventScroll:true}); }catch{ try{ ta.focus(); }catch{} }
+}
+
+function __closeTimelineNotesModal(){
+  const modal = document.getElementById("timelineNotesModal");
+  if(!modal) return;
+  modal.classList.add("hidden");
+}
+
+function __initTimelineNotesFab(){
+  try{
+    const fab = document.getElementById("timelineNotesFab");
+    const modal = document.getElementById("timelineNotesModal");
+    const backdrop = document.getElementById("timelineNotesBackdrop");
+    const btnClose = document.getElementById("timelineNotesClose");
+    const btnCancel = document.getElementById("timelineNotesCancel");
+    const btnSave = document.getElementById("timelineNotesSave");
+    const ta = document.getElementById("timelineNotesText");
+    const sel = document.getElementById("dateJumpSelect");
+
+    if(fab && !fab.__tn_bound){
+      fab.__tn_bound = true;
+      fab.addEventListener("click", (e)=>{
+    e.preventDefault(); e.stopPropagation();
+        const k = __getActiveDailyNoteKey();
+    openDailyNoteModal(k);
+  });
+    }
+    const closeAny = (e)=>{ try{ e && (e.preventDefault(), e.stopPropagation()); }catch{}; __closeTimelineNotesModal(); };
+    if(backdrop && !backdrop.__tn_bound){ backdrop.__tn_bound=true; backdrop.addEventListener("click", closeAny); }
+    if(btnClose && !btnClose.__tn_bound){ btnClose.__tn_bound=true; btnClose.addEventListener("click", closeAny); }
+    if(btnCancel && !btnCancel.__tn_bound){ btnCancel.__tn_bound=true; btnCancel.addEventListener("click", closeAny); }
+
+    if(btnSave && !btnSave.__tn_bound){
+      btnSave.__tn_bound=true;
+      btnSave.addEventListener("click",(e)=>{
+        e.preventDefault(); e.stopPropagation();
+        const k = __getActiveDateKey();
+        if(!k){ __closeTimelineNotesModal(); return; }
+        __setTimelineNote(k, ta ? ta.value : "");
+        __updateTimelineNotesBadge();
+        try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
+        __closeTimelineNotesModal();
+      });
+    }
+
+    // Keep badge updated when changing day
+    if(sel && !sel.__tn_bound){
+      sel.__tn_bound = true;
+      sel.addEventListener("change", ()=>{ __updateTimelineNotesBadge(); }, {passive:true});
+    }
+
+    // Patch setView to update visibility (safe)
+    try{
+      const orig = window.setView;
+      if(typeof orig === "function" && !orig.__tn_patched){
+        function patched(viewName){
+          const r = orig.apply(this, arguments);
+          try{ __updateTimelineNotesFabVisibility(); }catch{}
+          return r;
+        }
+        patched.__tn_patched = true;
+        patched.__dj_patched = orig.__dj_patched; // preserve flags if any
+        window.setView = patched;
+      }
+    }catch{}
+
+    __updateTimelineNotesFabVisibility();
+  }catch{}
+  // V174 (quirúrgico): volver a la vista origen al cerrar el sheet (sin tocar NAV/arranque)
+  try{
+    const ctx = window.__eventSheetReturnCtx;
+    if(ctx && ctx.sourceView){
+      const v = String(ctx.sourceView||"").trim();
+      const st = Number(ctx.sourceScrollTop);
+      // limpiar antes para evitar loops si setView abre/cierra algo
+      window.__eventSheetReturnCtx = null;
+      if(v && typeof setView === "function"){
+        setView(v);
+      }
+      const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
+      if(scroller && Number.isFinite(st)){
+        requestAnimationFrame(()=>{ try{ scroller.scrollTop = st; }catch{} });
+      }
+    }
+  }catch{}
+
+}
+
+function __initEventSheetBindings(){
+  const overlay = document.getElementById("eventSheetOverlay");
+  const closeBtn = document.getElementById("eventSheetClose");
+
+  const notesBtn = document.getElementById("eventSheetNotes");
+  if (notesBtn && !notesBtn.__boundNotes) {
+    notesBtn.__boundNotes = true;
+
+    // Capture=true para que funcione incluso con guards y para evitar dobles listeners
+    notesBtn.addEventListener("click", (e) => {
+      try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch{}
+
+      const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+      if(!ctx || !ctx.kind || !ctx.id) return;
+
+      // openItemNotesModal espera "leg|stay|act" (no "transport")
+      try{
+        if (typeof openItemNotesModalByTypeId === "function") {
+          openItemNotesModalByTypeId(String(ctx.kind), String(ctx.id), { readOnly: ((typeof getEventSheetMode==="function") ? getEventSheetMode() : "edit") === "view" });
+          return;
+        }
+        // fallback legacy
+        if (typeof openItemNotesModal === "function") {
+          openItemNotesModal(String(ctx.kind), String(ctx.id));
+        }
+      }catch{}
+    }, true);
+  }
+
+  const sheet = document.getElementById("eventSheet");
+  if (closeBtn) closeBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); if(!__confirmCloseIfDirty()) return; closeEventSheet(); });
+
+  
+
+
+  const attachBtn = document.getElementById("eventSheetAttach");
+  if(attachBtn && !attachBtn.__bound){
+    attachBtn.__bound = true;
+    attachBtn.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      try{
+        const obj = __getEventSheetObj();
+        if(!obj){ alert("No se encontró el evento"); return; }
+        openAttachmentsModal(obj);
+      }catch(err){
+        console.error(err);
+        alert("No se pudieron abrir los adjuntos");
+      }
+      return;
+    });
+  }
+
+  
+
+  const editBtn = document.getElementById("eventSheetEdit");
+  if (editBtn && !editBtn.__bound) {
+    editBtn.__bound = true;
+    editBtn.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+
+      // Toggle edit <-> view for the currently opened sheet.
+      try {
+        const cur = (typeof getEventSheetMode === "function") ? getEventSheetMode() : "edit";
+        if (cur === "edit") {
+          // Leaving edit: safest is to discard any unsaved field changes and re-open in view.
+          const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+          if (ctx && ctx.kind && ctx.id) {
+            try { closeEventSheet({ silent: true }); } catch {}
+            try { openEventSheet({ kind: ctx.kind, id: ctx.id, mode: "view", isNew: !!ctx.isNew, sourceView: ctx.sourceView }); } catch {}
+          } else {
+            try { setEventSheetMode("view"); } catch {}
+          }
+        } else {
+          try { setEventSheetMode("edit"); } catch {}
+          try{ __sheetSetSnapshot(); }catch{}
+          try{
+            const body = document.getElementById("eventSheetBody");
+            if(body && !body.__esDirtyBound){
+              body.addEventListener("input", __sheetUpdateDirty, true);
+              body.addEventListener("change", __sheetUpdateDirty, true);
+              body.__esDirtyBound = true;
+            }
+          }catch{}
+        }
+      } catch {}
+    });
+  }
+
+  const saveBtn = document.getElementById("eventSheetSave");
+  if (saveBtn && !saveBtn.__esModeBound) {
+    saveBtn.__esModeBound = true;
+    saveBtn.addEventListener("click", (e) => {
+      // Respect mode: only save in edit
+      if (getEventSheetMode() !== "edit") { try { e.preventDefault(); e.stopPropagation(); } catch {} return; }
+      // Let existing handlers (if any) run; do not duplicate saveState here.
+    }, true);
+  }
+
+  const trashBtn = document.getElementById("eventSheetTrash");
+  if (trashBtn && !trashBtn.__bound) {
+    trashBtn.__bound = true;
+    trashBtn.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      if (getEventSheetMode() !== "edit") return;
+      const ctx = __eventSheetCtx || {};
+      const k = String(ctx.kind || trashBtn.dataset.kind || "");
+      const id = String(ctx.id || trashBtn.dataset.id || "");
+      if (!k || !id) return;
+
+      // Typed confirmation + mini resumen
+      try{
+        const sc = (typeof curScenario === "function") ? curScenario() : null;
+        let obj = null;
+        if(sc){
+          if(k === "leg") obj = (sc.legs||[]).find(x => String(x && x.id) === String(id));
+          if(k === "stay") obj = (sc.stays||[]).find(x => String(x && x.id) === String(id));
+          if(k === "act") obj = (sc.activities||[]).find(x => String(x && x.id) === String(id));
+        }
+        const t = __deleteConfirmText({kind:k}, obj || {});
+        const parts = [];
+        parts.push(t.title);
+        if (t.detail && String(t.detail).trim()) parts.push(String(t.detail).trim());
+        parts.push("Esta acción no se puede deshacer.");
+        const msg = parts.join("\n");
+        if(!confirm(msg)) return;
+      }catch{
+        if(!confirm("¿Eliminar este evento?\n\nEsta acción no se puede deshacer.")) return;
+      }
+
+      try { deleteItemById(k, id); } catch {}
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try { closeEventSheet(); } catch {}
+      // Minimal rerender
+      try {
+        if (k === "leg") { if (typeof renderLegs === "function") renderLegs(); if (typeof renderTimeline === "function") renderTimeline(); }
+        else if (k === "stay") { if (typeof renderStays === "function") renderStays(); if (typeof renderTimeline === "function") renderTimeline(); }
+        else if (k === "act") { if (typeof renderActivities === "function") renderActivities(); if (typeof renderTimeline === "function") renderTimeline(); }
+        if (typeof calcSummary === "function") calcSummary();
+      } catch {}
+    });
+  }
+
+  if (overlay) overlay.addEventListener("click", (e) => {
+    // Cerrar SOLO si se toca el backdrop (el overlay mismo)
+    if (e.target !== overlay) return;
+    if(!__confirmCloseIfDirty()) return;
+    closeEventSheet();
+  });
+  document.addEventListener("keydown", (e) => {
+  try{
+    // Solo actuar si el sheet está abierto
+    if (!overlay || overlay.classList.contains("hidden")) return;
+
+    // Solo cerrar con Escape
+    if (e.key !== "Escape") return;
+
+    // Confirmar si hay cambios sin guardar
+    if(!__confirmCloseIfDirty()) return;
+
+    closeEventSheet();
+  }catch{}
+});
+}
+try{
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __initEventSheetBindings, { once:true });
+  else __initEventSheetBindings();
+}catch{}
+
+const LS_KEY_GEMINI = "miviaje\.gemini\.key";
+
+/* --------------------------- Read-only mode -------------------------- */
+const LS_KEY_READONLY = "miviaje.readonly";
+function isReadOnly() { return localStorage.getItem(LS_KEY_READONLY) === "1"; }
+
+function setReadOnly(on) {
+  localStorage.setItem(LS_KEY_READONLY, on ? "1" : "0");
+  applyReadOnlyMode();
+}
+
+function applyReadOnlyMode() {
+  const on = isReadOnly();
+
+  // body class
+  document.body.classList.toggle("readonly-mode", on);
+
+  // Toggle button label
+  const btn = $("btnReadOnly");
+  if (btn) {
+    btn.textContent = on ? "🔓" : "🔒";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  // Disable all form controls (except file inputs for import/export modal)
+  document.querySelectorAll("input, select, textarea").forEach(el => {
+    if (el.type === "file") return; // allow import in modal
+    el.disabled = on;
+  });
+
+  // Disable only the buttons that modify data
+  const idsToDisable = [
+    "addLeg", "addStay", "addAct",
+    "tabA", "tabB",
+    "aiPick", "aiGenerate"
+  ];
+  idsToDisable.forEach(id => {
+    const el = $(id);
+    if (el) el.disabled = on;
+  });
+
+  // Disable delete buttons (created dynamically)
+  document.querySelectorAll("[data-leg-del], [data-stay-del], [data-act-del]").forEach(b => {
+    b.disabled = on;
+  });
+
+  // Block AI actions that add items (created dynamically)
+  document.querySelectorAll("#aiResults button").forEach(b => {
+    b.disabled = on;
+  });
+}
+
+
+/* ------------------------- Sync helpers (iCloud) ------------------------- */
+const META_KEY = "miviaje.meta.v1";
+const BACKUPS_KEY = "miviaje.backups.v1";
+const DEVICE_KEY = "miviaje.deviceName.v1";
+
+function getMeta() {
+  try { return JSON.parse(localStorage.getItem(META_KEY) || "{}") || {}; }
+  catch { return {}; }
+}
+function setMeta(patch) {
+  const cur = getMeta();
+  const next = Object.assign({}, cur, patch || {});
+  localStorage.setItem(META_KEY, JSON.stringify(next));
+  return next;
+}
+function getDeviceName(askIfMissing = true) {
+  // Fuente de verdad: miviaje.deviceName (nuevo). Compat: miviaje.deviceName.v1 (legacy)
+  let v = (localStorage.getItem("miviaje.deviceName") || "").trim();
+  if (!v) v = (localStorage.getItem(DEVICE_KEY) || "").trim();
+
+  if (!v && askIfMissing) {
+    v = (prompt("Nombre de este dispositivo (ej: iPhone Ana / iPhone Luis):", "") || "").trim();
+    if (v) {
+      try { localStorage.setItem("miviaje.deviceName", v); } catch {}
+      try { localStorage.setItem(DEVICE_KEY, v); } catch {}
+    }
+  }
+  return v || "Dispositivo";
+}
+function pushBackup(reason, fromPayloadMeta = null) {
+  try {
+    const meta = getMeta();
+    const item = {
+      savedAt: new Date().toISOString(),
+      reason: reason || "backup",
+      deviceName: getDeviceName(false),
+      from: fromPayloadMeta || null,
+      state
+    };
+    const list = JSON.parse(localStorage.getItem(BACKUPS_KEY) || "[]");
+    list.unshift(item);
+    localStorage.setItem(BACKUPS_KEY, JSON.stringify(list.slice(0, 15)));
+  } catch {}
+}
+function getLatestBackup() {
+  try {
+    const list = JSON.parse(localStorage.getItem(BACKUPS_KEY) || "[]");
+    return list?.[0] || null;
+  } catch { return null; }
+}
+
+const emptyScenario = () => ({
+  legs: [],
+  stays: [],
+  meals: { daily: 0, people: "", days: "" },
+  miscExpenses: [],
+  activities: [],
+  dailyNotes: {}
+});
+
+let state = {
+  scenario: "A",
+  displayCurrency: "EUR",
+  scenarios: { A: emptyScenario(), B: emptyScenario() },
+  aiPick: { cities: [], items: [] }, // chosen topics
+  preferences: {
+    group: { adults: 2, kids: 0, kidsAges: "", pace: "Normal" },
+    tastes: [],
+    restrictions: { text: "", flags: { mobility: false, stroller: false, allergies: false, avoidLayovers: false, avoidLongWalks: false } },
+    citiesVisited: []
+  }
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) state = Object.assign(state, JSON.parse(raw));
+  } catch {}
+}
+function saveState() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  // Update sync meta so "lastSavedAt" reflects real editing time (not only export/import).
+  try { setMeta({ lastSavedAt: new Date().toISOString() }); } catch {}
+}
+function curScenario() { return state.scenarios[state.scenario]; }
+
+/* -------------------------- Currency convert ------------------------- */
+function currencySymbol(code){
+  switch(String(code||"")){
+    case "EUR": return "€";
+    case "USD": return "$";
+    case "GBP": return "£";
+    case "JPY": return "¥";
+    case "AUD": return "A$";
+    case "CAD": return "C$";
+    case "CHF": return "CHF";
+    case "MXN": return "MX$";
+    default: return String(code||"");
+  }
+}
+
+/* ----------------------------- FX table ------------------------------ */
+/* Fixed internal rates (editable). Values are: 1 UNIT of currency = X EUR.
+   Source-free by design (no external API) — adjust manually when needed. */
+const FX_TO_EUR = {
+  EUR: 1.0,
+  USD: 0.92,
+  GBP: 1.17,
+  JPY: 0.0062,
+  AUD: 0.61,
+  CAD: 0.68,
+  CHF: 1.04,
+  MXN: 0.052
+};
+
+function fxToEUR(code){
+  const c = String(code||"EUR").toUpperCase();
+  return (FX_TO_EUR[c] != null) ? Number(FX_TO_EUR[c]) : 1.0;
+}
+
+function convertMoney(amount, fromCur, toCur){
+  const a = Number(amount);
+  if (!isFinite(a) || a === 0) return 0;
+  const from = String(fromCur||"EUR").toUpperCase();
+  const to = String(toCur||"EUR").toUpperCase();
+  if (from === to) return a;
+  const eur = a * fxToEUR(from);
+  return eur / fxToEUR(to);
+}
+
+/* Simple: no external API. Keeps values in display currency.
+   You can later swap to real rates if needed. */
+function setDisplayCurrency(cur) {
+  state.displayCurrency = cur;
+  try { const sc = curScenario(); if (sc && sc.meals && !sc.meals.currency) sc.meals.currency = cur; } catch {}
+  $("sumCur").textContent = cur;
+  const mcSel = document.getElementById("mealCurrency");
+  if (mcSel) {
+    try {
+      const sc = curScenario();
+      if (sc && sc.meals && !sc.meals.currency) sc.meals.currency = cur;
+      mcSel.value = (sc && sc.meals && sc.meals.currency) ? sc.meals.currency : cur;
+    } catch {}
+  }
+  saveState();
+  renderAll();
+  syncStickyTotalsHeightVar();
+  }
+
+/* ----------------------------- Accordion ----------------------------- */
+function setupAccordion() {
+  document.querySelectorAll("[data-acc]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      try{ if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight(); }catch{}
+      const key = btn.getAttribute("data-acc");
+      const body = document.querySelector(`[data-acc-body="${key}"]`);
+      body.classList.toggle("hidden");
+
+    const isNowHidden = body.classList.contains("hidden");
+    if (isNowHidden) {
+      if (key === "legs") __sectionExpanded.legs.clear();
+      if (key === "stays") __sectionExpanded.stays.clear();
+      if (key === "acts") __sectionExpanded.activities.clear();
+    } else {
+      if (key === "legs") renderLegs();
+      if (key === "stays") renderStays();
+      if (key === "acts") renderActivities();
+    }
+      const icon = btn.querySelector(".accIcon");
+      icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+      
+    });
+  });
+}
+
+
+
+
+/* ------------------------------ Rendering ---------------------------- */
+function renderAll() {
+  renderTabs();
+  renderLegs();
+  renderStays();
+  renderMeals();
+  renderActivities();
+  renderTimeline();
+  calcSummary();
+  applyReadOnlyMode();
+}
+
+function renderTabs() {
+  const a = $("tabA"), b = $("tabB");
+  if (a && b) {
+    const onA = state.scenario === "A";
+    // Compact segmented control for header
+    a.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (onA ? "bg-slate-900 text-white" : "text-slate-700");
+    b.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (!onA ? "bg-slate-900 text-white" : "text-slate-700");
+  }
+  const dc = document.getElementById("displayCurrency");
+  if (dc) dc.value = state.displayCurrency;
+  const sc = document.getElementById("sumCur");
+  if (sc) sc.textContent = state.displayCurrency;
+  const mc = document.getElementById("mealCurrency");
+  if (mc) {
+    const scn = curScenario();
+    mc.value = (scn && scn.meals && scn.meals.currency) ? scn.meals.currency : state.displayCurrency;
+  }
+}
+
+
+function legCard(leg, idx) {
+  const dateKey = String(leg?.date || "").trim();
+  const vc = __sectionVisualClass("leg", leg, dateKey);
+  const st = vc.st;
+
+  const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
+  const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
+
+  const __tt = (String(leg && leg.tripType || "oneway")==="roundtrip") ? "roundtrip" : "oneway";
+  const __role = String(leg && leg.rtRole || "");
+  const __peer = String(leg && leg.rtPeerId || "");
+  const __rtBadge = (__tt==="roundtrip" && __peer)
+    ? (__role==="return"
+        ? `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a ida">Vuelta</span>`
+        : `<span role="button" tabindex="0" class="tap text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1 mv-nb rtJumpBtn" data-rt-jump="${escapeHtml(__peer)}" title="Ir a vuelta">Ida</span>`
+      )
+    : ``;
+
+  const __sp = buildLegSummaryParts(leg);
+
+  const badgeState = ``;
+
+  return `
+  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+    <button type="button"
+            class="tap w-full text-left flex items-stretch justify-between gap-3"
+            data-leg-open="${leg.id}"
+            aria-label="Abrir trayecto">
+      <div class="min-w-0">
+        <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>
+        ${__sp.placeLineHTML}
+      </div>
+
+      <div class="shrink-0 flex flex-col items-end gap-2 justify-between self-stretch">
+        <div class="flex items-center gap-2">
+          ${buildEventIndicatorsHTML(leg,"leg")}
+          <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
+          ${badgeState}
+        </div>
+        ${__rtBadge ? `<div class="mt-auto">${__rtBadge}</div>` : ""}
+      </div>
+    </button>
+  </div>`;
+}
+
+function renderLegs() {
+  const box = $("legsList");
+  const sc = curScenario();
+
+  sortByDateTimeEmptyFirst(sc.legs);
+  box.innerHTML = sc.legs.length
+    ? __renderGroupedByDate(sc.legs, (it)=>it.date, legCard)
+    : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
+
+  // UX 2.1: tap on summary opens sheet in view mode
+  box.querySelectorAll("[data-leg-open]").forEach(btn => btn.addEventListener("click", (e) => {
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "label" || tag === "button" || tag === "select") return;
+    try { e.preventDefault(); e.stopPropagation(); } catch {}
+    const id = btn.getAttribute("data-leg-open");
+    if (!id) return;
+    try { openEventSheet({ kind: "leg", id, mode: "view", sourceView: "legs" }); } catch {}
+  }));
+
+  // V217: done toggle in section cards (same source of truth as timeline)
+  box.querySelectorAll("[data-leg-done]").forEach(cb => {
+    cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
+    cb.onchange = () => handleLegDoneToggle(cb.getAttribute('data-leg-done'), cb.checked, cb);
+  });
+}
+
+
+function staySummaryLinesHTML(stay, opts){
+  opts = opts || {};
+  const city = (stay.city||"").trim() || "—";
+  const name = (stay.name||"").trim() || "—";
+
+  // Dates / times (no timezone logic yet)
+  const checkInISO = String(stay.date||"").trim();
+  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
+  const checkInTime = (stay.time||"").trim();
+
+  const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
+
+  const __addDaysISO_inline = (iso, days)=>{
+    const s = String(iso||"").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    const d = new Date(s + "T12:00:00");
+    if (isNaN(d.getTime())) return "";
+    d.setDate(d.getDate() + (Number(days)||0));
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const da = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${da}`;
+  };
+
+  const coISO_raw = String(stay.checkout||"").trim();
+  const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
+  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
+  const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
+
+  const hasNotes = !!(stay.notes && String(stay.notes).trim());
+
+  const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` ${__timeBadgeHTML(checkInISO, checkInTime)}` : ``} <span class="text-slate-500">·</span> <span class="font-semibold">${nights}</span> <span class="text-slate-600">noche${nights===1?"":"s"}</span>`;
+  const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
+
+  return `
+    <div class="text-sm font-semibold truncate">
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
+      ${(opts && opts.context==="timeline" && opts.tlMarker) ? `<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border border-slate-200 bg-white text-slate-700">${escapeHtml(String(opts.tlMarker))}</span>` : ``}
+    </div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
+  `;
+}
 
 
 
@@ -4624,7 +8031,7 @@ function __dateSeparatorHTML(label, iso){
         <div class="px-3 py-1 rounded-full inline-flex items-center text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
           ${label}
         </div>
-        ${(hasDaily && String(activeView||"")==="timeline") ? `<button type="button" class="dayNotePeekBtn" data-date-key="${key}" title="Ver nota del día">🗒️<span class="noteDot"></span></span>` : ``}
+        ${(hasDaily && String(activeView||"")==="timeline") ? `<button type="button" class="dayNotePeekBtn" data-date-key="${key}" title="Ver nota del día">🗒️<span class="noteDot"></span></button>` : ``}
       </div>
     </div>
   `;
@@ -5890,27 +9297,19 @@ function renderTimeline() {
     if (co && !days.includes(co)) days.push(co);
 
     for (const d of days) {
-      const isEntry = (ci && String(d) === String(ci));
-      const isExit  = (co && String(d) === String(co));
-      const phase = isEntry ? "entry" : isExit ? "exit" : "middle";
-      const marker = isEntry ? "Entrada" : isExit ? "Salida" : "";
-      const jumpISO = isEntry ? co : isExit ? ci : "";
-
+      const marker = (ci && String(d) === String(ci)) ? "Entrada" : (co && String(d) === String(co)) ? "Salida" : "";
       items.push({
         date: (d || "9999-99-99"),
-        time: (isEntry ? (s.time || "") : ""), // intermedios / salida: sin hora (no alterar orden)
+        time: (String(d) === String(ci) ? (s.time || "") : ""), // intermedios / salida: sin hora (no alterar orden)
         type:"Alojamiento",
         title: `${s.city || "—"} • ${s.name || "Hotel"}`,
         cost: parseMoney(s.cost),
         stayId: s.id,
         tlMarker: marker,
-        tlStayPhase: phase,
-        tlJumpISO: jumpISO,
         uid: `stay:${s.id}:${d || ""}`
       });
     }
   }
-
   for (const a of sc.activities) {
     items.push({ date: (a.date || "9999-99-99"), time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
   }
@@ -6134,7 +9533,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${((jumpType==="stay" && __stay) || (jumpType==="act" && __act) || (jumpType==="leg" && __leg)) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
 
             <div class="min-w-0">
-              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlStayPhase: (it && it.tlStayPhase) ? it.tlStayPhase : "", tlCompact: (it && it.tlStayPhase) ? (it.tlStayPhase==="middle") : false, tlJumpISO: (it && it.tlJumpISO) ? it.tlJumpISO : ""}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : ""}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
@@ -6156,7 +9555,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${(showCost && jumpType !== "leg") ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
             <div class="flex items-center gap-2">
               ${tlBadges ? tlBadges : ""}
-              ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</span>` : ``}
+              ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</button>` : ``}
             </div>
           </div>
         </div>
