@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V221A1_RESTORE_STABLE_SECTIONS_BASE</title>
+<title>V222A_TRANSPORT_TIMEZONES_FOUNDATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -926,7 +926,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V221A1_RESTORE_STABLE_SECTIONS_BASE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222A_TRANSPORT_TIMEZONES_FOUNDATION</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3916,6 +3916,60 @@ function __deriveUtcOffsetHours(city, iso, hhmm){
   return Number.isFinite(r.offMin) ? (r.offMin/60) : NaN;
 }
 
+// ============================================================
+// V222A_TRANSPORT_TIMEZONES_FOUNDATION
+// Base mínima para almacenar contexto de huso horario por tramo (salida/llegada)
+// - No altera lógica overnight/multiday existente
+// - Mantiene compatibilidad con legs antiguos (tzFrom/tzTo legacy)
+// ============================================================
+function __mvParseUtcOffsetHours(val){
+  if(val===null||val===undefined) return NaN;
+  if(typeof val==="number") return val;
+  const s=String(val).trim();
+  if(!s) return NaN;
+  // Accept "+01:00" / "-5" / "2"
+  const m=s.match(/^([+-])(\d{1,2})(?::?(\d{2}))?$/);
+  if(m){
+    const sign = m[1]==="-"?-1:1;
+    const hh = parseInt(m[2],10);
+    const mm = m[3]?parseInt(m[3],10):0;
+    return sign*(hh + (mm/60));
+  }
+  const n = Number(s);
+  return Number.isFinite(n)?n:NaN;
+}
+function __mvLegTZContext(leg, which){
+  const k = (which==="to"||which==="arrive"||which==="arrival") ? "to" : "from";
+  const zone = (k==="from")
+    ? (leg && (leg.tzFromZone||leg.tzFromIana||leg.tzFromTZ||null))
+    : (leg && (leg.tzToZone||leg.tzToIana||leg.tzToTZ||null));
+  const offH = (k==="from") ? __mvParseUtcOffsetHours(leg && leg.tzFrom) : __mvParseUtcOffsetHours(leg && leg.tzTo);
+  const offMin = Number.isFinite(offH) ? Math.round(offH*60) : NaN;
+  return { zone: zone?String(zone):null, offMin };
+}
+// Helpers preparados para futuras iteraciones (duración real / diferencias horarias):
+function __mvLegDepartureUTC(leg){
+  const iso = String(leg && leg.date || "").trim();
+  const hhmm = String(leg && leg.time || "").trim();
+  const ctx = __mvLegTZContext(leg,"from");
+  if(ctx.zone){
+    const r = __localToUtcWithZone(iso, hhmm, ctx.zone);
+    return Number.isFinite(r.utc) ? r.utc : NaN;
+  }
+  // Fallback legacy: tratar como hora local del dispositivo (comportamiento previo)
+  return __parseISOTimeToMsLocal(iso, hhmm);
+}
+function __mvLegArrivalUTC(leg){
+  const iso = String(leg && leg.arriveDate || "").trim();
+  const hhmm = String(leg && leg.arriveTime || "").trim();
+  const ctx = __mvLegTZContext(leg,"to");
+  if(ctx.zone){
+    const r = __localToUtcWithZone(iso, hhmm, ctx.zone);
+    return Number.isFinite(r.utc) ? r.utc : NaN;
+  }
+  return __parseISOTimeToMsLocal(iso, hhmm);
+}
+
 function buildLegSummaryParts(leg) {
   const fromTxt = String(leg?.from || "").trim() || "—";
   const toTxt   = String(leg?.to   || "").trim() || "—";
@@ -5585,6 +5639,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeOut" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
           <input data-sheet-leg="tzFrom" type="hidden" value="">
+          <input data-sheet-leg="tzFromZone" type="hidden" value="">
           <span id="legTzFromBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
 </div>
@@ -5606,6 +5661,7 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         <div class="mt-1 flex items-center gap-1">
           <input data-sheet-leg="timeIn" type="time" class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
           <input data-sheet-leg="tzTo" type="hidden" value="">
+          <input data-sheet-leg="tzToZone" type="hidden" value="">
           <span id="legTzToBadge" class="shrink-0 px-2 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold h-10 flex items-center">UTC—</span>
         </div>
 </div>
@@ -5896,28 +5952,38 @@ qs("from").value = v(legObj.from);
       const d1 = qs("dateIn").value;
       const t1 = qs("timeIn").value;
 
+      const z0 = __resolveCityTimeZone(cityFrom);
+      const z1 = __resolveCityTimeZone(cityTo);
       const off0 = __deriveUtcOffsetHours(cityFrom, d0, t0);
       const off1 = __deriveUtcOffsetHours(cityTo, d1, t1);
 
       if (Number.isFinite(off0)) {
         qs("tzFrom").value = String(off0);
+        qs("tzFromZone").value = String(z0||"");
         // keep model in sync (programmatic value changes do not trigger input events)
         legObj.tzFrom = off0;
+        legObj.tzFromZone = z0 || null;
         if (tzBadgeFrom) tzBadgeFrom.textContent = formatUTCOffset(off0);
       } else {
         qs("tzFrom").value = "";
+        qs("tzFromZone").value = "";
         legObj.tzFrom = null;
+        legObj.tzFromZone = null;
         if (tzBadgeFrom) tzBadgeFrom.textContent = "UTC—";
       }
 
       if (Number.isFinite(off1)) {
         qs("tzTo").value = String(off1);
+        qs("tzToZone").value = String(z1||"");
         // keep model in sync (programmatic value changes do not trigger input events)
         legObj.tzTo = off1;
+        legObj.tzToZone = z1 || null;
         if (tzBadgeTo) tzBadgeTo.textContent = formatUTCOffset(off1);
       } else {
         qs("tzTo").value = "";
+        qs("tzToZone").value = "";
         legObj.tzTo = null;
+        legObj.tzToZone = null;
         if (tzBadgeTo) tzBadgeTo.textContent = "UTC—";
       }
     } catch {}
@@ -11485,7 +11551,7 @@ $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.targe
 $("addLeg").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, currency:(state.displayCurrency||"EUR"), tzFrom:null, tzTo:null, tripType:"oneway" });
+  sc.legs.unshift({ id, mode:"plane", from:"", to:"", placeOut:"", placeIn:"", date:"", time:"", arriveDate:"", arriveTime:"", cost:null, currency:(state.displayCurrency||"EUR"), tzFrom:null, tzTo:null, tzFromZone:null, tzToZone:null, tripType:"oneway" });
   __sectionExpanded.legs.add(id);
   saveState(); renderLegs(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "leg", id, mode: "edit", isNew: true })));
