@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V221A1_TIMELINE_SECTIONS_COHERENCE_PHASE1_FIX</title>
+<title>V221B_TIMELINE_SECTIONS_COHERENCE_PHASE2</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -926,7 +926,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V221A1_TIMELINE_SECTIONS_COHERENCE_PHASE1_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V221B_TIMELINE_SECTIONS_COHERENCE_PHASE2</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4046,6 +4046,51 @@ function __sectionVisualClass(kind, obj, dateKey){
   const pastCls = (dk && (typeof isPast==="function") && isPast(dk)) ? " past" : "";
   return { st, visualClass: (visual + pastCls) };
 }
+
+/* ============================================================
+   V221B: Sections coherence micro-semantics (Phase 2)
+   - Adds small role pills for multiday/overnight items in SECTIONS
+   - No redesign: uses existing right-rail pattern (mt-auto).
+   ============================================================ */
+function __mvRolePillHTML(label){
+  const t = String(label||"").trim();
+  if(!t) return "";
+  return `<span class="text-[10px] font-semibold text-slate-700 border border-slate-200 bg-slate-50 rounded-full px-2 py-0.5 whitespace-nowrap">${escapeHtml(t)}</span>`;
+}
+function __mvCoveredRoleLabel(kind, dayKey, days){
+  const k = String(kind||"");
+  const dk = String(dayKey||"").trim();
+  const arr = Array.isArray(days) ? days.filter(Boolean).map(x=>String(x)) : [];
+  if(arr.length<=1 || !dk) return "";
+  const first = arr[0];
+  const last = arr[arr.length-1];
+  if(dk === first){
+    if(k==="stay") return "Entrada";
+    if(k==="leg") return "Salida";
+    if(k==="act") return "Inicio";
+  }
+  if(dk === last){
+    if(k==="stay") return "Salida";
+    if(k==="leg") return "Llegada";
+    if(k==="act") return "Fin";
+  }
+  // Intermediate day
+  if(k==="act") return "Continúa";
+  return "En curso";
+}
+function __mvSectionRolePill(kind, item){
+  const k = String(kind||"");
+  const dk = String((item?.__mvDayKey || item?.date) || "").trim();
+  let days = [];
+  try{
+    if(k==="stay" && typeof __tlStayCoveredDays==="function") days = __tlStayCoveredDays(item);
+    else if(k==="leg" && typeof __tlLegCoveredDays==="function") days = __tlLegCoveredDays(item);
+    else if(k==="act" && typeof __tlActCoveredDays==="function") days = __tlActCoveredDays(item);
+  }catch{}
+  const label = __mvCoveredRoleLabel(k, dk, days);
+  return __mvRolePillHTML(label);
+}
+
 function __timeBadgeHTML(iso, hhmm){
   const t = String(hhmm||"").trim();
   if(!/^\d{2}:\d{2}$/.test(t)) return "";
@@ -7446,7 +7491,7 @@ function legCard(leg, idx) {
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
-        ${__rtBadge ? `<div class="mt-auto">${__rtBadge}</div>` : ""}
+        ${(__mvSectionRolePill("leg", leg) || __rtBadge) ? `<div class="mt-auto flex flex-col items-end gap-2">${__mvSectionRolePill("leg", leg)}${__rtBadge ? `<div>${__rtBadge}</div>` : ""}</div>` : ""}
       </div>
     </button>
   </div>`;
@@ -7555,12 +7600,13 @@ function stayCard(stay) {
       <div class="min-w-0">
         ${staySummaryLinesHTML(stay)}
       </div>
-      <div class="shrink-0 flex flex-col items-end gap-2">
+      <div class="shrink-0 flex flex-col items-end gap-2 justify-between self-stretch">
         <div class="flex items-center gap-2">
           ${buildEventIndicatorsHTML(stay,"stay")}
           <input type="checkbox" class="secDoneToggle" data-stay-done="${escapeHtml(String(stay.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
+        <div class="mt-auto">${__mvSectionRolePill("stay", stay)}</div>
       </div>
     </button>
 
@@ -8722,12 +8768,13 @@ function actCard(act) {
       <div class="min-w-0">
         ${actSummaryLinesHTML(act)}
       </div>
-      <div class="shrink-0 flex flex-col items-end gap-2">
+      <div class="shrink-0 flex flex-col items-end gap-2 justify-between self-stretch">
         <div class="flex items-center gap-2">
           ${buildEventIndicatorsHTML(act,"act")}
           <input type="checkbox" class="secDoneToggle" data-act-done="${escapeHtml(String(act.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
+        <div class="mt-auto">${__mvSectionRolePill("act", act)}</div>
       </div>
     </button>
 
