@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V220A_TIMELINE_HOW_TO_GET_THERE_CONTEXTUAL</title>
+<title>V220B_TIMELINE_HOW_TO_GET_THERE_ICON_REFINEMENT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -708,18 +708,18 @@ div[data-acc-body="acts"]{
 }
 
 
-/* V220A: Timeline "Cómo llegar" contextual button */
+/* V220A/B: Timeline "Cómo llegar" contextual button (match Event Sheet pin icon) */
 .tlNavBtn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:4px;
   margin-left:6px;
-  padding:2px 6px;
-  border-radius:999px;
-  border:1px solid rgba(226,232,240,0.9);
-  background: rgba(255,255,255,0.92);
-  font-size:14px;
+  width:24px;
+  height:24px;
+  border-radius:9999px;
+  border:1px solid rgb(226 232 240);
+  background: rgb(241 245 249);
+  font-size:16px;
   line-height:1;
   opacity:0.92;
 }
@@ -926,7 +926,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V220A_TIMELINE_HOW_TO_GET_THERE_CONTEXTUAL</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V220B_TIMELINE_HOW_TO_GET_THERE_ICON_REFINEMENT</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3596,7 +3596,7 @@ function __tlHowToBtnHTML(dest, mode){
   const d = String(dest||"").trim();
   if(!d) return "";
   const m = String(mode||"").trim();
-  return `<button type="button" class="tap tlNavBtn" data-tl-nav="${escapeHtml(d)}" data-tl-nav-mode="${escapeHtml(m)}" aria-label="Cómo llegar" title="Cómo llegar">🧭</button>`;
+  return `<button type="button" class="tap tlNavBtn" data-tl-nav="${escapeHtml(d)}" data-tl-nav-mode="${escapeHtml(m)}" aria-label="Cómo llegar" title="Cómo llegar">📍</button>`;
 }
 
 // Delegated handler (capture): prevents bubbling to card tap (open sheet)
@@ -7514,7 +7514,7 @@ function staySummaryLinesHTML(stay, opts){
   if (__tlCompact) {
     return `
       <div class="text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}<span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
+        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
       </div>
     `;
   }
@@ -7527,7 +7527,7 @@ function staySummaryLinesHTML(stay, opts){
 
   return `
     <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
@@ -8616,9 +8616,9 @@ function actSummaryLinesHTML(act, opts){
   // Line 1: icono + ciudad + actividad (sin icono entre ciudad y actividad)
 const line1 = `<div class="text-sm font-semibold truncate">
   <span class="mr-1">🎯</span>
-  <span>${escapeHtml(line1Title)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+  <span>${escapeHtml(line1Title)}</span>
   <span class="text-slate-400"> · </span>
-  <span class="font-medium">${escapeHtml(line1City)}</span>
+  <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
   
   ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
 </div>`;
