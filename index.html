@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V219C_INTERVAL_RENDER_VISIBLE_FIX</title>
+<title>V218B_ACCOMMODATION_MULTIDAY_VISIBLE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -811,25 +811,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* Roundtrip jump: highlight target summary */
 .rtFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
-/* V219A: subtle interval progress overlay inside timeline cards */
-.timelineItem{ position: relative; overflow: hidden; }
-.tlProgressOverlay{
-  position:absolute;
-  left:0; top:0; bottom:0;
-  background: rgba(15, 23, 42, 0.06);
-  pointer-events:none;
-}
-/* V219A: stay entry/exit micro badge */
-.stayEdgeBtn{
-  font-size: 11px;
-  line-height: 1;
-  padding: 6px 8px;
-  border-radius: 9999px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: rgba(255,255,255,.85);
-  color: rgba(15,23,42,.85);
-}
-.stayEdgeBtn:active{ transform: scale(.98); }
 .tlPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 .rtPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 
@@ -927,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219C_INTERVAL_RENDER_VISIBLE_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218B_ACCOMMODATION_MULTIDAY_VISIBLE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2372,342 +2353,6 @@ function calcDurationTextTZ(departDate, departTime, arriveDate, arriveTime, tzFr
   if (h > 0) return `${h}h`;
   return `${m}m`;
 }
-
-
-// V219: Temporal foundation (duration, overnight, TZ) for interval-based logic without refactoring UI
-function __parseDurationMinutes(raw){
-  const s = String(raw||"").trim().toLowerCase();
-  if(!s) return 0;
-  // "HH:MM"
-  let m = s.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
-  if(m){
-    const hh = parseInt(m[1],10); const mm = parseInt(m[2],10);
-    if(Number.isFinite(hh) && Number.isFinite(mm)) return Math.max(0, hh*60 + mm);
-  }
-  // "2h30", "2h 30m", "2 h", "90m"
-  let hh = 0, mm2 = 0;
-  m = s.match(/(\d+)\s*h/);
-  if(m) hh = parseInt(m[1],10) || 0;
-  m = s.match(/(\d+)\s*m/);
-  if(m) mm2 = parseInt(m[1],10) || 0;
-  if(hh || mm2) return Math.max(0, hh*60 + mm2);
-  // pure number -> hours if small, minutes if big
-  if(/^\d+$/.test(s)){
-    const n = parseInt(s,10);
-    if(!Number.isFinite(n)) return 0;
-    return (n <= 24) ? (n*60) : n;
-  }
-  // "2h30" without m
-  m = s.match(/^(\d+)\s*h\s*(\d{1,2})$/);
-  if(m){
-    const h2 = parseInt(m[1],10)||0;
-    const m2 = parseInt(m[2],10)||0;
-    return Math.max(0, h2*60 + m2);
-  }
-  return 0;
-}
-
-function __localMillisFromISOTime(iso, hhmm){
-  const d = String(iso||"").trim();
-  const t = String(hhmm||"").trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !/^\d{2}:\d{2}$/.test(t)) return NaN;
-  const [Y,M,D] = d.split("-").map(x=>parseInt(x,10));
-  const [h,m] = t.split(":").map(x=>parseInt(x,10));
-  const dt = new Date(Y, M-1, D, h, m, 0, 0);
-  return dt.getTime();
-}
-
-function __addDaysISO(iso, days){
-  try{
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||""))) return "";
-    const d = new Date(String(iso) + "T00:00:00");
-    d.setDate(d.getDate() + (Number(days)||0));
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const day = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${day}`;
-  }catch{ return ""; }
-}
-
-// Return {start,end} in millis (UTC basis), end>=start, end==start for punctual
-function __eventIntervalMillis(kind, obj){
-  try{
-    const k = String(kind||"");
-    if(!obj) return { start: NaN, end: NaN };
-
-    // Transport (leg): date/time to arriveDate/arriveTime (or legacy dateIn/timeIn)
-    if(k === "leg"){
-      const depDate = String(obj.date||"").trim();
-      const depTime = String(obj.time||"").trim();
-      let arrDate = String(obj.arriveDate || obj.dateIn || "").trim();
-      const arrTime = String(obj.arriveTime || obj.timeIn || "").trim();
-
-      // Safe fallback: if we have arrive time but no arrive date, default to depart date,
-      // and if arrive time is "earlier" than depart time, assume next day (minimal, deterministic).
-      if(!arrDate && arrTime && depDate) arrDate = depDate;
-      if(arrDate && arrTime && depDate && depTime && /^\d{2}:\d{2}$/.test(arrTime) && /^\d{2}:\d{2}$/.test(depTime)){
-        if(arrDate === depDate && arrTime < depTime){
-          const d2 = __addDaysISO(depDate, 1);
-          if(d2) arrDate = d2;
-        }
-      }
-
-      // Prefer TZ if offsets exist/derivable
-      const off0 = Number.isFinite(Number(obj?.tzFrom)) ? Number(obj.tzFrom) : (typeof __deriveUtcOffsetHours==="function" ? __deriveUtcOffsetHours(obj?.from, depDate, depTime) : NaN);
-      const off1 = Number.isFinite(Number(obj?.tzTo))   ? Number(obj.tzTo)   : (typeof __deriveUtcOffsetHours==="function" ? __deriveUtcOffsetHours(obj?.to,   (arrDate||depDate), arrTime) : NaN);
-
-      let start = NaN, end = NaN;
-      if(depDate && depTime){
-        if(Number.isFinite(off0) && typeof __toUtcMillisFromLocal==="function"){
-          start = __toUtcMillisFromLocal(depDate, depTime, off0);
-        } else {
-          start = __localMillisFromISOTime(depDate, depTime);
-        }
-      }
-      if(arrDate && arrTime){
-        if(Number.isFinite(off1) && typeof __toUtcMillisFromLocal==="function"){
-          end = __toUtcMillisFromLocal(arrDate, arrTime, off1);
-        } else {
-          end = __localMillisFromISOTime(arrDate, arrTime);
-        }
-      }
-      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
-      if(!Number.isFinite(end)) end = start; // punctual if no explicit end
-      if(end < start) end = start; // never negative here
-      return { start, end };
-    }
-
-    // Activity (act): date/time + duration minutes
-    if(k === "act"){
-      const d0 = String(obj.date||"").trim();
-      const t0 = String(obj.time||"").trim();
-      const start = __localMillisFromISOTime(d0, t0);
-      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
-      const mins = __parseDurationMinutes(obj.duration);
-      const end = (mins > 0) ? (start + mins*60*1000) : start;
-      return { start, end: Math.max(end, start) };
-    }
-
-    // Stay (stay): check-in date/time to checkout date/time if available
-if(k === "stay"){
-  const d0 = String(obj.date||"").trim();
-  const t0 = String(obj.time||"").trim();
-  const start = __localMillisFromISOTime(d0, t0);
-  if(!Number.isFinite(start)) return { start: NaN, end: NaN };
-
-  // Accept multiple field variants (compat):
-  // - checkout/checkoutDate/checkoutTime
-  // - dateOut/timeOut
-  // - endDate/endTime
-  const d1 = String(obj.checkout || obj.checkoutDate || obj.dateOut || obj.endDate || "").trim();
-  const t1 = String(obj.checkoutTime || obj.checkout_time || obj.timeOut || obj.endTime || "").trim();
-
-  let end = start;
-  if(d1){
-    // If no explicit checkout time, assume 23:59 so the checkout day is included.
-    const tEnd = (t1 && /^\d{2}:\d{2}$/.test(t1)) ? t1 : "23:59";
-    const e = __localMillisFromISOTime(d1, tEnd);
-    if(Number.isFinite(e)) end = e;
-  }
-  if(end < start) end = start;
-  return { start, end };
-}
-
-    // Default punctual
-    const d = String(obj.date||"").trim();
-    const t = String(obj.time||"").trim();
-    const start = __localMillisFromISOTime(d,t);
-    if(!Number.isFinite(start)) return { start: NaN, end: NaN };
-    return { start, end: start };
-  }catch{
-    return { start: NaN, end: NaN };
-  }
-}
-
-function __eventIntervalFromTimelineItem(it){
-  try{
-    const key = (typeof __msMakeKey==="function") ? __msMakeKey(it) : "";
-    const m = String(key||"").match(/^(leg|act|stay):(.+)$/);
-    if(!m) return { start: NaN, end: NaN };
-    const kind = m[1], id = m[2];
-    const sc = (typeof curScenario==="function") ? curScenario() : (typeof getActiveScenario==="function" ? getActiveScenario() : null);
-    if(!sc) return { start: NaN, end: NaN };
-    let obj = null;
-    if(kind==="leg") obj = (sc.legs||[]).find(x=>String(x.id)===String(id));
-    if(kind==="act") obj = (sc.activities||[]).find(x=>String(x.id)===String(id));
-    if(kind==="stay") obj = (sc.stays||[]).find(x=>String(x.id)===String(id));
-    return __eventIntervalMillis(kind, obj);
-  }catch{
-    return { start: NaN, end: NaN };
-  }
-}
-
-function __dayBoundsMillis(iso){
-  const d = String(iso||"").trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return { start: NaN, end: NaN };
-  const [Y,M,D] = d.split("-").map(x=>parseInt(x,10));
-  const start = new Date(Y, M-1, D, 0, 0, 0, 0).getTime();
-  const end = start + 24*60*60*1000;
-  return { start, end };
-}
-
-function __intervalOverlapsDay(interval, dayISO){
-  const b = __dayBoundsMillis(dayISO);
-  const s = interval?.start, e = interval?.end;
-  if(!Number.isFinite(b.start) || !Number.isFinite(s)) return false;
-  const end = Number.isFinite(e) ? e : s;
-  // overlap: end > dayStart AND start < dayEnd (treat punctual as [s,s])
-  return (end > b.start) && (s < b.end);
-}
-
-function __msItemOverlapsDay(it, dayISO){
-  const iv = __eventIntervalFromTimelineItem(it);
-  return __intervalOverlapsDay(iv, dayISO);
-}
-function __msItemStartMillis(it){
-  const iv = __eventIntervalFromTimelineItem(it);
-  return Number.isFinite(iv.start) ? iv.start : NaN;
-}
-
-
-function __ymdFromMillis(ms){
-  try{
-    const d = new Date(ms);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const da = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${da}`;
-  }catch{ return ""; }
-}
-
-// Project items with real interval into every overlapped day so the MAIN timeline render is visibly correct.
-function __projectTimelineItemsAcrossDays(items){
-  try{
-    if(!Array.isArray(items) || !items.length) return items || [];
-    const out = [];
-    for(const it of items){
-      const iv = __eventIntervalFromTimelineItem(it);
-      const s = iv?.start, e = iv?.end;
-      if(!Number.isFinite(s)){
-        out.push(it); 
-        continue;
-      }
-      const end = Number.isFinite(e) ? e : s;
-      if(end < s){
-        out.push(it);
-        continue;
-      }
-      const endAdj = Math.max(s, end - 1); // inclusive end for day stepping
-      const day0 = __ymdFromMillis(s);
-      const day1 = __ymdFromMillis(endAdj);
-
-      if(!day0 || !day1 || day0 === day1){
-        // keep original
-        const one = Object.assign({}, it);
-        one.__projDay = one.date || day0;
-        one.__projStartDay = day0;
-        one.__projEndDay = day1;
-        out.push(one);
-        continue;
-      }
-
-      // enumerate days from day0 to day1 (local time)
-      let cur = new Date(s);
-      cur.setHours(0,0,0,0);
-      let last = new Date(endAdj);
-      last.setHours(0,0,0,0);
-
-      while(cur.getTime() <= last.getTime()){
-        const dk = __ymdFromMillis(cur.getTime());
-        const c = Object.assign({}, it);
-        c.__projDay = dk;
-        c.__projStartDay = day0;
-        c.__projEndDay = day1;
-
-        // force date for grouping in the main timeline
-        c.date = dk;
-
-        // sorting inside each projected day: if started before this day, pin to 00:00
-        if(String(dk) !== String(day0)){
-          c.__sortTime = "00:00";
-        }
-        out.push(c);
-        cur.setDate(cur.getDate()+1);
-      }
-    }
-    return out;
-  }catch{
-    return items || [];
-  }
-}
-
-function __intervalProgressPctForDay(interval, dayISO){
-  try{
-    const s = interval?.start, e = interval?.end;
-    if(!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return NaN;
-    const b = __dayBoundsMillis(dayISO);
-    if(!Number.isFinite(b.start)) return NaN;
-
-    const now = Date.now();
-    const today = todayYMD ? String(todayYMD()) : "";
-    let moment = b.start; // default: start of day
-
-    if (String(dayISO) === today) {
-      moment = now;
-    } else if (String(dayISO) < today) {
-      // past day: treat as end of the day (or event end)
-      moment = Math.min(b.end - 1, e);
-    } else {
-      // future day: treat as start of the day (or event start)
-      moment = Math.max(b.start, s);
-    }
-
-    const pct = (moment - s) / (e - s);
-    return Math.max(0, Math.min(1, pct));
-  }catch{
-    return NaN;
-  }
-}
-
-function __tlProgressOverlayHTML(it, dayISO){
-  try{
-    if (!it || !dayISO) return "";
-    const iv = __eventIntervalFromTimelineItem(it);
-    if (!__intervalOverlapsDay(iv, dayISO)) return "";
-    if (!Number.isFinite(iv.start) || !Number.isFinite(iv.end) || iv.end <= iv.start) return "";
-    // Only show when the interval is meaningful (>= 45 min)
-    if ((iv.end - iv.start) < 45*60*1000) return "";
-    const pct = __intervalProgressPctForDay(iv, dayISO);
-    if (!Number.isFinite(pct)) return "";
-    const w = Math.round(pct * 100);
-    if (w <= 0) return "";
-    return `<div class="tlProgressOverlay" style="width:${w}%"></div>`;
-  }catch{
-    return "";
-  }
-}
-
-function __stayEdgeBadgeHTML(stay, dayISO){
-  try{
-    if(!stay || !dayISO) return "";
-    const startISO = String(stay.date||"").trim();
-    const endISO = String(stay.checkout || stay.checkoutDate || stay.dateOut || stay.endDate || "").trim();
-    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(startISO) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(endISO)) return "";
-    const key = `stay:${stay.id}`;
-    if (String(dayISO) === startISO && endISO !== startISO) {
-      return `<button type="button" class="stayEdgeBtn" data-target-day="${escapeHtml(endISO)}" data-tl-key="${escapeHtml(key)}">Entrada</button>`;
-    }
-    if (String(dayISO) === endISO && endISO !== startISO) {
-      return `<button type="button" class="stayEdgeBtn" data-target-day="${escapeHtml(startISO)}" data-tl-key="${escapeHtml(key)}">Salida</button>`;
-    }
-    return "";
-  }catch{
-    return "";
-  }
-}
-
-
-
 
 function currencyOptionsHTML(selected){
   const cur = String(selected || "EUR");
@@ -5398,13 +5043,8 @@ function openTimelineMicroSummaryMenu(){
           return;
         }
 
-        items = all.filter(it => __msHasTime(it) && __msItemOverlapsDay(it, dayISO));
-        items.sort((a,b)=>{
-          const sa = __msItemStartMillis(a); const sb = __msItemStartMillis(b);
-          if(Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) return sa - sb;
-          // fallback by time string
-          return __msTimeKey(a.time) - __msTimeKey(b.time);
-        });
+        items = all.filter(it => String(it.date||"") === dayISO && __msHasTime(it));
+        items.sort((a,b)=> __msTimeKey(a.time) - __msTimeKey(b.time));
 
         if(!items.length){
           list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">${st.tab==="tomorrow" ? "No hay eventos para mañana" : "No hay eventos para hoy"}</div>`;
@@ -9458,51 +9098,11 @@ function formatDateHuman(dateKey){
 function getTimelineDays(items) {
   const days = [];
   const seen = new Set();
-
-  const addDay = (d)=>{
-    const iso = String(d||"").trim();
-    if (!iso || iso === "9999-99-99") return;
-    if (!seen.has(iso)) { seen.add(iso); days.push(iso); }
-  };
-
-  const isoFromMillis = (ms)=>{
-    if(!Number.isFinite(ms)) return "";
-    const dt = new Date(ms);
-    const y = dt.getFullYear();
-    const m = String(dt.getMonth()+1).padStart(2,"0");
-    const d = String(dt.getDate()).padStart(2,"0");
-    return `${y}-${m}-${d}`;
-  };
-
   for (const it of (items || [])) {
-    const d0 = String(it?.date || "").trim();
-    if (!d0 || d0 === "9999-99-99") continue;
-
-    // V219: include days spanned by real intervals (overnight legs, activities with duration, stays with checkout)
-    try{
-      const iv = __eventIntervalFromTimelineItem(it);
-      if (Number.isFinite(iv?.start)) {
-        const startISO = isoFromMillis(iv.start);
-        const endISO = isoFromMillis(Number.isFinite(iv.end) ? iv.end : iv.start);
-        addDay(startISO || d0);
-        if (endISO && endISO !== startISO) {
-          // add each day between start and end (inclusive), but cap to avoid pathological loops
-          let cur = startISO || d0;
-          let guard = 0;
-          while(cur && cur !== endISO && guard < 14){
-            cur = __addDaysISO(cur, 1);
-            if(!cur) break;
-            addDay(cur);
-            guard++;
-          }
-        }
-        continue;
-      }
-    }catch{}
-    // fallback: start date only
-    addDay(d0);
+    const d = String(it?.date || "").trim();
+    if (!d || d === "9999-99-99") continue;
+    if (!seen.has(d)) { seen.add(d); days.push(d); }
   }
-
   days.sort((a,b)=>String(a).localeCompare(String(b)));
   return days;
 }
@@ -9588,7 +9188,65 @@ function moveActiveDay(delta) {
   renderTimeline();
 }
 
-function renderTimeline() {
+function renderTim
+/* ---------------- Stay multiday visibility (V218B) ----------------
+   Objetivo: que un alojamiento con check-in (stay.date) y check-out (stay.checkout)
+   sea visible en el cronograma durante los días intermedios ocupados.
+   Criterio de check-out: EXCLUSIVO (se muestra hasta el día anterior a stay.checkout).
+   Si stay.checkout falta pero hay stay.nights, se calcula checkout = date + nights.
+   Fallback: si fechas incompletas, se mantiene el comportamiento previo (solo stay.date).
+------------------------------------------------------------------- */
+function __tlIsoToDateMidday(iso){
+  const s = String(iso||"").trim();
+  if (typeof __isValidISODate === "function" && !__isValidISODate(s)) return null;
+  if (!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s)) return null;
+  const d = new Date(s + "T12:00:00"); // evita bordes DST
+  return isNaN(d.getTime()) ? null : d;
+}
+function __tlDateToISO(d){
+  if (!d || isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const da = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
+}
+function __tlAddDaysISO(iso, days){
+  const d = __tlIsoToDateMidday(iso);
+  if (!d) return "";
+  const n = Number(days||0);
+  d.setDate(d.getDate() + (isFinite(n) ? n : 0));
+  return __tlDateToISO(d);
+}
+function __tlStayCoveredDays(stayObj){
+  const ci = String(stayObj?.date || "").trim();
+  if (!(typeof __isValidISODate === "function" ? __isValidISODate(ci) : /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(ci))) {
+    // comportamiento previo: el stay solo "ocurre" en su fecha base (o sin fecha)
+    return [stayObj?.date || "9999-99-99"];
+  }
+
+  let co = String(stayObj?.checkout || "").trim();
+  const coValid = (typeof __isValidISODate === "function") ? __isValidISODate(co) : /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(co);
+  if (!coValid) {
+    const n = Math.max(1, parseInt(String(stayObj?.nights ?? 1), 10) || 1);
+    co = __tlAddDaysISO(ci, n);
+  }
+  const coOk = (typeof __isValidISODate === "function") ? __isValidISODate(co) : /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(co);
+  if (!coOk || String(co) <= String(ci)) return [ci];
+
+  const out = [];
+  let cur = ci;
+  let guard = 0;
+  while (String(cur) < String(co) && guard < 400) { // guard anti bucle
+    out.push(cur);
+    cur = __tlAddDaysISO(cur, 1);
+    if (!cur) break;
+    guard++;
+  }
+  return out.length ? out : [ci];
+}
+/* ---------------- /Stay multiday visibility (V218B) ---------------- */
+
+eline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
@@ -9601,29 +9259,12 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    const depDate = String(leg.date || "9999-99-99");
-    const depTime = String(leg.time || "");
-    const arrDateRaw = String(leg.arriveDate || leg.dateIn || "");
-    const arrTimeRaw = String(leg.arriveTime || leg.timeIn || "");
-    const arrDate = (!arrDateRaw && arrTimeRaw && depDate && depDate !== "9999-99-99") ? depDate : arrDateRaw;
-    const arrTime = arrTimeRaw;
-
-    // Duration: prefer TZ if offsets are derivable, fallback to non-TZ if not.
-    const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
-    const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   (arrDate || depDate), arrTime);
-
-    let dur = "";
-    if (depDate && depTime && arrDate && arrTime) {
-      dur = calcDurationTextTZ(depDate, depTime, arrDate, arrTime, off0, off1) || "";
-      if (!dur) dur = calcDurationText(depDate, depTime, arrDate, arrTime) || "";
-    }
-
     items.push({
-      date: depDate,
-      time: depTime,
-      arriveDate: arrDate,
-      arriveTime: arrTime,
-      duration: dur,
+      date: (leg.date || "9999-99-99"),
+      time: (leg.time || ""),
+      arriveDate: (leg.arriveDate || ""),
+      arriveTime: (leg.arriveTime || ""),
+      duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
       type: "Trayecto",
       title: `${leg.from || "—"} → ${leg.to || "—"}`,
       cost: parseMoney(leg.cost),
@@ -9632,7 +9273,18 @@ function renderTimeline() {
     });
   }
   for (const s of sc.stays) {
-    items.push({ date: (s.date || "9999-99-99"), time: (s.time || ""), type:"Alojamiento", title: `${s.city || "—"} • ${s.name || "Hotel"}`, cost: parseMoney(s.cost), stayId: s.id, uid: `stay:${s.id}` });
+    const days = __tlStayCoveredDays(s);
+    for (const d of days) {
+      items.push({
+        date: (d || "9999-99-99"),
+        time: (String(d) === String(s.date || "") ? (s.time || "") : ""), // intermedios: sin hora (no alterar orden)
+        type:"Alojamiento",
+        title: `${s.city || "—"} • ${s.name || "Hotel"}`,
+        cost: parseMoney(s.cost),
+        stayId: s.id,
+        uid: `stay:${s.id}:${d || ""}`
+      });
+    }
   }
   for (const a of sc.activities) {
     items.push({ date: (a.date || "9999-99-99"), time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
@@ -9645,13 +9297,10 @@ function renderTimeline() {
     if (t.includes("comida") || t.includes("meal")) items.splice(i, 1);
   }
 
-  
-  // V219C: Project real-interval events into every overlapped day for visible main timeline rendering
-  items = __projectTimelineItemsAcrossDays(items);
-items.sort((a,b)=>{
+  items.sort((a,b)=>{
     if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
-    const ta = timeSortKey(a.__sortTime || a.time);
-    const tb = timeSortKey(b.__sortTime || b.time);
+    const ta = timeSortKey(a.time);
+    const tb = timeSortKey(b.time);
     if (ta !== tb) return ta - tb;
     return String(a.uid || (a.type+':'+(a.legId||a.stayId||a.actId||a.date||''))).localeCompare(String(b.uid || (b.type+':'+(b.legId||b.stayId||b.actId||b.date||''))));
   });
@@ -9681,38 +9330,12 @@ items.sort((a,b)=>{
       renderDailyNotes();
       return;
     }
-    // V219: Day mode should include interval-overlapping events (overnight legs / activities with duration)
-    visibleItems = (filteredItems || []).filter(it => {
-      const d = String(it?.date || "");
-      if (String(it?.type||"") === "__noteOnly") return d === String(activeDayISO);
-      if (!d || d === "9999-99-99") return false;
-      try { return __intervalOverlapsDay(__eventIntervalFromTimelineItem(it), String(activeDayISO)); } catch { return d === String(activeDayISO); }
-    });
+    visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
     if (!visibleItems.length) {
       box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
       return;
     }
-  
-
-// V219A: re-order day items by "effective start" within this day
-try{
-  const b = __dayBoundsMillis(String(activeDayISO));
-  visibleItems.sort((a,b2)=>{
-    const ia = __eventIntervalFromTimelineItem(a);
-    const ib = __eventIntervalFromTimelineItem(b2);
-    const sa = Number.isFinite(ia.start) ? ia.start : __localMillisFromISOTime(String(a.date||""), String(a.time||""));
-    const sb = Number.isFinite(ib.start) ? ib.start : __localMillisFromISOTime(String(b2.date||""), String(b2.time||""));
-    const ea = Number.isFinite(b.start) ? Math.max(sa, b.start) : sa;
-    const eb = Number.isFinite(b.start) ? Math.max(sb, b.start) : sb;
-    if (ea !== eb) return ea - eb;
-    // stable tie-breakers
-    const ta = timeSortKey(a.__sortTime || a.time);
-    const tb = timeSortKey(b2.time);
-    if (ta !== tb) return ta - tb;
-    return String(a.uid||"").localeCompare(String(b2.uid||""));
-  });
-}catch{}
   }
 
   // V187B: ensure days with daily notes appear even if they have no events (Global mode)
@@ -9741,8 +9364,8 @@ try{
         // keep chronological order
         visibleItems.sort((a,b)=>{
           if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
-          const ta = timeSortKey(a.__sortTime || a.time);
-          const tb = timeSortKey(b.__sortTime || b.time);
+          const ta = timeSortKey(a.time);
+          const tb = timeSortKey(b.time);
           if (ta !== tb) return ta - tb;
           return String(a.uid||"").localeCompare(String(b.uid||""));
         });
@@ -9791,7 +9414,7 @@ try{
     const __metaClass = __sum.metaClass;
 
 // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
-    const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}` + (it.__projDay ? `@${it.__projDay}` : ``);
+    const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
     const __persistKey = (window.__tlPersistentFoundKey||"");
     const persistCls = (__persistKey && String(__persistKey)===String(tlKey)) ? " tlPersistentFound" : "";
     const isExpanded = __tlExpanded.has(tlKey);
@@ -9873,11 +9496,6 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
                  ${ro ? "disabled" : ""}>`;
     }
 
-// V219A: progress overlay for interval events when viewing a specific day
-const progressOverlay = (timelineViewMode === "day") ? __tlProgressOverlayHTML(it, String(activeDayISO||"")) : "";
-const __edgeDay = (timelineViewMode === "day") ? String(activeDayISO||"") : String(it.__projDay || it.date || "");
-const stayEdgeHTML = (kind === "stay" && itemObj && __edgeDay) ? __stayEdgeBadgeHTML(itemObj, __edgeDay) : "";
-
 
     return `
       <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}${persistCls}"
@@ -9885,8 +9503,6 @@ const stayEdgeHTML = (kind === "stay" && itemObj && __edgeDay) ? __stayEdgeBadge
            data-tl-jump-type="${jumpType}"
            data-tl-jump-id="${escapeHtml(jumpId)}"
            data-tl-key="${escapeHtml(tlKey)}">
-
-        ${progressOverlay}
 
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
@@ -9903,7 +9519,6 @@ const stayEdgeHTML = (kind === "stay" && itemObj && __edgeDay) ? __stayEdgeBadge
               ${tlCheckbox ? tlCheckbox : ""}
               ${notesBtn ? notesBtn : ""}
             </div>
-            ${stayEdgeHTML ? `<div class="mt-auto">${stayEdgeHTML}</div>` : ``}
             ${rtBadgeHTML ? `<div class="mt-auto">${rtBadgeHTML}</div>` : ""}
           </div>
         </div>
@@ -9938,40 +9553,6 @@ const stayEdgeHTML = (kind === "stay" && itemObj && __edgeDay) ? __stayEdgeBadge
   box.querySelectorAll("[data-tl-stay-done]").forEach(cb => {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
-
-// V219A: Stay Entry/Exit quick jump between edges (Day mode)
-box.querySelectorAll(".stayEdgeBtn[data-target-day][data-tl-key]").forEach(btn => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault(); e.stopPropagation();
-    const targetDay = btn.getAttribute("data-target-day") || "";
-    const keyBase = btn.getAttribute("data-tl-key") || "";
-    if (!targetDay || !keyBase) return;
-
-    // We project stays per day with keys like stay:<id>@YYYY-MM-DD
-    const scrollKey = `${keyBase}@${targetDay}`;
-
-    // If currently in Day mode, jump day and rerender; otherwise keep current mode and just scroll
-    const wasDay = (typeof timelineViewMode !== "undefined" && timelineViewMode === "day");
-    if (wasDay) {
-      try { activeDayISO = String(targetDay); } catch {}
-      try { renderTimeline(); } catch {}
-      try { requestAnimationFrame(() => { try { __msScrollToKey(scrollKey, true); } catch{} }); } catch {}
-      return;
-    }
-
-    // Full timeline: scroll to the projected item for that day (no mode switch)
-    try { __msScrollToKey(scrollKey, true); } catch {}
-  });
-}); catch {
-          try {
-            const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
-            if (el) __scrollTimelineFoundItemToTopAnchor(el);
-          } catch {}
-        }
-      });
-    } catch {}
-  });
-});
 
     // Tap en item: abrir Sheet directo (contextual)
 // - Click en checkbox/notas/Ir NO debe abrir el sheet
