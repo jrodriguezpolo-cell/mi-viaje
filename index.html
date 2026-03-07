@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V221A_TIMELINE_SECTIONS_COHERENCE_PHASE1</title>
+<title>V221A1_TIMELINE_SECTIONS_COHERENCE_PHASE1_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -926,7 +926,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V221A_TIMELINE_SECTIONS_COHERENCE_PHASE1</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V221A1_TIMELINE_SECTIONS_COHERENCE_PHASE1_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -7407,7 +7407,7 @@ function renderTabs() {
 
 
 function legCard(leg, idx) {
-  const dateKey = String(leg?.date || "").trim();
+  const dateKey = String((leg?.__mvDayKey || leg?.date) || "").trim();
   const vc = __sectionVisualClass("leg", leg, dateKey);
   const st = vc.st;
 
@@ -7458,7 +7458,7 @@ function renderLegs() {
 
   sortByDateTimeEmptyFirst(sc.legs);
   box.innerHTML = sc.legs.length
-    ? __renderGroupedByDate(sc.legs, (it)=>it.date, legCard)
+    ? __renderGroupedByDate(__mvExpandForSection(sc.legs, __tlLegCoveredDays, (it)=>it.date), (it)=>it.__mvDayKey || it.date, legCard)
     : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
 
   // UX 2.1: tap on summary opens sheet in view mode
@@ -7540,7 +7540,7 @@ function staySummaryLinesHTML(stay, opts){
 
 
 function stayCard(stay) {
-  const dateKey = String(stay?.date || "").trim();
+  const dateKey = String((stay?.__mvDayKey || stay?.date) || "").trim();
   const vc = __sectionVisualClass("stay", stay, dateKey);
   const st = vc.st;
 
@@ -7610,7 +7610,7 @@ function renderStays() {
   sortByDateTimeEmptyFirst(sc.stays);
 
   box.innerHTML = sc.stays.length
-    ? __renderGroupedByDate(sc.stays, (it)=>it.date, stayCard)
+    ? __renderGroupedByDate(__mvExpandForSection(sc.stays, __mvStayDaysForSection, (it)=>it.date), (it)=>it.__mvDayKey || it.date, stayCard)
     : `<div class="text-sm text-slate-500">Añade alojamientos para organizar tus noches.</div>`;
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
@@ -8219,6 +8219,52 @@ function __dateSeparatorHTML(label, iso){
   }
   return out;
 }
+
+/* ---------------- Sections multiday/overnight coherence (V221A1) ----------------
+   Objetivo: que las SECCIONES reflejen en todos los días cubiertos
+   los eventos multiday/overnight ya visibles en el cronograma.
+   Cambios quirúrgicos: expandimos items por días cubiertos y agrupamos por ese día.
+------------------------------------------------------------------- */
+function __mvExpandForSection(list, daysFn, fallbackDateFn){
+  if (!Array.isArray(list) || !list.length) return [];
+  const out = [];
+  const seen = new Set();
+  for (const it of list){
+    const base = (fallbackDateFn ? fallbackDateFn(it) : (it && it.date)) || "";
+    const days = (typeof daysFn === "function") ? (daysFn(it) || []) : [];
+    const useDays = Array.isArray(days) && days.length ? days : (base ? [base] : []);
+    for (const d of useDays){
+      const iso = String(d || "").trim();
+      const k = String(it?.id || "") + "::" + iso;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      // Clon ligero con dayKey para agrupar/render en sección sin alterar el objeto original
+      out.push(Object.assign({}, it, { __mvDayKey: iso }));
+    }
+  }
+  // Orden estable por día y hora (si existe)
+  out.sort((a,b)=>{
+    const da = String(a?.__mvDayKey || a?.date || "9999-99-99");
+    const db = String(b?.__mvDayKey || b?.date || "9999-99-99");
+    if (da !== db) return da.localeCompare(db);
+    const ta = String(a?.time || "");
+    const tb = String(b?.time || "");
+    if (ta !== tb) return ta.localeCompare(tb);
+    return String(a?.id||"").localeCompare(String(b?.id||""));
+  });
+  return out;
+}
+
+function __mvStayDaysForSection(stay){
+  // Igual que cronograma: días ocupados + día de checkout para marcar "Salida"
+  const ci = String(stay?.date || "").trim();
+  let days = (typeof __tlStayCoveredDays === "function") ? __tlStayCoveredDays(stay) : (ci ? [ci] : []);
+  if (!Array.isArray(days)) days = (ci ? [ci] : []);
+  const co = (typeof __tlStayCheckoutISO === "function") ? __tlStayCheckoutISO(stay) : "";
+  if (co && !days.includes(co)) days = days.concat([co]);
+  return days;
+}
+/* ---------------- /Sections multiday/overnight coherence (V221A1) ---------------- */
 /* ---------------- Upcoming focus helpers (vFIX7) ---------------- */
 function __nowMinutes(){
   const d = new Date();
@@ -8661,7 +8707,7 @@ const line1 = `<div class="text-sm font-semibold truncate">
 
 
 function actCard(act) {
-  const dateKey = String(act?.date || "").trim();
+  const dateKey = String((act?.__mvDayKey || act?.date) || "").trim();
   const vc = __sectionVisualClass("act", act, dateKey);
   const st = vc.st;
 
@@ -8736,7 +8782,7 @@ function renderActivities() {
   sortByDateTimeEmptyFirst(sc.activities);
 
   box.innerHTML = sc.activities.length
-    ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard)
+    ? __renderGroupedByDate(__mvExpandForSection(sc.activities, __tlActCoveredDays, (it)=>it.date), (it)=>it.__mvDayKey || it.date, actCard)
     : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
