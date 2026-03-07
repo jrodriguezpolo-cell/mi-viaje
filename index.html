@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222B2_TIMELINE_TRANSPORT_TEMPORAL_LINE_WRAP_FIX</title>
+<title>V222B3_TRANSPORT_RIGHT_RAIL_CLEANUP_AND_STAY_BADGE_RESTORE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -917,12 +917,31 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 }
 
 
-/* V222B1: Transport duration right-column alignment (stable across timeline + Transport section) */
-.mvLegRightRail{display:grid;grid-template-rows:1.25rem auto 1fr auto;justify-items:end;align-items:start;gap:0.25rem;}
-.mvLegRightTop{height:1.25rem;display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;}
+/* V222B3: Transport right-rail cleanup (stable lanes) */
+.mvLegRightRail{
+  display:grid;
+  grid-template-rows:1.25rem 1.25rem 1fr auto;
+  justify-items:end;
+  align-items:start;
+  row-gap:0.25rem;
+}
+.mvLegRightTop{
+  height:1.25rem;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:0.5rem;
+}
+.mvLegRightMid{
+  height:1.25rem;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  width:100%;
+}
+.mvLegRightSpacer{min-height:0;}
 .mvLegRightDur{line-height:1.1;}
 .mvLegRightBottom{align-self:end;}
-
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -933,7 +952,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222B2_TIMELINE_TRANSPORT_TEMPORAL_LINE_WRAP_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222B3_TRANSPORT_RIGHT_RAIL_CLEANUP_AND_STAY_BADGE_RESTORE</div></div>
 </div>
 <div class="mvLegRightTop">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3924,7 +3943,7 @@ function __deriveUtcOffsetHours(city, iso, hhmm){
 }
 
 // ============================================================
-// V222B2_TIMELINE_TRANSPORT_TEMPORAL_LINE_WRAP_FIX
+// V222B3_TRANSPORT_RIGHT_RAIL_CLEANUP_AND_STAY_BADGE_RESTORE
 // Base mínima para almacenar contexto de huso horario por tramo (salida/llegada)
 // - No altera lógica overnight/multiday existente
 // - Mantiene compatibilidad con legs antiguos (tzFrom/tzTo legacy)
@@ -7521,7 +7540,10 @@ function legCard(leg, idx) {
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
-        ${__sp.durText ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div>` : ""}
+        <div class="mvLegRightMid">
+          ${__sp.durText ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div>` : ""}
+        </div>
+        <div class="mvLegRightSpacer"></div>
         ${__rtBadge ? `<div class="mvLegRightBottom">${__rtBadge}</div>` : ""}
       </div>
     </button>
@@ -10041,7 +10063,10 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
               ${tlCheckbox ? tlCheckbox : ""}
               ${notesBtn ? notesBtn : ""}
             </div>
-            ${__rightDurHTML || ""}
+            <div class="mvLegRightMid">
+              ${__rightDurHTML || ""}
+            </div>
+            <div class="mvLegRightSpacer"></div>
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
           </div>
         </div>
