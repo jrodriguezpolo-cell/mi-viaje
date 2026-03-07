@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V219B_INTERVAL_VISIBLE_ACROSS_DAYS_FIX</title>
+<title>V219C_INTERVAL_RENDER_VISIBLE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -927,7 +927,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219B_INTERVAL_VISIBLE_ACROSS_DAYS_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219C_INTERVAL_RENDER_VISIBLE_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2567,6 +2567,78 @@ function __msItemOverlapsDay(it, dayISO){
 function __msItemStartMillis(it){
   const iv = __eventIntervalFromTimelineItem(it);
   return Number.isFinite(iv.start) ? iv.start : NaN;
+}
+
+
+function __ymdFromMillis(ms){
+  try{
+    const d = new Date(ms);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const da = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${da}`;
+  }catch{ return ""; }
+}
+
+// Project items with real interval into every overlapped day so the MAIN timeline render is visibly correct.
+function __projectTimelineItemsAcrossDays(items){
+  try{
+    if(!Array.isArray(items) || !items.length) return items || [];
+    const out = [];
+    for(const it of items){
+      const iv = __eventIntervalFromTimelineItem(it);
+      const s = iv?.start, e = iv?.end;
+      if(!Number.isFinite(s)){
+        out.push(it); 
+        continue;
+      }
+      const end = Number.isFinite(e) ? e : s;
+      if(end < s){
+        out.push(it);
+        continue;
+      }
+      const endAdj = Math.max(s, end - 1); // inclusive end for day stepping
+      const day0 = __ymdFromMillis(s);
+      const day1 = __ymdFromMillis(endAdj);
+
+      if(!day0 || !day1 || day0 === day1){
+        // keep original
+        const one = Object.assign({}, it);
+        one.__projDay = one.date || day0;
+        one.__projStartDay = day0;
+        one.__projEndDay = day1;
+        out.push(one);
+        continue;
+      }
+
+      // enumerate days from day0 to day1 (local time)
+      let cur = new Date(s);
+      cur.setHours(0,0,0,0);
+      let last = new Date(endAdj);
+      last.setHours(0,0,0,0);
+
+      while(cur.getTime() <= last.getTime()){
+        const dk = __ymdFromMillis(cur.getTime());
+        const c = Object.assign({}, it);
+        c.__projDay = dk;
+        c.__projStartDay = day0;
+        c.__projEndDay = day1;
+
+        // force date for grouping in the main timeline
+        c.date = dk;
+
+        // sorting inside each projected day: if started before this day, pin to 00:00
+        if(String(dk) !== String(day0)){
+          c.__sortTime = "00:00";
+        }
+        out.push(c);
+        cur.setDate(cur.getDate()+1);
+      }
+    }
+    return out;
+  }catch{
+    return items || [];
+  }
 }
 
 function __intervalProgressPctForDay(interval, dayISO){
@@ -9573,10 +9645,13 @@ function renderTimeline() {
     if (t.includes("comida") || t.includes("meal")) items.splice(i, 1);
   }
 
-  items.sort((a,b)=>{
+  
+  // V219C: Project real-interval events into every overlapped day for visible main timeline rendering
+  items = __projectTimelineItemsAcrossDays(items);
+items.sort((a,b)=>{
     if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
-    const ta = timeSortKey(a.time);
-    const tb = timeSortKey(b.time);
+    const ta = timeSortKey(a.__sortTime || a.time);
+    const tb = timeSortKey(b.__sortTime || b.time);
     if (ta !== tb) return ta - tb;
     return String(a.uid || (a.type+':'+(a.legId||a.stayId||a.actId||a.date||''))).localeCompare(String(b.uid || (b.type+':'+(b.legId||b.stayId||b.actId||b.date||''))));
   });
@@ -9632,7 +9707,7 @@ try{
     const eb = Number.isFinite(b.start) ? Math.max(sb, b.start) : sb;
     if (ea !== eb) return ea - eb;
     // stable tie-breakers
-    const ta = timeSortKey(a.time);
+    const ta = timeSortKey(a.__sortTime || a.time);
     const tb = timeSortKey(b2.time);
     if (ta !== tb) return ta - tb;
     return String(a.uid||"").localeCompare(String(b2.uid||""));
@@ -9666,8 +9741,8 @@ try{
         // keep chronological order
         visibleItems.sort((a,b)=>{
           if (a.date !== b.date) return String(a.date).localeCompare(String(b.date));
-          const ta = timeSortKey(a.time);
-          const tb = timeSortKey(b.time);
+          const ta = timeSortKey(a.__sortTime || a.time);
+          const tb = timeSortKey(b.__sortTime || b.time);
           if (ta !== tb) return ta - tb;
           return String(a.uid||"").localeCompare(String(b.uid||""));
         });
@@ -9716,7 +9791,7 @@ try{
     const __metaClass = __sum.metaClass;
 
 // Collapsible: por defecto plegado. (2º tap sobre expandido => jump)
-    const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}`;
+    const tlKey = it.isNote ? `note:${datePart}` : `${jumpType}:${jumpId}` + (it.__projDay ? `@${it.__projDay}` : ``);
     const __persistKey = (window.__tlPersistentFoundKey||"");
     const persistCls = (__persistKey && String(__persistKey)===String(tlKey)) ? " tlPersistentFound" : "";
     const isExpanded = __tlExpanded.has(tlKey);
@@ -9800,7 +9875,8 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
 // V219A: progress overlay for interval events when viewing a specific day
 const progressOverlay = (timelineViewMode === "day") ? __tlProgressOverlayHTML(it, String(activeDayISO||"")) : "";
-const stayEdgeHTML = (timelineViewMode === "day" && kind === "stay" && itemObj) ? __stayEdgeBadgeHTML(itemObj, String(activeDayISO||"")) : "";
+const __edgeDay = (timelineViewMode === "day") ? String(activeDayISO||"") : String(it.__projDay || it.date || "");
+const stayEdgeHTML = (kind === "stay" && itemObj && __edgeDay) ? __stayEdgeBadgeHTML(itemObj, __edgeDay) : "";
 
 
     return `
@@ -9868,17 +9944,25 @@ box.querySelectorAll(".stayEdgeBtn[data-target-day][data-tl-key]").forEach(btn =
   btn.addEventListener("click", (e) => {
     e.preventDefault(); e.stopPropagation();
     const targetDay = btn.getAttribute("data-target-day") || "";
-    const key = btn.getAttribute("data-tl-key") || "";
-    if (!targetDay || !key) return;
+    const keyBase = btn.getAttribute("data-tl-key") || "";
+    if (!targetDay || !keyBase) return;
 
-    try { timelineViewMode = "day"; } catch {}
-    try { activeDayISO = String(targetDay); } catch {}
-    try { renderTimeline(); } catch {}
+    // We project stays per day with keys like stay:<id>@YYYY-MM-DD
+    const scrollKey = `${keyBase}@${targetDay}`;
 
-    // After rerender, scroll + highlight
-    try {
-      requestAnimationFrame(() => {
-        try { __msScrollToKey(key, true); } catch {
+    // If currently in Day mode, jump day and rerender; otherwise keep current mode and just scroll
+    const wasDay = (typeof timelineViewMode !== "undefined" && timelineViewMode === "day");
+    if (wasDay) {
+      try { activeDayISO = String(targetDay); } catch {}
+      try { renderTimeline(); } catch {}
+      try { requestAnimationFrame(() => { try { __msScrollToKey(scrollKey, true); } catch{} }); } catch {}
+      return;
+    }
+
+    // Full timeline: scroll to the projected item for that day (no mode switch)
+    try { __msScrollToKey(scrollKey, true); } catch {}
+  });
+}); catch {
           try {
             const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
             if (el) __scrollTimelineFoundItemToTopAnchor(el);
