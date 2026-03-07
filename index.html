@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V219_DURATION_OVERNIGHT_AND_TIMEZONE_FOUNDATION</title>
+<title>V219A_INTERVAL_PROGRESS_AND_STAY_ENTRY_EXIT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -811,6 +811,25 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* Roundtrip jump: highlight target summary */
 .rtFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
 .msFlash{ box-shadow: 0 0 0 3px rgba(59,130,246,.35) !important; transition: box-shadow .15s ease; }
+/* V219A: subtle interval progress overlay inside timeline cards */
+.timelineItem{ position: relative; overflow: hidden; }
+.tlProgressOverlay{
+  position:absolute;
+  left:0; top:0; bottom:0;
+  background: rgba(15, 23, 42, 0.06);
+  pointer-events:none;
+}
+/* V219A: stay entry/exit micro badge */
+.stayEdgeBtn{
+  font-size: 11px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.85);
+  color: rgba(15,23,42,.85);
+}
+.stayEdgeBtn:active{ transform: scale(.98); }
 .tlPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 .rtPersistentFound{ box-shadow: 0 0 0 3px rgba(59,130,246,.22) !important; background: rgba(59,130,246,.06) !important; transition: box-shadow .15s ease, background .15s ease; }
 
@@ -908,7 +927,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V217C_REMOVE_SECTION_STATE_TEXT_BADGES<</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219A_INTERVAL_PROGRESS_AND_STAY_ENTRY_EXIT</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -2470,21 +2489,29 @@ function __eventIntervalMillis(kind, obj){
     }
 
     // Stay (stay): check-in date/time to checkout date/time if available
-    if(k === "stay"){
-      const d0 = String(obj.date||"").trim();
-      const t0 = String(obj.time||"").trim();
-      const start = __localMillisFromISOTime(d0, t0);
-      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
-      const d1 = String(obj.checkout || obj.checkoutDate || "").trim();
-      const t1 = String(obj.checkoutTime || obj.checkout_time || "").trim();
-      let end = start;
-      if(d1 && t1){
-        const e = __localMillisFromISOTime(d1, t1);
-        if(Number.isFinite(e)) end = e;
-      }
-      if(end < start) end = start;
-      return { start, end };
-    }
+if(k === "stay"){
+  const d0 = String(obj.date||"").trim();
+  const t0 = String(obj.time||"").trim();
+  const start = __localMillisFromISOTime(d0, t0);
+  if(!Number.isFinite(start)) return { start: NaN, end: NaN };
+
+  // Accept multiple field variants (compat):
+  // - checkout/checkoutDate/checkoutTime
+  // - dateOut/timeOut
+  // - endDate/endTime
+  const d1 = String(obj.checkout || obj.checkoutDate || obj.dateOut || obj.endDate || "").trim();
+  const t1 = String(obj.checkoutTime || obj.checkout_time || obj.timeOut || obj.endTime || "").trim();
+
+  let end = start;
+  if(d1){
+    // If no explicit checkout time, assume 00:00 for interval overlap purposes.
+    const tEnd = (t1 && /^\d{2}:\d{2}$/.test(t1)) ? t1 : "00:00";
+    const e = __localMillisFromISOTime(d1, tEnd);
+    if(Number.isFinite(e)) end = e;
+  }
+  if(end < start) end = start;
+  return { start, end };
+}
 
     // Default punctual
     const d = String(obj.date||"").trim();
@@ -2541,6 +2568,73 @@ function __msItemStartMillis(it){
   const iv = __eventIntervalFromTimelineItem(it);
   return Number.isFinite(iv.start) ? iv.start : NaN;
 }
+
+function __intervalProgressPctForDay(interval, dayISO){
+  try{
+    const s = interval?.start, e = interval?.end;
+    if(!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return NaN;
+    const b = __dayBoundsMillis(dayISO);
+    if(!Number.isFinite(b.start)) return NaN;
+
+    const now = Date.now();
+    const today = todayYMD ? String(todayYMD()) : "";
+    let moment = b.start; // default: start of day
+
+    if (String(dayISO) === today) {
+      moment = now;
+    } else if (String(dayISO) < today) {
+      // past day: treat as end of the day (or event end)
+      moment = Math.min(b.end - 1, e);
+    } else {
+      // future day: treat as start of the day (or event start)
+      moment = Math.max(b.start, s);
+    }
+
+    const pct = (moment - s) / (e - s);
+    return Math.max(0, Math.min(1, pct));
+  }catch{
+    return NaN;
+  }
+}
+
+function __tlProgressOverlayHTML(it, dayISO){
+  try{
+    if (!it || !dayISO) return "";
+    const iv = __eventIntervalFromTimelineItem(it);
+    if (!__intervalOverlapsDay(iv, dayISO)) return "";
+    if (!Number.isFinite(iv.start) || !Number.isFinite(iv.end) || iv.end <= iv.start) return "";
+    // Only show when the interval is meaningful (>= 45 min)
+    if ((iv.end - iv.start) < 45*60*1000) return "";
+    const pct = __intervalProgressPctForDay(iv, dayISO);
+    if (!Number.isFinite(pct)) return "";
+    const w = Math.round(pct * 100);
+    if (w <= 0) return "";
+    return `<div class="tlProgressOverlay" style="width:${w}%"></div>`;
+  }catch{
+    return "";
+  }
+}
+
+function __stayEdgeBadgeHTML(stay, dayISO){
+  try{
+    if(!stay || !dayISO) return "";
+    const startISO = String(stay.date||"").trim();
+    const endISO = String(stay.checkout || stay.checkoutDate || stay.dateOut || stay.endDate || "").trim();
+    if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(startISO) || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(endISO)) return "";
+    const key = `stay:${stay.id}`;
+    if (String(dayISO) === startISO && endISO !== startISO) {
+      return `<button type="button" class="stayEdgeBtn" data-target-day="${escapeHtml(endISO)}" data-tl-key="${escapeHtml(key)}">Entrada</button>`;
+    }
+    if (String(dayISO) === endISO && endISO !== startISO) {
+      return `<button type="button" class="stayEdgeBtn" data-target-day="${escapeHtml(startISO)}" data-tl-key="${escapeHtml(key)}">Salida</button>`;
+    }
+    return "";
+  }catch{
+    return "";
+  }
+}
+
+
 
 
 function currencyOptionsHTML(selected){
@@ -9524,6 +9618,26 @@ function renderTimeline() {
       renderDailyNotes();
       return;
     }
+  
+
+// V219A: re-order day items by "effective start" within this day
+try{
+  const b = __dayBoundsMillis(String(activeDayISO));
+  visibleItems.sort((a,b2)=>{
+    const ia = __eventIntervalFromTimelineItem(a);
+    const ib = __eventIntervalFromTimelineItem(b2);
+    const sa = Number.isFinite(ia.start) ? ia.start : __localMillisFromISOTime(String(a.date||""), String(a.time||""));
+    const sb = Number.isFinite(ib.start) ? ib.start : __localMillisFromISOTime(String(b2.date||""), String(b2.time||""));
+    const ea = Number.isFinite(b.start) ? Math.max(sa, b.start) : sa;
+    const eb = Number.isFinite(b.start) ? Math.max(sb, b.start) : sb;
+    if (ea !== eb) return ea - eb;
+    // stable tie-breakers
+    const ta = timeSortKey(a.time);
+    const tb = timeSortKey(b2.time);
+    if (ta !== tb) return ta - tb;
+    return String(a.uid||"").localeCompare(String(b2.uid||""));
+  });
+}catch{}
   }
 
   // V187B: ensure days with daily notes appear even if they have no events (Global mode)
@@ -9684,6 +9798,10 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
                  ${ro ? "disabled" : ""}>`;
     }
 
+// V219A: progress overlay for interval events when viewing a specific day
+const progressOverlay = (timelineViewMode === "day") ? __tlProgressOverlayHTML(it, String(activeDayISO||"")) : "";
+const stayEdgeHTML = (timelineViewMode === "day" && kind === "stay" && itemObj) ? __stayEdgeBadgeHTML(itemObj, String(activeDayISO||"")) : "";
+
 
     return `
       <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}${persistCls}"
@@ -9691,6 +9809,8 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
            data-tl-jump-type="${jumpType}"
            data-tl-jump-id="${escapeHtml(jumpId)}"
            data-tl-key="${escapeHtml(tlKey)}">
+
+        ${progressOverlay}
 
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-start gap-3 min-w-0">
@@ -9707,6 +9827,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
               ${tlCheckbox ? tlCheckbox : ""}
               ${notesBtn ? notesBtn : ""}
             </div>
+            ${stayEdgeHTML ? `<div class="mt-auto">${stayEdgeHTML}</div>` : ``}
             ${rtBadgeHTML ? `<div class="mt-auto">${rtBadgeHTML}</div>` : ""}
           </div>
         </div>
@@ -9741,6 +9862,32 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
   box.querySelectorAll("[data-tl-stay-done]").forEach(cb => {
     cb.onchange = () => handleStayDoneToggle(cb.dataset.tlStayDone, cb.checked, cb);
   });
+
+// V219A: Stay Entry/Exit quick jump between edges (Day mode)
+box.querySelectorAll(".stayEdgeBtn[data-target-day][data-tl-key]").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const targetDay = btn.getAttribute("data-target-day") || "";
+    const key = btn.getAttribute("data-tl-key") || "";
+    if (!targetDay || !key) return;
+
+    try { timelineViewMode = "day"; } catch {}
+    try { activeDayISO = String(targetDay); } catch {}
+    try { renderTimeline(); } catch {}
+
+    // After rerender, scroll + highlight
+    try {
+      requestAnimationFrame(() => {
+        try { __msScrollToKey(key, true); } catch {
+          try {
+            const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
+            if (el) __scrollTimelineFoundItemToTopAnchor(el);
+          } catch {}
+        }
+      });
+    } catch {}
+  });
+});
 
     // Tap en item: abrir Sheet directo (contextual)
 // - Click en checkbox/notas/Ir NO debe abrir el sheet
