@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218H1_ACCOMMODATION_ENTRY_EXIT_TOP_ANCHOR_FIX</title>
+<title>V219A_TRANSPORT_OVERNIGHT_VISIBLE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -908,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218H1_ACCOMMODATION_ENTRY_EXIT_TOP_ANCHOR_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219A_TRANSPORT_OVERNIGHT_VISIBLE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -9328,6 +9328,43 @@ function __tlStayCheckoutISO(stayObj){
 
 /* ---------------- /Stay multiday visibility (V218B) ---------------- */
 
+
+/* ---------------- Leg overnight visibility (V219A) ---------------- */
+function __tlLegCoveredDays(leg) {
+  const dep = String(leg?.date || "").trim();
+  const arr = String(leg?.arriveDate || "").trim();
+
+  const depValid = (typeof __isValidISODate === "function")
+    ? __isValidISODate(dep)
+    : /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dep);
+
+  if (!depValid) return dep ? [dep] : [];
+
+  if (!arr) return [dep];
+
+  const arrValid = (typeof __isValidISODate === "function")
+    ? __isValidISODate(arr)
+    : /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(arr);
+
+  if (!arrValid) return [dep];
+
+  // Si por datos corruptos llega antes de salir, no expandir
+  if (String(arr) < String(dep)) return [dep];
+
+  const out = [dep];
+  let cur = dep;
+  let guard = 400;
+  while (cur !== arr && guard-- > 0) {
+    const next = __tlAddDaysISO(cur, 1);
+    if (!next || next === cur) break;
+    cur = next;
+    out.push(cur);
+    if (cur === arr) break;
+  }
+  return out;
+}
+/* ---------------- /Leg overnight visibility (V219A) ---------------- */
+
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
@@ -9341,18 +9378,28 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
-    items.push({
-      date: (leg.date || "9999-99-99"),
-      time: (leg.time || ""),
-      arriveDate: (leg.arriveDate || ""),
-      arriveTime: (leg.arriveTime || ""),
-      duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
-      type: "Trayecto",
-      title: `${leg.from || "—"} → ${leg.to || "—"}`,
-      cost: parseMoney(leg.cost),
-      legId: leg.id,
-      uid: `leg:${leg.id}`
-    });
+    const depISO = String(leg?.date || "").trim();
+    const arrISO = String(leg?.arriveDate || "").trim();
+    const days = __tlLegCoveredDays(leg);
+
+    for (const d of days) {
+      const isDep = depISO && String(d) === String(depISO);
+      const isArr = arrISO && String(d) === String(arrISO);
+
+      items.push({
+        date: (d || "9999-99-99"),
+        // Mantener ordenación: hora solo en salida y llegada; intermedios sin hora
+        time: (isDep ? (leg.time || "") : (isArr ? (leg.arriveTime || "") : "")),
+        arriveDate: (leg.arriveDate || ""),
+        arriveTime: (leg.arriveTime || ""),
+        duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
+        type: "Trayecto",
+        title: `${leg.from || "—"} → ${leg.to || "—"}`,
+        cost: parseMoney(leg.cost),
+        legId: leg.id,
+        uid: `leg:${leg.id}:${d || ""}`
+      });
+    }
   }
   for (const s of sc.stays) {
     const ci = String(s?.date || "").trim();
