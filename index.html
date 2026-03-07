@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V219A_TRANSPORT_OVERNIGHT_VISIBLE</title>
+<title>V219B_ACTIVITIES_OVERNIGHT_VISIBLE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -908,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219A_TRANSPORT_OVERNIGHT_VISIBLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219B_ACTIVITIES_OVERNIGHT_VISIBLE</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -9365,6 +9365,89 @@ function __tlLegCoveredDays(leg) {
 }
 /* ---------------- /Leg overnight visibility (V219A) ---------------- */
 
+/* ---------------- /Activities overnight visibility (V219B) ---------------- */
+function __tlParseDurationToMinutes(txt){
+  const s = String(txt||"").trim().toLowerCase();
+  if(!s) return 0;
+  let days = 0, hours = 0, mins = 0;
+
+  // days: "1d", "2 días", "1 dia"
+  const mDay = s.match(/(\d+)\s*(d|día|dias|días)\b/);
+  if(mDay) days = parseInt(mDay[1],10) || 0;
+
+  const mH = s.match(/(\d+)\s*h\b/);
+  if(mH) hours = parseInt(mH[1],10) || 0;
+
+  const mM = s.match(/(\d+)\s*m\b/);
+  if(mM) mins = parseInt(mM[1],10) || 0;
+
+  // e.g. "90" (assume minutes) is ambiguous -> do NOT parse to avoid surprises
+  return (days*24*60) + (hours*60) + mins;
+}
+
+function __tlActEndDateTime(act){
+  const startISO = String(act?.date||"").trim();
+  const startTime = String(act?.time||"").trim();
+  const durTxt = String(act?.duration||"").trim();
+  const durMin = __tlParseDurationToMinutes(durTxt);
+
+  const startValid = (typeof __isValidISODate==="function") ? __isValidISODate(startISO) : /^\d{4}-\d{2}-\d{2}$/.test(startISO);
+  if(!startValid) return null;
+
+  if(!durMin){
+    // if no parseable duration -> no expansion
+    return { endISO: startISO, endTime: "" };
+  }
+
+  // If no start time, we can only expand by whole days (if any)
+  if(!startTime){
+    const days = Math.floor(durMin / (24*60));
+    if(days <= 0) return { endISO: startISO, endTime: "" };
+    const endISO = __tlAddDaysISO(startISO, days);
+    return { endISO: endISO || startISO, endTime: "" };
+  }
+
+  // Add duration minutes from start datetime (local)
+  const dt = new Date(startISO + "T" + startTime + ":00");
+  if(!Number.isFinite(dt.getTime())) return { endISO: startISO, endTime: "" };
+  const end = new Date(dt.getTime() + durMin*60000);
+  const y = end.getFullYear();
+  const m = String(end.getMonth()+1).padStart(2,"0");
+  const d = String(end.getDate()).padStart(2,"0");
+  const hh = String(end.getHours()).padStart(2,"0");
+  const mm = String(end.getMinutes()).padStart(2,"0");
+  return { endISO: `${y}-${m}-${d}`, endTime: `${hh}:${mm}` };
+}
+
+function __tlActCoveredDays(act){
+  const startISO = String(act?.date||"").trim();
+  const startValid = (typeof __isValidISODate==="function") ? __isValidISODate(startISO) : /^\d{4}-\d{2}-\d{2}$/.test(startISO);
+  if(!startValid) return startISO ? [startISO] : [];
+
+  const endInfo = __tlActEndDateTime(act);
+  const endISO = endInfo && endInfo.endISO ? String(endInfo.endISO) : startISO;
+
+  if(!endISO) return [startISO];
+  const endValid = (typeof __isValidISODate==="function") ? __isValidISODate(endISO) : /^\d{4}-\d{2}-\d{2}$/.test(endISO);
+  if(!endValid) return [startISO];
+
+  if(String(endISO) < String(startISO)) return [startISO];
+
+  const out = [startISO];
+  let cur = startISO;
+  let guard = 400;
+  while (cur !== endISO && guard-- > 0) {
+    const next = __tlAddDaysISO(cur, 1);
+    if(!next || next === cur) break;
+    cur = next;
+    out.push(cur);
+    if(cur === endISO) break;
+  }
+  return out;
+}
+/* ---------------- /Activities overnight visibility (V219B) ---------------- */
+
+
 function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
@@ -9424,7 +9507,31 @@ function renderTimeline() {
     }
   }
   for (const a of sc.activities) {
-    items.push({ date: (a.date || "9999-99-99"), time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
+    const startISO = String(a?.date || "").trim();
+    if(!startISO){
+      items.push({ date: "9999-99-99", time: (a.time || ""), type:"Actividad", title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
+      continue;
+    }
+    const endInfo = __tlActEndDateTime(a) || { endISO: startISO, endTime: "" };
+    const endISO = String(endInfo.endISO || startISO || "").trim();
+    const endTime = String(endInfo.endTime || "").trim();
+    const days = __tlActCoveredDays(a);
+
+    for (const d of days) {
+      const isStart = startISO && String(d) === String(startISO);
+      const isEnd = endISO && String(d) === String(endISO);
+
+      items.push({
+        date: (d || "9999-99-99"),
+        // Mantener ordenación: hora solo en inicio y fin; intermedios sin hora
+        time: (isStart ? (a.time || "") : (isEnd ? (endTime || "") : "")),
+        type:"Actividad",
+        title: `${a.city || "—"} • ${a.title || "Actividad"}`,
+        cost: parseMoney(a.cost),
+        actId: a.id,
+        uid: `act:${a.id}:${d || ""}`
+      });
+    }
   }
 
   
