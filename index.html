@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218F1_ACCOMMODATION_BADGE_ALIGNMENT_AND_NIGHTS_LABEL_FIX</title>
+<title>V218G_SUMMARY_DATES_SHORT_NUMERIC</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -908,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218F1_ACCOMMODATION_BADGE_ALIGNMENT_AND_NIGHTS_LABEL_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218G_SUMMARY_DATES_SHORT_NUMERIC</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1519,6 +1519,15 @@ function formatDateES(dateStr) {
   // normalizar: quitar puntos si el mes viene “feb.” -> “feb”
   out = String(out || "").replace(/\./g, "").replace(/\s+/g, " ").trim();
   return out;
+}
+
+function formatDateShortES(dateStr){
+  // dateStr "YYYY-MM-DD" -> "dd/mm/aa"
+  const s = String(dateStr || "").trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return "";
+  const yy = m[1].slice(2);
+  return `${m[3]}/${m[2]}/${yy}`;
 }
 
 function calcDurationText(departDate, departTime, arriveDate, arriveTime) {
@@ -3820,7 +3829,7 @@ function buildLegSummaryParts(leg) {
   const toTxt   = String(leg?.to   || "").trim() || "—";
   const title = `${fromTxt} → ${toTxt}`;
 
-  const dES = leg?.date ? formatDateES(leg.date) : "";
+  const dES = leg?.date ? formatDateShortES(leg.date) : "";
 
   const depDate = String(leg?.date || "").trim();
   const depTime = String(leg?.time || "").trim();
@@ -7340,7 +7349,7 @@ function staySummaryLinesHTML(stay, opts){
 
   // Dates / times (no timezone logic yet)
   const checkInISO = String(stay.date||"").trim();
-  const checkInDateES = (checkInISO ? formatDateES(checkInISO) : "") || "—";
+  const checkInDateES = (checkInISO ? formatDateShortES(checkInISO) : "") || "—";
   const checkInTime = (stay.time||"").trim();
 
   const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
@@ -7359,7 +7368,7 @@ function staySummaryLinesHTML(stay, opts){
 
   const coISO_raw = String(stay.checkout||"").trim();
   const checkOutISO = coISO_raw || (checkInISO ? __addDaysISO_inline(checkInISO, nights) : "");
-  const checkOutDateES = (checkOutISO ? formatDateES(checkOutISO) : "") || "—";
+  const checkOutDateES = (checkOutISO ? formatDateShortES(checkOutISO) : "") || "—";
   const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
 
   // V218D: compact timeline rendering for intermediate days (visual only)
@@ -8449,7 +8458,7 @@ function actSummaryLinesHTML(act, opts){
   opts = opts || {};
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
-  const dES = (act.date ? formatDateES(act.date) : "");
+  const dES = (act.date ? formatDateShortES(act.date) : "");
   const t = (act.time||"").trim();
   const duration = (act.duration||"").trim();
   const hasNotes = !!(act.notes && String(act.notes).trim());
