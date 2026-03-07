@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218A_PREFERENCES_CHILDREN_AND_VISITED_CITIES_SMART</title>
+<title>V219_DURATION_OVERNIGHT_AND_TIMEZONE_FOUNDATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -2353,6 +2353,195 @@ function calcDurationTextTZ(departDate, departTime, arriveDate, arriveTime, tzFr
   if (h > 0) return `${h}h`;
   return `${m}m`;
 }
+
+
+// V219: Temporal foundation (duration, overnight, TZ) for interval-based logic without refactoring UI
+function __parseDurationMinutes(raw){
+  const s = String(raw||"").trim().toLowerCase();
+  if(!s) return 0;
+  // "HH:MM"
+  let m = s.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
+  if(m){
+    const hh = parseInt(m[1],10); const mm = parseInt(m[2],10);
+    if(Number.isFinite(hh) && Number.isFinite(mm)) return Math.max(0, hh*60 + mm);
+  }
+  // "2h30", "2h 30m", "2 h", "90m"
+  let hh = 0, mm2 = 0;
+  m = s.match(/(\d+)\s*h/);
+  if(m) hh = parseInt(m[1],10) || 0;
+  m = s.match(/(\d+)\s*m/);
+  if(m) mm2 = parseInt(m[1],10) || 0;
+  if(hh || mm2) return Math.max(0, hh*60 + mm2);
+  // pure number -> hours if small, minutes if big
+  if(/^\d+$/.test(s)){
+    const n = parseInt(s,10);
+    if(!Number.isFinite(n)) return 0;
+    return (n <= 24) ? (n*60) : n;
+  }
+  // "2h30" without m
+  m = s.match(/^(\d+)\s*h\s*(\d{1,2})$/);
+  if(m){
+    const h2 = parseInt(m[1],10)||0;
+    const m2 = parseInt(m[2],10)||0;
+    return Math.max(0, h2*60 + m2);
+  }
+  return 0;
+}
+
+function __localMillisFromISOTime(iso, hhmm){
+  const d = String(iso||"").trim();
+  const t = String(hhmm||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !/^\d{2}:\d{2}$/.test(t)) return NaN;
+  const [Y,M,D] = d.split("-").map(x=>parseInt(x,10));
+  const [h,m] = t.split(":").map(x=>parseInt(x,10));
+  const dt = new Date(Y, M-1, D, h, m, 0, 0);
+  return dt.getTime();
+}
+
+function __addDaysISO(iso, days){
+  try{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||""))) return "";
+    const d = new Date(String(iso) + "T00:00:00");
+    d.setDate(d.getDate() + (Number(days)||0));
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }catch{ return ""; }
+}
+
+// Return {start,end} in millis (UTC basis), end>=start, end==start for punctual
+function __eventIntervalMillis(kind, obj){
+  try{
+    const k = String(kind||"");
+    if(!obj) return { start: NaN, end: NaN };
+
+    // Transport (leg): date/time to arriveDate/arriveTime (or legacy dateIn/timeIn)
+    if(k === "leg"){
+      const depDate = String(obj.date||"").trim();
+      const depTime = String(obj.time||"").trim();
+      let arrDate = String(obj.arriveDate || obj.dateIn || "").trim();
+      const arrTime = String(obj.arriveTime || obj.timeIn || "").trim();
+
+      // Safe fallback: if we have arrive time but no arrive date, default to depart date,
+      // and if arrive time is "earlier" than depart time, assume next day (minimal, deterministic).
+      if(!arrDate && arrTime && depDate) arrDate = depDate;
+      if(arrDate && arrTime && depDate && depTime && /^\d{2}:\d{2}$/.test(arrTime) && /^\d{2}:\d{2}$/.test(depTime)){
+        if(arrDate === depDate && arrTime < depTime){
+          const d2 = __addDaysISO(depDate, 1);
+          if(d2) arrDate = d2;
+        }
+      }
+
+      // Prefer TZ if offsets exist/derivable
+      const off0 = Number.isFinite(Number(obj?.tzFrom)) ? Number(obj.tzFrom) : (typeof __deriveUtcOffsetHours==="function" ? __deriveUtcOffsetHours(obj?.from, depDate, depTime) : NaN);
+      const off1 = Number.isFinite(Number(obj?.tzTo))   ? Number(obj.tzTo)   : (typeof __deriveUtcOffsetHours==="function" ? __deriveUtcOffsetHours(obj?.to,   (arrDate||depDate), arrTime) : NaN);
+
+      let start = NaN, end = NaN;
+      if(depDate && depTime){
+        if(Number.isFinite(off0) && typeof __toUtcMillisFromLocal==="function"){
+          start = __toUtcMillisFromLocal(depDate, depTime, off0);
+        } else {
+          start = __localMillisFromISOTime(depDate, depTime);
+        }
+      }
+      if(arrDate && arrTime){
+        if(Number.isFinite(off1) && typeof __toUtcMillisFromLocal==="function"){
+          end = __toUtcMillisFromLocal(arrDate, arrTime, off1);
+        } else {
+          end = __localMillisFromISOTime(arrDate, arrTime);
+        }
+      }
+      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
+      if(!Number.isFinite(end)) end = start; // punctual if no explicit end
+      if(end < start) end = start; // never negative here
+      return { start, end };
+    }
+
+    // Activity (act): date/time + duration minutes
+    if(k === "act"){
+      const d0 = String(obj.date||"").trim();
+      const t0 = String(obj.time||"").trim();
+      const start = __localMillisFromISOTime(d0, t0);
+      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
+      const mins = __parseDurationMinutes(obj.duration);
+      const end = (mins > 0) ? (start + mins*60*1000) : start;
+      return { start, end: Math.max(end, start) };
+    }
+
+    // Stay (stay): check-in date/time to checkout date/time if available
+    if(k === "stay"){
+      const d0 = String(obj.date||"").trim();
+      const t0 = String(obj.time||"").trim();
+      const start = __localMillisFromISOTime(d0, t0);
+      if(!Number.isFinite(start)) return { start: NaN, end: NaN };
+      const d1 = String(obj.checkout || obj.checkoutDate || "").trim();
+      const t1 = String(obj.checkoutTime || obj.checkout_time || "").trim();
+      let end = start;
+      if(d1 && t1){
+        const e = __localMillisFromISOTime(d1, t1);
+        if(Number.isFinite(e)) end = e;
+      }
+      if(end < start) end = start;
+      return { start, end };
+    }
+
+    // Default punctual
+    const d = String(obj.date||"").trim();
+    const t = String(obj.time||"").trim();
+    const start = __localMillisFromISOTime(d,t);
+    if(!Number.isFinite(start)) return { start: NaN, end: NaN };
+    return { start, end: start };
+  }catch{
+    return { start: NaN, end: NaN };
+  }
+}
+
+function __eventIntervalFromTimelineItem(it){
+  try{
+    const key = (typeof __msMakeKey==="function") ? __msMakeKey(it) : "";
+    const m = String(key||"").match(/^(leg|act|stay):(.+)$/);
+    if(!m) return { start: NaN, end: NaN };
+    const kind = m[1], id = m[2];
+    const sc = (typeof curScenario==="function") ? curScenario() : (typeof getActiveScenario==="function" ? getActiveScenario() : null);
+    if(!sc) return { start: NaN, end: NaN };
+    let obj = null;
+    if(kind==="leg") obj = (sc.legs||[]).find(x=>String(x.id)===String(id));
+    if(kind==="act") obj = (sc.activities||[]).find(x=>String(x.id)===String(id));
+    if(kind==="stay") obj = (sc.stays||[]).find(x=>String(x.id)===String(id));
+    return __eventIntervalMillis(kind, obj);
+  }catch{
+    return { start: NaN, end: NaN };
+  }
+}
+
+function __dayBoundsMillis(iso){
+  const d = String(iso||"").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return { start: NaN, end: NaN };
+  const [Y,M,D] = d.split("-").map(x=>parseInt(x,10));
+  const start = new Date(Y, M-1, D, 0, 0, 0, 0).getTime();
+  const end = start + 24*60*60*1000;
+  return { start, end };
+}
+
+function __intervalOverlapsDay(interval, dayISO){
+  const b = __dayBoundsMillis(dayISO);
+  const s = interval?.start, e = interval?.end;
+  if(!Number.isFinite(b.start) || !Number.isFinite(s)) return false;
+  const end = Number.isFinite(e) ? e : s;
+  // overlap: end > dayStart AND start < dayEnd (treat punctual as [s,s])
+  return (end > b.start) && (s < b.end);
+}
+
+function __msItemOverlapsDay(it, dayISO){
+  const iv = __eventIntervalFromTimelineItem(it);
+  return __intervalOverlapsDay(iv, dayISO);
+}
+function __msItemStartMillis(it){
+  const iv = __eventIntervalFromTimelineItem(it);
+  return Number.isFinite(iv.start) ? iv.start : NaN;
+}
+
 
 function currencyOptionsHTML(selected){
   const cur = String(selected || "EUR");
@@ -5043,8 +5232,13 @@ function openTimelineMicroSummaryMenu(){
           return;
         }
 
-        items = all.filter(it => String(it.date||"") === dayISO && __msHasTime(it));
-        items.sort((a,b)=> __msTimeKey(a.time) - __msTimeKey(b.time));
+        items = all.filter(it => __msHasTime(it) && __msItemOverlapsDay(it, dayISO));
+        items.sort((a,b)=>{
+          const sa = __msItemStartMillis(a); const sb = __msItemStartMillis(b);
+          if(Number.isFinite(sa) && Number.isFinite(sb) && sa !== sb) return sa - sb;
+          // fallback by time string
+          return __msTimeKey(a.time) - __msTimeKey(b.time);
+        });
 
         if(!items.length){
           list.innerHTML = `<div class="py-6 text-center text-sm text-slate-600">${st.tab==="tomorrow" ? "No hay eventos para mañana" : "No hay eventos para hoy"}</div>`;
@@ -9098,11 +9292,51 @@ function formatDateHuman(dateKey){
 function getTimelineDays(items) {
   const days = [];
   const seen = new Set();
+
+  const addDay = (d)=>{
+    const iso = String(d||"").trim();
+    if (!iso || iso === "9999-99-99") return;
+    if (!seen.has(iso)) { seen.add(iso); days.push(iso); }
+  };
+
+  const isoFromMillis = (ms)=>{
+    if(!Number.isFinite(ms)) return "";
+    const dt = new Date(ms);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,"0");
+    const d = String(dt.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+  };
+
   for (const it of (items || [])) {
-    const d = String(it?.date || "").trim();
-    if (!d || d === "9999-99-99") continue;
-    if (!seen.has(d)) { seen.add(d); days.push(d); }
+    const d0 = String(it?.date || "").trim();
+    if (!d0 || d0 === "9999-99-99") continue;
+
+    // V219: include days spanned by real intervals (overnight legs, activities with duration, stays with checkout)
+    try{
+      const iv = __eventIntervalFromTimelineItem(it);
+      if (Number.isFinite(iv?.start)) {
+        const startISO = isoFromMillis(iv.start);
+        const endISO = isoFromMillis(Number.isFinite(iv.end) ? iv.end : iv.start);
+        addDay(startISO || d0);
+        if (endISO && endISO !== startISO) {
+          // add each day between start and end (inclusive), but cap to avoid pathological loops
+          let cur = startISO || d0;
+          let guard = 0;
+          while(cur && cur !== endISO && guard < 14){
+            cur = __addDaysISO(cur, 1);
+            if(!cur) break;
+            addDay(cur);
+            guard++;
+          }
+        }
+        continue;
+      }
+    }catch{}
+    // fallback: start date only
+    addDay(d0);
   }
+
   days.sort((a,b)=>String(a).localeCompare(String(b)));
   return days;
 }
@@ -9201,12 +9435,29 @@ function renderTimeline() {
   const items = [];
 
   for (const leg of sc.legs) {
+    const depDate = String(leg.date || "9999-99-99");
+    const depTime = String(leg.time || "");
+    const arrDateRaw = String(leg.arriveDate || leg.dateIn || "");
+    const arrTimeRaw = String(leg.arriveTime || leg.timeIn || "");
+    const arrDate = (!arrDateRaw && arrTimeRaw && depDate && depDate !== "9999-99-99") ? depDate : arrDateRaw;
+    const arrTime = arrTimeRaw;
+
+    // Duration: prefer TZ if offsets are derivable, fallback to non-TZ if not.
+    const off0 = Number.isFinite(Number(leg?.tzFrom)) ? Number(leg.tzFrom) : __deriveUtcOffsetHours(leg?.from, depDate, depTime);
+    const off1 = Number.isFinite(Number(leg?.tzTo))   ? Number(leg.tzTo)   : __deriveUtcOffsetHours(leg?.to,   (arrDate || depDate), arrTime);
+
+    let dur = "";
+    if (depDate && depTime && arrDate && arrTime) {
+      dur = calcDurationTextTZ(depDate, depTime, arrDate, arrTime, off0, off1) || "";
+      if (!dur) dur = calcDurationText(depDate, depTime, arrDate, arrTime) || "";
+    }
+
     items.push({
-      date: (leg.date || "9999-99-99"),
-      time: (leg.time || ""),
-      arriveDate: (leg.arriveDate || ""),
-      arriveTime: (leg.arriveTime || ""),
-      duration: calcDurationText(leg.date, leg.time, leg.arriveDate, leg.arriveTime),
+      date: depDate,
+      time: depTime,
+      arriveDate: arrDate,
+      arriveTime: arrTime,
+      duration: dur,
       type: "Trayecto",
       title: `${leg.from || "—"} → ${leg.to || "—"}`,
       cost: parseMoney(leg.cost),
@@ -9261,7 +9512,13 @@ function renderTimeline() {
       renderDailyNotes();
       return;
     }
-    visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
+    // V219: Day mode should include interval-overlapping events (overnight legs / activities with duration)
+    visibleItems = (filteredItems || []).filter(it => {
+      const d = String(it?.date || "");
+      if (String(it?.type||"") === "__noteOnly") return d === String(activeDayISO);
+      if (!d || d === "9999-99-99") return false;
+      try { return __intervalOverlapsDay(__eventIntervalFromTimelineItem(it), String(activeDayISO)); } catch { return d === String(activeDayISO); }
+    });
     if (!visibleItems.length) {
       box.innerHTML = `<div class="text-sm text-slate-500">No hay eventos para este día con los filtros actuales. Prueba otro día o quita filtros.</div>`;
       renderDailyNotes();
