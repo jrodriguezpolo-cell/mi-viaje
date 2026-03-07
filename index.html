@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V218D_ACCOMMODATION_UX_REFINEMENT</title>
+<title>V218D1_ACCOMMODATION_UX_REFINEMENT_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -933,7 +933,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218D_ACCOMMODATION_UX_REFINEMENT</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V218D1_ACCOMMODATION_UX_REFINEMENT_FIX</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3964,24 +3964,10 @@ function legSummaryLinesHTML(leg, opts){
     ? "text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug"
     : "text-xs text-slate-600 mt-0.5 truncate";
 
-  const isTL = (opts && opts.context==="timeline");
-  const compact = !!(isTL && opts && opts.tlCompact);
-  const marker = isTL ? String(opts.tlMarker||"").trim() : "";
-  const jumpISO = isTL ? String(opts.tlJumpISO||"").trim() : "";
-  const stayIdStr = String(stay && stay.id != null ? stay.id : "");
-  const badgeTitle = (marker === "Entrada") ? "Ir a Salida" : (marker === "Salida") ? "Ir a Entrada" : "";
-  const showBadge = !!(marker && jumpISO && stayIdStr);
-
   return `
-    <div class="${isTL ? `tlStayWrap${compact ? " tlStayCompact" : ""}` : ``}">
-      <div class="text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
-      </div>
-      ${(!isTL || !compact) ? `<div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
-      <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>` : ``}
-      ${(isTL && showBadge) ? `<span role="button" tabindex="0" class="tlStayBadge" data-stay-jump="${escapeHtml(jumpISO)}" data-stay-id="${escapeHtml(stayIdStr)}" title="${escapeHtml(badgeTitle)}">${escapeHtml(marker)}</span>` : ``}
-    </div>
-  `;
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>
+    <div class="${metaCls}">${parts.metaHTML}</div>
+    ${parts.placeLineHTML || ""}`;
 }
 
 
