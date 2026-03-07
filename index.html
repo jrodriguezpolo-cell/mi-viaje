@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V219B_ACTIVITIES_OVERNIGHT_VISIBLE</title>
+<title>V219C_ACTIVITIES_DURATION_STRUCTURED_HHMM</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -838,14 +838,14 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .sheet-act-editor select[data-sheet-act="currency"]{ width:auto !important; min-width:86px; max-width:96px; flex:0 0 auto; padding:4px 12px !important; min-height:40px !important; height:40px !important; background:#fff; font-size:16px !important; font-weight:600; }
 
 /* V213G: Actividades — final equal height for duration */
-.sheet-act-editor input[data-sheet-act="duration"]{
+.sheet-act-editor input[data-sheet-act="durH"],
+.sheet-act-editor input[data-sheet-act="durM"]{
   height:40px !important;
   min-height:40px !important;
   box-sizing:border-box !important;
   padding-top:6px !important;
   padding-bottom:6px !important;
-  line-height:1.25rem !important;
-  font-size:0.875rem !important;
+  line-height:1.2 !important;
 }
 /* V213D: Bottom NAV active pill — preserve stable fix */
 #bottomNav .grid{
@@ -908,7 +908,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219B_ACTIVITIES_OVERNIGHT_VISIBLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V219C_ACTIVITIES_DURATION_STRUCTURED_HHMM</div></div>
 </div>
 <div class="flex items-center gap-2">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -6217,8 +6217,16 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
 
         <div class="fieldCell">
           <label class="text-xs text-slate-600">Duración</label>
-          <input data-act-duration="${escapeHtml(String(itemId))}" data-sheet-act="duration"
-            class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="Ej: 1h 30m">
+          <div class="mt-1 flex gap-2">
+            <div class="flex-1">
+              <input data-act-durh="${escapeHtml(String(itemId))}" data-sheet-act="durH" type="number" min="0" step="1" inputmode="numeric"
+                class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="Horas">
+            </div>
+            <div class="flex-1">
+              <input data-act-durm="${escapeHtml(String(itemId))}" data-sheet-act="durM" type="number" min="0" max="59" step="1" inputmode="numeric"
+                class="w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10" placeholder="Min">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -6254,8 +6262,15 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   try{ __wireActAutocomplete(wrap); }catch{}
   qs("date").value = v(actObj.date || "");
   qs("time").value = v(actObj.time || "");
-  qs("duration").value = v(actObj.duration || "");
-  qs("currency").value = v(actObj.currency || "EUR");
+
+  // Duration (structured): prefer durationH/durationM (or durationMin), fallback to legacy text
+  const _durMin = __tlActDurationMinutes(actObj);
+  const _h = _durMin ? Math.floor(_durMin/60) : "";
+  const _m = _durMin ? (_durMin%60) : "";
+  if (qs("durH")) qs("durH").value = (_h === "" ? "" : String(_h));
+  if (qs("durM")) qs("durM").value = (_m === "" ? "" : String(_m).padStart(2,"0"));
+
+qs("currency").value = v(actObj.currency || "EUR");
   qs("cost").value = (actObj.cost == null ? "" : String(actObj.cost));
 
   try { __updateActSheetTitle(actObj.city, actObj.title); } catch {}
@@ -6271,7 +6286,21 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
   bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
   bind("date", (val)=>{ actObj.date = val; });
   bind("time", (val)=>{ actObj.time = val; });
-  bind("duration", (val)=>{ actObj.duration = val; });
+
+  const __actRecalcDuration = ()=>{
+    const h = Math.max(0, Math.floor(parseInt(qs("durH")?.value || "0",10) || 0));
+    const mRaw = parseInt(qs("durM")?.value || "0",10);
+    const m = Math.max(0, Math.min(59, Math.floor(Number.isFinite(mRaw)? mRaw : 0)));
+    actObj.durationH = h;
+    actObj.durationM = m;
+    actObj.durationMin = h*60 + m;
+    // Keep legacy string for backwards compatibility / older renders
+    actObj.duration = __tlFormatDurationHM(actObj.durationMin);
+  };
+
+  bind("durH", ()=>{ __actRecalcDuration(); });
+  bind("durM", ()=>{ __actRecalcDuration(); });
+
   bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; });
   bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
 
@@ -8508,7 +8537,8 @@ function actSummaryLinesHTML(act, opts){
   const title = (act.title||act.name||"").trim();
   const dES = (act.date ? formatDateShortES(act.date) : "");
   const t = (act.time||"").trim();
-  const duration = (act.duration||"").trim();
+  const durationMin = __tlActDurationMinutes(act);
+  const durationLabel = __tlFormatDurationHM(durationMin);
   const hasNotes = !!(act.notes && String(act.notes).trim());
 
   const line1City = city || "—";
@@ -8534,7 +8564,7 @@ const line1 = `<div class="text-sm font-semibold truncate">
   </div>`;
 
   // Line 3: duración si existe
-  const line3 = duration ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(duration)}</span></div>` : ``;
+  const line3 = durationLabel ? `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Duración:</span> <span>${escapeHtml(durationLabel)}</span></div>` : ``;
 
   return `${line1}${line2}${line3}`;
 }
@@ -9385,11 +9415,37 @@ function __tlParseDurationToMinutes(txt){
   return (days*24*60) + (hours*60) + mins;
 }
 
+function __tlActDurationMinutes(act){
+  // Prefer structured duration (hours/minutes) if present; fallback to legacy free-text duration.
+  const h = (act && Number.isFinite(+act.durationH)) ? (+act.durationH) : null;
+  const m = (act && Number.isFinite(+act.durationM)) ? (+act.durationM) : null;
+  if (h != null || m != null){
+    const hh = Math.max(0, Math.floor(h || 0));
+    const mm = Math.max(0, Math.min(59, Math.floor(m || 0)));
+    return hh*60 + mm;
+  }
+  if (act && Number.isFinite(+act.durationMin)){
+    const dm = Math.max(0, Math.floor(+act.durationMin));
+    return dm;
+  }
+  const legacy = String(act?.duration||"").trim();
+  return __tlParseDurationToMinutes(legacy);
+}
+
+function __tlFormatDurationHM(totalMin){
+  const t = Math.max(0, Math.floor(+totalMin || 0));
+  if(!t) return "";
+  const h = Math.floor(t/60);
+  const m = t % 60;
+  if(h && m) return `${h}h ${String(m).padStart(2,"0")}m`;
+  if(h) return `${h}h`;
+  return `${m}m`;
+}
+
 function __tlActEndDateTime(act){
   const startISO = String(act?.date||"").trim();
   const startTime = String(act?.time||"").trim();
-  const durTxt = String(act?.duration||"").trim();
-  const durMin = __tlParseDurationToMinutes(durTxt);
+  const durMin = __tlActDurationMinutes(act);
 
   const startValid = (typeof __isValidISODate==="function") ? __isValidISODate(startISO) : /^\d{4}-\d{2}-\d{2}$/.test(startISO);
   if(!startValid) return null;
