@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V223A_NOTIFICATIONS_PHASE_1_DAILY_AND_EVENT_ALERTS</title>
+<title>V223B_NOTIFICATIONS_TEST_BUTTONS_ONLY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1007,7 +1007,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223A_NOTIFICATIONS_PHASE_1_DAILY_AND_EVENT_ALERTS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223B_NOTIFICATIONS_TEST_BUTTONS_ONLY</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4988,6 +4988,76 @@ function __notifSend(title, body, tag){
   }
 }
 
+function __notifPanelStatusClassName(tone){
+  if(tone === "ok") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if(tone === "warn") return "border-amber-200 bg-amber-50 text-amber-700";
+  if(tone === "error") return "border-rose-200 bg-rose-50 text-rose-700";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function __notifSetPanelTestStatus(message, tone){
+  const el = document.getElementById("notifTestStatus");
+  if(!el) return;
+  const txt = String(message || "").trim() || "Usa los botones para comprobar el formato real de las notificaciones.";
+  el.className = `rounded-2xl border px-4 py-3 text-sm ${__notifPanelStatusClassName(tone)}`;
+  el.textContent = txt;
+}
+
+function __notifEnsureManualTestReady(){
+  const st = __notifPermissionState();
+  if(st === "unsupported"){
+    __notifSetPanelTestStatus("Este navegador no permite probar notificaciones en este dispositivo.", "error");
+    return false;
+  }
+  if(st !== "granted"){
+    __notifSetPanelTestStatus("Primero debes conceder permiso para poder probar las notificaciones.", "warn");
+    return false;
+  }
+  return true;
+}
+
+function __notifSendManualPreview(title, body, suffix){
+  if(!__notifEnsureManualTestReady()) return false;
+  const ok = __notifSend(title, body, `manual-test:${String(suffix || "preview")}:${Date.now()}`);
+  __notifSetPanelTestStatus(
+    ok ? "Notificación enviada. Comprueba si aparece en tu dispositivo." : "No se pudo mostrar la notificación en este momento.",
+    ok ? "ok" : "error"
+  );
+  return ok;
+}
+
+function __notifGetNextTimedEntryForPreview(){
+  const now = Date.now();
+  const items = __notifBuildTimedEntries()
+    .filter(it => it && it.startAt instanceof Date && Number.isFinite(it.startAt.getTime()))
+    .sort((a,b)=>a.startAt.getTime()-b.startAt.getTime());
+  const future = items.find(it => it.startAt.getTime() >= now);
+  return future || items[0] || null;
+}
+
+function __notifRunTestSimple(){
+  return __notifSendManualPreview("Mi Viaje · Prueba", "Notificaciones activadas correctamente", "simple");
+}
+
+function __notifRunTestTomorrowDigest(){
+  const digest = __notifBuildTomorrowDigest();
+  const title = digest && digest.title ? digest.title : "Mi Viaje · Mañana";
+  const body = digest && String(digest.body || "").trim() ? digest.body : "No tienes eventos mañana";
+  return __notifSendManualPreview(title, body, "tomorrow");
+}
+
+function __notifRunTestOneHour(){
+  const next = __notifGetNextTimedEntryForPreview();
+  const body = next ? next.oneHourBody : "No hay eventos próximos con hora válida para probar este aviso";
+  return __notifSendManualPreview("Mi Viaje · Próximo evento", body, "one-hour");
+}
+
+function __notifRunTestAtStart(){
+  const next = __notifGetNextTimedEntryForPreview();
+  const body = next ? next.startBody : "No hay eventos próximos con hora válida para probar este aviso";
+  return __notifSendManualPreview("Mi Viaje · Ahora", body, "at-start");
+}
+
 function __notifCheckDueAlerts(){
   const prefs = __ensureNotificationPrefs();
   const now = new Date();
@@ -5046,6 +5116,8 @@ function __startNotificationsEngine(){
 function openNotificationsModal(){
   const cfg = __ensureNotificationPrefs();
   const perm = __notifPermissionState();
+  const permBadge = __notifPermissionLabel();
+  const supportLabel = perm === "unsupported" ? "No disponible en este navegador" : "Disponible en este navegador";
   const body = `
     <div class="space-y-5">
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -5054,9 +5126,19 @@ function openNotificationsModal(){
             <div class="font-extrabold text-slate-900">Notificaciones</div>
             <div class="mt-1 text-sm text-slate-600">Fase 1: resumen de mañana, aviso 1 hora antes y aviso al inicio.</div>
           </div>
-          <div class="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700" id="notifPermissionBadge">${escapeHtml(__notifPermissionLabel())}</div>
+          <div class="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700" id="notifPermissionBadge">${escapeHtml(permBadge)}</div>
         </div>
         <div class="mt-3 text-xs text-slate-500">En esta fase funcionan mientras la app está abierta en este dispositivo.</div>
+        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Compatibilidad</div>
+            <div class="mt-1 text-sm font-semibold text-slate-900">${escapeHtml(supportLabel)}</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Permiso</div>
+            <div class="mt-1 text-sm font-semibold text-slate-900" id="notifPermissionText">${escapeHtml(permBadge)}</div>
+          </div>
+        </div>
         <div class="mt-3 flex flex-wrap gap-2">
           <button type="button" id="notifRequestPermission" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold ${perm==="denied" || perm==="unsupported" ? "opacity-50 cursor-not-allowed" : ""}" ${perm==="denied" || perm==="unsupported" ? "disabled" : ""}>Permitir notificaciones</button>
         </div>
@@ -5079,6 +5161,18 @@ function openNotificationsModal(){
           ${__notifToggleRowHTML("notifTypeActivities", "Actividades", !!cfg.types.activities)}
         </div>
       </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="font-extrabold text-slate-900">Pruebas manuales</div>
+        <div class="mt-1 text-sm text-slate-600">Comprueba ahora mismo el permiso, el formato y el disparo real sin esperar a la hora del viaje.</div>
+        <div class="mt-3 grid grid-cols-1 gap-2">
+          <button type="button" id="notifTestSimple" class="tap w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-900 hover:bg-slate-50">Enviar notificación de prueba</button>
+          <button type="button" id="notifTestTomorrow" class="tap w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-900 hover:bg-slate-50">Probar resumen de mañana</button>
+          <button type="button" id="notifTestOneHour" class="tap w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-900 hover:bg-slate-50">Probar aviso 1 hora antes</button>
+          <button type="button" id="notifTestAtStart" class="tap w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-900 hover:bg-slate-50">Probar aviso de inicio</button>
+        </div>
+        <div id="notifTestStatus" class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">Usa los botones para comprobar el formato real de las notificaciones.</div>
+      </div>
     </div>
   `;
 
@@ -5098,21 +5192,55 @@ function openNotificationsModal(){
     if(el) el.addEventListener("change", persist, { passive: true });
   });
 
+  const bindManual = (id, handler)=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("click", (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      try{ handler(); }catch{
+        __notifSetPanelTestStatus("No se pudo completar esta prueba en este momento.", "error");
+      }
+    });
+  };
+  bindManual("notifTestSimple", __notifRunTestSimple);
+  bindManual("notifTestTomorrow", __notifRunTestTomorrowDigest);
+  bindManual("notifTestOneHour", __notifRunTestOneHour);
+  bindManual("notifTestAtStart", __notifRunTestAtStart);
+
   const reqBtn = document.getElementById("notifRequestPermission");
   if(reqBtn){
     reqBtn.addEventListener("click", async (e)=>{
       e.preventDefault();
       e.stopPropagation();
-      if(__notifPermissionState() === "unsupported") return;
+      if(__notifPermissionState() === "unsupported"){
+        __notifSetPanelTestStatus("Este navegador no permite notificaciones en este dispositivo.", "error");
+        return;
+      }
       try{
         const res = await Notification.requestPermission();
         const badge = document.getElementById("notifPermissionBadge");
         if(badge) badge.textContent = __notifPermissionLabel();
+        const permText = document.getElementById("notifPermissionText");
+        if(permText) permText.textContent = __notifPermissionLabel();
         if(res === "granted"){
           __startNotificationsEngine();
+          __notifSetPanelTestStatus("Permiso concedido. Ya puedes lanzar una prueba manual.", "ok");
+        }else if(res === "denied"){
+          __notifSetPanelTestStatus("El permiso quedó bloqueado en este navegador.", "warn");
+        }else{
+          __notifSetPanelTestStatus("Permiso pendiente. Concede acceso para poder probar las notificaciones.", "warn");
         }
-      }catch{}
+      }catch{
+        __notifSetPanelTestStatus("No se pudo solicitar el permiso en este momento.", "error");
+      }
     });
+  }
+
+  if(perm === "unsupported"){
+    __notifSetPanelTestStatus("Este navegador no soporta notificaciones. Puedes seguir usando la app sin esta función.", "error");
+  }else if(perm !== "granted"){
+    __notifSetPanelTestStatus("Concede permiso para probar las notificaciones desde este panel.", "warn");
   }
 }
 /* ================= /V223A: Notificaciones fase 1 ================= */
