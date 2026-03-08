@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE</title>
+<title>V223D_NOTIFICATIONS_PHASE_2_PREMIUM_POLISH_AND_CONTROLS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V223D_NOTIFICATIONS_PHASE_2_PREMIUM_POLISH_AND_CONTROLS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1007,7 +1007,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223D_NOTIFICATIONS_PHASE_2_PREMIUM_POLISH_AND_CONTROLS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1262,7 +1262,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE
+            Build cargada: V223D_NOTIFICATIONS_PHASE_2_PREMIUM_POLISH_AND_CONTROLS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
@@ -1293,7 +1293,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE";
+const APP_BUILD = "V223D_NOTIFICATIONS_PHASE_2_PREMIUM_POLISH_AND_CONTROLS";
 const APP_BUILD_PARAM = "mv_build";
 
 function __setVisibleBuildLabel(){
@@ -4717,16 +4717,26 @@ $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
 
-/* ================= V223A: Notificaciones fase 1 ================= */
+/* ================= V223D: Notificaciones fase 2 ================= */
 const MV_NOTIF_RUNTIME_KEY = "miviaje.notifications.runtime.v1";
 
 function __notifDefaults(){
   return {
     summaryTomorrow: true,
+    summaryTomorrowTime: "20:00",
     oneHourBefore: true,
     atStart: true,
     types: { legs: true, stays: true, activities: true }
   };
+}
+
+function __notifNormalizeTime(value, fallback){
+  const src = String(value ?? "").trim();
+  if(/^\d{2}:\d{2}$/.test(src)){
+    const [hh, mm] = src.split(":").map(n=>parseInt(n, 10));
+    if(hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59) return `${String(hh).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;
+  }
+  return fallback ? __notifNormalizeTime(fallback, "") : "";
 }
 
 function __ensureNotificationPrefs(){
@@ -4735,6 +4745,7 @@ function __ensureNotificationPrefs(){
   const types = (cur.types && typeof cur.types === "object") ? cur.types : {};
   state.notifications = {
     summaryTomorrow: (typeof cur.summaryTomorrow === "boolean") ? cur.summaryTomorrow : base.summaryTomorrow,
+    summaryTomorrowTime: __notifNormalizeTime(cur.summaryTomorrowTime, base.summaryTomorrowTime),
     oneHourBefore: (typeof cur.oneHourBefore === "boolean") ? cur.oneHourBefore : base.oneHourBefore,
     atStart: (typeof cur.atStart === "boolean") ? cur.atStart : base.atStart,
     types: {
@@ -4828,15 +4839,15 @@ function __notifAddDaysISO(iso, days){
 
 function __notifDateTime(iso, hhmm){
   const d = String(iso||"").trim();
-  const t = String(hhmm||"").trim();
+  const t = __notifNormalizeTime(hhmm);
   if(!(typeof __isValidISODate === "function" ? __isValidISODate(d) : /^\d{4}-\d{2}-\d{2}$/.test(d))) return null;
-  if(!/^\d{2}:\d{2}$/.test(t)) return null;
+  if(!t) return null;
   const dt = new Date(d + "T" + t + ":00");
   return Number.isFinite(dt.getTime()) ? dt : null;
 }
 
 function __notifFmtTime(hhmm){
-  return /^\d{2}:\d{2}$/.test(String(hhmm||"").trim()) ? String(hhmm).trim() : "";
+  return __notifNormalizeTime(hhmm);
 }
 
 function __notifSortByTime(a, b){
@@ -4870,11 +4881,11 @@ function __notifBuildSummaryLine(entry){
   return time ? `${prefix} · ${title} · ${time}` : `${prefix} · ${title}`;
 }
 
-function __notifStayTitle(stay, mode){
+function __notifStaySummaryTitle(stay, subtype){
   const name = String(stay?.name || "Alojamiento").trim() || "Alojamiento";
-  if(mode === "checkout") return `Check-out ${name}`;
-  if(mode === "middle") return name;
-  return `Check-in ${name}`;
+  if(subtype === "checkout") return `Check-out · ${name}`;
+  if(subtype === "checkin") return name;
+  return name;
 }
 
 function __notifCollectTomorrowEntries(){
@@ -4910,7 +4921,7 @@ function __notifCollectTomorrowEntries(){
       kind: "stay",
       subtype,
       itemId: String(stay?.id || ""),
-      title: __notifStayTitle(stay, subtype),
+      title: __notifStaySummaryTitle(stay, subtype),
       time: isCheckIn ? String(stay?.time || "").trim() : (isCheckOut ? String(stay?.checkoutTime || stay?.checkout_time || "").trim() : ""),
       date: tomorrow
     });
@@ -4956,12 +4967,10 @@ function __notifBuildTomorrowDigest(){
   };
 
   if(!filtered.length){
-    return { empty: true, title: "Mi Viaje · Mañana", body: "Mañana no tienes eventos planificados" };
+    return { empty: true, title: "Mi Viaje · Mañana", body: "No tienes eventos mañana" };
   }
 
-  const lines = [];
-  lines.push(__notifSummaryHeadline(counts));
-
+  const lines = [__notifSummaryHeadline(counts)];
   const legs = filtered.filter(x=>x.kind==="leg");
   const stays = filtered.filter(x=>x.kind==="stay");
   const acts = filtered.filter(x=>x.kind==="activity").sort(__notifSortByTime);
@@ -4969,7 +4978,7 @@ function __notifBuildTomorrowDigest(){
   legs.forEach(it => lines.push(__notifBuildSummaryLine(it)));
   stays.forEach(it => lines.push(__notifBuildSummaryLine(it)));
 
-  const maxActs = 4;
+  const maxActs = 3;
   acts.slice(0, maxActs).forEach(it => lines.push(__notifBuildSummaryLine(it)));
   if(acts.length > maxActs){
     lines.push(`+${acts.length - maxActs} actividades más`);
@@ -5018,7 +5027,7 @@ function __notifBuildTimedEntries(){
         });
       }
       const coISO = (typeof __tlStayCheckoutISO === "function") ? __tlStayCheckoutISO(stay) : String(stay?.checkout || "").trim();
-      const coTime = String(stay?.checkoutTime || stay?.checkout_time || "").trim();
+      const coTime = __notifNormalizeTime(stay?.checkoutTime || stay?.checkout_time || "");
       const co = __notifDateTime(coISO, coTime);
       if(co){
         out.push({
@@ -5148,8 +5157,8 @@ function __notifCheckDueAlerts(){
   if(prefs.summaryTomorrow){
     const digest = __notifBuildTomorrowDigest();
     const dateKey = __notifLocalDateKey(now);
-    const target = __notifDateTime(dateKey, "20:00");
-    const dailyKey = `summary:${dateKey}`;
+    const target = __notifDateTime(dateKey, prefs.summaryTomorrowTime);
+    const dailyKey = `summary:${dateKey}:${prefs.summaryTomorrowTime}`;
     if(target && !digest.empty && !__notifWasSent(dailyKey)){
       const diff = now.getTime() - target.getTime();
       if(diff >= 0 && diff <= (12 * 60 * 60 * 1000)){
@@ -5201,13 +5210,14 @@ function openNotificationsModal(){
   const perm = __notifPermissionState();
   const permBadge = __notifPermissionLabel();
   const supportLabel = perm === "unsupported" ? "No disponible en este navegador" : "Disponible en este navegador";
+  const dailyDigestTime = __notifNormalizeTime(cfg.summaryTomorrowTime, "20:00");
   const body = `
     <div class="space-y-5">
       <div class="rounded-2xl border border-slate-200 bg-white p-4">
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-extrabold text-slate-900">Notificaciones</div>
-            <div class="mt-1 text-sm text-slate-600">Fase 1: resumen de mañana, aviso 1 hora antes y aviso al inicio.</div>
+            <div class="mt-1 text-sm text-slate-600">Fase 2: resumen de mañana configurable, avisos horarios y pruebas manuales.</div>
           </div>
           <div class="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700" id="notifPermissionBadge">${escapeHtml(permBadge)}</div>
         </div>
@@ -5231,6 +5241,15 @@ function openNotificationsModal(){
         <div class="font-extrabold text-slate-900">Qué quieres recibir</div>
         <div class="mt-3 space-y-3">
           ${__notifToggleRowHTML("notifSummaryTomorrow", "Resumen de mañana", !!cfg.summaryTomorrow)}
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-slate-900">Hora del resumen de mañana</div>
+                <div class="mt-1 text-xs text-slate-500">Elige la hora a la que quieres recibir el resumen diario.</div>
+              </div>
+              <input id="notifSummaryTomorrowTime" type="time" value="${escapeHtml(dailyDigestTime)}" class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-900">
+            </div>
+          </div>
           ${__notifToggleRowHTML("notifOneHourBefore", "Aviso 1 hora antes", !!cfg.oneHourBefore)}
           ${__notifToggleRowHTML("notifAtStart", "Aviso al inicio", !!cfg.atStart)}
         </div>
@@ -5243,6 +5262,11 @@ function openNotificationsModal(){
           ${__notifToggleRowHTML("notifTypeStays", "Alojamiento", !!cfg.types.stays)}
           ${__notifToggleRowHTML("notifTypeActivities", "Actividades", !!cfg.types.activities)}
         </div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="font-extrabold text-slate-900">Estado actual</div>
+        <div class="mt-1 text-sm text-slate-600">Resumen de mañana a las <span class="font-semibold text-slate-900" id="notifSummaryTomorrowTimePreview">${escapeHtml(dailyDigestTime)}</span>. Los avisos horarios solo se enviarán para eventos con hora válida.</div>
       </div>
 
       <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -5268,9 +5292,14 @@ function openNotificationsModal(){
     p.types.legs = !!document.getElementById("notifTypeLegs")?.checked;
     p.types.stays = !!document.getElementById("notifTypeStays")?.checked;
     p.types.activities = !!document.getElementById("notifTypeActivities")?.checked;
+    p.summaryTomorrowTime = __notifNormalizeTime(document.getElementById("notifSummaryTomorrowTime")?.value, "20:00");
+    const timeInput = document.getElementById("notifSummaryTomorrowTime");
+    if(timeInput && timeInput.value !== p.summaryTomorrowTime) timeInput.value = p.summaryTomorrowTime;
+    const preview = document.getElementById("notifSummaryTomorrowTimePreview");
+    if(preview) preview.textContent = p.summaryTomorrowTime;
     saveState();
   };
-  ["notifSummaryTomorrow","notifOneHourBefore","notifAtStart","notifTypeLegs","notifTypeStays","notifTypeActivities"].forEach(id=>{
+  ["notifSummaryTomorrow","notifOneHourBefore","notifAtStart","notifTypeLegs","notifTypeStays","notifTypeActivities","notifSummaryTomorrowTime"].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.addEventListener("change", persist, { passive: true });
   });
@@ -5326,7 +5355,7 @@ function openNotificationsModal(){
     __notifSetPanelTestStatus("Concede permiso para probar las notificaciones desde este panel.", "warn");
   }
 }
-/* ================= /V223A: Notificaciones fase 1 ================= */
+/* ================= /V223D: Notificaciones fase 2 ================= */
 
 /* ================= V218: Preferencias (Herramientas) ================= */
 /* ================= V218A: Preferencias smart (Niños + Ciudades visitadas) ================= */
