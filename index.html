@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222H_SECTIONS_MAPS_PIN_POSITION_ALIGNMENT_ONLY</title>
+<title>V223A_NOTIFICATIONS_PHASE_1_DAILY_AND_EVENT_ALERTS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1007,7 +1007,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222H_SECTIONS_MAPS_PIN_POSITION_ALIGNMENT_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223A_NOTIFICATIONS_PHASE_1_DAILY_AND_EVENT_ALERTS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1254,6 +1254,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnPrefs">
             Preferencias
+          </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnNotifications">
+            Notificaciones
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
@@ -4630,6 +4633,490 @@ function closeModal() {
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
 
+
+/* ================= V223A: Notificaciones fase 1 ================= */
+const MV_NOTIF_RUNTIME_KEY = "miviaje.notifications.runtime.v1";
+
+function __notifDefaults(){
+  return {
+    summaryTomorrow: true,
+    oneHourBefore: true,
+    atStart: true,
+    types: { legs: true, stays: true, activities: true }
+  };
+}
+
+function __ensureNotificationPrefs(){
+  const base = __notifDefaults();
+  const cur = (state && state.notifications && typeof state.notifications === "object") ? state.notifications : {};
+  const types = (cur.types && typeof cur.types === "object") ? cur.types : {};
+  state.notifications = {
+    summaryTomorrow: (typeof cur.summaryTomorrow === "boolean") ? cur.summaryTomorrow : base.summaryTomorrow,
+    oneHourBefore: (typeof cur.oneHourBefore === "boolean") ? cur.oneHourBefore : base.oneHourBefore,
+    atStart: (typeof cur.atStart === "boolean") ? cur.atStart : base.atStart,
+    types: {
+      legs: (typeof types.legs === "boolean") ? types.legs : base.types.legs,
+      stays: (typeof types.stays === "boolean") ? types.stays : base.types.stays,
+      activities: (typeof types.activities === "boolean") ? types.activities : base.types.activities
+    }
+  };
+  return state.notifications;
+}
+
+function __notifPermissionState(){
+  try{
+    if(typeof Notification === "undefined") return "unsupported";
+    return String(Notification.permission || "default");
+  }catch{
+    return "unsupported";
+  }
+}
+
+function __notifPermissionLabel(){
+  const st = __notifPermissionState();
+  if(st === "granted") return "Activadas en este navegador";
+  if(st === "denied") return "Bloqueadas en este navegador";
+  if(st === "default") return "Pendientes de permiso";
+  return "No disponibles en este navegador";
+}
+
+function __notifToggleRowHTML(id, label, checked){
+  return `<label class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 bg-white">
+    <span class="text-sm font-semibold text-slate-900">${escapeHtml(label)}</span>
+    <input id="${escapeHtml(id)}" type="checkbox" class="h-5 w-5 rounded border-slate-300 accent-blue-600" ${checked ? "checked" : ""}>
+  </label>`;
+}
+
+function __notifLoadRuntime(){
+  try{
+    const raw = localStorage.getItem(MV_NOTIF_RUNTIME_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if(parsed && typeof parsed === "object") return parsed;
+  }catch{}
+  return { sent: {} };
+}
+
+function __notifSaveRuntime(rt){
+  try{
+    const src = rt && typeof rt === "object" ? rt : {};
+    const sent = (src.sent && typeof src.sent === "object") ? src.sent : {};
+    const now = Date.now();
+    const keep = {};
+    const entries = Object.entries(sent)
+      .map(([k,v]) => [String(k), Number(v)||0])
+      .filter(([,v]) => v > (now - (45 * 24 * 60 * 60 * 1000)))
+      .sort((a,b)=>b[1]-a[1])
+      .slice(0, 800);
+    for(const [k,v] of entries) keep[k] = v;
+    localStorage.setItem(MV_NOTIF_RUNTIME_KEY, JSON.stringify({ sent: keep }));
+  }catch{}
+}
+
+function __notifMarkSent(key){
+  if(!key) return;
+  const rt = __notifLoadRuntime();
+  rt.sent = rt.sent || {};
+  rt.sent[String(key)] = Date.now();
+  __notifSaveRuntime(rt);
+}
+
+function __notifWasSent(key){
+  if(!key) return false;
+  const rt = __notifLoadRuntime();
+  return !!(rt.sent && rt.sent[String(key)]);
+}
+
+function __notifLocalDateKey(dt){
+  const d = dt instanceof Date ? dt : new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const da = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${da}`;
+}
+
+function __notifAddDaysISO(iso, days){
+  const s = String(iso || "").trim();
+  if(!(typeof __isValidISODate === "function" ? __isValidISODate(s) : /^\d{4}-\d{2}-\d{2}$/.test(s))) return "";
+  const d = new Date(s + "T12:00:00");
+  if(!Number.isFinite(d.getTime())) return "";
+  d.setDate(d.getDate() + (Number(days)||0));
+  return __notifLocalDateKey(d);
+}
+
+function __notifDateTime(iso, hhmm){
+  const d = String(iso||"").trim();
+  const t = String(hhmm||"").trim();
+  if(!(typeof __isValidISODate === "function" ? __isValidISODate(d) : /^\d{4}-\d{2}-\d{2}$/.test(d))) return null;
+  if(!/^\d{2}:\d{2}$/.test(t)) return null;
+  const dt = new Date(d + "T" + t + ":00");
+  return Number.isFinite(dt.getTime()) ? dt : null;
+}
+
+function __notifFmtTime(hhmm){
+  return /^\d{2}:\d{2}$/.test(String(hhmm||"").trim()) ? String(hhmm).trim() : "";
+}
+
+function __notifSortByTime(a, b){
+  const aa = String(a?.time || "99:99");
+  const bb = String(b?.time || "99:99");
+  if(aa !== bb) return aa.localeCompare(bb);
+  return String(a?.title || "").localeCompare(String(b?.title || ""), "es");
+}
+
+function __notifPlural(n, one, many){
+  return `${n} ${n===1 ? one : many}`;
+}
+
+function __notifSummaryHeadline(counts){
+  const parts = [];
+  if(counts.legs) parts.push(__notifPlural(counts.legs, "transporte", "transportes"));
+  if(counts.stays) parts.push(__notifPlural(counts.stays, "alojamiento", "alojamientos"));
+  if(counts.activities) parts.push(__notifPlural(counts.activities, "actividad", "actividades"));
+  if(!parts.length) return "Mañana no tienes eventos planificados";
+  if(parts.length === 1) return `Mañana tienes ${parts[0]}`;
+  if(parts.length === 2) return `Mañana tienes ${parts[0]} y ${parts[1]}`;
+  return `Mañana tienes ${parts[0]}, ${parts[1]} y ${parts[2]}`;
+}
+
+function __notifBuildSummaryLine(entry){
+  const prefix = entry.kind === "leg" ? "Transporte"
+               : entry.kind === "stay" ? "Alojamiento"
+               : "Actividad";
+  const title = String(entry.title || "—").trim() || "—";
+  const time = __notifFmtTime(entry.time);
+  return time ? `${prefix} · ${title} · ${time}` : `${prefix} · ${title}`;
+}
+
+function __notifStayTitle(stay, mode){
+  const name = String(stay?.name || "Alojamiento").trim() || "Alojamiento";
+  if(mode === "checkout") return `Check-out ${name}`;
+  if(mode === "middle") return name;
+  return `Check-in ${name}`;
+}
+
+function __notifCollectTomorrowEntries(){
+  const sc = curScenario();
+  const tomorrow = __notifAddDaysISO(__notifLocalDateKey(new Date()), 1);
+  if(!sc || !tomorrow) return [];
+
+  const entries = [];
+
+  for(const leg of (sc.legs || [])){
+    const days = (typeof __tlLegCoveredDays === "function") ? __tlLegCoveredDays(leg) : [String(leg?.date||"").trim()].filter(Boolean);
+    if(!days.includes(tomorrow)) continue;
+    const isStart = String(leg?.date||"").trim() === tomorrow;
+    const isEnd = String(leg?.arriveDate||"").trim() === tomorrow;
+    entries.push({
+      kind: "leg",
+      subtype: isStart ? "start" : (isEnd ? "end" : "middle"),
+      itemId: String(leg?.id || ""),
+      title: `${String(leg?.from || "—").trim() || "—"} → ${String(leg?.to || "—").trim() || "—"}`,
+      time: isStart ? String(leg?.time || "").trim() : (isEnd ? String(leg?.arriveTime || "").trim() : ""),
+      date: tomorrow
+    });
+  }
+
+  for(const stay of (sc.stays || [])){
+    const days = (typeof __tlStayCoveredDays === "function") ? __tlStayCoveredDays(stay) : [String(stay?.date||"").trim()].filter(Boolean);
+    if(!days.includes(tomorrow)) continue;
+    const co = (typeof __tlStayCheckoutISO === "function") ? __tlStayCheckoutISO(stay) : String(stay?.checkout || "").trim();
+    const isCheckIn = String(stay?.date || "").trim() === tomorrow;
+    const isCheckOut = String(co || "").trim() === tomorrow;
+    const subtype = isCheckOut ? "checkout" : (isCheckIn ? "checkin" : "middle");
+    entries.push({
+      kind: "stay",
+      subtype,
+      itemId: String(stay?.id || ""),
+      title: __notifStayTitle(stay, subtype),
+      time: isCheckIn ? String(stay?.time || "").trim() : (isCheckOut ? String(stay?.checkoutTime || stay?.checkout_time || "").trim() : ""),
+      date: tomorrow
+    });
+  }
+
+  for(const act of (sc.activities || [])){
+    const days = (typeof __tlActCoveredDays === "function") ? __tlActCoveredDays(act) : [String(act?.date||"").trim()].filter(Boolean);
+    if(!days.includes(tomorrow)) continue;
+    const endInfo = (typeof __tlActEndDateTime === "function") ? __tlActEndDateTime(act) : null;
+    const isStart = String(act?.date || "").trim() === tomorrow;
+    const isEnd = !!(endInfo && String(endInfo.endISO || "").trim() === tomorrow);
+    entries.push({
+      kind: "activity",
+      subtype: isStart ? "start" : (isEnd ? "end" : "middle"),
+      itemId: String(act?.id || ""),
+      title: String(act?.title || act?.name || "Actividad").trim() || "Actividad",
+      time: isStart ? String(act?.time || "").trim() : ((isEnd && endInfo && /^\d{2}:\d{2}$/.test(String(endInfo.endTime||""))) ? String(endInfo.endTime) : ""),
+      date: tomorrow
+    });
+  }
+
+  return entries.sort((a,b)=>{
+    const orderA = a.kind === "leg" ? 0 : (a.kind === "stay" ? 1 : 2);
+    const orderB = b.kind === "leg" ? 0 : (b.kind === "stay" ? 1 : 2);
+    if(orderA !== orderB) return orderA - orderB;
+    return __notifSortByTime(a, b);
+  });
+}
+
+function __notifBuildTomorrowDigest(){
+  const prefs = __ensureNotificationPrefs();
+  const all = __notifCollectTomorrowEntries();
+  const filtered = all.filter(it => {
+    if(it.kind === "leg") return !!prefs.types.legs;
+    if(it.kind === "stay") return !!prefs.types.stays;
+    return !!prefs.types.activities;
+  });
+
+  const counts = {
+    legs: filtered.filter(x=>x.kind==="leg").length,
+    stays: filtered.filter(x=>x.kind==="stay").length,
+    activities: filtered.filter(x=>x.kind==="activity").length
+  };
+
+  if(!filtered.length){
+    return { empty: true, title: "Mi Viaje · Mañana", body: "Mañana no tienes eventos planificados" };
+  }
+
+  const lines = [];
+  lines.push(__notifSummaryHeadline(counts));
+
+  const legs = filtered.filter(x=>x.kind==="leg");
+  const stays = filtered.filter(x=>x.kind==="stay");
+  const acts = filtered.filter(x=>x.kind==="activity").sort(__notifSortByTime);
+
+  legs.forEach(it => lines.push(__notifBuildSummaryLine(it)));
+  stays.forEach(it => lines.push(__notifBuildSummaryLine(it)));
+
+  const maxActs = 4;
+  acts.slice(0, maxActs).forEach(it => lines.push(__notifBuildSummaryLine(it)));
+  if(acts.length > maxActs){
+    lines.push(`+${acts.length - maxActs} actividades más`);
+  }
+
+  return {
+    empty: false,
+    title: "Mi Viaje · Mañana",
+    body: lines.join("\n")
+  };
+}
+
+function __notifBuildTimedEntries(){
+  const prefs = __ensureNotificationPrefs();
+  const sc = curScenario();
+  if(!sc) return [];
+
+  const out = [];
+
+  if(prefs.types.legs){
+    for(const leg of (sc.legs || [])){
+      const when = __notifDateTime(leg?.date, leg?.time);
+      if(!when) continue;
+      const route = `${String(leg?.from || "—").trim() || "—"} → ${String(leg?.to || "—").trim() || "—"}`;
+      out.push({
+        keyBase: `leg:${String(leg?.id || route)}`,
+        kind: "leg",
+        startAt: when,
+        oneHourBody: `En 1 hora empieza tu transporte ${route}`,
+        startBody: `Empieza ahora tu transporte ${route}`
+      });
+    }
+  }
+
+  if(prefs.types.stays){
+    for(const stay of (sc.stays || [])){
+      const name = String(stay?.name || "Alojamiento").trim() || "Alojamiento";
+      const ci = __notifDateTime(stay?.date, stay?.time);
+      if(ci){
+        out.push({
+          keyBase: `stay-checkin:${String(stay?.id || name)}`,
+          kind: "stay",
+          startAt: ci,
+          oneHourBody: `En 1 hora empieza tu check-in en ${name}`,
+          startBody: `Es la hora de tu check-in en ${name}`
+        });
+      }
+      const coISO = (typeof __tlStayCheckoutISO === "function") ? __tlStayCheckoutISO(stay) : String(stay?.checkout || "").trim();
+      const coTime = String(stay?.checkoutTime || stay?.checkout_time || "").trim();
+      const co = __notifDateTime(coISO, coTime);
+      if(co){
+        out.push({
+          keyBase: `stay-checkout:${String(stay?.id || name)}`,
+          kind: "stay",
+          startAt: co,
+          oneHourBody: `En 1 hora es tu check-out en ${name}`,
+          startBody: `Es la hora de tu check-out en ${name}`
+        });
+      }
+    }
+  }
+
+  if(prefs.types.activities){
+    for(const act of (sc.activities || [])){
+      const when = __notifDateTime(act?.date, act?.time);
+      if(!when) continue;
+      const title = String(act?.title || act?.name || "Actividad").trim() || "Actividad";
+      out.push({
+        keyBase: `act:${String(act?.id || title)}`,
+        kind: "activity",
+        startAt: when,
+        oneHourBody: `En 1 hora empieza ${title}`,
+        startBody: `Empieza ahora ${title}`
+      });
+    }
+  }
+
+  return out;
+}
+
+function __notifCanUseBrowserNotifications(){
+  return __notifPermissionState() === "granted";
+}
+
+function __notifSend(title, body, tag){
+  if(!__notifCanUseBrowserNotifications()) return false;
+  try{
+    const n = new Notification(String(title || "Mi Viaje"), {
+      body: String(body || "").trim(),
+      tag: String(tag || ""),
+      renotify: false
+    });
+    n.onclick = () => {
+      try{ window.focus(); }catch{}
+    };
+    return true;
+  }catch{
+    return false;
+  }
+}
+
+function __notifCheckDueAlerts(){
+  const prefs = __ensureNotificationPrefs();
+  const now = new Date();
+
+  if(prefs.summaryTomorrow){
+    const digest = __notifBuildTomorrowDigest();
+    const dateKey = __notifLocalDateKey(now);
+    const target = __notifDateTime(dateKey, "20:00");
+    const dailyKey = `summary:${dateKey}`;
+    if(target && !digest.empty && !__notifWasSent(dailyKey)){
+      const diff = now.getTime() - target.getTime();
+      if(diff >= 0 && diff <= (12 * 60 * 60 * 1000)){
+        if(__notifSend(digest.title, digest.body, dailyKey)){
+          __notifMarkSent(dailyKey);
+        }
+      }
+    }
+  }
+
+  const dueWindowMs = 5 * 60 * 1000;
+  const items = __notifBuildTimedEntries();
+  items.forEach(it => {
+    if(prefs.oneHourBefore){
+      const oneHourAt = new Date(it.startAt.getTime() - (60 * 60 * 1000));
+      const oneHourKey = `${it.keyBase}:1h:${it.startAt.toISOString()}`;
+      const diff1 = now.getTime() - oneHourAt.getTime();
+      if(diff1 >= 0 && diff1 <= dueWindowMs && !__notifWasSent(oneHourKey)){
+        if(__notifSend("Mi Viaje · Próximo evento", it.oneHourBody, oneHourKey)){
+          __notifMarkSent(oneHourKey);
+        }
+      }
+    }
+    if(prefs.atStart){
+      const startKey = `${it.keyBase}:start:${it.startAt.toISOString()}`;
+      const diff2 = now.getTime() - it.startAt.getTime();
+      if(diff2 >= 0 && diff2 <= dueWindowMs && !__notifWasSent(startKey)){
+        if(__notifSend("Mi Viaje · Ahora", it.startBody, startKey)){
+          __notifMarkSent(startKey);
+        }
+      }
+    }
+  });
+}
+
+let __notifTicker = null;
+function __startNotificationsEngine(){
+  __ensureNotificationPrefs();
+  if(__notifTicker) return;
+  const run = ()=>{ try{ __notifCheckDueAlerts(); }catch{} };
+  run();
+  __notifTicker = window.setInterval(run, 30000);
+  window.addEventListener("focus", run, { passive: true });
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) run(); }, { passive: true });
+}
+
+function openNotificationsModal(){
+  const cfg = __ensureNotificationPrefs();
+  const perm = __notifPermissionState();
+  const body = `
+    <div class="space-y-5">
+      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="font-extrabold text-slate-900">Notificaciones</div>
+            <div class="mt-1 text-sm text-slate-600">Fase 1: resumen de mañana, aviso 1 hora antes y aviso al inicio.</div>
+          </div>
+          <div class="shrink-0 rounded-full border border-slate-200 px-3 py-1 text-xs font-extrabold text-slate-700" id="notifPermissionBadge">${escapeHtml(__notifPermissionLabel())}</div>
+        </div>
+        <div class="mt-3 text-xs text-slate-500">En esta fase funcionan mientras la app está abierta en este dispositivo.</div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <button type="button" id="notifRequestPermission" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold ${perm==="denied" || perm==="unsupported" ? "opacity-50 cursor-not-allowed" : ""}" ${perm==="denied" || perm==="unsupported" ? "disabled" : ""}>Permitir notificaciones</button>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="font-extrabold text-slate-900">Qué quieres recibir</div>
+        <div class="mt-3 space-y-3">
+          ${__notifToggleRowHTML("notifSummaryTomorrow", "Resumen de mañana", !!cfg.summaryTomorrow)}
+          ${__notifToggleRowHTML("notifOneHourBefore", "Aviso 1 hora antes", !!cfg.oneHourBefore)}
+          ${__notifToggleRowHTML("notifAtStart", "Aviso al inicio", !!cfg.atStart)}
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="font-extrabold text-slate-900">Tipos de evento</div>
+        <div class="mt-3 space-y-3">
+          ${__notifToggleRowHTML("notifTypeLegs", "Transporte", !!cfg.types.legs)}
+          ${__notifToggleRowHTML("notifTypeStays", "Alojamiento", !!cfg.types.stays)}
+          ${__notifToggleRowHTML("notifTypeActivities", "Actividades", !!cfg.types.activities)}
+        </div>
+      </div>
+    </div>
+  `;
+
+  showModal("Notificaciones", body, []);
+  const persist = ()=>{
+    const p = __ensureNotificationPrefs();
+    p.summaryTomorrow = !!document.getElementById("notifSummaryTomorrow")?.checked;
+    p.oneHourBefore = !!document.getElementById("notifOneHourBefore")?.checked;
+    p.atStart = !!document.getElementById("notifAtStart")?.checked;
+    p.types.legs = !!document.getElementById("notifTypeLegs")?.checked;
+    p.types.stays = !!document.getElementById("notifTypeStays")?.checked;
+    p.types.activities = !!document.getElementById("notifTypeActivities")?.checked;
+    saveState();
+  };
+  ["notifSummaryTomorrow","notifOneHourBefore","notifAtStart","notifTypeLegs","notifTypeStays","notifTypeActivities"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener("change", persist, { passive: true });
+  });
+
+  const reqBtn = document.getElementById("notifRequestPermission");
+  if(reqBtn){
+    reqBtn.addEventListener("click", async (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(__notifPermissionState() === "unsupported") return;
+      try{
+        const res = await Notification.requestPermission();
+        const badge = document.getElementById("notifPermissionBadge");
+        if(badge) badge.textContent = __notifPermissionLabel();
+        if(res === "granted"){
+          __startNotificationsEngine();
+        }
+      }catch{}
+    });
+  }
+}
+/* ================= /V223A: Notificaciones fase 1 ================= */
+
 /* ================= V218: Preferencias (Herramientas) ================= */
 /* ================= V218A: Preferencias smart (Niños + Ciudades visitadas) ================= */
 function __prefsParseKidsAgesLegacy(str){
@@ -7458,6 +7945,12 @@ let state = {
     tastes: [],
     restrictions: { text: "", flags: { mobility: false, stroller: false, allergies: false, avoidLayovers: false, avoidLongWalks: false } },
     citiesVisited: []
+  },
+  notifications: {
+    summaryTomorrow: true,
+    oneHourBefore: true,
+    atStart: true,
+    types: { legs: true, stays: true, activities: true }
   }
 };
 
@@ -11936,6 +12429,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const btnOpen = $("btnTools");
   const btnClose = $("toolsClose");
   const btnPrefs = $("btnPrefs");
+  const btnNotifications = $("btnNotifications");
 
   function openTools(){
     if (!backdrop || !sheet) return;
@@ -12040,6 +12534,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
   });
 
   if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
+  if (btnNotifications) btnNotifications.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openNotificationsModal(); });
 })();
 
 const __tn = $("timelineNext");
@@ -12168,6 +12663,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  try { __startNotificationsEngine(); } catch {}
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
