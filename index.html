@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222C_RETRY_SECTIONS_CONTEXTUAL_PIN_FROM_STABLE</title>
+<title>V222B6_RESTORE_STABLE_SECTIONS_AFTER_PIN_FAIL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -968,7 +968,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222C_RETRY_SECTIONS_CONTEXTUAL_PIN_FROM_STABLE</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222B6_RESTORE_STABLE_SECTIONS_AFTER_PIN_FAIL</div></div>
 </div>
 <div class="mvLegRightTop">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3959,7 +3959,7 @@ function __deriveUtcOffsetHours(city, iso, hhmm){
 }
 
 // ============================================================
-// V222C_RETRY_SECTIONS_CONTEXTUAL_PIN_FROM_STABLE
+// V222B6_RESTORE_STABLE_SECTIONS_AFTER_PIN_FAIL
 // Base mínima para almacenar contexto de huso horario por tramo (salida/llegada)
 // - No altera lógica overnight/multiday existente
 // - Mantiene compatibilidad con legs antiguos (tzFrom/tzTo legacy)
@@ -4066,7 +4066,7 @@ function legSummaryLinesHTML(leg, opts){
   const parts = buildLegSummaryParts(leg);
 
   // V220A: "Cómo llegar" destino contextual (punto de salida)
-  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+  const __navDest = (opts.context==="timeline")
     ? __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim())
     : "";
   const __navMode = (function(){
@@ -4083,7 +4083,7 @@ function legSummaryLinesHTML(leg, opts){
     : "text-xs text-slate-600 mt-0.5 truncate";
 
   return `
-    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${((opts.context==="timeline") || (opts.context==="section")) ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}`;
 }
@@ -7545,7 +7545,9 @@ function legCard(leg, idx) {
             data-leg-open="${leg.id}"
             aria-label="Abrir trayecto">
       <div class="min-w-0">
-        ${legSummaryLinesHTML(leg,{context:"section"})}
+        <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
+        <div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>
+        ${__sp.placeLineHTML}
       </div>
 
       <div class="shrink-0 mvLegRightRail self-stretch">
@@ -7597,7 +7599,7 @@ function staySummaryLinesHTML(stay, opts){
   const name = (stay.name||"").trim() || "—";
 
   // V220A: "Cómo llegar" destino contextual (alojamiento)
-  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+  const __navDest = (opts.context==="timeline")
     ? __mapsDestWithCity((stay.address||stay.name||"").trim(), city)
     : "";
 
@@ -7630,7 +7632,7 @@ function staySummaryLinesHTML(stay, opts){
   if (__tlCompact) {
     return `
       <div class="text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${((opts.context==="timeline") || (opts.context==="section")) ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
       </div>
     `;
   }
@@ -7643,7 +7645,7 @@ function staySummaryLinesHTML(stay, opts){
 
   return `
     <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${((opts.context==="timeline") || (opts.context==="section")) ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
@@ -7665,7 +7667,7 @@ function stayCard(stay) {
             data-stay-open="${stay.id}"
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        ${staySummaryLinesHTML(stay,{context:"section"})}
+        ${staySummaryLinesHTML(stay)}
       </div>
       <div class="shrink-0 flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
@@ -8760,7 +8762,7 @@ function actSummaryLinesHTML(act, opts){
   const title = (act.title||act.name||"").trim();
 
   // V220A: "Cómo llegar" destino contextual (lugar de la actividad)
-  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+  const __navDest = (opts.context==="timeline")
     ? __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city)
     : "";
   const dES = (act.date ? formatDateShortES(act.date) : "");
@@ -8779,7 +8781,7 @@ function actSummaryLinesHTML(act, opts){
     <span class="mr-1">🎯</span>
     <span>${escapeHtml(line1Title)}</span>
     <span class="text-slate-400"> · </span>
-    <span class="font-medium">${escapeHtml(line1City)}</span>${((opts.context==="timeline") || (opts.context==="section")) ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
   </div>`;
 
@@ -8826,7 +8828,7 @@ function actCard(act) {
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
-        ${actSummaryLinesHTML(act,{context:"section"})}
+        ${actSummaryLinesHTML(act)}
       </div>
       <div class="shrink-0 flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
