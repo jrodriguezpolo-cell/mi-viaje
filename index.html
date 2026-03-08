@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V224D_AI_ACTION_HUB_AND_TRIP_CITIES_ACTIVITY_DISCOVERY</title>
+<title>V224D_SAFE_RETRY_AI_HUB_WITHOUT_TOUCHING_CORE_RENDER</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V224D_AI_ACTION_HUB_AND_TRIP_CITIES_ACTIVITY_DISCOVERY" rel="manifest"/>
+<link href="manifest.json?v=V224D_SAFE_RETRY_AI_HUB_WITHOUT_TOUCHING_CORE_RENDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1068,7 +1068,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V224D_AI_ACTION_HUB_AND_TRIP_CITIES_ACTIVITY_DISCOVERY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V224D_SAFE_RETRY_AI_HUB_WITHOUT_TOUCHING_CORE_RENDER</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1302,7 +1302,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V224D_AI_ACTION_HUB_AND_TRIP_CITIES_ACTIVITY_DISCOVERY
+            Build cargada: V224D_SAFE_RETRY_AI_HUB_WITHOUT_TOUCHING_CORE_RENDER
           </div>
 <button class="hidden tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
@@ -1333,7 +1333,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V224D_AI_ACTION_HUB_AND_TRIP_CITIES_ACTIVITY_DISCOVERY";
+const APP_BUILD = "V224D_SAFE_RETRY_AI_HUB_WITHOUT_TOUCHING_CORE_RENDER";
 const APP_BUILD_PARAM = "mv_build";
 
 function __setVisibleBuildLabel(){
@@ -11605,82 +11605,142 @@ function openAIPickModal() {
 
 function renderAIResults(sections) {
   const box = $("aiResults");
-  if (!box) return;
-  const list = Array.isArray(sections) ? sections : [];
-  if (!list.length) { box.innerHTML = ""; return; }
+  if (!sections.length) { box.innerHTML = ""; return; }
 
-  const cardsHtml = list.map((sec, sidx) => {
-    const spots = Array.isArray(sec.spots) ? sec.spots : [];
-    const cityLabel = String(sec.city || sec.topic || "Sugerencias").trim() || "Sugerencias";
-    const spotsHtml = spots.map((sp, i)=>{
-      const title = String(sp?.title || "Lugar").trim() || "Lugar";
-      const desc = String(sp?.desc || "").trim();
-      const why = String(sp?.why || sp?.reason || "").trim();
-      return `
-        <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 bg-white">
-          <input type="checkbox" class="mt-1 w-4 h-4" data-ai-spot="${sidx}:${i}">
-          <div class="min-w-0 flex-1">
-            <div class="font-extrabold text-slate-900">${escapeHtml(title)}</div>
-            ${desc ? `<div class="text-sm text-slate-600 mt-1">${escapeHtml(desc)}</div>` : ``}
-            ${why ? `<div class="text-xs text-slate-500 mt-1">${escapeHtml(why)}</div>` : ``}
-          </div>
-        </label>
-      `;
-    }).join("");
+  box.innerHTML = sections.map((sec, sidx) => {
+    const tipsHtml = (sec.tips || []).map(t=>`<li><b>${escapeHtml(t.title||"Tip")}</b>: ${escapeHtml(t.detail||"")}</li>`).join("");
+    const spotsHtml = (sec.spots || []).map((sp, i)=>`
+      <label class="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 bg-white">
+        <input type="checkbox" class="mt-1 w-4 h-4" data-ai-spot="${sidx}:${i}">
+        <div>
+          <div class="font-extrabold">${escapeHtml(sp.title||"Lugar")}</div>
+          <div class="text-sm text-slate-600">${escapeHtml(sp.desc||"")}</div>
+          <div class="text-xs text-slate-500 mt-1">${escapeHtml(sec.city||"")}</div>
+        </div>
+      </label>
+    `).join("");
 
     return `
-      <div class="border border-slate-200 rounded-3xl p-4 bg-white">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <div class="font-extrabold text-lg text-slate-900">${escapeHtml(cityLabel)}</div>
-            <div class="text-xs text-slate-500">${spots.length ? `${spots.length} propuesta${spots.length===1?"":"s"}` : "Sin propuestas"}</div>
-          </div>
+      <div class="border border-slate-200 rounded-3xl p-4 bg-slate-50">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-extrabold text-lg">${escapeHtml(sec.city || sec.topic || "Sugerencias")}</div>
+          <span class="text-xs text-slate-500">${(sec.spots||[]).length} lugares</span>
         </div>
+        ${(sec.tips && sec.tips.length) ? `
+          <div class="mt-3">
+            <div class="font-extrabold">Tips útiles</div>
+            <ul class="list-disc pl-5 text-sm text-slate-700 mt-1">${tipsHtml}</ul>
+          </div>
+        ` : ``}
         <div class="mt-3 grid grid-cols-1 gap-2">
-          ${spotsHtml || `<div class="text-sm text-slate-500">No hay propuestas disponibles todavía para esta ciudad.</div>`}
+          ${spotsHtml || `<div class="text-sm text-slate-500">Sin lugares.</div>`}
         </div>
       </div>
     `;
   }).join("");
 
-  const anySelectable = list.some(sec => Array.isArray(sec?.spots) && sec.spots.length);
-  const actionBar = anySelectable ? `
-    <div class="flex justify-end">
-      <button type="button" data-ai-ctl="add-selected-activities" class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold">Añadir seleccionadas a Actividades</button>
-    </div>
-  ` : "";
+  const btnAdd = document.createElement("button");
+  btnAdd.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
+  btnAdd.textContent = "Añadir seleccionadas a Actividades";
+  btnAdd.onclick = () => {
+    const sc = curScenario();
+    const checks = Array.from(document.querySelectorAll("[data-ai-spot]")).filter(x=>x.checked);
+    let added = 0;
+    for (const c of checks) {
+      const [sidx, i] = c.getAttribute("data-ai-spot").split(":").map(x=>parseInt(x,10));
+      const sec = window.__aiSections[sidx];
+      const sp = sec.spots[i];
+      sc.activities.unshift({
+        id: nowId(),
+        title: sp.title,
+        city: sec.city || "",
+        date: "", // optional
+        cost: "",
+        fromAI: true
+      });
+      added++;
+    }
+    saveState();
+    renderAll();
+  syncStickyTotalsHeightVar();
+  $("aiStatus").textContent = added ? `Añadidas ${added} actividades.` : "No has seleccionado ninguna recomendación.";
+  };
 
-  box.innerHTML = `${actionBar}${actionBar ? `<div class="h-1"></div>` : ``}${cardsHtml}`;
+  // attach under results
+  const actionBar = document.createElement("div");
+  actionBar.className = "mt-3 flex justify-end";
+  actionBar.appendChild(btnAdd);
+  box.prepend(actionBar);
 }
 
-/* ================= V224D: IA hub de acciones + ciudades del viaje ================= */
+async function generateAIGuide() {
+  const pick = state.aiPick || { cities: [], items: [] };
+  if ((!pick.cities || !pick.cities.length) && (!pick.items || !pick.items.length)) {
+    $("aiStatus").textContent = "Primero pulsa “1) Elegir temas” y marca al menos un destino o item.";
+    return;
+  }
+  if (!getGeminiKey()) {
+    $("aiStatus").textContent = "Primero pulsa “Cambiar clave” y pega tu API Key de Gemini (AIza…).";
+    return;
+  }
+
+  $("aiStatus").textContent = "Generando guía… (Gemini 2.5 Flash)";
+  $("aiResults").innerHTML = "";
+
+  const schema = `Devuelve SOLO JSON válido con este formato:
+{
+  "sections":[
+    {
+      "city":"Nueva York",
+      "spots":[{"title":"...","desc":"..."}],
+      "tips":[{"title":"Transporte público","detail":"..."}]
+    }
+  ]
+}`;
+  const topics = [];
+  for (const c of (pick.cities||[])) topics.push({ kind:"city", value:c });
+  for (const it of (pick.items||[])) topics.push({ kind:it.type, value:it.text });
+
+  const sections = [];
+  for (const t of topics) {
+    const prompt = `Eres un guía local experto y práctico.
+Genera recomendaciones turísticas y tips útiles para: ${t.value}
+Idioma: español.
+Si es una ciudad, prioriza lugares imprescindibles + 1-2 lugares menos típicos.
+Incluye tips útiles (abonos de transporte, cómo moverse, horarios típicos, trucos locales).
+Máximo: 6 lugares y 4 tips.
+NO incluyas URLs.`;
+    try {
+      const out = await geminiGenerateJSON(prompt, schema);
+      for (const sec of (out.sections || [])) {
+        // normalize
+        sections.push({
+          city: sec.city || (t.kind==="city" ? t.value : ""),
+          topic: t.value,
+          spots: (sec.spots || []).slice(0,6),
+          tips: (sec.tips || []).slice(0,4)
+        });
+      }
+    } catch(e) {
+      console.error(e);
+      $("aiStatus").textContent = "Error generando guía. Revisa la clave o reintenta.";
+      return;
+    }
+  }
+
+  window.__aiSections = sections;
+  $("aiStatus").textContent = `Guía lista: ${sections.length} bloque(s). Marca lugares para añadirlos al plan.`;
+  renderAIResults(sections);
+}
+
+
+/* ================= V224A: IA contextual fase 0 ================= */
 function __aiEnsureContextualConfig(){
   const cur = (state && state.aiContextual && typeof state.aiContextual === "object") ? state.aiContextual : {};
   state.aiContextual = {
     enabled: (typeof cur.enabled === "boolean") ? cur.enabled : true
   };
   return state.aiContextual;
-}
-
-function __aiEnsureHubState(){
-  const cur = (state && state.aiHub && typeof state.aiHub === "object") ? state.aiHub : {};
-  const valid = new Set(["tripCities","contextual"]);
-  state.aiHub = {
-    activeAction: valid.has(String(cur.activeAction || "")) ? String(cur.activeAction) : "tripCities",
-    lastTripCities: Array.isArray(cur.lastTripCities) ? cur.lastTripCities.slice(0, 12) : []
-  };
-  return state.aiHub;
-}
-
-function __aiActiveAction(){
-  return __aiEnsureHubState().activeAction || "tripCities";
-}
-
-function __aiSetActiveAction(action){
-  const hub = __aiEnsureHubState();
-  hub.activeAction = String(action || "tripCities") === "contextual" ? "contextual" : "tripCities";
-  saveState();
-  __aiRenderHub();
 }
 
 function __aiISODateLabel(iso){
@@ -11818,10 +11878,14 @@ function __aiPushTip(list, seen, key, priority, title, detail){
   const k = String(key || "").trim();
   if(!k || seen.has(k)) return;
   const t = String(title || "").trim();
-  const d = String(detail || "").trim();
   if(!t) return;
   seen.add(k);
-  list.push({ key:k, priority:Number(priority)||0, title:t, detail:d });
+  list.push({
+    key: k,
+    priority: Number(priority) || 0,
+    title: t,
+    detail: String(detail || "").trim()
+  });
 }
 
 function __aiBuildContextualTips(){
@@ -11829,12 +11893,21 @@ function __aiBuildContextualTips(){
   const tips = [];
   const seen = new Set();
   const today = (typeof todayKey === "function") ? todayKey() : __notifLocalDateKey(new Date());
-  const upcomingDays = ctx.days.filter(day => String(day.date || "") >= String(today || ""));
-  const nextDay = upcomingDays[0] || null;
-  const tomorrowIso = (typeof __notifAddDaysISO === "function") ? __notifAddDaysISO(today, 1) : "";
-  const tomorrowDay = upcomingDays.find(day => day.date === tomorrowIso) || null;
+  const tomorrow = (typeof __notifAddDaysISO === "function") ? __notifAddDaysISO(today, 1) : "";
+  const upcomingDays = ctx.days.filter(day => String(day.date || "") >= today);
+  const nextDay = upcomingDays[0] || ctx.days[0] || null;
+  const tomorrowDay = upcomingDays.find(day => day.date === tomorrow) || null;
 
-  if(tomorrowDay && tomorrowDay.total >= 3){
+  if(!ctx.days.length){
+    return [{
+      key: "empty",
+      priority: 0,
+      title: "Cuando añadas transporte, alojamiento o actividades, aquí aparecerán sugerencias breves y contextuales.",
+      detail: "Esta zona solo lee tu viaje actual. No cambia el plan ni ejecuta acciones."
+    }];
+  }
+
+  if(tomorrowDay && (tomorrowDay.total >= 2 || tomorrowDay.activities.length >= 2)){
     const parts = [];
     if(tomorrowDay.legs.length) parts.push(__notifPlural(tomorrowDay.legs.length, "transporte", "transportes"));
     if(tomorrowDay.stays.length) parts.push(__notifPlural(tomorrowDay.stays.length, "alojamiento", "alojamientos"));
@@ -11955,149 +12028,38 @@ function __aiBuildContextualTips(){
   return tips.sort((a,b)=> (b.priority - a.priority) || String(a.title).localeCompare(String(b.title), "es")).slice(0, 4);
 }
 
-function __aiNormCityKey(v){
-  try{ return String(v||"").trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
-  catch{ return String(v||"").trim().toLowerCase(); }
+function __aiGetContextualNodes(){
+  const status = document.getElementById("aiSummaryStatus") || document.getElementById("aiStatus");
+  const results = document.getElementById("aiSummaryResults") || document.getElementById("aiResults");
+  const pickBtn = document.getElementById("aiSummaryToggle") || document.getElementById("aiPick");
+  const genBtn = document.getElementById("aiSummaryRefresh") || document.getElementById("aiGenerate");
+  return { status, results, pickBtn, genBtn };
 }
 
-function __aiTitleCase(v){
-  return String(v||"").trim().replace(/\s+/g," ").replace(/\b\p{L}/gu, m => m.toUpperCase());
-}
-
-function __aiExtractCityCandidate(value){
-  let s = String(value || "").trim();
-  if(!s) return "";
-  const iata = s.match(/\b([A-Z]{3})\b/);
-  if(iata && Array.isArray(__AIRPORT_DB)){
-    const hit = __AIRPORT_DB.find(a => String(a.iata || "") === String(iata[1] || ""));
-    if(hit && hit.city) return String(hit.city).trim();
-  }
-  const par = s.match(/\(([^()]+)\)/);
-  if(par && par[1]){
-    const inside = String(par[1]).split(",")[0].trim();
-    if(inside) return __aiTitleCase(inside);
-  }
-  if(s.includes("·")){
-    const parts = s.split("·").map(x=>String(x||"").trim()).filter(Boolean);
-    const last = parts[parts.length-1] || "";
-    if(last && last.length <= 40) s = last;
-  }
-  if(s.includes(",")) s = s.split(",")[0].trim();
-  s = s.replace(/\s+/g," ").trim();
-  if(!s) return "";
-  return __aiTitleCase(s);
-}
-
-function __aiCollectTripCities(){
-  const sc = curScenario() || {};
-  const seen = new Set();
-  const out = [];
-  const push = (value)=>{
-    const city = __aiExtractCityCandidate(value);
-    const key = __aiNormCityKey(city);
-    if(!city || !key || seen.has(key)) return;
-    if(key.length < 2) return;
-    seen.add(key);
-    out.push(city);
-  };
-
-  (Array.isArray(sc.legs) ? sc.legs : []).forEach(leg=>{
-    push(leg?.from);
-    push(leg?.to);
-  });
-  (Array.isArray(sc.stays) ? sc.stays : []).forEach(stay=>{
-    push(stay?.city);
-    push(stay?.place);
-    push(stay?.name);
-  });
-  (Array.isArray(sc.activities) ? sc.activities : []).forEach(act=>{
-    push(act?.city);
-  });
-
-  const hub = __aiEnsureHubState();
-  hub.lastTripCities = out.slice(0, 12);
-  saveState();
-  return hub.lastTripCities.slice();
-}
-
-function __aiLocalSuggestionSpots(city){
-  const c = String(city || "").trim() || "la ciudad";
-  const tastes = ((__ensurePreferences()?.tastes) || []).map(x=>String(x||""));
-  const likesFood = tastes.includes("Gastronomía");
-  const likesCulture = tastes.includes("Cultura");
-  const likesNature = tastes.includes("Naturaleza");
-  const base = [
-    {
-      title: `Paseo de primera toma de contacto por ${c}`,
-      desc: `Un recorrido suave por la zona más reconocible para ubicarte rápido y detectar los puntos clave del día.`,
-      why: `Suele funcionar muy bien como primera actividad cuando acabas de llegar o cambias de ciudad.`
-    },
-    {
-      title: likesCulture ? `Museo o edificio emblemático de ${c}` : `Mirador o punto icónico de ${c}`,
-      desc: likesCulture ? `Una visita cultural breve para captar el carácter de la ciudad sin cargar demasiado la agenda.` : `Una parada visual potente para entender mejor la ciudad y su escala.`,
-      why: likesCulture ? `Aporta contexto y suele encajar bien incluso en jornadas con varios hitos.` : `Da una referencia clara del destino y suele dejar buenas fotos sin invertir todo el día.`
-    },
-    {
-      title: likesFood ? `Mercado o parada gastronómica en ${c}` : (likesNature ? `Parque o tramo agradable al aire libre en ${c}` : `Barrio con ambiente para pasear en ${c}`),
-      desc: likesFood ? `Una propuesta fácil de encajar para probar sabores locales sin bloquear demasiado tiempo.` : (likesNature ? `Un respiro al aire libre que compensa jornadas densas de traslados y visitas.` : `Una zona con vida local para completar el día con algo flexible.`),
-      why: likesFood ? `Va bien cuando quieres una actividad ligera y útil entre otros planes.` : (likesNature ? `Ayuda a bajar ritmo si el viaje tiene varios días intensos.` : `Suele ser una pieza flexible para completar huecos sin sobrecargar el plan.`)
-    }
-  ];
-  return base;
-}
-
-function __aiRenderActionHub(){
-  const host = document.getElementById("aiActionHub");
-  if(!host) return;
-  const active = __aiActiveAction();
-  const btn = (action, title, detail)=>{
-    const on = active === action;
-    return `
-      <button type="button" data-ai-action="${escapeHtml(action)}" class="tap text-left rounded-2xl border px-4 py-4 transition ${on ? "border-violet-300 bg-violet-50 shadow-sm" : "border-slate-200 bg-white hover:bg-slate-50"}">
-        <div class="flex items-start gap-3">
-          <span class="inline-flex w-10 h-10 rounded-2xl items-center justify-center text-lg ${on ? "bg-violet-100" : "bg-slate-100"}">${action === "tripCities" ? "✨" : "🧭"}</span>
-          <div class="min-w-0">
-            <div class="font-extrabold text-slate-900">${escapeHtml(title)}</div>
-            <div class="mt-1 text-sm text-slate-600">${escapeHtml(detail)}</div>
-          </div>
-        </div>
-      </button>
-    `;
-  };
-  host.innerHTML = [
-    btn("tripCities", "Descubrir ciudades del viaje", "Detecta destinos del viaje, propone actividades por ciudad y te deja añadir las que elijas a Actividades."),
-    btn("contextual", "Resumen contextual del viaje", "Lee el ritmo del viaje y destaca días intensos, cambios de ciudad o hitos que conviene revisar.")
-  ].join("");
-}
-
-function __aiRenderContextualPanel(forceNote){
+function renderAIContextual(forceNote){
   const cfg = __aiEnsureContextualConfig();
-  const controls = document.getElementById("aiActionControls");
-  const status = document.getElementById("aiStatus");
-  const results = document.getElementById("aiResults");
-  if(!controls || !status || !results) return;
+  const nodes = __aiGetContextualNodes();
+  const pickBtn = nodes.pickBtn;
+  const genBtn = nodes.genBtn;
+  const status = nodes.status;
+  const results = nodes.results;
+  if(!status || !results) return;
 
-  controls.innerHTML = `
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <div class="font-extrabold text-slate-900">Resumen contextual</div>
-        <div class="text-sm text-slate-500">Sugerencias breves basadas solo en el viaje que tienes cargado ahora mismo.</div>
-      </div>
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button type="button" data-ai-ctl="toggle-contextual" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">${cfg.enabled ? "Ocultar sugerencias" : "Mostrar sugerencias"}</button>
-        <button type="button" data-ai-ctl="refresh-contextual" class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold">Actualizar sugerencias</button>
-      </div>
-    </div>
-  `;
+  if(pickBtn){
+    pickBtn.textContent = cfg.enabled ? "Ocultar sugerencias" : "Mostrar sugerencias";
+    pickBtn.setAttribute("aria-pressed", cfg.enabled ? "true" : "false");
+  }
+  if(genBtn) genBtn.textContent = "Actualizar sugerencias";
 
   if(!cfg.enabled){
-    status.textContent = forceNote || "Las sugerencias contextuales están ocultas. Puedes volver a mostrarlas cuando quieras.";
+    status.textContent = forceNote || "Las sugerencias están ocultas. Puedes volver a mostrarlas cuando quieras.";
     results.innerHTML = "";
     return;
   }
 
   const tips = __aiBuildContextualTips();
   status.textContent = forceNote || "Sugerencias breves basadas solo en tu viaje actual. No cambian el plan ni ejecutan acciones.";
+
   results.innerHTML = tips.map((tip)=>{
     return `<div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3">
       <div class="text-sm font-semibold text-slate-900">${escapeHtml(tip.title || "")}</div>
@@ -12106,145 +12068,348 @@ function __aiRenderContextualPanel(forceNote){
   }).join("");
 }
 
-function renderAITripCities(forceNote){
-  const controls = document.getElementById("aiActionControls");
-  const status = document.getElementById("aiStatus");
-  const results = document.getElementById("aiResults");
-  if(!controls || !status || !results) return;
-  const cities = __aiCollectTripCities();
-  const chips = cities.map(city=>`<span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-700">${escapeHtml(city)}</span>`).join(" ");
-  controls.innerHTML = `
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div>
-        <div class="text-sm text-slate-500">La IA detecta las ciudades relevantes del viaje y puede proponerte actividades breves y seleccionables por ciudad.</div>
-      </div>
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button type="button" data-ai-ctl="detect-trip-cities" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">Actualizar ciudades</button>
-        <button type="button" data-ai-ctl="generate-trip-city-guide" class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold">Proponer actividades por ciudad</button>
-      </div>
-    </div>
-    <div class="mt-3">
-      <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ciudades detectadas</div>
-      <div class="mt-2 flex flex-wrap gap-2">${chips || `<span class="text-sm text-slate-500">Aún no hemos detectado ciudades con la información actual del viaje.</span>`}</div>
-    </div>
-  `;
-  status.textContent = forceNote || (cities.length ? `Hemos detectado ${cities.length} ${cities.length === 1 ? "ciudad" : "ciudades"} en tu viaje. Puedes generar propuestas por ciudad y añadir las que te encajen.` : "Añade algún trayecto, alojamiento o actividad con ciudad para descubrir destinos del viaje.");
-  if(!forceNote){
-    results.innerHTML = cities.length ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">Pulsa <span class="font-semibold text-slate-900">“Proponer actividades por ciudad”</span> para cargar ideas compactas y seleccionables para cada destino detectado.</div>` : "";
-  }
-}
-
-function __aiFallbackCitySections(cities){
-  return (Array.isArray(cities) ? cities : []).map(city=>({
-    city,
-    spots: __aiLocalSuggestionSpots(city)
-  }));
-}
-
-async function generateAITripCityGuide(){
-  const status = document.getElementById("aiStatus");
-  const cities = __aiCollectTripCities();
-  if(!status) return;
-  if(!cities.length){
-    status.textContent = "No hay ciudades detectadas todavía. Añade al menos un trayecto, alojamiento o actividad con ciudad y vuelve a intentarlo.";
-    const results = document.getElementById("aiResults");
-    if(results) results.innerHTML = "";
-    return;
-  }
-
-  status.textContent = `Preparando propuestas para ${cities.length} ${cities.length === 1 ? "ciudad" : "ciudades"}…`;
-  const results = document.getElementById("aiResults");
-  if(results) results.innerHTML = "";
-
-  const tasteHint = (()=>{
-    try{
-      const tastes = (__ensurePreferences()?.tastes) || [];
-      return tastes.length ? `Ten en cuenta estas preferencias del grupo: ${tastes.join(", ")}.` : "";
-    }catch{ return ""; }
-  })();
-
-  let sections = [];
-  if(getGeminiKey()){
-    const schema = `Devuelve SOLO JSON válido con este formato:\n{\n  "city":"Madrid",\n  "spots":[\n    {"title":"...","desc":"...","why":"..."}\n  ]\n}`;
-    for(const city of cities.slice(0, 8)){
-      const prompt = `Eres un asistente premium de viajes. Para la ciudad ${city}, propone actividades o imprescindibles compactos para añadir a un plan de viaje.\n\nReglas:\n- Idioma: español.\n- Máximo 4 propuestas.\n- Cada propuesta debe tener título breve, descripción útil y una razón corta de por qué merece la pena.\n- Nada de URLs.\n- Nada de texto largo.\n- Evita duplicados y cosas demasiado genéricas.\n${tasteHint}`;
-      try{
-        const out = await geminiGenerateJSON(prompt, schema);
-        const spots = Array.isArray(out?.spots) ? out.spots.slice(0,4).map(sp=>({
-          title: String(sp?.title || "").trim(),
-          desc: String(sp?.desc || "").trim(),
-          why: String(sp?.why || "").trim()
-        })).filter(sp=>sp.title) : [];
-        if(spots.length) sections.push({ city: String(out?.city || city).trim() || city, spots });
-      }catch(_){ }
-    }
-  }
-
-  if(!sections.length){
-    sections = __aiFallbackCitySections(cities.slice(0, 8));
-    status.textContent = `Mostramos una base de propuestas para ${cities.length} ${cities.length === 1 ? "ciudad" : "ciudades"}. Si añades tu clave IA, podrás refinar aún más las ideas.`;
-  }else{
-    status.textContent = `Listo: ${sections.length} bloque${sections.length===1?"":"s"} con propuestas por ciudad. Marca las que quieras llevar a Actividades.`;
-  }
-
-  window.__aiSections = sections;
-  renderAIResults(sections);
-}
-
-function __aiAddSelectedToActivities(){
-  const sc = curScenario();
-  if(!sc) return;
-  const checks = Array.from(document.querySelectorAll("[data-ai-spot]"));
-  const selected = checks.filter(x=>x.checked);
-  let added = 0;
-  selected.forEach(c=>{
-    const raw = String(c.getAttribute("data-ai-spot") || "");
-    const parts = raw.split(":");
-    const sidx = parseInt(parts[0] || "-1", 10);
-    const i = parseInt(parts[1] || "-1", 10);
-    const sec = Array.isArray(window.__aiSections) ? window.__aiSections[sidx] : null;
-    const sp = sec && Array.isArray(sec.spots) ? sec.spots[i] : null;
-    if(!sec || !sp || !String(sp.title || "").trim()) return;
-    sc.activities.unshift({
-      id: nowId(),
-      title: String(sp.title || "").trim(),
-      city: String(sec.city || "").trim(),
-      date: "",
-      cost: "",
-      notes: String(sp.desc || sp.why || "").trim(),
-      fromAI: true
-    });
-    added += 1;
-  });
-  saveState();
-  renderAll();
-  syncStickyTotalsHeightVar();
-  const status = document.getElementById("aiStatus");
-  if(status) status.textContent = added ? `Añadidas ${added} ${added === 1 ? "actividad" : "actividades"} desde la IA a tu sección de Actividades.` : "No has seleccionado ninguna propuesta todavía.";
-}
-
-function __aiRenderHub(forceNote){
-  __aiRenderActionHub();
-  const active = __aiActiveAction();
-  if(active === "contextual"){
-    __aiRenderContextualPanel(forceNote);
-    return;
-  }
-  renderAITripCities(forceNote);
-}
-
 function openAIPickModal(){
   const cfg = __aiEnsureContextualConfig();
   cfg.enabled = !cfg.enabled;
   saveState();
-  __aiSetActiveAction("contextual");
-  __aiRenderHub(cfg.enabled ? "Sugerencias activadas. La IA contextual solo acompaña; no modifica tu viaje." : "Sugerencias ocultas. Puedes volver a mostrarlas cuando quieras.");
+  renderAIContextual(cfg.enabled ? "Sugerencias activadas. La IA contextual solo acompaña; no modifica tu viaje." : "Sugerencias ocultas. Puedes volver a mostrarlas cuando quieras.");
 }
 
 function generateAIGuide(){
-  __aiSetActiveAction("contextual");
-  __aiRenderHub("Sugerencias actualizadas con el contexto actual del viaje.");
+  __aiEnsureContextualConfig();
+  renderAIContextual("Sugerencias actualizadas con el contexto actual del viaje.");
+}
+
+function __aiNormCityName(v){
+  return String(v || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function __aiTitleCityName(v){
+  const s = String(v || "").trim();
+  if(!s) return "";
+  return s.split(/\s+/).map(part => part ? part.charAt(0).toUpperCase() + part.slice(1) : "").join(" ");
+}
+
+const __AI_CITY_DISCOVERY_LIBRARY = {
+  "madrid": [
+    { title:"Paseo por el Madrid de los Austrias", why:"Buen primer contacto", detail:"Centro histórico compacto para situarte rápido y enlazar varios hitos del viaje." },
+    { title:"Museo del Prado", why:"Icono cultural", detail:"Ideal si quieres reservar una franja clara para una visita potente y muy reconocible." },
+    { title:"Atardecer en el Retiro", why:"Ritmo más calmado", detail:"Funciona bien para equilibrar días cargados con un plan fácil de encajar." }
+  ],
+  "barcelona": [
+    { title:"Sagrada Familia", why:"Imprescindible claro", detail:"Conviene encajarlo con hora para evitar colas y proteger el resto del día." },
+    { title:"Paseo por el Born y Barrio Gótico", why:"Muy buen contexto", detail:"Permite enlazar arquitectura, ambiente y varias paradas sin gran logística." },
+    { title:"Mirador en Montjuïc", why:"Buen cierre de jornada", detail:"Encaja especialmente bien en tardes algo más despejadas." }
+  ],
+  "roma": [
+    { title:"Coliseo y Foro", why:"Icono absoluto", detail:"Mejor reservarlo como bloque principal porque suele pedir tiempo y foco." },
+    { title:"Trastevere al atardecer", why:"Muy buen ambiente", detail:"Plan flexible para una franja más relajada tras un día intenso." },
+    { title:"Fontana di Trevi y centro histórico", why:"Ruta fácil de hilar", detail:"Funciona bien como paseo corto o primera toma de contacto con la ciudad." }
+  ],
+  "londres": [
+    { title:"Westminster y South Bank", why:"Ruta muy agradecida", detail:"Te da varios hitos reconocibles en un recorrido sencillo de seguir." },
+    { title:"British Museum", why:"Valor seguro", detail:"Buena opción para una mañana clara o para cubrir un hueco con contenido potente." },
+    { title:"Notting Hill o Covent Garden", why:"Plan ligero", detail:"Sirve para bajar ritmo sin dejar de aprovechar la ciudad." }
+  ],
+  "paris": [
+    { title:"Torre Eiffel y Trocadéro", why:"Imprescindible clásico", detail:"Va mejor si le das una franja concreta y evitas apretarlo entre otros hitos." },
+    { title:"Museo del Louvre", why:"Visita fuerte", detail:"Mejor tratarlo como actividad principal del bloque para ir con calma." },
+    { title:"Paseo por Le Marais", why:"Muy flexible", detail:"Encaja bien como tramo urbano agradable entre actividades cerradas." }
+  ],
+  "nueva york": [
+    { title:"Top of the Rock o mirador principal", why:"Panorámica potente", detail:"Muy buena forma de ubicarte al principio del viaje o al caer la tarde." },
+    { title:"Central Park + Museum Mile", why:"Bloque equilibrado", detail:"Permite combinar paseo y visita sin sensación de maratón." },
+    { title:"Lower Manhattan y puente de Brooklyn", why:"Ruta icónica", detail:"Va muy bien en una jornada dedicada a iconos y cambios de barrio." }
+  ],
+  "new york": [
+    { title:"Top of the Rock o mirador principal", why:"Panorámica potente", detail:"Muy buena forma de ubicarte al principio del viaje o al caer la tarde." },
+    { title:"Central Park + Museum Mile", why:"Bloque equilibrado", detail:"Permite combinar paseo y visita sin sensación de maratón." },
+    { title:"Lower Manhattan y puente de Brooklyn", why:"Ruta icónica", detail:"Va muy bien en una jornada dedicada a iconos y cambios de barrio." }
+  ],
+  "washington": [
+    { title:"National Mall esencial", why:"Muy representativo", detail:"Agrupa monumentos y museos en una ruta clara y fácil de priorizar." },
+    { title:"Capitolio + Library of Congress", why:"Gran bloque institucional", detail:"Buena propuesta si quieres una mañana con identidad muy clara." },
+    { title:"Georgetown al final del día", why:"Cambio de ritmo", detail:"Ideal para cerrar jornada con un plan más ligero y agradable." }
+  ],
+  "washington dc": [
+    { title:"National Mall esencial", why:"Muy representativo", detail:"Agrupa monumentos y museos en una ruta clara y fácil de priorizar." },
+    { title:"Capitolio + Library of Congress", why:"Gran bloque institucional", detail:"Buena propuesta si quieres una mañana con identidad muy clara." },
+    { title:"Georgetown al final del día", why:"Cambio de ritmo", detail:"Ideal para cerrar jornada con un plan más ligero y agradable." }
+  ],
+  "orlando": [
+    { title:"Bloque temático principal", why:"Mejor dedicarle foco", detail:"Conviene protegerlo de otras actividades para evitar un día demasiado comprimido." },
+    { title:"Disney Springs o paseo tranquilo", why:"Plan de descarga", detail:"Buena opción para equilibrar jornadas muy intensas." },
+    { title:"Outlet o visita ligera de tarde", why:"Hueco flexible", detail:"Encaja bien en un día de llegada o entre planes fuertes." }
+  ],
+  "lugo": [
+    { title:"Muralla y casco histórico", why:"Imprescindible local", detail:"Recorrido compacto y fácil para ubicarte enseguida en la ciudad." },
+    { title:"Tapeo por el centro", why:"Plan muy natural", detail:"Funciona especialmente bien como cierre relajado del día." },
+    { title:"Paseo junto al Miño", why:"Ritmo calmado", detail:"Buena alternativa si buscas bajar intensidad sin dejar de aprovechar." }
+  ]
+};
+
+function __aiFallbackCityIdeas(cityLabel){
+  return [
+    { title:`Paseo esencial por ${cityLabel}`, why:"Buen primer contacto", detail:"Ayuda a orientarte y a detectar mejor qué zonas te encajan en el viaje." },
+    { title:`Mirador o zona emblemática de ${cityLabel}`, why:"Icono reconocible", detail:"Suele ser una propuesta fácil de entender y de colocar en un hueco claro." },
+    { title:`Barrio con ambiente local en ${cityLabel}`, why:"Plan flexible", detail:"Buena opción para equilibrar días intensos con algo más ligero y agradable." }
+  ];
+}
+
+function __aiCollectTripCities(){
+  const sc = curScenario();
+  const ordered = [];
+  const seen = new Set();
+  const push = (raw)=>{
+    const city = String(raw || "").trim();
+    if(!city) return;
+    const key = __aiNormCityName(city);
+    if(!key || seen.has(key)) return;
+    seen.add(key);
+    ordered.push({ key, label: city });
+  };
+  (sc.legs || []).forEach(leg => { push(leg.from); push(leg.to); });
+  (sc.stays || []).forEach(stay => push(stay.city || stay.name));
+  (sc.activities || []).forEach(act => push(act.city));
+  return ordered.filter(item => item.key && item.label);
+}
+
+function __aiBuildTripCityProposalGroups(){
+  const cities = __aiCollectTripCities();
+  return cities.map((city)=>{
+    const lib = __AI_CITY_DISCOVERY_LIBRARY[city.key] || __AI_CITY_DISCOVERY_LIBRARY[__aiNormCityName(city.label)] || __aiFallbackCityIdeas(city.label);
+    const unique = [];
+    const seen = new Set();
+    for(const idea of lib){
+      const title = String(idea?.title || "").trim();
+      if(!title) continue;
+      const key = __aiNormCityName(title);
+      if(seen.has(key)) continue;
+      seen.add(key);
+      unique.push({
+        title,
+        why: String(idea?.why || "").trim(),
+        detail: String(idea?.detail || "").trim(),
+        city: city.label
+      });
+      if(unique.length >= 3) break;
+    }
+    return { city: city.label, key: city.key, spots: unique };
+  }).filter(group => group.spots && group.spots.length);
+}
+
+function __aiEnsureHubLocalState(){
+  if(!window.__aiHubLocalState){
+    window.__aiHubLocalState = {
+      action: "summary",
+      selected: {}
+    };
+  }
+  return window.__aiHubLocalState;
+}
+
+function __aiActionBtnClass(active){
+  return active
+    ? "tap rounded-2xl border border-violet-300 bg-violet-50 px-4 py-4 text-left shadow-sm"
+    : "tap rounded-2xl border border-slate-200 bg-white px-4 py-4 text-left hover:bg-slate-50";
+}
+
+function __aiRenderHubActions(){
+  const host = document.getElementById("aiHubActions");
+  if(!host) return;
+  const st = __aiEnsureHubLocalState();
+  const actions = [
+    {
+      key: "cities",
+      icon: "🏙️",
+      title: "Descubrir ciudades del viaje",
+      detail: "Detecta destinos ya presentes en tu viaje y propone actividades breves por ciudad."
+    },
+    {
+      key: "summary",
+      icon: "✨",
+      title: "Resumen contextual del viaje",
+      detail: "Muestra sugerencias breves sobre ritmo, cambios de ciudad y próximos hitos."
+    }
+  ];
+  host.innerHTML = actions.map(action => `
+    <button class="${__aiActionBtnClass(st.action === action.key)}" data-ai-hub-action="${action.key}" type="button">
+      <div class="flex items-start gap-3">
+        <span class="inline-flex w-10 h-10 rounded-2xl items-center justify-center bg-white border border-slate-200 text-lg shrink-0">${action.icon}</span>
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-slate-900">${escapeHtml(action.title)}</div>
+          <div class="mt-1 text-sm text-slate-600">${escapeHtml(action.detail)}</div>
+        </div>
+      </div>
+    </button>
+  `).join("");
+
+  host.querySelectorAll("[data-ai-hub-action]").forEach(btn => {
+    if(btn.__aiHubBound) return;
+    btn.__aiHubBound = true;
+    btn.addEventListener("click", ()=>{
+      st.action = btn.getAttribute("data-ai-hub-action") || "summary";
+      __aiRenderHubActions();
+      __aiRenderHubPanel();
+    });
+  });
+}
+
+function __aiRenderSummaryPanel(){
+  const host = document.getElementById("aiActionBody");
+  if(!host) return;
+  host.innerHTML = `
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <div>
+        <div class="text-sm font-semibold text-slate-900">Resumen contextual del viaje</div>
+        <div class="text-sm text-slate-500">Solo lectura. Útil para revisar ritmo, cambios de ciudad y próximos hitos.</div>
+      </div>
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiSummaryToggle" type="button">Ocultar sugerencias</button>
+        <button class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold" id="aiSummaryRefresh" type="button">Actualizar sugerencias</button>
+      </div>
+    </div>
+    <div class="text-sm text-slate-500" id="aiSummaryStatus">Sugerencias breves basadas solo en tu viaje actual. No cambian el plan ni ejecutan acciones.</div>
+    <div class="mt-4 space-y-3" id="aiSummaryResults"></div>
+  `;
+  const pick = document.getElementById("aiSummaryToggle");
+  const gen = document.getElementById("aiSummaryRefresh");
+  if(pick) pick.addEventListener("click", openAIPickModal);
+  if(gen) gen.addEventListener("click", generateAIGuide);
+  renderAIContextual();
+}
+
+function __aiRenderCitiesPanel(note){
+  const host = document.getElementById("aiActionBody");
+  if(!host) return;
+  const groups = __aiBuildTripCityProposalGroups();
+  const st = __aiEnsureHubLocalState();
+  if(!groups.length){
+    host.innerHTML = `
+      <div>
+        <div class="text-sm font-semibold text-slate-900">Descubrir ciudades del viaje</div>
+        <div class="mt-1 text-sm text-slate-500">Añade transporte, alojamiento o actividades con ciudad para que la IA pueda detectar destinos y proponerte ideas.</div>
+      </div>
+    `;
+    return;
+  }
+
+  host.innerHTML = `
+    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+      <div>
+        <div class="text-sm font-semibold text-slate-900">Descubrir ciudades del viaje</div>
+        <div class="text-sm text-slate-500">La IA ha detectado ${groups.length} ${groups.length===1 ? "ciudad relevante" : "ciudades relevantes"} en tu viaje y propone ideas compactas para añadir a Actividades.</div>
+      </div>
+      <div class="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1">Selección manual · Sin tocar el core</div>
+    </div>
+    ${note ? `<div class="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">${escapeHtml(note)}</div>` : ``}
+    <div class="space-y-4" id="aiCityDiscoveryResults">
+      ${groups.map((group, gidx)=>`
+        <section class="rounded-3xl border border-slate-200 bg-white px-4 py-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">${escapeHtml(group.city)}</div>
+              <div class="text-xs text-slate-500">Propuestas breves para no perder de vista esta ciudad dentro del viaje.</div>
+            </div>
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">${group.spots.length} ideas</div>
+          </div>
+          <div class="mt-3 space-y-3">
+            ${group.spots.map((spot, sidx)=>{
+              const key = `${gidx}:${sidx}`;
+              const checked = !!st.selected[key];
+              return `
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 cursor-pointer">
+                  <input class="mt-1 h-4 w-4 rounded border-slate-300 text-violet-600" data-ai-city-pick="${key}" type="checkbox" ${checked ? "checked" : ""}>
+                  <span class="min-w-0 flex-1">
+                    <span class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-slate-900">${escapeHtml(spot.title)}</span>
+                      <span class="text-[11px] font-semibold text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">${escapeHtml(group.city)}</span>
+                    </span>
+                    <span class="mt-1 block text-sm text-slate-600">${escapeHtml(spot.detail)}</span>
+                    <span class="mt-1 block text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(spot.why || "Buena propuesta para encajar en esta parada del viaje.")}</span>
+                  </span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `).join("")}
+    </div>
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="text-sm text-slate-500">Marca lo que te interese y conviértelo en actividad real del viaje.</div>
+      <button class="tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold" id="aiAddSelectedActivities" type="button">Añadir seleccionadas a Actividades</button>
+    </div>
+  `;
+
+  host.querySelectorAll("[data-ai-city-pick]").forEach(input => {
+    if(input.__aiCityBound) return;
+    input.__aiCityBound = true;
+    input.addEventListener("change", ()=>{
+      st.selected[input.getAttribute("data-ai-city-pick")] = !!input.checked;
+    });
+  });
+  const addBtn = document.getElementById("aiAddSelectedActivities");
+  if(addBtn){
+    addBtn.addEventListener("click", __aiAddSelectedCityActivities);
+  }
+}
+
+function __aiAddSelectedCityActivities(){
+  const st = __aiEnsureHubLocalState();
+  const groups = __aiBuildTripCityProposalGroups();
+  const sc = curScenario();
+  let added = 0;
+  Object.keys(st.selected || {}).forEach(key => {
+    if(!st.selected[key]) return;
+    const parts = String(key).split(":");
+    const gidx = parseInt(parts[0], 10);
+    const sidx = parseInt(parts[1], 10);
+    const group = groups[gidx];
+    const spot = group && group.spots ? group.spots[sidx] : null;
+    if(!group || !spot) return;
+    const already = (sc.activities || []).some(act => {
+      return __aiNormCityName(act.city) === __aiNormCityName(group.city) && __aiNormCityName(act.title) === __aiNormCityName(spot.title);
+    });
+    if(already) return;
+    sc.activities.unshift({
+      id: nowId(),
+      title: spot.title,
+      city: group.city,
+      date: "",
+      time: "",
+      duration: "",
+      cost: null,
+      currency: (state.displayCurrency || "EUR"),
+      fromAI: true,
+      notes: `${spot.detail}${spot.why ? `\n\nIA · ${spot.why}` : ""}`
+    });
+    added++;
+  });
+  saveState();
+  renderActivities();
+  renderTimeline();
+  calcSummary();
+  __aiRenderCitiesPanel(added ? `Añadidas ${added} ${added===1 ? "actividad" : "actividades"} a tu viaje.` : "No había ninguna propuesta nueva seleccionada para añadir.");
+}
+
+function __aiRenderHubPanel(){
+  const st = __aiEnsureHubLocalState();
+  if(st.action === "cities"){
+    __aiRenderCitiesPanel();
+  }else{
+    __aiRenderSummaryPanel();
+  }
+}
+
+function renderAIHub(){
+  __aiEnsureContextualConfig();
+  __aiEnsureHubLocalState();
+  __aiRenderHubActions();
+  __aiRenderHubPanel();
 }
 
 function openAISheet(){
@@ -12252,7 +12417,7 @@ function openAISheet(){
   if(!overlay) return;
   overlay.classList.remove("hidden");
   document.body.classList.add("ai-sheet-open");
-  try{ __aiRenderHub(); }catch{}
+  try{ renderAIHub(); }catch{}
 }
 
 function closeAISheet(){
@@ -12285,7 +12450,7 @@ function initAISheet(){
     });
   }
 }
-/* ================= /V224D: IA hub de acciones + ciudades del viaje ================= */
+/* ================= /V224A: IA contextual fase 0 ================= */
 
 /* ----------------------- Device name \(minimal\) ------------------------ */
 const LS_DEVICE_NAME = "miviaje.deviceName";
@@ -13594,14 +13759,14 @@ window.addEventListener('DOMContentLoaded', () => {
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
 <button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨</button>
 <div aria-hidden="true" class="hidden" id="aiSheetOverlay">
-  <div aria-label="IA" aria-modal="true" id="aiSheet" role="dialog">
+  <div aria-label="IA contextual" aria-modal="true" id="aiSheet" role="dialog">
     <div id="aiSheetHeader">
       <div class="min-w-0">
         <div class="flex items-center gap-2">
           <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center text-lg">✨</span>
           <div class="min-w-0">
-            <div class="font-extrabold text-slate-900">IA · Hub de acciones</div>
-            <div class="text-xs text-slate-500">Ideas útiles sobre tu viaje sin cambiar el plan automáticamente</div>
+            <div class="font-extrabold text-slate-900">IA contextual</div>
+            <div class="text-xs text-slate-500">Hub de acciones seguro sobre tu viaje actual</div>
           </div>
         </div>
       </div>
@@ -13609,14 +13774,12 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
     <div id="aiSheetBody">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">Solo lectura · IA transversal</div>
-        <div class="text-xs text-slate-500">Puedes explorar ideas y decidir qué añadir a tu viaje.</div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">Solo lectura · Capa transversal · Sin tocar el plan</div>
+        <div class="text-xs text-slate-500">Elige una acción para trabajar con la IA sobre el viaje ya cargado.</div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="aiActionHub"></div>
-      <div class="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-        <div id="aiActionControls"></div>
-        <div class="mt-3 text-sm text-slate-500" id="aiStatus">La IA te acompaña con acciones concretas basadas en el viaje cargado.</div>
-        <div class="mt-4 space-y-3" id="aiResults"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="aiHubActions"></div>
+      <div class="mt-4 rounded-3xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+        <div id="aiActionBody"></div>
       </div>
     </div>
   </div>
@@ -13624,33 +13787,8 @@ window.addEventListener('DOMContentLoaded', () => {
 <script>
 (function(){
   const bindAIControls = function(){
-    try{
-      const body = document.getElementById("aiSheetBody");
-      if(body && !body.__aiCtlBound){
-        body.__aiCtlBound = true;
-        body.addEventListener("click", (ev)=>{
-          const actionBtn = ev.target.closest('[data-ai-action]');
-          if(actionBtn){
-            ev.preventDefault();
-            ev.stopPropagation();
-            try{ __aiSetActiveAction(actionBtn.getAttribute('data-ai-action') || 'contextual'); }catch{}
-            return;
-          }
-          const ctl = ev.target.closest('[data-ai-ctl]');
-          if(!ctl) return;
-          const cmd = ctl.getAttribute('data-ai-ctl') || '';
-          ev.preventDefault();
-          ev.stopPropagation();
-          if(cmd === 'toggle-contextual') return void openAIPickModal();
-          if(cmd === 'refresh-contextual') return void generateAIGuide();
-          if(cmd === 'detect-trip-cities') return void renderAITripCities();
-          if(cmd === 'generate-trip-city-guide') return void generateAITripCityGuide();
-          if(cmd === 'add-selected-activities') return void __aiAddSelectedToActivities();
-        });
-      }
-      try{ initAISheet(); }catch{}
-      try{ __aiRenderHub(); }catch{}
-    }catch{}
+    try{ initAISheet(); }catch{}
+    try{ renderAIHub(); }catch{}
   };
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", bindAIControls, { once:true });
