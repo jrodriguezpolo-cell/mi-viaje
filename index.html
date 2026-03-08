@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V225F2_FILL_TRIP_GAPS_ADD_SELECTED_TO_ACTIVITIES_REAL_BRIDGE</title>
+<title>V225F3_AI_GAP_FILL_CONTEXTUAL_INSERTION_AND_GUIDED_REVIEW</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V225F2_FILL_TRIP_GAPS_ADD_SELECTED_TO_ACTIVITIES_REAL_BRIDGE" rel="manifest"/>
+<link href="manifest.json?v=V225F3_AI_GAP_FILL_CONTEXTUAL_INSERTION_AND_GUIDED_REVIEW" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1058,6 +1058,53 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   line-height:1.2rem;
 }
 
+
+
+/* V225F3: AI guided review highlight + bar */
+.aiReviewHighlight{
+  outline: 3px solid rgba(217,70,239,.55);
+  box-shadow: 0 0 0 6px rgba(217,70,239,.12);
+  background: rgba(217,70,239,.04) !important;
+}
+.aiReviewBar{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 9998;
+}
+.aiReviewBarInner{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  justify-content:space-between;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(148,163,184,.6);
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 34px rgba(2,6,23,.16);
+}
+.aiReviewLeft{ min-width:0; }
+.aiReviewTitle{ font-weight: 800; color: rgb(15 23 42); }
+.aiReviewSub{ font-size: 12px; color: rgb(71 85 105); margin-top:2px; }
+.aiReviewBtns{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.aiReviewBtnPrimary{
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgb(217 70 239);
+  color: white;
+  font-weight: 800;
+  border: 1px solid rgba(217,70,239,.9);
+}
+.aiReviewBtnSecondary{
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: white;
+  color: rgb(15 23 42);
+  font-weight: 800;
+  border: 1px solid rgb(226 232 240);
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1068,7 +1115,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F2_FILL_TRIP_GAPS_ADD_SELECTED_TO_ACTIVITIES_REAL_BRIDGE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F3_AI_GAP_FILL_CONTEXTUAL_INSERTION_AND_GUIDED_REVIEW</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1302,7 +1349,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V225F2_FILL_TRIP_GAPS_ADD_SELECTED_TO_ACTIVITIES_REAL_BRIDGE
+            Build cargada: V225F3_AI_GAP_FILL_CONTEXTUAL_INSERTION_AND_GUIDED_REVIEW
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1339,7 +1386,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V225F2_FILL_TRIP_GAPS_ADD_SELECTED_TO_ACTIVITIES_REAL_BRIDGE";
+const APP_BUILD = "V225F3_AI_GAP_FILL_CONTEXTUAL_INSERTION_AND_GUIDED_REVIEW";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13751,30 +13798,61 @@ window.addEventListener('DOMContentLoaded', () => {
       },
       addActivities(items){
         const sc = (typeof curScenario === "function") ? curScenario() : null;
-        if(!sc || !Array.isArray(sc.activities)) return { added:0, error:true };
+        if(!sc || !Array.isArray(sc.activities)) return { added:0, ids:[], error:true };
         let added = 0;
+        const ids = [];
+        const fmtDur = (min)=>{
+          try{
+            if(typeof __tlFormatDurationHM === "function") return __tlFormatDurationHM(min);
+          }catch{}
+          const h = Math.floor((min||0)/60), m = (min||0)%60;
+          if(!min) return "";
+          if(h && m) return `${h}h ${String(m).padStart(2,"0")}m`;
+          if(h) return `${h}h`;
+          return `${m}m`;
+        };
         (Array.isArray(items) ? items : []).forEach((item)=>{
           const title = String(item && item.title || "").trim();
           if(!title) return;
           const city = String(item && item.city || "").trim();
-          const note = [String(item && item.summary || "").trim(), String(item && item.why || "").trim()].filter(Boolean).join(" · ");
-          sc.activities.unshift({
-            id: (typeof nowId === "function") ? nowId() : ("ai-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
+          const date = String(item && item.date || "").trim();
+          const time = String(item && item.time || "").trim();
+          const durMinRaw = (item && (item.durationMin ?? item.durMin)) != null ? parseInt(item.durationMin ?? item.durMin,10) : null;
+          const durMin = (Number.isFinite(durMinRaw) && durMinRaw>0) ? durMinRaw : null;
+          const note = [
+            String(item && item.summary || "").trim(),
+            String(item && item.why || "").trim(),
+            String(item && item.aiNote || "").trim()
+          ].filter(Boolean).join(" · ");
+          const id = (typeof nowId === "function") ? nowId() : ("ai-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+          const obj = {
+            id,
             title,
             city,
-            date: String(item && item.date || "").trim(),
-            time: String(item && item.time || "").trim(),
-            duration: String(item && item.duration || "").trim(),
+            date,
+            time,
+            durationMin: durMin || 0,
+            durationH: durMin ? Math.floor(durMin/60) : 0,
+            durationM: durMin ? (durMin%60) : 0,
+            duration: durMin ? fmtDur(durMin) : "",
+            currency: "EUR",
             cost: "",
             notes: note ? `IA · ${note}` : "IA · propuesta añadida desde el módulo IA",
-            fromAI: true
-          });
+            fromAI: true,
+            addedByAI: true,
+            pendingAIReview: !!(item && item.pendingAIReview),
+            aiSource: String(item && item.aiSource || "").trim(),
+            aiInsertedAt: new Date().toISOString()
+          };
+          // Prepend so it's immediately visible (existing behavior)
+          sc.activities.unshift(obj);
+          ids.push(id);
           added += 1;
         });
         try{ if(typeof saveState === "function") saveState(); }catch{}
         try{ if(typeof renderAll === "function") renderAll(); }catch{}
         try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
-        return { added };
+        return { added, ids };
       }
     },
     bindUI(){
@@ -14735,7 +14813,19 @@ __aiBuildDayBuckets(trip){
           day,
           city,
           reason: ctx.reason,
-          proposals: proposals.map((pr, idx)=> Object.assign({}, pr, { id: `gap:${day}:${this.__aiCityKey(city)}:${idx}` }))
+          proposals: proposals.map((pr, idx)=> {
+            const sug = this.__aiSuggestGapPlacement(day, buckets[day] || {legs:[],checkins:[],checkouts:[],acts:[]}, thresholds);
+            const durMin = this.__aiDefaultGapDurationMin(thresholds);
+            return Object.assign({}, pr, {
+              id: `gap:${day}:${this.__aiCityKey(city)}:${idx}`,
+              city,
+              date: day,
+              time: sug.time,
+              durationMin: durMin,
+              aiSource: "gaps",
+              aiNote: sug.note || ctx.reason || ""
+            });
+          })
         });
       }
 
@@ -14805,21 +14895,44 @@ __aiBuildDayBuckets(trip){
       const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
       blocks.forEach((blk)=>{
         (blk.proposals||[]).forEach((item)=>{
-          if(this.state.selectedKeys[item.id]) selected.push(item);
+          if(this.state.selectedKeys[item.id]){
+            selected.push(Object.assign({}, item, {
+              city: blk.city || item.city || "",
+              date: blk.day || item.date || "",
+              time: item.time || "",
+              durationMin: item.durationMin || 0,
+              pendingAIReview: true,
+              aiSource: "gaps",
+              aiNote: (blk.reason || "") ? `Gap: ${blk.reason}` : (item.aiNote || "")
+            }));
+          }
         });
       });
+
       const res = this.bridge.addActivities(selected);
       const status = document.getElementById("aiStatus");
       if(status){
         status.textContent = res && res.added
-          ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
+          ? `Añadidas ${res.added} actividades. Ahora revisamos juntas dónde encajan en el cronograma.`
           : "No hay propuestas seleccionadas para añadir.";
       }
+
       if(res && res.added){
+        // Reset selection
         this.state.selectedKeys = {};
-        this.loadTripGapsFill({ force:true });
+        // Close IA coherently and start guided review in timeline
+        try{ this.close(); }catch{}
+        try{
+          if(typeof window.__aiStartGuidedReview === "function"){
+            window.__aiStartGuidedReview(res.ids || []);
+          }
+        }catch{}
+      }else{
+        // Keep user in place
+        try{ this.loadTripGapsFill({ force:true }); }catch{}
       }
     },
+
 commitSelectedActivities(){
       const selected = [];
       this.state.cityGroups.forEach((group)=>{
@@ -14874,6 +14987,139 @@ commitSelectedActivities(){
     try{ aiModule.init(); }catch{}
   }
   window.initAISheet = initAISheet;
+
+  /* ================= V225F3: Guided review of AI-inserted activities ================= */
+  function __aiFindTimelineActEl(actId){
+    const selId = String(actId||"").trim();
+    if(!selId) return null;
+    return document.querySelector('.timelineItem[data-tl-jump-type="act"][data-tl-jump-id="'+selId+'"]')
+      || document.getElementById("tl-act-"+selId)
+      || document.getElementById("tl-act-act-"+selId)
+      || document.getElementById("tl-activity-"+selId);
+  }
+
+  function __aiEnsureReviewBar(){
+    let bar = document.getElementById("aiReviewBar");
+    if(bar) return bar;
+    bar = document.createElement("div");
+    bar.id = "aiReviewBar";
+    bar.className = "aiReviewBar hidden";
+    bar.innerHTML = `
+      <div class="aiReviewBarInner">
+        <div class="aiReviewLeft">
+          <div class="aiReviewTitle">Revisión IA</div>
+          <div class="aiReviewSub" id="aiReviewSub">Revisa las nuevas actividades añadidas</div>
+        </div>
+        <div class="aiReviewBtns">
+          <button type="button" class="tap aiReviewBtnSecondary" id="aiReviewEdit">Editar</button>
+          <button type="button" class="tap aiReviewBtnPrimary" id="aiReviewNext">Revisada · Siguiente</button>
+          <button type="button" class="tap aiReviewBtnSecondary" id="aiReviewExit">Salir</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(bar);
+    return bar;
+  }
+
+  function __aiSetReviewHighlight(actId){
+    // remove old
+    document.querySelectorAll(".aiReviewHighlight").forEach(el=>el.classList.remove("aiReviewHighlight"));
+    const el = __aiFindTimelineActEl(actId);
+    if(el) el.classList.add("aiReviewHighlight");
+  }
+
+  function __aiScrollToReviewItem(actId){
+    const el = __aiFindTimelineActEl(actId);
+    if(!el) return false;
+    try{
+      if(typeof scrollToElWithOffset === "function") scrollToElWithOffset(el, { smooth:true });
+      else el.scrollIntoView({ behavior:"smooth", block:"center" });
+    }catch{
+      try{ el.scrollIntoView({ behavior:"smooth", block:"center" }); }catch{}
+    }
+    return true;
+  }
+
+  function __aiMarkActivityReviewed(actId){
+    try{
+      const sc = (typeof curScenario === "function") ? curScenario() : null;
+      if(!sc || !Array.isArray(sc.activities)) return;
+      const a = sc.activities.find(x=> String(x && x.id) === String(actId));
+      if(a){
+        a.pendingAIReview = false;
+        // keep addedByAI/fromAI for provenance, but review flag off
+      }
+      if(typeof saveState === "function") saveState();
+      if(typeof renderAll === "function") renderAll();
+    }catch{}
+  }
+
+  function __aiOpenEditForAct(actId){
+    try{
+      if(typeof openEventSheet === "function"){
+        openEventSheet({ kind:"act", id:String(actId), mode:"edit" });
+        return;
+      }
+    }catch{}
+    try{ jumpToItem("act", String(actId)); }catch{}
+  }
+
+  function __aiExitGuidedReview(){
+    try{ window.__aiGuidedReview = null; }catch{}
+    const bar = document.getElementById("aiReviewBar");
+    if(bar) bar.classList.add("hidden");
+    document.querySelectorAll(".aiReviewHighlight").forEach(el=>el.classList.remove("aiReviewHighlight"));
+  }
+
+  function __aiRenderGuidedReview(){
+    const st = window.__aiGuidedReview;
+    if(!st || !Array.isArray(st.ids) || !st.ids.length) return __aiExitGuidedReview();
+    const bar = __aiEnsureReviewBar();
+    const idx = Math.min(st.index||0, st.ids.length-1);
+    const actId = st.ids[idx];
+    const sub = document.getElementById("aiReviewSub");
+    if(sub) sub.textContent = `Actividad ${idx+1} de ${st.ids.length} · revisa y ajusta si quieres`;
+    bar.classList.remove("hidden");
+
+    // Bind buttons once
+    if(!bar.__aiBound){
+      bar.__aiBound = true;
+      bar.querySelector("#aiReviewEdit")?.addEventListener("click", ()=>{ try{ __aiOpenEditForAct(window.__aiGuidedReview?.ids?.[window.__aiGuidedReview?.index||0]); }catch{} });
+      bar.querySelector("#aiReviewNext")?.addEventListener("click", ()=>{
+        try{
+          const s = window.__aiGuidedReview;
+          if(!s) return;
+          const cur = s.ids[s.index||0];
+          __aiMarkActivityReviewed(cur);
+          s.index = (s.index||0) + 1;
+          if(s.index >= s.ids.length){
+            __aiExitGuidedReview();
+            try{ toast("Revisión IA completada."); }catch{}
+            return;
+          }
+          __aiSetReviewHighlight(s.ids[s.index]);
+          __aiScrollToReviewItem(s.ids[s.index]);
+          // Keep in timeline
+        }catch{}
+      });
+      bar.querySelector("#aiReviewExit")?.addEventListener("click", ()=>{ __aiExitGuidedReview(); });
+    }
+
+    __aiSetReviewHighlight(actId);
+    __aiScrollToReviewItem(actId);
+  }
+
+  // Public entrypoint called by IA after insertion
+  window.__aiStartGuidedReview = function(ids){
+    const list = (Array.isArray(ids) ? ids : []).filter(Boolean).map(String);
+    if(!list.length) return;
+    // Ensure we are in timeline view
+    try{ if(typeof setView === "function") setView("timeline"); }catch{}
+    // render + scroll after layout settles
+    window.__aiGuidedReview = { ids: list, index: 0 };
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ try{ if(typeof renderAll === "function") renderAll(); }catch{} __aiRenderGuidedReview(); }); });
+  };
+  /* ================= /V225F3 Guided review ================= */
 
   const bindAIControls = function(){
     try{
