@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222F_SECTIONS_MAPS_PIN_REPLICA_FROM_TIMELINE_ONLY</title>
+<title>V222G_SECTIONS_MAPS_PIN_SAFE_RETRY_FROM_V222E</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -725,6 +725,29 @@ div[data-acc-body="acts"]{
 }
 .tlNavBtn:active{ transform: scale(0.98); }
 .tlNavBtn[disabled]{ opacity:0.35; cursor:not-allowed; }
+
+.secSummaryWithNav{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:0.5rem;
+  min-width:0;
+}
+.secSummaryMain{
+  min-width:0;
+  flex:1 1 auto;
+}
+.secSummaryNav{
+  flex:0 0 auto;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding-top:1px;
+}
+.secSummaryNav .tlNavBtn{
+  margin-left:0;
+}
+
 .filesPeekBtn{
   cursor:pointer;
 }
@@ -978,7 +1001,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222F_SECTIONS_MAPS_PIN_REPLICA_FROM_TIMELINE_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222G_SECTIONS_MAPS_PIN_SAFE_RETRY_FROM_V222E</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3643,6 +3666,19 @@ function __tlHowToBtnHTML(dest, mode){
   return `<button type="button" class="tap tlNavBtn" data-tl-nav="${escapeHtml(d)}" data-tl-nav-mode="${escapeHtml(m)}" aria-label="Cómo llegar" title="Cómo llegar">📍</button>`;
 }
 
+function __secHowToBtnHTML(dest, mode){
+  const d = String(dest||"").trim();
+  if(!d) return "";
+  const m = String(mode||"").trim();
+  return `<span role="button" tabindex="0" class="tap tlNavBtn" data-tl-nav="${escapeHtml(d)}" data-tl-nav-mode="${escapeHtml(m)}" aria-label="Cómo llegar" title="Cómo llegar">📍</span>`;
+}
+
+function __sectionSummaryWithNavHTML(contentHTML, dest, mode){
+  const pinHTML = __secHowToBtnHTML(dest, mode);
+  if(!pinHTML) return contentHTML;
+  return `<div class="secSummaryWithNav"><div class="secSummaryMain">${contentHTML}</div><div class="secSummaryNav">${pinHTML}</div></div>`;
+}
+
 // Delegated handler (capture): prevents bubbling to card tap (open sheet)
 try{
   if(!document.__tlNavDelegationBound){
@@ -3650,6 +3686,19 @@ try{
     document.addEventListener("click", (e)=>{
       const btn = e.target && e.target.closest ? e.target.closest(".tlNavBtn") : null;
       if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      const dest = String(btn.getAttribute("data-tl-nav")||"").trim();
+      const mode = String(btn.getAttribute("data-tl-nav-mode")||"").trim();
+      if(!dest) return;
+      try{ __openDirectionsTo(dest, mode); }catch{}
+    }, true);
+    document.addEventListener("keydown", (e)=>{
+      const btn = e.target && e.target.closest ? e.target.closest(".tlNavBtn") : null;
+      if(!btn) return;
+      const isNativeBtn = String(btn.tagName||"").toLowerCase()==="button";
+      if(isNativeBtn) return;
+      const key = e.key || e.code || "";
+      if(key !== "Enter" && key !== " " && key !== "Spacebar") return;
       try{ e.preventDefault(); e.stopPropagation(); }catch{}
       const dest = String(btn.getAttribute("data-tl-nav")||"").trim();
       const mode = String(btn.getAttribute("data-tl-nav-mode")||"").trim();
@@ -4074,8 +4123,10 @@ function legSummaryLinesHTML(leg, opts){
     )
   );
 
-  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
-  const __navDest = __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim());
+  // V220A/V222G: "Cómo llegar" destino contextual (punto de salida)
+  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+    ? __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim())
+    : "";
   const __navMode = (function(){
     const m = String(leg.mode||"").toLowerCase();
     if(m==="car"||m==="driving") return "driving";
@@ -4084,21 +4135,26 @@ function legSummaryLinesHTML(leg, opts){
     return "transit";
   })();
 
-  // V216C: In timeline, DO NOT truncate the meta line (date + depart + arrive + duration).
   const metaCls = (opts.context==="timeline")
     ? "text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug"
     : "text-xs text-slate-600 mt-0.5 truncate";
 
   if (__compact){
-    return `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${__tlHowToBtnHTML(__navDest, __navMode)}</div>
+    const __contentHTML = `
+      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     `;
+    return (opts.context==="section")
+      ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, __navMode)
+      : __contentHTML;
   }
 
-  return `
-    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${__tlHowToBtnHTML(__navDest, __navMode)}</div>
+  const __contentHTML = `
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}`;
+  return (opts.context==="section")
+    ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, __navMode)
+    : __contentHTML;
 }
 function buildTimelineSummaryParts(it, jumpType, modelItem, dateLineHTML) {
   if (jumpType === "leg" && modelItem) {
@@ -7611,10 +7667,11 @@ function staySummaryLinesHTML(stay, opts){
   const city = (stay.city||"").trim() || "—";
   const name = (stay.name||"").trim() || "—";
 
-  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
-  const __navDest = __mapsDestWithCity((stay.address||stay.name||"").trim(), city);
+  // V220A/V222G: "Cómo llegar" destino contextual (alojamiento)
+  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+    ? __mapsDestWithCity((stay.address||stay.name||"").trim(), city)
+    : "";
 
-  // Dates / times (no timezone logic yet)
   const checkInISO = String(stay.date||"").trim();
   const checkInDateES = (checkInISO ? formatDateShortES(checkInISO) : "") || "—";
   const checkInTime = (stay.time||"").trim();
@@ -7638,7 +7695,6 @@ function staySummaryLinesHTML(stay, opts){
   const checkOutDateES = (checkOutISO ? formatDateShortES(checkOutISO) : "") || "—";
   const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
 
-  // V218D / V222D: compact rendering for intermediate days (timeline + section)
   const __compact = !!(
     opts && (
       (opts.context==="timeline" && opts.tlCompact) ||
@@ -7646,28 +7702,32 @@ function staySummaryLinesHTML(stay, opts){
     )
   );
   if (__compact) {
-    return `
+    const __contentHTML = `
       <div class="mvSecMicroLine text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
+        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
       </div>
     `;
+    return (opts.context==="section")
+      ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
+      : __contentHTML;
   }
 
-  // Nights label: stable, single, non-breakable unit
   const nightsLabel = `<span class="font-semibold whitespace-nowrap">${nights}&nbsp;${nights===1?"noche":"noches"}</span>`;
 
   const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` ${__timeBadgeHTML(checkInISO, checkInTime)}` : ``} <span class="text-slate-500">·</span> ${nightsLabel}`;
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
 
-  return `
+  const __contentHTML = `
     <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
   `;
+  return (opts.context==="section")
+    ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
+    : __contentHTML;
 }
-
 
 function stayCard(stay) {
   const dateKey = String((stay?.__mvDayKey || stay?.date) || "").trim();
@@ -8820,8 +8880,10 @@ function actSummaryLinesHTML(act, opts){
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
 
-  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
-  const __navDest = __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city);
+  // V220A/V222G: "Cómo llegar" destino contextual (lugar de la actividad)
+  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+    ? __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city)
+    : "";
   const dES = (act.date ? formatDateShortES(act.date) : "");
   const t = (act.time||"").trim();
   const durationMin = __tlActDurationMinutes(act);
@@ -8833,12 +8895,11 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  // Line 1: icono + título · ciudad + pin (timeline)
   const line1 = `<div class="text-sm font-semibold truncate">
     <span class="mr-1">🎯</span>
     <span>${escapeHtml(line1Title)}</span>
     <span class="text-slate-400"> · </span>
-    <span class="font-medium">${escapeHtml(line1City)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
+    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
   </div>`;
 
@@ -8849,23 +8910,24 @@ function actSummaryLinesHTML(act, opts){
     )
   );
   if (__compact){
-    return `<div class="mvSecMicroLine text-sm font-semibold truncate">
+    const __contentHTML = `<div class="mvSecMicroLine text-sm font-semibold truncate">
       <span class="mr-1">🎯</span>
       <span>${escapeHtml(line1Title)}</span>
       <span class="text-slate-400"> · </span>
-      <span class="font-medium">${escapeHtml(line1City)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
+      <span class="font-medium">${escapeHtml(line1City)}</span>
       ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
     </div>`;
+    return (opts.context==="section")
+      ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
+      : __contentHTML;
   }
 
-  // Line 2: inicio (fecha · hora) + duración (en la MISMA línea)
   const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
     <span class="font-semibold">${escapeHtml(line2Date)}</span>
     ${line2Time ? `<span class="text-slate-400"> · </span>${__timeBadgeHTML(act.date, line2Time)}` : ``}
     ${durationLabel ? `<span class="text-slate-400"> · </span><span class="mv-nb">${escapeHtml(durationLabel).replace(/\s+/g,"&nbsp;")}</span>` : ``}
   </div>`;
 
-  // Line 3: fin (fecha · hora) en línea inferior, si se puede calcular
   let line3 = ``;
   try{
     const iso = String(act.date||"").trim();
@@ -8883,9 +8945,11 @@ function actSummaryLinesHTML(act, opts){
     }
   }catch{}
 
-  return `${line1}${line2}${line3}`;
+  const __contentHTML = `${line1}${line2}${line3}`;
+  return (opts.context==="section")
+    ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
+    : __contentHTML;
 }
-
 
 function actCard(act) {
   const dateKey = String((act?.__mvDayKey || act?.date) || "").trim();
