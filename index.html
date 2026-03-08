@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V224A_CONTEXTUAL_AI_PHASE_0_SAFE_FOUNDATION</title>
+<title>V224B_AI_RELOCATION_GLOBAL_FLOATING_ACCESS_AND_MODAL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V224A_CONTEXTUAL_AI_PHASE_0_SAFE_FOUNDATION" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -292,6 +292,67 @@ function deleteItemById(kind, id) {
 }
 #fabAdd:active{ transform: scale(0.98); }
 
+#fabAI{
+  position: fixed;
+  right: 14px;
+  left: auto;
+  bottom: calc(var(--bottom-nav-h, 64px) + 16px);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid rgba(139,92,246,0.18);
+  font-size: 24px;
+  line-height: 56px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(76,29,149,0.26);
+  z-index: 2500;
+}
+#fabAI:active{ transform: scale(0.98); }
+
+#aiSheetOverlay{
+  position: fixed;
+  top: var(--top-stack-h, 0px);
+  left: 0;
+  right: 0;
+  bottom: var(--bottom-nav-h, 0px);
+  background: rgba(15,23,42,0.35);
+  z-index: 6800;
+}
+#aiSheetOverlay.hidden{ display:none; }
+#aiSheet{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 88%;
+  background: #fff;
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+  box-shadow: 0 -10px 30px rgba(15,23,42,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(16px);
+  transition: transform 180ms ease;
+}
+#aiSheetOverlay:not(.hidden) #aiSheet{ transform: translateY(0); }
+#aiSheetHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  border-bottom:1px solid #e2e8f0;
+  background:#fff;
+}
+#aiSheetBody{
+  padding:14px;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+}
+body.ai-sheet-open #mainScroll{ overflow:hidden; }
 
 /* Event Detail Sheet (V89D) */
 #eventSheetOverlay{
@@ -1007,7 +1068,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V224A_CONTEXTUAL_AI_PHASE_0_SAFE_FOUNDATION</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V224B_AI_RELOCATION_GLOBAL_FLOATING_ACCESS_AND_MODAL</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1188,31 +1249,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="space-y-3" id="actsList"></div>
 </div>
 </div>
-<!-- IA -->
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-<button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="ai">
-<div class="flex items-center gap-3">
-<span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center">🤖</span>
-<div class="text-left">
-<div class="font-extrabold">SUGERENCIAS DE LA IA</div>
-</div>
-</div>
-<span class="accIcon text-slate-400 text-xl">▾</span>
-</button>
-<div class="px-5 pb-5 hidden" data-acc-body="ai">
-<div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-<div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">Solo lectura · Contexto actual</div>
-<div class="flex flex-wrap gap-2 justify-end">
-<button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiPick">Ocultar sugerencias</button>
-<button class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold" id="aiGenerate">Actualizar sugerencias</button>
-</div>
-</div>
-<div class="text-sm text-slate-500" id="aiStatus">
-              Sugerencias breves basadas solo en tu viaje actual. No cambian el plan ni ejecutan acciones.
-            </div>
-<div class="mt-4 space-y-3" id="aiResults"></div>
-</div>
-</div>
+<!-- IA reubicada a FAB global + modal -->
 </div>
 <!-- end view-acts -->
 <!-- Summary -->
@@ -1517,6 +1554,7 @@ function triggerAddForView(view){
 }
 function updateFabForView(view){
   const fab = document.getElementById("fabAdd");
+  const aiFab = document.getElementById("fabAI");
   if (!fab) return;
 
   // V199: In timeline, FAB opens a type picker. Other views keep legacy behavior.
@@ -1524,6 +1562,15 @@ function updateFabForView(view){
   const show = isTimeline || (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
 
   fab.classList.toggle("hidden", !show);
+  if (aiFab) aiFab.classList.toggle("hidden", !show);
+
+  if (aiFab) {
+    aiFab.onclick = (e) => {
+      try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
+      try{ openAISheet(); }catch{}
+    };
+  }
+
   if (!show) { fab.onclick = null; return; }
 
   if (isTimeline) {
@@ -12023,6 +12070,45 @@ function generateAIGuide(){
   __aiEnsureContextualConfig();
   renderAIContextual("Sugerencias actualizadas con el contexto actual del viaje.");
 }
+
+function openAISheet(){
+  const overlay = document.getElementById("aiSheetOverlay");
+  if(!overlay) return;
+  overlay.classList.remove("hidden");
+  document.body.classList.add("ai-sheet-open");
+  try{ renderAIContextual(); }catch{}
+}
+
+function closeAISheet(){
+  const overlay = document.getElementById("aiSheetOverlay");
+  if(!overlay) return;
+  overlay.classList.add("hidden");
+  document.body.classList.remove("ai-sheet-open");
+}
+
+function initAISheet(){
+  const overlay = document.getElementById("aiSheetOverlay");
+  const closeBtn = document.getElementById("aiSheetClose");
+  if(closeBtn && !closeBtn.__aiBound){
+    closeBtn.__aiBound = true;
+    closeBtn.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      closeAISheet();
+    });
+  }
+  if(overlay && !overlay.__aiBound){
+    overlay.__aiBound = true;
+    overlay.addEventListener("click", (e)=>{
+      if(e.target === overlay) closeAISheet();
+    });
+  }
+  if(!window.__aiEscBound){
+    window.__aiEscBound = true;
+    document.addEventListener("keydown", (e)=>{
+      if((e.key || "") === "Escape") closeAISheet();
+    });
+  }
+}
 /* ================= /V224A: IA contextual fase 0 ================= */
 
 /* ----------------------- Device name \(minimal\) ------------------------ */
@@ -13003,6 +13089,7 @@ $("btnKey").addEventListener("click", ()=>{
 
 if ($("aiPick")) $("aiPick").addEventListener("click", openAIPickModal);
 if ($("aiGenerate")) $("aiGenerate").addEventListener("click", generateAIGuide);
+try{ initAISheet(); }catch{}
 
 $("btnTrips").addEventListener("click", openTripsModal);
 /* -------------------------- Tools bottom sheet -------------------------- */
@@ -13329,6 +13416,59 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
+<button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨</button>
+<div aria-hidden="true" class="hidden" id="aiSheetOverlay">
+  <div aria-label="IA contextual" aria-modal="true" id="aiSheet" role="dialog">
+    <div id="aiSheetHeader">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center text-lg">✨</span>
+          <div class="min-w-0">
+            <div class="font-extrabold text-slate-900">IA contextual</div>
+            <div class="text-xs text-slate-500">Sugerencias breves sobre tu viaje actual</div>
+          </div>
+        </div>
+      </div>
+      <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiSheetClose" type="button">Cerrar</button>
+    </div>
+    <div id="aiSheetBody">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">Solo lectura · Capa transversal</div>
+        <div class="flex flex-wrap gap-2 justify-end">
+          <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiPick">Ocultar sugerencias</button>
+          <button class="tap px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold" id="aiGenerate">Actualizar sugerencias</button>
+        </div>
+      </div>
+      <div class="text-sm text-slate-500" id="aiStatus">Sugerencias breves basadas solo en tu viaje actual. No cambian el plan ni ejecutan acciones.</div>
+      <div class="mt-4 space-y-3" id="aiResults"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const bindAIControls = function(){
+    try{
+      const pick = document.getElementById("aiPick");
+      const gen = document.getElementById("aiGenerate");
+      if(pick && !pick.__aiCtlBound){
+        pick.__aiCtlBound = true;
+        pick.addEventListener("click", openAIPickModal);
+      }
+      if(gen && !gen.__aiCtlBound){
+        gen.__aiCtlBound = true;
+        gen.addEventListener("click", generateAIGuide);
+      }
+      try{ initAISheet(); }catch{}
+      try{ renderAIContextual(); }catch{}
+    }catch{}
+  };
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", bindAIControls, { once:true });
+  }else{
+    bindAIControls();
+  }
+})();
+</script>
 <!-- Event Detail Sheet (V89D) -->
 <div aria-hidden="true" class="hidden" id="eventSheetOverlay">
 <div aria-label="Detalle del evento" aria-modal="true" id="eventSheet" role="dialog">
