@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V225A_AI_MODULE_SHELL_AND_CORE_BRIDGE_SAFE_FOUNDATION</title>
+<title>V225B_WEBAPP_DIAGNOSTICS_AND_SAFE_HARD_REFRESH</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V225A_AI_MODULE_SHELL_AND_CORE_BRIDGE_SAFE_FOUNDATION" rel="manifest"/>
+<link href="manifest.json?v=V225B_WEBAPP_DIAGNOSTICS_AND_SAFE_HARD_REFRESH" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1068,7 +1068,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225A_AI_MODULE_SHELL_AND_CORE_BRIDGE_SAFE_FOUNDATION</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225B_WEBAPP_DIAGNOSTICS_AND_SAFE_HARD_REFRESH</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1302,7 +1302,13 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V225A_AI_MODULE_SHELL_AND_CORE_BRIDGE_SAFE_FOUNDATION
+            Build cargada: V225B_WEBAPP_DIAGNOSTICS_AND_SAFE_HARD_REFRESH
+          </div>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
+            Recarga limpia total
+          </button>
+<div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left" id="toolsDiagnosticsPanel">
+            Diagnóstico no disponible todavía.
           </div>
 <button class="hidden tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
@@ -1333,8 +1339,12 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V225A_AI_MODULE_SHELL_AND_CORE_BRIDGE_SAFE_FOUNDATION";
+const APP_BUILD = "V225B_WEBAPP_DIAGNOSTICS_AND_SAFE_HARD_REFRESH";
 const APP_BUILD_PARAM = "mv_build";
+const APP_REFRESH_KIND_PARAM = "mv_refresh";
+const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
+const APP_HARD_REFRESH_SNAPSHOT_KEY = "miViaje.diag.hardRefreshSnapshot";
+const APP_LOAD_TS = new Date().toISOString();
 
 function __setVisibleBuildLabel(){
   try {
@@ -1355,16 +1365,133 @@ function __setVersionedManifestHref(){
   } catch {}
 }
 
-function __currentBuildRefreshUrl(){
+function __currentBuildRefreshUrl(opts = {}){
   try {
     const url = new URL(location.href);
     url.searchParams.set(APP_BUILD_PARAM, APP_BUILD);
     url.searchParams.set("_ts", String(Date.now()));
+    if (opts && opts.kind) url.searchParams.set(APP_REFRESH_KIND_PARAM, String(opts.kind));
+    else url.searchParams.delete(APP_REFRESH_KIND_PARAM);
     return url.toString();
   } catch {
     const sep = String(location.href || "").includes("?") ? "&" : "?";
-    return String(location.href || "./") + sep + APP_BUILD_PARAM + "=" + encodeURIComponent(APP_BUILD) + "&_ts=" + Date.now();
+    const extra = (opts && opts.kind) ? "&" + APP_REFRESH_KIND_PARAM + "=" + encodeURIComponent(String(opts.kind)) : "";
+    return String(location.href || "./") + sep + APP_BUILD_PARAM + "=" + encodeURIComponent(APP_BUILD) + "&_ts=" + Date.now() + extra;
   }
+}
+
+function __isStandaloneMode(){
+  try {
+    return !!((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true);
+  } catch {
+    return false;
+  }
+}
+
+function __getAppDisplayModeLabel(){
+  return __isStandaloneMode() ? "Modo app/web-app" : "Modo navegador";
+}
+
+function __canUseLocalStorage(){
+  try {
+    const k = "__mv_diag_ls__" + Date.now();
+    localStorage.setItem(k, "1");
+    localStorage.removeItem(k);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function __readLastRefreshMeta(){
+  try {
+    return JSON.parse(localStorage.getItem(APP_LAST_REFRESH_KEY) || "null") || null;
+  } catch {
+    return null;
+  }
+}
+
+function __writeLastRefreshMeta(kind, extra = {}){
+  try {
+    localStorage.setItem(APP_LAST_REFRESH_KEY, JSON.stringify(Object.assign({
+      kind: kind || "normal",
+      build: APP_BUILD,
+      at: new Date().toISOString(),
+      mode: __getAppDisplayModeLabel()
+    }, extra || {})));
+  } catch {}
+}
+
+function __getScenarioEventCounts(){
+  try {
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    return {
+      scenario: (typeof state !== "undefined" && state && state.scenario) ? state.scenario : "—",
+      legs: Array.isArray(sc && sc.legs) ? sc.legs.length : 0,
+      stays: Array.isArray(sc && sc.stays) ? sc.stays.length : 0,
+      activities: Array.isArray(sc && sc.activities) ? sc.activities.length : 0
+    };
+  } catch {
+    return { scenario: "—", legs: 0, stays: 0, activities: 0 };
+  }
+}
+
+function __renderToolsDiagnostics(){
+  try {
+    const metaBox = document.getElementById("toolsBuildRefreshMeta");
+    const diagBox = document.getElementById("toolsDiagnosticsPanel");
+    const counts = __getScenarioEventCounts();
+    const mode = __getAppDisplayModeLabel();
+    const cachesSupport = ("caches" in window) ? "Disponible" : "No disponible";
+    const lsSupport = __canUseLocalStorage() ? "Disponible" : "No disponible";
+    const lastRefresh = __readLastRefreshMeta();
+    const lastRefreshLine = lastRefresh && lastRefresh.at
+      ? `${escapeHtml(lastRefresh.kind === "hard" ? "Última recarga limpia" : "Última actualización")}: ${escapeHtml(lastRefresh.at)}`
+      : "Todavía no has lanzado una actualización desde esta build.";
+    if (metaBox) {
+      metaBox.innerHTML = `
+        <div class="font-semibold text-slate-900">Build cargada: <span class="font-extrabold">${escapeHtml(APP_BUILD)}</span></div>
+        <div class="mt-1">${escapeHtml(mode)} · Escenario ${escapeHtml(counts.scenario)}</div>
+        <div class="mt-1">Si no ves los últimos cambios, pulsa “Actualizar app”. Si sigue mezclando caché o estado en la web-app, usa “Recarga limpia total”.</div>
+      `;
+    }
+    if (diagBox) {
+      diagBox.innerHTML = `
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="font-semibold text-slate-900">Diagnóstico de la app</div>
+          <div class="text-xs text-slate-500">Carga actual: ${escapeHtml(APP_LOAD_TS)}</div>
+        </div>
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Modo</div><div class="font-semibold text-slate-900">${escapeHtml(mode)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Escenario activo</div><div class="font-semibold text-slate-900">${escapeHtml(counts.scenario)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Transporte cargado</div><div class="font-semibold text-slate-900">${escapeHtml(counts.legs)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Alojamiento cargado</div><div class="font-semibold text-slate-900">${escapeHtml(counts.stays)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Actividades cargadas</div><div class="font-semibold text-slate-900">${escapeHtml(counts.activities)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">Caches API</div><div class="font-semibold text-slate-900">${escapeHtml(cachesSupport)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"><div class="text-slate-500 text-xs">localStorage</div><div class="font-semibold text-slate-900">${escapeHtml(lsSupport)}</div></div>
+          <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:col-span-2"><div class="text-slate-500 text-xs">Estado de actualización</div><div class="font-semibold text-slate-900">${escapeHtml(lastRefreshLine)}</div></div>
+        </div>
+      `;
+    }
+  } catch {}
+}
+
+function __restoreHardRefreshSnapshotIfNeeded(){
+  try {
+    const raw = localStorage.getItem(APP_HARD_REFRESH_SNAPSHOT_KEY);
+    if (!raw) return;
+    const snap = JSON.parse(raw);
+    if (!snap || !snap.stateRaw) {
+      localStorage.removeItem(APP_HARD_REFRESH_SNAPSHOT_KEY);
+      return;
+    }
+    const key = snap.lsKey || (typeof LS_KEY !== "undefined" ? LS_KEY : "miviaje.rewrite.v1");
+    const current = localStorage.getItem(key);
+    if (!current) {
+      localStorage.setItem(key, snap.stateRaw);
+    }
+    localStorage.removeItem(APP_HARD_REFRESH_SNAPSHOT_KEY);
+  } catch {}
 }
 
 async function __forceRefreshApp(){
@@ -1375,6 +1502,7 @@ async function __forceRefreshApp(){
       btn.classList.add("opacity-70");
     }
   } catch {}
+  __writeLastRefreshMeta("normal", { requestedBuild: APP_BUILD });
   try { localStorage.setItem("miViaje.lastRequestedBuild", APP_BUILD); } catch {}
   try {
     if("caches" in window) {
@@ -1383,33 +1511,64 @@ async function __forceRefreshApp(){
     }
   } catch {}
   try {
-    const freshUrl = __currentBuildRefreshUrl();
+    const freshUrl = __currentBuildRefreshUrl({ kind: "normal" });
     location.replace(freshUrl);
     return;
   } catch {}
   try {
-    location.href = __currentBuildRefreshUrl();
+    location.href = __currentBuildRefreshUrl({ kind: "normal" });
   } catch {
     try { location.reload(); } catch {}
   }
 }
 
-function __renderToolsBuildRefreshMeta(){
+async function __hardRefreshApp(){
+  const msg = "La recarga limpia total intentará arrancar la app con una instancia más limpia. Se conservará el viaje actual antes de recargar. ¿Continuar?";
+  if (!confirm(msg)) return;
   try {
-    const box = document.getElementById("toolsBuildRefreshMeta");
-    if(!box) return;
-    const label = APP_BUILD;
-    const mode = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches ? "Modo app/web-app" : "Modo navegador";
-    box.innerHTML = `
-      <div class="font-semibold text-slate-900">Build cargada: <span class="font-extrabold">${escapeHtml(label)}</span></div>
-      <div class="mt-1">Si no ves los últimos cambios, pulsa “Actualizar app” para forzar una recarga fresca.</div>
-      <div class="mt-1 text-slate-400">${escapeHtml(mode)}</div>
-    `;
+    const btn = document.getElementById("btnHardRefreshApp");
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add("opacity-70");
+    }
   } catch {}
+  try {
+    const snapshot = {
+      lsKey: (typeof LS_KEY !== "undefined") ? LS_KEY : "miviaje.rewrite.v1",
+      stateRaw: localStorage.getItem((typeof LS_KEY !== "undefined") ? LS_KEY : "miviaje.rewrite.v1"),
+      at: new Date().toISOString(),
+      build: APP_BUILD
+    };
+    localStorage.setItem(APP_HARD_REFRESH_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {}
+  __writeLastRefreshMeta("hard", { requestedBuild: APP_BUILD });
+  try { sessionStorage.clear(); } catch {}
+  try { localStorage.removeItem("miViaje.lastRequestedBuild"); } catch {}
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all((regs || []).map((reg) => reg.unregister().catch(() => false)));
+    }
+  } catch {}
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key)=>caches.delete(key).catch(()=>false)));
+    }
+  } catch {}
+  try {
+    const freshUrl = __currentBuildRefreshUrl({ kind: "hard" });
+    location.replace(freshUrl);
+    return;
+  } catch {}
+  try {
+    location.href = __currentBuildRefreshUrl({ kind: "hard" });
+  } catch {
+    try { location.reload(); } catch {}
+  }
 }
 
-
-
+/* ----------------------------- Views (v89a) ----------------------------- */
 /* ----------------------------- Views (v89a) ----------------------------- */
 let activeView = "timeline";
 
@@ -13103,6 +13262,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   function openTools(){
     if (!backdrop || !sheet) return;
+    try { __renderToolsDiagnostics(); } catch {}
     backdrop.classList.remove("hidden");
     // allow transition
     requestAnimationFrame(() => {
@@ -13204,12 +13364,14 @@ $("btnTrips").addEventListener("click", openTripsModal);
   });
 
   const btnForceRefreshApp = $("btnForceRefreshApp");
+  const btnHardRefreshApp = $("btnHardRefreshApp");
   if (btnForceRefreshApp) btnForceRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __forceRefreshApp(); });
+  if (btnHardRefreshApp) btnHardRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __hardRefreshApp(); });
   if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
   if (btnNotifications) btnNotifications.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openNotificationsModal(); });
   __setVisibleBuildLabel();
   __setVersionedManifestHref();
-  __renderToolsBuildRefreshMeta();
+  __renderToolsDiagnostics();
 })();
 
 const __tn = $("timelineNext");
@@ -13319,7 +13481,9 @@ function __initTimelineNavBindings(){
 
 
 window.addEventListener('DOMContentLoaded', () => {
+  try { __restoreHardRefreshSnapshotIfNeeded(); } catch {}
   loadState();
+  try { __renderToolsDiagnostics(); } catch {}
   setupAccordion();
   try { __initTimelineNavBindings(); } catch {}
 
@@ -13338,6 +13502,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  try { __renderToolsDiagnostics(); } catch {}
   try { __startNotificationsEngine(); } catch {}
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
