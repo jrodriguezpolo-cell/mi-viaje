@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION</title>
+<title>V225F_AI_FILL_TRIP_GAPS_WITH_PREFERENCE_AWARE_ACTIVITIES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1068,7 +1068,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F_AI_FILL_TRIP_GAPS_WITH_PREFERENCE_AWARE_ACTIVITIES</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -13617,6 +13617,10 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="font-extrabold text-slate-900">Revisar puntos delicados del viaje</div>
           <div class="mt-1 text-sm text-slate-600">Detecta días y transiciones que conviene revisar (sin modificar nada del viaje).</div>
         </button>
+        <button class="tap text-left rounded-2xl border border-slate-200 bg-white px-4 py-4" id="aiActionGaps" type="button">
+          <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
+          <div class="mt-1 text-sm text-slate-600">Detecta huecos razonables y propone actividades alineadas con tu plan y preferencias (sin modificar nada automáticamente).</div>
+        </button>
 </button>
       </div>
       <div class="text-sm text-slate-500" id="aiStatus">La IA funciona como una capa separada. Solo lee el viaje y usa un bridge controlado para acciones permitidas.</div>
@@ -13695,6 +13699,7 @@ window.addEventListener('DOMContentLoaded', () => {
         contextualTips: [],
         detectedCities: [],
         cityGroups: [],
+        gapGroups: [],
         selectedKeys: {},
         bridgeNote: "",
         entrypoint: "timeline",
@@ -13776,6 +13781,7 @@ window.addEventListener('DOMContentLoaded', () => {
       on("aiActionSummary", ()=> this.selectAction("summary"));
       on("aiActionCities", ()=> this.selectAction("cities"));
       on("aiActionSensitive", ()=> this.selectAction("sensitive"));
+      on("aiActionGaps", ()=> this.selectAction("gaps"));
       on("aiPick", ()=> this.selectAction("summary"));
       on("aiGenerate", ()=> this.selectAction("cities"));
     },
@@ -13883,7 +13889,7 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     selectAction(action){
       this.init();
-      this.state.currentAction = (action === "cities") ? "cities" : (action === "sensitive") ? "sensitive" : "summary";
+      this.state.currentAction = (action === "cities") ? "cities" : (action === "sensitive") ? "sensitive" : (action === "gaps") ? "gaps" : "summary";
       this.savePrefs();
       this.refreshCurrentAction({ force:true });
     },
@@ -13894,6 +13900,7 @@ window.addEventListener('DOMContentLoaded', () => {
       else this.syncContext(this.state.entrypoint);
       if(this.state.currentAction === "cities") this.loadTripCities(o);
       else if(this.state.currentAction === "sensitive") this.loadSensitivePointsReview(o);
+      else if(this.state.currentAction === "gaps") this.loadTripGapsFill(o);
       else this.loadContextualSummary(o);
     },
     setBridgeNote(msg){
@@ -13923,16 +13930,19 @@ window.addEventListener('DOMContentLoaded', () => {
       const summaryBtn = document.getElementById("aiActionSummary");
       const citiesBtn = document.getElementById("aiActionCities");
       const sensitiveBtn = document.getElementById("aiActionSensitive");
+      const gapsBtn = document.getElementById("aiActionGaps");
       const quickSummary = document.getElementById("aiPick");
       const quickCities = document.getElementById("aiGenerate");
       const isSummary = this.state.currentAction === "summary";
       const isCities = this.state.currentAction === "cities";
       const isSensitive = this.state.currentAction === "sensitive";
+      const isGaps = this.state.currentAction === "gaps";
       const onCls = ["border-violet-200","bg-violet-50/70"], offCls = ["border-slate-200","bg-white"];
-      [summaryBtn, citiesBtn, sensitiveBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
+      [summaryBtn, citiesBtn, sensitiveBtn, gapsBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
       if(summaryBtn) summaryBtn.classList.add(...(isSummary ? onCls : offCls));
       if(citiesBtn) citiesBtn.classList.add(...(isCities ? onCls : offCls));
       if(sensitiveBtn) sensitiveBtn.classList.add(...(isSensitive ? onCls : offCls));
+      if(gapsBtn) gapsBtn.classList.add(...(isGaps ? onCls : offCls));
       if(quickSummary) quickSummary.textContent = "Resumen contextual";
       if(quickCities) quickCities.textContent = "Descubrir ciudades";
       this.renderContextBlocks();
@@ -14346,7 +14356,687 @@ window.addEventListener('DOMContentLoaded', () => {
         reBtn.addEventListener("click", ()=> this.loadSensitivePointsReview({ force:true }));
         footer.appendChild(reBtn);
       }
+    
+    /* --------------------- Fill trip gaps with preference-aware activities (V225F) --------------------- */
+    loadTripGapsFill(opts){
+      this.renderShell();
+      const trip = this.bridge.readTrip();
+      const pref = this.state.preferenceContext || this.buildPreferenceContext();
+      const prefsRaw = pref.raw || {};
+      const group = prefsRaw.group || {};
+      const pace = String(group.pace || "Normal").toLowerCase();
+      const kids = Math.max(0, parseInt(group.kids || 0, 10) || 0);
+
+      // Buckets by day (same helper as sensitive review)
+      const buckets = this.__aiBuildDayBuckets(trip);
+      const dateKeys = Object.keys(buckets).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+
+      const status = document.getElementById("aiStatus");
+      if(status){
+        status.textContent = dateKeys.length
+          ? "Buscando huecos razonables del viaje y preparando propuestas concretas…"
+          : "No hay fechas suficientes en el viaje para detectar huecos. Añade transporte, alojamiento o actividades con fecha y vuelve a intentarlo.";
+      }
+
+      // Compute "delicate" day scores (reused by this action to avoid tension)
+      const delicate = this.__aiComputeSensitiveDayScores(trip, prefsRaw);
+
+      // Determine trip day range (inclusive) and include empty days between
+      const days = this.__aiEnumerateDays(dateKeys[0], dateKeys[dateKeys.length-1]);
+
+      const existingActs = (trip.activities || []).map(a => String(a?.title||"").trim().toLowerCase()).filter(Boolean);
+
+      const maxActsForGap = (pace === "tranquilo" || kids > 0) ? 1 : 2;
+      const gapGroups = [];
+
+      const tastes = Array.isArray(pref.tastes) ? pref.tastes.map(t=>String(t||"").trim()).filter(Boolean) : [];
+      const hasTaste = (k)=> tastes.some(t => t.toLowerCase().includes(k));
+      const wantsFood = hasTaste("gastro") || hasTaste("food") || hasTaste("comida") || hasTaste("gastron");
+      const wantsNature = hasTaste("natur") || hasTaste("parque") || hasTaste("aire");
+      const wantsCulture = hasTaste("cultur") || hasTaste("muse");
+      const wantsRelax = (pace === "tranquilo") || hasTaste("relax") || hasTaste("descans");
+      const familyMode = kids > 0 || (pref.restrictions||[]).some(x=>String(x||"").toLowerCase().includes("carrito"));
+
+      const pickTemplates = (city)=>{
+        const c = String(city||"").trim();
+        const out = [];
+        const push = (title, summary, why, kind)=>{
+          const t = String(title||"").trim();
+          if(!t) return;
+          const norm = t.toLowerCase();
+          if(existingActs.includes(norm)) return;
+          out.push({
+            id: "gap_" + (Math.random().toString(36).slice(2,10)),
+            title: t,
+            city: c,
+            summary: String(summary||"").trim(),
+            why: String(why||"").trim(),
+            kind: kind || "general"
+          });
+        };
+
+        // Core (always safe, low commitment)
+        push(
+          c ? `Paseo de orientación por ${c}` : "Paseo de orientación por la zona",
+          "Un paseo corto para ubicarte y descubrir la zona más agradable del día.",
+          "Encaja bien cuando hay tiempo libre y ayuda a que el resto del viaje fluya mejor.",
+          "easy"
+        );
+
+        if(wantsNature){
+          push(
+            c ? `Parque principal y mirador en ${c}` : "Parque principal y mirador",
+            "Plan al aire libre y flexible (ideal para ajustar según energía y tiempo).",
+            "Aporta naturaleza sin apretar el día ni depender de horarios rígidos.",
+            "nature"
+          );
+        }
+
+        if(wantsFood){
+          push(
+            c ? `Mercado gastronómico / food market en ${c}` : "Mercado gastronómico / food market",
+            "Parada cómoda para picar algo y descubrir productos locales.",
+            "Si tu foco es gastronomía, es una forma muy eficiente de sumar experiencia sin tensar la agenda.",
+            "food"
+          );
+        }
+
+        if(wantsCulture){
+          push(
+            c ? `Hito cultural emblemático en ${c} (visita corta)` : "Hito cultural emblemático (visita corta)",
+            "Una visita breve a un icono cultural, sin convertirlo en un día de museos.",
+            "Suma cultura sin romper el ritmo del viaje ni exigir media jornada.",
+            "culture"
+          );
+        }
+
+        if(familyMode){
+          push(
+            c ? `Plan familiar ligero en ${c} (parque + algo interactivo)` : "Plan familiar ligero (parque + algo interactivo)",
+            "Algo fácil de adaptar (parque, zona peatonal, espacio interactivo).",
+            "Con niños, funciona mejor un plan flexible que no obligue a tiempos exactos.",
+            "family"
+          );
+        }
+
+        if(wantsRelax){
+          push(
+            c ? `Café tranquilo + paseo corto en ${c}` : "Café tranquilo + paseo corto",
+            "Bloque de descanso real (sin ‘rellenar por rellenar’).",
+            "Si tu ritmo es tranquilo, este tipo de bloque mantiene el viaje cómodo y sostenible.",
+            "relax"
+          );
+        }
+
+        // Ensure variety; keep max 3
+        const seen = new Set();
+        const uniqOut = [];
+        for(const it of out){
+          const k = it.title.toLowerCase();
+          if(seen.has(k)) continue;
+          seen.add(k);
+          uniqOut.push(it);
+        }
+        return uniqOut.slice(0,3);
+      };
+
+      for(const day of days){
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const legN = (b.legs||[]).length;
+        const inN = (b.checkins||[]).length;
+        const outN = (b.checkouts||[]).length;
+        const actN = (b.acts||[]).length;
+        const total = legN + inN + outN + actN;
+
+        // Avoid days already delicate or busy
+        const score = delicate[day] || 0;
+        if(score >= 2) continue; // marked as delicate
+        if(total >= 4) continue;
+        if(actN > maxActsForGap) continue;
+        if(legN >= 1 && (inN + outN) >= 1) continue; // logistics chain days
+
+        // Detect a "reasonable gap"
+        const isGap = (actN === 0) || (actN === 1 && total <= 2);
+        if(!isGap) continue;
+
+        const city = this.__aiGetPrimaryCityForDay(trip, day, b) || "";
+        const proposals = pickTemplates(city);
+        if(!proposals.length) continue;
+
+        const reason = actN === 0
+          ? "No hay actividades previstas en este día."
+          : "Este día tiene margen razonable para añadir una cosa más sin apretar el plan.";
+        const mod = (kids > 0) ? "Con perfil familiar, priorizo propuestas flexibles." : (pace==="tranquilo" ? "Con ritmo tranquilo, solo propongo si el hueco es razonable." : "");
+        gapGroups.push({
+          id: "gapday_" + day,
+          day,
+          city,
+          reason: (reason + (mod ? " " + mod : "")),
+          proposals
+        });
+      }
+
+      this.state.gapGroups = gapGroups;
+
+      this.setBridgeNote("La IA solo propone. Puedes marcar con tick y añadir seleccionadas a Actividades mediante el bridge seguro. No se modifican fechas ni se reprograma nada.");
+
+      const body = document.getElementById("aiActionBody");
+      if(body){
+        const n = gapGroups.length;
+        body.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
+            <div class="mt-1 text-sm text-slate-600">Detecto huecos razonables en el plan y preparo propuestas concretas que encajan con tus preferencias. Evito días ya delicados o muy comprimidos.</div>
+            ${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}
+            <div class="mt-3 text-xs text-slate-500">${n ? `He detectado ${n} hueco${n===1?"":"s"} razonable${n===1?"":"s"}.` : "No he visto huecos claros (o el plan ya está bastante completo / delicado)."}</div>
+          </div>
+        `;
+      }
+
+      const results = document.getElementById("aiResults");
+      if(results){
+        results.innerHTML = gapGroups.length ? gapGroups.map((g)=>`
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-slate-900">${escapeHtml(g.day)}${g.city ? ` · ${escapeHtml(g.city)}` : ""}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(g.reason)}</div>
+              </div>
+              <div class="text-xs text-slate-500 whitespace-nowrap">${(g.proposals||[]).length} propuestas</div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-2">
+              ${(g.proposals||[]).map((item)=>`
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                  <div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                  </div>
+                </label>
+              `).join("")}
+            </div>
+          </div>
+        `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No he detectado huecos claros que merezca rellenar sin tensionar el viaje.</div>`;
+
+        results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
+          el.addEventListener("change", (ev)=>{
+            const key = String(ev.target.getAttribute("data-ai-proposal") || "");
+            if(!key) return;
+            if(ev.target.checked) this.state.selectedKeys[key] = true;
+            else delete this.state.selectedKeys[key];
+          });
+        });
+      }
+
+      const footer = document.getElementById("aiActionFooter");
+      if(footer){
+        footer.innerHTML = "";
+        const refresh = document.createElement("button");
+        refresh.type = "button";
+        refresh.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        refresh.textContent = "Recalcular huecos";
+        refresh.addEventListener("click", ()=> this.loadTripGapsFill({ force:true }));
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
+        add.textContent = "Añadir seleccionadas a Actividades";
+        add.addEventListener("click", ()=> this.commitSelectedActivities());
+        footer.appendChild(refresh);
+        footer.appendChild(add);
+      }
+
+      if(status){
+        status.textContent = gapGroups.length
+          ? `Huecos detectados: ${gapGroups.length}. Marca con tick lo que quieras añadir a Actividades.`
+          : "No se han detectado huecos claros para rellenar sin tensar el viaje.";
+      }
     },
+
+    __aiEnumerateDays(minISO, maxISO){
+      const min = String(minISO||"").trim();
+      const max = String(maxISO||"").trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(min) || !/^\d{4}-\d{2}-\d{2}$/.test(max)) return [];
+      const start = new Date(min + "T00:00:00");
+      const end = new Date(max + "T00:00:00");
+      if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+      const out = [];
+      let cur = new Date(start.getTime());
+      let guard = 0;
+      while(cur.getTime() <= end.getTime() && guard < 400){
+        out.push(cur.toISOString().slice(0,10));
+        cur.setDate(cur.getDate() + 1);
+        guard += 1;
+      }
+      return out;
+    },
+
+    __aiGetPrimaryCityForDay(trip, dayISO, bucket){
+      try{
+        const b = bucket || {};
+        // 1) activity city of the day
+        const acts = b.acts || [];
+        for(const a of acts){
+          const c = String(a?.city || "").trim();
+          if(c) return c;
+        }
+        // 2) stay city if day is within a stay window
+        const stayCity = this.__aiFindActiveStayCity(trip, dayISO);
+        if(stayCity) return stayCity;
+        // 3) check-in/out city
+        const in0 = (b.checkins||[])[0];
+        const out0 = (b.checkouts||[])[0];
+        if(in0 && String(in0.city||"").trim()) return String(in0.city||"").trim();
+        if(out0 && String(out0.city||"").trim()) return String(out0.city||"").trim();
+        // 4) transport city
+        const leg0 = (b.legs||[])[0];
+        if(leg0){
+          const to = String(leg0.to || "").trim();
+          const from = String(leg0.from || "").trim();
+          return to || from || "";
+        }
+      }catch{}
+      return "";
+    },
+
+    __aiFindActiveStayCity(trip, dayISO){
+      try{
+        const d = String(dayISO||"").trim();
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "";
+        const stays = Array.isArray(trip?.stays) ? trip.stays : [];
+        for(const s of stays){
+          const city = String(s?.city||"").trim();
+          if(!city) continue;
+          const ci = String(s?.checkin || s?.date || "").trim();
+          const co = String(s?.checkout || "").trim();
+          if(/^\d{4}-\d{2}-\d{2}$/.test(ci) && /^\d{4}-\d{2}-\d{2}$/.test(co)){
+            if(ci <= d && d < co) return city;
+          }else if(/^\d{4}-\d{2}-\d{2}$/.test(ci)){
+            if(ci === d) return city;
+          }
+        }
+      }catch{}
+      return "";
+    },
+
+    __aiComputeSensitiveDayScores(trip, prefs){
+      // Score >=2 => avoid proposing to fill gaps
+      const out = {};
+      try{
+        const prefsObj = prefs || {};
+        const g = prefsObj.group || {};
+        const pace = String(g.pace || "Normal").toLowerCase();
+        const kids = Math.max(0, parseInt(g.kids || 0, 10) || 0);
+
+        const thresholds = {
+          dayEvents: (pace === "tranquilo" || kids > 0) ? 3 : 4,
+          manyActs: (pace === "tranquilo" || kids > 0) ? 2 : 3
+        };
+
+        const buckets = this.__aiBuildDayBuckets(trip);
+        Object.keys(buckets).forEach((day)=>{
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+          const b = buckets[day] || {};
+          const legN = (b.legs||[]).length;
+          const inN = (b.checkins||[]).length;
+          const outN = (b.checkouts||[]).length;
+          const actN = (b.acts||[]).length;
+          const total = legN + inN + outN + actN;
+
+          let score = 0;
+
+          if(total >= thresholds.dayEvents) score += 2;
+          if(legN >= 1 && (inN + outN) >= 1 && actN >= 1) score += 2;
+          if(actN >= thresholds.manyActs) score += 1;
+          if((inN>=1 || outN>=1) && (legN>=1 || actN>=thresholds.manyActs)) score += 1;
+
+          const hasCityChange = legN > 0 && (b.legs||[]).some(l=>{
+            const from = String(l?.from||"").trim().toLowerCase();
+            const to = String(l?.to||"").trim().toLowerCase();
+            return from && to && from !== to;
+          });
+          if(hasCityChange && (actN >= 2 || total >= thresholds.dayEvents)) score += 1;
+
+          out[day] = score;
+        });
+      }catch{}
+      return out;
+    },
+
+    /* --------------------- Fill trip gaps with preference-aware activities (V225F) --------------------- */
+    loadTripGapsFill(opts){
+      this.renderShell();
+      const trip = this.bridge.readTrip();
+      const pref = this.state.preferenceContext || this.buildPreferenceContext();
+      const prefsRaw = pref.raw || {};
+      const group = prefsRaw.group || {};
+      const pace = String(group.pace || "Normal").toLowerCase();
+      const kids = Math.max(0, parseInt(group.kids || 0, 10) || 0);
+
+      const buckets = this.__aiBuildDayBuckets(trip);
+      const dateKeys = Object.keys(buckets).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+
+      const status = document.getElementById("aiStatus");
+      if(status){
+        status.textContent = dateKeys.length
+          ? "Buscando huecos razonables del viaje y preparando propuestas concretas…"
+          : "No hay fechas suficientes en el viaje para detectar huecos. Añade transporte, alojamiento o actividades con fecha y vuelve a intentarlo.";
+      }
+
+      const delicate = this.__aiComputeSensitiveDayScores(trip, prefsRaw);
+
+      const days = this.__aiEnumerateDays(dateKeys[0], dateKeys[dateKeys.length-1]);
+
+      const existingActs = (trip.activities || []).map(a => String(a?.title||"").trim().toLowerCase()).filter(Boolean);
+
+      const maxActsForGap = (pace === "tranquilo" || kids > 0) ? 1 : 2;
+      const gapGroups = [];
+
+      const tastes = Array.isArray(pref.tastes) ? pref.tastes.map(t=>String(t||"").trim()).filter(Boolean) : [];
+      const hasTaste = (k)=> tastes.some(t => t.toLowerCase().includes(k));
+      const wantsFood = hasTaste("gastro") || hasTaste("food") || hasTaste("comida") || hasTaste("gastron");
+      const wantsNature = hasTaste("natur") || hasTaste("parque") || hasTaste("aire");
+      const wantsCulture = hasTaste("cultur") || hasTaste("muse");
+      const wantsRelax = (pace === "tranquilo") || hasTaste("relax") || hasTaste("descans");
+      const familyMode = kids > 0 || (pref.restrictions||[]).some(x=>String(x||"").toLowerCase().includes("carrito"));
+
+      const pickTemplates = (city)=>{
+        const c = String(city||"").trim();
+        const out = [];
+        const push = (title, summary, why, kind)=>{
+          const t = String(title||"").trim();
+          if(!t) return;
+          const norm = t.toLowerCase();
+          if(existingActs.includes(norm)) return;
+          out.push({
+            id: "gap_" + (Math.random().toString(36).slice(2,10)),
+            title: t,
+            city: c,
+            summary: String(summary||"").trim(),
+            why: String(why||"").trim(),
+            kind: kind || "general"
+          });
+        };
+
+        push(
+          c ? `Paseo de orientación por ${c}` : "Paseo de orientación por la zona",
+          "Un paseo corto para ubicarte y descubrir la zona más agradable del día.",
+          "Encaja bien cuando hay tiempo libre y ayuda a que el resto del viaje fluya mejor.",
+          "easy"
+        );
+
+        if(wantsNature){
+          push(
+            c ? `Parque principal y mirador en ${c}` : "Parque principal y mirador",
+            "Plan al aire libre y flexible (ideal para ajustar según energía y tiempo).",
+            "Aporta naturaleza sin apretar el día ni depender de horarios rígidos.",
+            "nature"
+          );
+        }
+
+        if(wantsFood){
+          push(
+            c ? `Mercado gastronómico / food market en ${c}` : "Mercado gastronómico / food market",
+            "Parada cómoda para picar algo y descubrir productos locales.",
+            "Si tu foco es gastronomía, es una forma muy eficiente de sumar experiencia sin tensar la agenda.",
+            "food"
+          );
+        }
+
+        if(wantsCulture){
+          push(
+            c ? `Hito cultural emblemático en ${c} (visita corta)` : "Hito cultural emblemático (visita corta)",
+            "Una visita breve a un icono cultural, sin convertirlo en un día de museos.",
+            "Suma cultura sin romper el ritmo del viaje ni exigir media jornada.",
+            "culture"
+          );
+        }
+
+        if(familyMode){
+          push(
+            c ? `Plan familiar ligero en ${c} (parque + algo interactivo)` : "Plan familiar ligero (parque + algo interactivo)",
+            "Algo fácil de adaptar (parque, zona peatonal, espacio interactivo).",
+            "Con niños, funciona mejor un plan flexible que no obligue a tiempos exactos.",
+            "family"
+          );
+        }
+
+        if(wantsRelax){
+          push(
+            c ? `Café tranquilo + paseo corto en ${c}` : "Café tranquilo + paseo corto",
+            "Bloque de descanso real (sin ‘rellenar por rellenar’).",
+            "Si tu ritmo es tranquilo, este tipo de bloque mantiene el viaje cómodo y sostenible.",
+            "relax"
+          );
+        }
+
+        const seen = new Set();
+        const uniqOut = [];
+        for(const it of out){
+          const k = it.title.toLowerCase();
+          if(seen.has(k)) continue;
+          seen.add(k);
+          uniqOut.push(it);
+        }
+        return uniqOut.slice(0,3);
+      };
+
+      for(const day of days){
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const legN = (b.legs||[]).length;
+        const inN = (b.checkins||[]).length;
+        const outN = (b.checkouts||[]).length;
+        const actN = (b.acts||[]).length;
+        const total = legN + inN + outN + actN;
+
+        const score = delicate[day] || 0;
+        if(score >= 2) continue;
+        if(total >= 4) continue;
+        if(actN > maxActsForGap) continue;
+        if(legN >= 1 && (inN + outN) >= 1) continue;
+
+        const isGap = (actN === 0) || (actN === 1 && total <= 2);
+        if(!isGap) continue;
+
+        const city = this.__aiGetPrimaryCityForDay(trip, day, b) || "";
+        const proposals = pickTemplates(city);
+        if(!proposals.length) continue;
+
+        const reason = actN === 0
+          ? "No hay actividades previstas en este día."
+          : "Este día tiene margen razonable para añadir una cosa más sin apretar el plan.";
+        const mod = (kids > 0) ? "Con perfil familiar, priorizo propuestas flexibles." : (pace==="tranquilo" ? "Con ritmo tranquilo, solo propongo si el hueco es razonable." : "");
+        gapGroups.push({
+          id: "gapday_" + day,
+          day,
+          city,
+          reason: (reason + (mod ? " " + mod : "")),
+          proposals
+        });
+      }
+
+      this.state.gapGroups = gapGroups;
+
+      this.setBridgeNote("La IA solo propone. Puedes marcar con tick y añadir seleccionadas a Actividades mediante el bridge seguro. No se modifican fechas ni se reprograma nada.");
+
+      const body = document.getElementById("aiActionBody");
+      if(body){
+        const n = gapGroups.length;
+        body.innerHTML = `
+          <div class="rounded-2xl border border-slate-200 bg-white p-4">
+            <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
+            <div class="mt-1 text-sm text-slate-600">Detecto huecos razonables en el plan y preparo propuestas concretas que encajan con tus preferencias. Evito días ya delicados o muy comprimidos.</div>
+            ${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}
+            <div class="mt-3 text-xs text-slate-500">${n ? `He detectado ${n} hueco${n===1?"":"s"} razonable${n===1?"":"s"}.` : "No he visto huecos claros (o el plan ya está bastante completo / delicado)."}</div>
+          </div>
+        `;
+      }
+
+      const results = document.getElementById("aiResults");
+      if(results){
+        results.innerHTML = gapGroups.length ? gapGroups.map((g)=>`
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-slate-900">${escapeHtml(g.day)}${g.city ? ` · ${escapeHtml(g.city)}` : ""}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(g.reason)}</div>
+              </div>
+              <div class="text-xs text-slate-500 whitespace-nowrap">${(g.proposals||[]).length} propuestas</div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-2">
+              ${(g.proposals||[]).map((item)=>`
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                  <div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                  </div>
+                </label>
+              `).join("")}
+            </div>
+          </div>
+        `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No he detectado huecos claros que merezca rellenar sin tensionar el viaje.</div>`;
+
+        results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
+          el.addEventListener("change", (ev)=>{
+            const key = String(ev.target.getAttribute("data-ai-proposal") || "");
+            if(!key) return;
+            if(ev.target.checked) this.state.selectedKeys[key] = true;
+            else delete this.state.selectedKeys[key];
+          });
+        });
+      }
+
+      const footer = document.getElementById("aiActionFooter");
+      if(footer){
+        footer.innerHTML = "";
+        const refresh = document.createElement("button");
+        refresh.type = "button";
+        refresh.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        refresh.textContent = "Recalcular huecos";
+        refresh.addEventListener("click", ()=> this.loadTripGapsFill({ force:true }));
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
+        add.textContent = "Añadir seleccionadas a Actividades";
+        add.addEventListener("click", ()=> this.commitSelectedActivities());
+        footer.appendChild(refresh);
+        footer.appendChild(add);
+      }
+
+      if(status){
+        status.textContent = gapGroups.length
+          ? `Huecos detectados: ${gapGroups.length}. Marca con tick lo que quieras añadir a Actividades.`
+          : "No se han detectado huecos claros para rellenar sin tensar el viaje.";
+      }
+    },
+
+    __aiEnumerateDays(minISO, maxISO){
+      const min = String(minISO||"").trim();
+      const max = String(maxISO||"").trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(min) || !/^\d{4}-\d{2}-\d{2}$/.test(max)) return [];
+      const start = new Date(min + "T00:00:00");
+      const end = new Date(max + "T00:00:00");
+      if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return [];
+      const out = [];
+      let cur = new Date(start.getTime());
+      let guard = 0;
+      while(cur.getTime() <= end.getTime() && guard < 400){
+        out.push(cur.toISOString().slice(0,10));
+        cur.setDate(cur.getDate() + 1);
+        guard += 1;
+      }
+      return out;
+    },
+
+    __aiGetPrimaryCityForDay(trip, dayISO, bucket){
+      try{
+        const b = bucket || {};
+        const acts = b.acts || [];
+        for(const a of acts){
+          const c = String(a?.city || "").trim();
+          if(c) return c;
+        }
+        const stayCity = this.__aiFindActiveStayCity(trip, dayISO);
+        if(stayCity) return stayCity;
+        const in0 = (b.checkins||[])[0];
+        const out0 = (b.checkouts||[])[0];
+        if(in0 && String(in0.city||"").trim()) return String(in0.city||"").trim();
+        if(out0 && String(out0.city||"").trim()) return String(out0.city||"").trim();
+        const leg0 = (b.legs||[])[0];
+        if(leg0){
+          const to = String(leg0.to || "").trim();
+          const from = String(leg0.from || "").trim();
+          return to || from || "";
+        }
+      }catch{}
+      return "";
+    },
+
+    __aiFindActiveStayCity(trip, dayISO){
+      try{
+        const d = String(dayISO||"").trim();
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "";
+        const stays = Array.isArray(trip?.stays) ? trip.stays : [];
+        for(const s of stays){
+          const city = String(s?.city||"").trim();
+          if(!city) continue;
+          const ci = String(s?.checkin || s?.date || "").trim();
+          const co = String(s?.checkout || "").trim();
+          if(/^\d{4}-\d{2}-\d{2}$/.test(ci) && /^\d{4}-\d{2}-\d{2}$/.test(co)){
+            if(ci <= d && d < co) return city;
+          }else if(/^\d{4}-\d{2}-\d{2}$/.test(ci)){
+            if(ci === d) return city;
+          }
+        }
+      }catch{}
+      return "";
+    },
+
+    __aiComputeSensitiveDayScores(trip, prefs){
+      const out = {};
+      try{
+        const prefsObj = prefs || {};
+        const g = prefsObj.group || {};
+        const pace = String(g.pace || "Normal").toLowerCase();
+        const kids = Math.max(0, parseInt(g.kids || 0, 10) || 0);
+
+        const thresholds = {
+          dayEvents: (pace === "tranquilo" || kids > 0) ? 3 : 4,
+          manyActs: (pace === "tranquilo" || kids > 0) ? 2 : 3
+        };
+
+        const buckets = this.__aiBuildDayBuckets(trip);
+        Object.keys(buckets).forEach((day)=>{
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+          const b = buckets[day] || {};
+          const legN = (b.legs||[]).length;
+          const inN = (b.checkins||[]).length;
+          const outN = (b.checkouts||[]).length;
+          const actN = (b.acts||[]).length;
+          const total = legN + inN + outN + actN;
+
+          let score = 0;
+
+          if(total >= thresholds.dayEvents) score += 2;
+          if(legN >= 1 && (inN + outN) >= 1 && actN >= 1) score += 2;
+          if(actN >= thresholds.manyActs) score += 1;
+          if((inN>=1 || outN>=1) && (legN>=1 || actN>=thresholds.manyActs)) score += 1;
+
+          const hasCityChange = legN > 0 && (b.legs||[]).some(l=>{
+            const from = String(l?.from||"").trim().toLowerCase();
+            const to = String(l?.to||"").trim().toLowerCase();
+            return from && to && from !== to;
+          });
+          if(hasCityChange && (actN >= 2 || total >= thresholds.dayEvents)) score += 1;
+
+          out[day] = score;
+        });
+      }catch{}
+      return out;
+    },
+},
     __aiBuildDayBuckets(trip){
       const buckets = {};
       const ensure = (d)=>{
@@ -14509,8 +15199,9 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     commitSelectedActivities(){
       const selected = [];
-      this.state.cityGroups.forEach((group)=>{
-        group.proposals.forEach((item)=>{
+      const groups = (this.state.currentAction === "gaps") ? (this.state.gapGroups || []) : (this.state.cityGroups || []);
+      groups.forEach((group)=>{
+        (group.proposals || []).forEach((item)=>{
           if(this.state.selectedKeys[item.id]) selected.push(item);
         });
       });
@@ -14523,7 +15214,8 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       if(res && res.added){
         this.state.selectedKeys = {};
-        this.loadTripCities({ force:true });
+        if(this.state.currentAction === "gaps") this.loadTripGapsFill({ force:true });
+        else this.loadTripCities({ force:true });
       }
     },
     render(){
