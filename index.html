@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222E_TRANSPORT_SECTIONS_INTERMEDIATE_MICROSUMMARY_ONLY</title>
+<title>V222F_SECTIONS_MAPS_PIN_REPLICA_FROM_TIMELINE_ONLY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -978,7 +978,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222E_TRANSPORT_SECTIONS_INTERMEDIATE_MICROSUMMARY_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222F_SECTIONS_MAPS_PIN_REPLICA_FROM_TIMELINE_ONLY</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4074,10 +4074,8 @@ function legSummaryLinesHTML(leg, opts){
     )
   );
 
-  // V220A: "Cómo llegar" destino contextual (punto de salida)
-  const __navDest = (opts.context==="timeline")
-    ? __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim())
-    : "";
+  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
+  const __navDest = __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim());
   const __navMode = (function(){
     const m = String(leg.mode||"").toLowerCase();
     if(m==="car"||m==="driving") return "driving";
@@ -4093,12 +4091,12 @@ function legSummaryLinesHTML(leg, opts){
 
   if (__compact){
     return `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${__tlHowToBtnHTML(__navDest, __navMode)}</div>
     `;
   }
 
   return `
-    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${__tlHowToBtnHTML(__navDest, __navMode)}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}`;
 }
@@ -7613,10 +7611,8 @@ function staySummaryLinesHTML(stay, opts){
   const city = (stay.city||"").trim() || "—";
   const name = (stay.name||"").trim() || "—";
 
-  // V220A: "Cómo llegar" destino contextual (alojamiento)
-  const __navDest = (opts.context==="timeline")
-    ? __mapsDestWithCity((stay.address||stay.name||"").trim(), city)
-    : "";
+  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
+  const __navDest = __mapsDestWithCity((stay.address||stay.name||"").trim(), city);
 
   // Dates / times (no timezone logic yet)
   const checkInISO = String(stay.date||"").trim();
@@ -7652,7 +7648,7 @@ function staySummaryLinesHTML(stay, opts){
   if (__compact) {
     return `
       <div class="mvSecMicroLine text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
       </div>
     `;
   }
@@ -7665,7 +7661,7 @@ function staySummaryLinesHTML(stay, opts){
 
   return `
     <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
@@ -8824,10 +8820,8 @@ function actSummaryLinesHTML(act, opts){
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
 
-  // V220A: "Cómo llegar" destino contextual (lugar de la actividad)
-  const __navDest = (opts.context==="timeline")
-    ? __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city)
-    : "";
+  // V222F: "Cómo llegar" contextual en cronograma y secciones (misma lógica)
+  const __navDest = __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city);
   const dES = (act.date ? formatDateShortES(act.date) : "");
   const t = (act.time||"").trim();
   const durationMin = __tlActDurationMinutes(act);
@@ -8844,7 +8838,7 @@ function actSummaryLinesHTML(act, opts){
     <span class="mr-1">🎯</span>
     <span>${escapeHtml(line1Title)}</span>
     <span class="text-slate-400"> · </span>
-    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+    <span class="font-medium">${escapeHtml(line1City)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
     ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
   </div>`;
 
@@ -8859,7 +8853,7 @@ function actSummaryLinesHTML(act, opts){
       <span class="mr-1">🎯</span>
       <span>${escapeHtml(line1Title)}</span>
       <span class="text-slate-400"> · </span>
-      <span class="font-medium">${escapeHtml(line1City)}</span>
+      <span class="font-medium">${escapeHtml(line1City)}</span>${__tlHowToBtnHTML(__navDest, "transit")}
       ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
     </div>`;
   }
