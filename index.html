@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V225F4_AI_GAP_FILL_REAL_ACTIVITY_INSERTION_AND_RECOMMENDATION_REFRESH</title>
+<title>V225F5_AI_ADDED_ITEMS_HIGHLIGHT_AND_REVIEW_CONFIRMATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V225F4_AI_GAP_FILL_REAL_ACTIVITY_INSERTION_AND_RECOMMENDATION_REFRESH" rel="manifest"/>
+<link href="manifest.json?v=V225F5_AI_ADDED_ITEMS_HIGHLIGHT_AND_REVIEW_CONFIRMATION" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1058,6 +1058,37 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   line-height:1.2rem;
 }
 
+
+/* === IA: resaltado ligero de incorporaciones pendientes de revisión (V225F5) === */
+.ai-pending-card{
+  border-color: rgba(168,85,247,0.55) !important;
+  background: rgba(168,85,247,0.06) !important;
+}
+.mvAiBadge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid rgba(168,85,247,0.35);
+  background:#fff;
+  color: rgb(107,33,168);
+  font-weight:800;
+  font-size:11px;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.mvAiBadgeSmall{
+  font-weight:700;
+  color: rgb(88,28,135);
+}
+.mvAiConfirmBtn{
+  border:1px solid rgba(168,85,247,0.35) !important;
+  color: rgb(107,33,168) !important;
+}
+.mvAiConfirmBtn:hover{
+  background: rgba(168,85,247,0.08) !important;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1068,7 +1099,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F4_AI_GAP_FILL_REAL_ACTIVITY_INSERTION_AND_RECOMMENDATION_REFRESH</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F5_AI_ADDED_ITEMS_HIGHLIGHT_AND_REVIEW_CONFIRMATION</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1302,7 +1333,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V225F4_AI_GAP_FILL_REAL_ACTIVITY_INSERTION_AND_RECOMMENDATION_REFRESH
+            Build cargada: V225F5_AI_ADDED_ITEMS_HIGHLIGHT_AND_REVIEW_CONFIRMATION
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1339,7 +1370,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V225F4_AI_GAP_FILL_REAL_ACTIVITY_INSERTION_AND_RECOMMENDATION_REFRESH";
+const APP_BUILD = "V225F5_AI_ADDED_ITEMS_HIGHLIGHT_AND_REVIEW_CONFIRMATION";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9856,7 +9887,7 @@ function actSummaryLinesHTML(act, opts){
     <span>${escapeHtml(line1Title)}</span>
     <span class="text-slate-400"> · </span>
     <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
-    ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
+    ${(act && act.pendingAIReview) ? ` <span class="mvAiBadge">IA <span class="mvAiBadgeSmall">por revisar</span></span>` : (act && act.fromAI ? ` <span class="mvAiBadge">IA</span>` : ``)}
   </div>`;
 
   const __compact = !!(
@@ -9871,7 +9902,7 @@ function actSummaryLinesHTML(act, opts){
       <span>${escapeHtml(line1Title)}</span>
       <span class="text-slate-400"> · </span>
       <span class="font-medium">${escapeHtml(line1City)}</span>
-      ${act.fromAI ? ` <span class="ml-1 text-slate-500">(IA)</span>` : ``}
+      ${(act && act.pendingAIReview) ? ` <span class="mvAiBadge">IA <span class="mvAiBadgeSmall">por revisar</span></span>` : (act && act.fromAI ? ` <span class="mvAiBadge">IA</span>` : ``)}
     </div>`;
     return (opts.context==="section")
       ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
@@ -9914,15 +9945,17 @@ function actCard(act) {
   const actMeta = __mvActSectionMeta(act, dateKey);
   const isIntermediate = !!actMeta.isIntermediate;
 
-  const badgeState = ``;
+  const __aiPending = !!(act && (act.pendingAIReview || act.pendingAIReview===true));
+  const badgeState = __aiPending ? `<span class="mvAiBadge">IA <span class="mvAiBadgeSmall">por revisar</span></span>` : (act && act.fromAI ? `<span class="mvAiBadge">IA</span>` : ``);
 
   return `
-  <div id="act-${act.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${isIntermediate ? " mvSecMicroSummary" : ""}${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+  <div id="act-${act.id}" class="secCard${__aiPending ? " ai-pending-card" : ""} border border-slate-200 rounded-2xl bg-white p-3${isIntermediate ? " mvSecMicroSummary" : ""}${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-start justify-between gap-3"
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
+              ${badgeState ? `<div class="mb-1">${badgeState}</div>` : ``}
         ${actSummaryLinesHTML(act, { context:"section", secCompact:isIntermediate })}
       </div>
       <div class="shrink-0 flex flex-col items-end gap-2">
@@ -10966,7 +10999,17 @@ function renderTimeline() {
   if (timelineViewMode === "day") {
     if (!activeDayISO) {
       box.innerHTML = `<div class="text-sm text-slate-500">${(timelineFilterState.categories.size ? "No hay eventos para estos filtros." : "No hay eventos todavía.")}</div>`;
-      renderDailyNotes();
+      // Confirmación ligera de incorporaciones IA (pendientes)
+  box.querySelectorAll("[data-ai-confirm-act]").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }catch{}
+      const id = String(btn.getAttribute("data-ai-confirm-act")||"").trim();
+      if(!id) return;
+      __aiConfirmActivityPendingReview(id);
+    });
+  });
+
+  renderDailyNotes();
       return;
     }
     visibleItems = (filteredItems || []).filter(it => String(it.date || "") === String(activeDayISO));
@@ -11031,6 +11074,7 @@ function renderTimeline() {
     const __leg = (jumpType === 'leg') ? legById.get(String(jumpId)) : null;
     const __act = (jumpType === 'act') ? actById.get(String(jumpId)) : null;
     const __stay = (jumpType === 'stay') ? stayById.get(String(jumpId)) : null;
+    const __aiPendingTL = (jumpType === 'act' && __act && __act.pendingAIReview) ? true : false;
     const __rightDurHTML = (jumpType === 'leg' && __leg) ? (function(){ const sp = buildLegSummaryParts(__leg); return (sp && sp.durText) ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${sp.durText}</div>` : ``; })() : ``;
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
@@ -11153,7 +11197,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
 
     return `
-      <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}${persistCls}${(jumpType==="stay" && __stay && !(it && it.tlMarker)) ? " mvStayTlCompact" : ""}"
+      <div id="tl-${jumpType}-${escapeHtml(String(jumpId||""))}" class="timelineItem cursor-pointer ${clsTime}${visualClass} border border-slate-200 rounded-2xl p-3${noteBadge}${__aiPendingTL ? " ai-pending-card" : ""}${persistCls}${(jumpType==="stay" && __stay && !(it && it.tlMarker)) ? " mvStayTlCompact" : ""}"
            data-date="${escapeHtml(it.date)}"
            data-tl-jump-type="${jumpType}"
            data-tl-jump-id="${escapeHtml(jumpId)}"
@@ -11188,6 +11232,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${(showCost && jumpType !== "leg") ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
             <div class="flex items-center gap-2">
               ${tlBadges ? tlBadges : ""}
+              ${(__aiPendingTL && jumpType==="act" && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg bg-white text-xs font-semibold mvAiConfirmBtn" data-ai-confirm-act="${escapeHtml(String(jumpId))}">Confirmar</button>` : ``}
               ${(!it.isNote && jumpType && jumpId) ? `<button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs" data-tl-go="1">↗ Ir</button>` : ``}
             </div>
           </div>
@@ -11830,6 +11875,15 @@ function renderAIResults(sections) {
       : { added: 0, error: true };
 
     const added = (res && typeof res.added === "number") ? res.added : 0;
+
+    try{
+      const ids = (res && Array.isArray(res.ids)) ? res.ids : [];
+      if(ids.length){
+        // Foco al primer elemento añadido por IA (queda marcado como pendiente)
+        __aiFocusActivityInTimeline(ids[0]);
+      }
+    }catch{}
+
     $("aiStatus").textContent = added ? `Añadidas ${added} actividades a Actividades.` : "No has seleccionado ninguna recomendación.";
   };
 
@@ -12253,6 +12307,46 @@ function closeAISheet(){
   document.body.classList.remove("ai-sheet-open");
 }
 
+
+/* ================= IA review: confirmar incorporaciones añadidas por IA (V225F5) ================= */
+function __aiConfirmActivityPendingReview(actId){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc || !Array.isArray(sc.activities)) return;
+    const id = String(actId||"").trim();
+    const act = sc.activities.find(a=> String(a && a.id) === id);
+    if(!act) return;
+    act.pendingAIReview = false;
+    act.aiConfirmedAt = Date.now();
+    try{ if(typeof saveState==="function") saveState(); }catch{}
+    try{ if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+    try{ if(typeof syncStickyTotalsHeightVar==="function") syncStickyTotalsHeightVar(); }catch{}
+
+    // Avanzar a la siguiente pendiente (si existe una cola)
+    const q = Array.isArray(window.__aiPendingReviewQueue) ? window.__aiPendingReviewQueue.map(String) : [];
+    const still = q.filter(x=>{
+      const a = sc.activities.find(v=> String(v && v.id)===String(x));
+      return a && a.pendingAIReview;
+    });
+    window.__aiPendingReviewQueue = still;
+    if(still.length){
+      __aiFocusActivityInTimeline(still[0]);
+      toast("Confirmada. Siguiente incorporación IA.");
+    }else{
+      toast("Incorporación IA confirmada.");
+    }
+  }catch(e){ console.error(e); }
+}
+function __aiFocusActivityInTimeline(actId){
+  try{
+    setView("timeline");
+    // Asegurar render
+    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+    const el = document.getElementById("tl-act-"+String(actId));
+    if(el) scrollToElWithOffset(el, 12, true);
+    try{ el && el.classList && el.classList.add("ai-pending-card"); }catch{}
+  }catch(e){ console.error(e); }
+}
 function initAISheet(){
   const overlay = document.getElementById("aiSheetOverlay");
   const closeBtn = document.getElementById("aiSheetClose");
@@ -13792,6 +13886,7 @@ window.addEventListener('DOMContentLoaded', () => {
         };
 
         let added = 0;
+        const ids = [];
         (Array.isArray(items) ? items : []).forEach((item)=>{
           const title = String(item && item.title || "").trim();
           if(!title) return;
@@ -13813,16 +13908,20 @@ window.addEventListener('DOMContentLoaded', () => {
             duration: fmtDur(durMin),
             cost: "",
             notes: note ? `IA · ${note}` : "IA · propuesta añadida desde el módulo IA",
-            fromAI: true
+            fromAI: true,
+            pendingAIReview: true,
+            aiAddedAt: Date.now()
           };
 
           sc.activities.unshift(act);
+          ids.push(String(act.id));
           added += 1;
         });
         try{ if(typeof saveState === "function") saveState(); }catch{}
         try{ if(typeof renderAll === "function") renderAll(); }catch{}
         try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
-        return { added };
+        try{ window.__aiPendingReviewQueue = (window.__aiPendingReviewQueue || []).concat(ids); }catch{}
+        return { added, ids };
       }
     },
     bindUI(){
