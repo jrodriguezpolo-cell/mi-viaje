@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION</title>
+<title>V225F_SAFE_RETRY_FILL_TRIP_GAPS_FROM_V225E</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION" rel="manifest"/>
+<link href="manifest.json?v=V225F_SAFE_RETRY_FILL_TRIP_GAPS_FROM_V225E" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1068,7 +1068,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V225F_SAFE_RETRY_FILL_TRIP_GAPS_FROM_V225E</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1302,7 +1302,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION
+            Build cargada: V225F_SAFE_RETRY_FILL_TRIP_GAPS_FROM_V225E
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1339,7 +1339,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V225E_AI_SENSITIVE_POINTS_REVIEW_FOUNDATION";
+const APP_BUILD = "V225F_SAFE_RETRY_FILL_TRIP_GAPS_FROM_V225E";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13612,13 +13612,16 @@ window.addEventListener('DOMContentLoaded', () => {
         <button class="tap text-left rounded-2xl border border-slate-200 bg-white px-4 py-4" id="aiActionCities" type="button">
           <div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div>
           <div class="mt-1 text-sm text-slate-600">Detecta ciudades del viaje y prepara propuestas que puedes añadir a Actividades.</div>
-        
+        </button>
         <button class="tap text-left rounded-2xl border border-slate-200 bg-white px-4 py-4" id="aiActionSensitive" type="button">
           <div class="font-extrabold text-slate-900">Revisar puntos delicados del viaje</div>
           <div class="mt-1 text-sm text-slate-600">Detecta días y transiciones que conviene revisar (sin modificar nada del viaje).</div>
         </button>
-</button>
-      </div>
+        <button class="tap text-left rounded-2xl border border-slate-200 bg-white px-4 py-4" id="aiActionGaps" type="button">
+          <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
+          <div class="mt-1 text-sm text-slate-600">Encuentra huecos razonables y propone actividades alineadas con tus preferencias.</div>
+        </button>
+</div>
       <div class="text-sm text-slate-500" id="aiStatus">La IA funciona como una capa separada. Solo lee el viaje y usa un bridge controlado para acciones permitidas.</div>
       <div class="mt-3 rounded-2xl border border-violet-100 bg-violet-50/70 p-3" id="aiContextBlock"></div>
       <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3" id="aiPreferencesBlock"></div>
@@ -13713,14 +13716,14 @@ window.addEventListener('DOMContentLoaded', () => {
         if(!raw) return;
         const data = JSON.parse(raw);
         if(data && typeof data.contextualVisible === "boolean") this.state.contextualVisible = data.contextualVisible;
-        if(data && (data.currentAction === "summary" || data.currentAction === "cities" || data.currentAction === "sensitive")) this.state.currentAction = data.currentAction;
+        if(data && (data.currentAction === "summary" || data.currentAction === "cities" || data.currentAction === "sensitive" || data.currentAction === "gaps")) this.state.currentAction = data.currentAction;
       }catch{}
     },
     savePrefs(){
       try{
         localStorage.setItem(AI_PREFS_KEY, JSON.stringify({
           contextualVisible: !!this.state.contextualVisible,
-          currentAction: this.state.currentAction === "cities" ? "cities" : "summary"
+          currentAction: (this.state.currentAction === "cities") ? "cities" : (this.state.currentAction === "sensitive") ? "sensitive" : (this.state.currentAction === "gaps") ? "gaps" : "summary"
         }));
       }catch{}
     },
@@ -13776,6 +13779,7 @@ window.addEventListener('DOMContentLoaded', () => {
       on("aiActionSummary", ()=> this.selectAction("summary"));
       on("aiActionCities", ()=> this.selectAction("cities"));
       on("aiActionSensitive", ()=> this.selectAction("sensitive"));
+      on("aiActionGaps", ()=> this.selectAction("gaps"));
       on("aiPick", ()=> this.selectAction("summary"));
       on("aiGenerate", ()=> this.selectAction("cities"));
     },
@@ -13883,7 +13887,7 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     selectAction(action){
       this.init();
-      this.state.currentAction = (action === "cities") ? "cities" : (action === "sensitive") ? "sensitive" : "summary";
+      this.state.currentAction = (action === "cities") ? "cities" : (action === "sensitive") ? "sensitive" : (action === "gaps") ? "gaps" : "summary";
       this.savePrefs();
       this.refreshCurrentAction({ force:true });
     },
@@ -13894,6 +13898,7 @@ window.addEventListener('DOMContentLoaded', () => {
       else this.syncContext(this.state.entrypoint);
       if(this.state.currentAction === "cities") this.loadTripCities(o);
       else if(this.state.currentAction === "sensitive") this.loadSensitivePointsReview(o);
+      else if(this.state.currentAction === "gaps") this.loadTripGapsFill(o);
       else this.loadContextualSummary(o);
     },
     setBridgeNote(msg){
@@ -13923,16 +13928,19 @@ window.addEventListener('DOMContentLoaded', () => {
       const summaryBtn = document.getElementById("aiActionSummary");
       const citiesBtn = document.getElementById("aiActionCities");
       const sensitiveBtn = document.getElementById("aiActionSensitive");
+      const gapsBtn = document.getElementById("aiActionGaps");
       const quickSummary = document.getElementById("aiPick");
       const quickCities = document.getElementById("aiGenerate");
       const isSummary = this.state.currentAction === "summary";
       const isCities = this.state.currentAction === "cities";
       const isSensitive = this.state.currentAction === "sensitive";
+      const isGaps = this.state.currentAction === "gaps";
       const onCls = ["border-violet-200","bg-violet-50/70"], offCls = ["border-slate-200","bg-white"];
-      [summaryBtn, citiesBtn, sensitiveBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
+      [summaryBtn, citiesBtn, sensitiveBtn, gapsBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
       if(summaryBtn) summaryBtn.classList.add(...(isSummary ? onCls : offCls));
       if(citiesBtn) citiesBtn.classList.add(...(isCities ? onCls : offCls));
       if(sensitiveBtn) sensitiveBtn.classList.add(...(isSensitive ? onCls : offCls));
+      if(gapsBtn) gapsBtn.classList.add(...(isGaps ? onCls : offCls));
       if(quickSummary) quickSummary.textContent = "Resumen contextual";
       if(quickCities) quickCities.textContent = "Descubrir ciudades";
       this.renderContextBlocks();
@@ -14347,7 +14355,131 @@ window.addEventListener('DOMContentLoaded', () => {
         footer.appendChild(reBtn);
       }
     },
-    __aiBuildDayBuckets(trip){
+    
+    __aiCityKey(city){
+      return String(city||"").trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g,"-")
+        .replace(/^-+|-+$/g,"") || "city";
+    },
+    __aiISOAddDays(iso, delta){
+      const s = String(iso||"").trim();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+      const d = new Date(s + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return "";
+      d.setDate(d.getDate() + (parseInt(delta,10)||0));
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${dd}`;
+    },
+    __aiHumanDay(day){
+      const d = String(day||"").trim();
+      if(!d || d === "9999-99-99") return "Sin fecha";
+      return d;
+    },
+    __aiBuildStayRanges(trip){
+      const ranges = [];
+      (Array.isArray(trip.stays)?trip.stays:[]).forEach((s)=>{
+        const city = String(s && s.city || "").trim();
+        const inDay = String(s && (s.checkinDate||s.checkInDate||s.inDate||s.startDate||s.date) || "").trim().slice(0,10);
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(inDay)) return;
+        let nights = parseInt(s && s.nights, 10);
+        if(!Number.isFinite(nights) || nights <= 0) nights = 1;
+        const outDay = this.__aiISOAddDays(inDay, nights);
+        ranges.push({ city, inDay, outDay, nights });
+      });
+      return ranges;
+    },
+    __aiCollectTripDays(trip, stayRanges){
+      const set = new Set();
+      const add = (d)=>{ const s=String(d||"").trim().slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) set.add(s); };
+
+      (Array.isArray(trip.legs)?trip.legs:[]).forEach(l=>{
+        add(l && (l.date||l.day||l.depDate||l.departDate||l.fromDate||l.startDate));
+        add(l && (l.arriveDate||l.dateIn||l.arrivalDate||l.endDate));
+      });
+      (Array.isArray(trip.activities)?trip.activities:[]).forEach(a=>{
+        add(a && (a.date||a.day||a.startDate));
+      });
+
+      (Array.isArray(stayRanges)?stayRanges:[]).forEach(r=>{
+        // incluir todos los días de estancia (inDay .. outDay-1)
+        let cur = r.inDay;
+        for(let i=0;i<Math.max(1, r.nights);i++){
+          add(cur);
+          cur = this.__aiISOAddDays(cur, 1);
+        }
+      });
+
+      const days = Array.from(set).sort();
+      return days;
+    },
+    __aiDayContext(day, trip, stayRanges, bucket){
+      const d = String(day||"").trim();
+      const b = bucket || {};
+      // 1) prefer stay city that covers the day
+      let city = "";
+      let reason = "";
+      if(Array.isArray(stayRanges)){
+        const hit = stayRanges.find(r => d >= r.inDay && d < r.outDay && String(r.city||"").trim());
+        if(hit){
+          city = String(hit.city||"").trim();
+          reason = (b && (b.acts||[]).length) ? "Hay margen extra dentro de la estancia." : "Día dentro de la estancia con pocas actividades.";
+        }
+      }
+      // 2) fallback: activity city
+      if(!city){
+        const act = (b.acts||[]).find(a => String(a && a.city || "").trim());
+        if(act){
+          city = String(act.city||"").trim();
+          reason = "Pocas actividades para este día.";
+        }
+      }
+      // 3) fallback: leg destination
+      if(!city){
+        const leg = (b.legs||[]).find(l => String(l && (l.to||l.toCity)||"").trim());
+        if(leg){
+          city = String(leg.to||leg.toCity||"").trim();
+          reason = "Día con traslado donde aún queda margen razonable.";
+        }
+      }
+      // 4) last fallback: any detected city in trip
+      if(!city){
+        const cities = this.collectTripCities ? this.collectTripCities() : [];
+        if(cities && cities.length){
+          city = String(cities[0].city||"").trim();
+          reason = "Hueco detectado con ciudad aproximada del viaje.";
+        }
+      }
+      return { city, reason };
+    },
+    __aiTopProposalsForCity(city, existingTitlesSet, maxN){
+      const cityName = String(city||"").trim();
+      if(!cityName) return [];
+      const key = this.__aiCityKey(cityName);
+      const catalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && AI_CITY_CATALOG[key])
+        ? AI_CITY_CATALOG[key]
+        : this.genericSuggestions(cityName);
+
+      const existing = existingTitlesSet || new Set();
+
+      const proposals = (Array.isArray(catalog)?catalog:[])
+        .map((item)=>{
+          const adapted = this.adaptProposal(item);
+          return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
+        })
+        .filter((it)=>{
+          const t = String(it.title||"").trim().toLowerCase();
+          return t && !existing.has(t);
+        })
+        .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"))
+        .slice(0, Math.max(1, parseInt(maxN,10)||3))
+        .map(({score, ...rest})=> rest);
+
+      return proposals;
+    },
+__aiBuildDayBuckets(trip){
       const buckets = {};
       const ensure = (d)=>{
         const key = d || "9999-99-99";
@@ -14507,7 +14639,179 @@ window.addEventListener('DOMContentLoaded', () => {
         footer.appendChild(add);
       }
     },
-    commitSelectedActivities(){
+    
+    loadTripGapsFill(opts){
+      this.renderShell();
+      const trip = this.bridge.readTrip();
+      const prefs = this.bridge.readPreferences();
+      const p = (prefs && prefs.group) ? prefs.group : {};
+      const pace = String(p.pace || "Normal").toLowerCase();
+      const kids = Math.max(0, parseInt(p.kids || 0, 10) || 0);
+      const hasKids = kids > 0;
+
+      const thresholds = {
+        dayEvents: (pace === "tranquilo" || hasKids) ? 3 : 4,
+        manyActs: (pace === "tranquilo" || hasKids) ? 2 : 3
+      };
+
+      const status = document.getElementById("aiStatus");
+      if(status){
+        status.textContent = "Analizando huecos razonables del viaje… (sin modificar nada automáticamente)";
+      }
+
+      this.setBridgeNote("Selecciona propuestas con ✓ y confirma al final. La IA NO añade nada hasta que pulses “Añadir seleccionadas a Actividades”.");
+
+      const body = document.getElementById("aiActionBody");
+      if(body){
+        body.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
+          <div class="mt-1 text-sm text-slate-600">Detecta días con margen razonable y propone actividades concretas alineadas con tus preferencias. Evita jornadas ya cargadas o delicadas.</div>
+        </div>`;
+      }
+
+      const buckets = this.__aiBuildDayBuckets(trip);
+      const stayRanges = this.__aiBuildStayRanges(trip);
+      const allDays = this.__aiCollectTripDays(trip, stayRanges);
+
+      const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> String(a && (a.title||a.name)||"").trim().toLowerCase()).filter(Boolean));
+
+      const gapBlocks = [];
+      const isBusyDay = (day)=>{
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const legN = (b.legs||[]).length;
+        const inN = (b.checkins||[]).length;
+        const outN = (b.checkouts||[]).length;
+        const actN = (b.acts||[]).length;
+        const total = legN + inN + outN + actN;
+
+        // Replicar señales de delicadeza básicas (sin inventar datos)
+        if(total >= thresholds.dayEvents) return true;
+        if(legN >= 1 && (inN + outN) >= 1 && actN >= 1) return true;
+        if(legN >= 1 && actN >= thresholds.manyActs) return true;
+
+        // Cambio de ciudad (cuando es detectable)
+        const hasCityChange = legN > 0 && (b.legs||[]).some(l=>{
+          const from = String(l.from||l.fromCity||"").trim().toLowerCase();
+          const to = String(l.to||l.toCity||"").trim().toLowerCase();
+          return from && to && from !== to;
+        });
+        if(hasCityChange && (actN >= 1 || (inN+outN)>=1)) return true;
+
+        return false;
+      };
+
+      const maxBlocks = 6;
+      for(const day of allDays){
+        if(gapBlocks.length >= maxBlocks) break;
+
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const actN = (b.acts||[]).length;
+
+        // Hueco: pocas o ninguna actividad
+        const isGap = (actN === 0) || (actN === 1 && ((b.legs||[]).length + (b.checkins||[]).length + (b.checkouts||[]).length) === 0);
+        if(!isGap) continue;
+
+        // Evitar días cargados/delicados
+        if(isBusyDay(day)) continue;
+
+        const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+        const city = ctx.city || "";
+        if(!city) continue;
+
+        // Propuestas por ciudad (máx 3), filtrando duplicados ya existentes
+        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 3);
+        if(!proposals.length) continue;
+
+        gapBlocks.push({
+          day,
+          city,
+          reason: ctx.reason,
+          proposals: proposals.map((pr, idx)=> Object.assign({}, pr, { id: `gap:${day}:${this.__aiCityKey(city)}:${idx}` }))
+        });
+      }
+
+      this.state.gapBlocks = gapBlocks;
+
+      if(status){
+        status.textContent = gapBlocks.length
+          ? `Huecos encontrados: ${gapBlocks.length}. Selecciona propuestas y añade solo las que quieras.`
+          : "No he encontrado huecos claros que merezca la pena rellenar sin tensar el viaje. (Si añades fechas/ciudades, vuelve a intentarlo.)";
+      }
+
+      const results = document.getElementById("aiResults");
+      if(results){
+        results.innerHTML = gapBlocks.length ? gapBlocks.map((blk)=>`
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-extrabold text-slate-900">${escapeHtml(blk.city)} · ${escapeHtml(this.__aiHumanDay(blk.day))}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(blk.reason || "Este día tiene margen razonable para añadir algo.")}</div>
+              </div>
+              <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-2">
+              ${blk.proposals.map((item)=>`
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                  <div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                  </div>
+                </label>
+              `).join("")}
+            </div>
+          </div>
+        `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay huecos claros que rellenar ahora mismo.</div>`;
+
+        results.querySelectorAll("[data-ai-gap-proposal]").forEach((el)=>{
+          el.addEventListener("change", (ev)=>{
+            const key = String(ev.target.getAttribute("data-ai-gap-proposal") || "");
+            if(!key) return;
+            if(ev.target.checked) this.state.selectedKeys[key] = true;
+            else delete this.state.selectedKeys[key];
+          });
+        });
+      }
+
+      const footer = document.getElementById("aiActionFooter");
+      if(footer){
+        footer.innerHTML = "";
+        const refresh = document.createElement("button");
+        refresh.type = "button";
+        refresh.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        refresh.textContent = "Recalcular huecos";
+        refresh.addEventListener("click", ()=> this.loadTripGapsFill({ force:true }));
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
+        add.textContent = "Añadir seleccionadas a Actividades";
+        add.addEventListener("click", ()=> this.commitSelectedGapActivities());
+        footer.appendChild(refresh);
+        footer.appendChild(add);
+      }
+    },
+    commitSelectedGapActivities(){
+      const selected = [];
+      const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
+      blocks.forEach((blk)=>{
+        (blk.proposals||[]).forEach((item)=>{
+          if(this.state.selectedKeys[item.id]) selected.push(item);
+        });
+      });
+      const res = this.bridge.addActivities(selected);
+      const status = document.getElementById("aiStatus");
+      if(status){
+        status.textContent = res && res.added
+          ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
+          : "No hay propuestas seleccionadas para añadir.";
+      }
+      if(res && res.added){
+        this.state.selectedKeys = {};
+        this.loadTripGapsFill({ force:true });
+      }
+    },
+commitSelectedActivities(){
       const selected = [];
       this.state.cityGroups.forEach((group)=>{
         group.proposals.forEach((item)=>{
