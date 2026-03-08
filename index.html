@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V223B_NOTIFICATIONS_TEST_BUTTONS_ONLY</title>
+<title>V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json" rel="manifest"/>
+<link href="manifest.json?v=V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1007,7 +1007,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223B_NOTIFICATIONS_TEST_BUTTONS_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1258,6 +1258,12 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnNotifications">
             Notificaciones
           </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold" id="btnForceRefreshApp">
+            Actualizar app
+          </button>
+<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
+            Build cargada: V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE
+          </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnKey">
             Cambiar clave
           </button>
@@ -1285,6 +1291,83 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* ----------------------------- Utilities ----------------------------- */
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+
+const APP_BUILD = "V223C_WEBAPP_FORCE_REFRESH_AND_VERSION_UPDATE_SAFE";
+const APP_BUILD_PARAM = "mv_build";
+
+function __setVisibleBuildLabel(){
+  try {
+    document.title = APP_BUILD;
+    const buildEl = document.getElementById("buildId");
+    if(buildEl) buildEl.textContent = APP_BUILD;
+  } catch {}
+}
+
+function __setVersionedManifestHref(){
+  try {
+    const manifestEl = document.querySelector('link[rel="manifest"]');
+    if(!manifestEl) return;
+    const rawHref = manifestEl.getAttribute("href") || "manifest.json";
+    const url = new URL(rawHref, location.href);
+    url.searchParams.set("v", APP_BUILD);
+    manifestEl.setAttribute("href", url.pathname + url.search + url.hash);
+  } catch {}
+}
+
+function __currentBuildRefreshUrl(){
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set(APP_BUILD_PARAM, APP_BUILD);
+    url.searchParams.set("_ts", String(Date.now()));
+    return url.toString();
+  } catch {
+    const sep = String(location.href || "").includes("?") ? "&" : "?";
+    return String(location.href || "./") + sep + APP_BUILD_PARAM + "=" + encodeURIComponent(APP_BUILD) + "&_ts=" + Date.now();
+  }
+}
+
+async function __forceRefreshApp(){
+  try {
+    const btn = document.getElementById("btnForceRefreshApp");
+    if(btn) {
+      btn.disabled = true;
+      btn.classList.add("opacity-70");
+    }
+  } catch {}
+  try { localStorage.setItem("miViaje.lastRequestedBuild", APP_BUILD); } catch {}
+  try {
+    if("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key)=>caches.delete(key).catch(()=>false)));
+    }
+  } catch {}
+  try {
+    const freshUrl = __currentBuildRefreshUrl();
+    location.replace(freshUrl);
+    return;
+  } catch {}
+  try {
+    location.href = __currentBuildRefreshUrl();
+  } catch {
+    try { location.reload(); } catch {}
+  }
+}
+
+function __renderToolsBuildRefreshMeta(){
+  try {
+    const box = document.getElementById("toolsBuildRefreshMeta");
+    if(!box) return;
+    const label = APP_BUILD;
+    const mode = window.matchMedia && window.matchMedia("(display-mode: standalone)").matches ? "Modo app/web-app" : "Modo navegador";
+    box.innerHTML = `
+      <div class="font-semibold text-slate-900">Build cargada: <span class="font-extrabold">${escapeHtml(label)}</span></div>
+      <div class="mt-1">Si no ves los últimos cambios, pulsa “Actualizar app” para forzar una recarga fresca.</div>
+      <div class="mt-1 text-slate-400">${escapeHtml(mode)}</div>
+    `;
+  } catch {}
+}
+
 
 
 /* ----------------------------- Views (v89a) ----------------------------- */
@@ -12661,8 +12744,13 @@ $("btnTrips").addEventListener("click", openTripsModal);
     if (e.key === "Escape" && backdrop && !backdrop.classList.contains("hidden")) closeTools();
   });
 
+  const btnForceRefreshApp = $("btnForceRefreshApp");
+  if (btnForceRefreshApp) btnForceRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __forceRefreshApp(); });
   if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
   if (btnNotifications) btnNotifications.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openNotificationsModal(); });
+  __setVisibleBuildLabel();
+  __setVersionedManifestHref();
+  __renderToolsBuildRefreshMeta();
 })();
 
 const __tn = $("timelineNext");
