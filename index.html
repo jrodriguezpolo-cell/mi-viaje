@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222B7_TIMELINE_NOTES_FAB_VERTICAL_ALIGNMENT_FIX</title>
+<title>V222D_SECTIONS_OVERNIGHT_INTERMEDIATE_MICROSUMMARY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -958,6 +958,13 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   display:none !important;
 }
 
+
+/* V222D: Micro summary in SECTIONS for intermediate covered days (visual only) */
+.secCard.mvSecMicro{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -968,7 +975,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222B7_TIMELINE_NOTES_FAB_VERTICAL_ALIGNMENT_FIX</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222D_SECTIONS_OVERNIGHT_INTERMEDIATE_MICROSUMMARY</div></div>
 </div>
 <div class="mvLegRightTop">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -3959,7 +3966,7 @@ function __deriveUtcOffsetHours(city, iso, hhmm){
 }
 
 // ============================================================
-// V222B7_TIMELINE_NOTES_FAB_VERTICAL_ALIGNMENT_FIX
+// V222D_SECTIONS_OVERNIGHT_INTERMEDIATE_MICROSUMMARY
 // Base mínima para almacenar contexto de huso horario por tramo (salida/llegada)
 // - No altera lógica overnight/multiday existente
 // - Mantiene compatibilidad con legs antiguos (tzFrom/tzTo legacy)
@@ -4064,6 +4071,13 @@ function legSummaryLinesHTML(leg, opts){
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const parts = buildLegSummaryParts(leg);
+
+  // V222D: compact rendering for intermediate days in sections (visual only)
+  const __secCompact = !!(opts && opts.context==="section" && opts.tlCompact);
+  if(__secCompact){
+    return `<div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>`;
+  }
+
 
   // V220A: "Cómo llegar" destino contextual (punto de salida)
   const __navDest = (opts.context==="timeline")
@@ -7521,6 +7535,9 @@ function legCard(leg, idx) {
   const vc = __sectionVisualClass("leg", leg, dateKey);
   const st = vc.st;
 
+  const __days = (typeof __tlLegCoveredDays==='function') ? __tlLegCoveredDays(leg) : [];
+  const __isMid = __mvIsIntermediateDay(dateKey, __days);
+
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
 
@@ -7539,15 +7556,15 @@ function legCard(leg, idx) {
   const badgeState = ``;
 
   return `
-  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${__isMid ? " mvSecMicro" : ""}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-stretch justify-between gap-3"
             data-leg-open="${leg.id}"
             aria-label="Abrir trayecto">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>
-        ${__sp.placeLineHTML}
+        ${legSummaryLinesHTML(leg, {context:"section", tlCompact: __isMid})}
+        ${__isMid ? `` : `<div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>`}
+        ${__isMid ? `` : __sp.placeLineHTML}
       </div>
 
       <div class="shrink-0 mvLegRightRail self-stretch">
@@ -7628,7 +7645,7 @@ function staySummaryLinesHTML(stay, opts){
   const checkOutTime = String(stay.checkoutTime || stay.checkout_time || "").trim();
 
   // V218D: compact timeline rendering for intermediate days (visual only)
-  const __tlCompact = !!(opts && opts.context==="timeline" && opts.tlCompact);
+  const __tlCompact = !!(opts && (opts.context==="timeline" || opts.context==="section") && opts.tlCompact);
   if (__tlCompact) {
     return `
       <div class="text-sm font-semibold truncate">
@@ -7658,16 +7675,19 @@ function stayCard(stay) {
   const vc = __sectionVisualClass("stay", stay, dateKey);
   const st = vc.st;
 
+  const __days = (typeof __mvStayDaysForSection==='function') ? __mvStayDaysForSection(stay) : [];
+  const __isMid = __mvIsIntermediateDay(dateKey, __days);
+
   const badgeState = ``;
 
   return `
-  <div id="stay-${stay.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+  <div id="stay-${stay.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${__isMid ? " mvSecMicro" : ""}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-start justify-between gap-3"
             data-stay-open="${stay.id}"
             aria-label="Abrir alojamiento">
       <div class="min-w-0">
-        ${staySummaryLinesHTML(stay)}
+        ${staySummaryLinesHTML(stay, {context:"section", tlCompact: __isMid})}
       </div>
       <div class="shrink-0 flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
@@ -8339,6 +8359,14 @@ function __dateSeparatorHTML(label, iso){
    los eventos multiday/overnight ya visibles en el cronograma.
    Cambios quirúrgicos: expandimos items por días cubiertos y agrupamos por ese día.
 ------------------------------------------------------------------- */
+
+function __mvIsIntermediateDay(dayISO, coveredDays){
+  const dk = String(dayISO||"").trim();
+  const arr = Array.isArray(coveredDays) ? coveredDays.filter(Boolean) : [];
+  if(!dk || arr.length<3) return false;
+  return dk !== String(arr[0]).trim() && dk !== String(arr[arr.length-1]).trim();
+}
+
 function __mvExpandForSection(list, daysFn, fallbackDateFn){
   if (!Array.isArray(list) || !list.length) return [];
   const out = [];
@@ -8773,6 +8801,13 @@ function actSummaryLinesHTML(act, opts){
   const line1City = city || "—";
   const line1Title = title || "—";
 
+  // V222D: compact rendering for intermediate days in sections (visual only)
+  const __secCompact = !!(opts && opts.context==="section" && opts.tlCompact);
+  if(__secCompact){
+    return `<div class="text-sm font-semibold truncate"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></div>`;
+  }
+
+
   const line2Date = dES || "—";
   const line2Time = t || "";
 
@@ -8819,16 +8854,19 @@ function actCard(act) {
   const vc = __sectionVisualClass("act", act, dateKey);
   const st = vc.st;
 
+  const __days = (typeof __tlActCoveredDays==='function') ? __tlActCoveredDays(act) : [];
+  const __isMid = __mvIsIntermediateDay(dateKey, __days);
+
   const badgeState = ``;
 
   return `
-  <div id="act-${act.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+  <div id="act-${act.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${__isMid ? " mvSecMicro" : ""}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-start justify-between gap-3"
             data-act-open="${act.id}"
             aria-label="Abrir actividad">
       <div class="min-w-0">
-        ${actSummaryLinesHTML(act)}
+        ${actSummaryLinesHTML(act, {context:"section", tlCompact: __isMid})}
       </div>
       <div class="shrink-0 flex flex-col items-end gap-2">
         <div class="flex items-center gap-2">
