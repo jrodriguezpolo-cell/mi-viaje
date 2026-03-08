@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222D_RETRY_SECTIONS_INTERMEDIATE_MICROSUMMARY_SAFE_SCOPE_2</title>
+<title>V222E_TRANSPORT_SECTIONS_INTERMEDIATE_MICROSUMMARY_ONLY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -958,7 +958,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   display:none !important;
 }
 
-/* V222D: Section intermediate microsummary (safe scope: stays + acts only) */
+/* V222E: Section intermediate microsummary (transport sections intermediate days) */
 .mvSecMicroSummary{
   padding-top:0.55rem !important;
   padding-bottom:0.55rem !important;
@@ -978,7 +978,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222D_RETRY_SECTIONS_INTERMEDIATE_MICROSUMMARY_SAFE_SCOPE_2</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V222E_TRANSPORT_SECTIONS_INTERMEDIATE_MICROSUMMARY_ONLY</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -4067,6 +4067,13 @@ function legSummaryLinesHTML(leg, opts){
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
   const parts = buildLegSummaryParts(leg);
 
+  const __compact = !!(
+    opts && (
+      (opts.context==="timeline" && opts.tlCompact) ||
+      (opts.context==="section" && opts.secCompact)
+    )
+  );
+
   // V220A: "Cómo llegar" destino contextual (punto de salida)
   const __navDest = (opts.context==="timeline")
     ? __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim())
@@ -4083,6 +4090,12 @@ function legSummaryLinesHTML(leg, opts){
   const metaCls = (opts.context==="timeline")
     ? "text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug"
     : "text-xs text-slate-600 mt-0.5 truncate";
+
+  if (__compact){
+    return `
+      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+    `;
+  }
 
   return `
     <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
@@ -7522,6 +7535,8 @@ function legCard(leg, idx) {
   const dateKey = String((leg?.__mvDayKey || leg?.date) || "").trim();
   const vc = __sectionVisualClass("leg", leg, dateKey);
   const st = vc.st;
+  const legMeta = __mvLegSectionMeta(leg, dateKey);
+  const isIntermediate = !!legMeta.isIntermediate;
 
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
@@ -7541,15 +7556,13 @@ function legCard(leg, idx) {
   const badgeState = ``;
 
   return `
-  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
+  <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${isIntermediate ? " mvSecMicroSummary" : ""}${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-stretch justify-between gap-3"
             data-leg-open="${leg.id}"
             aria-label="Abrir trayecto">
       <div class="min-w-0">
-        <div class="text-sm font-semibold truncate">${modeIcon} <span>${escapeHtml(route)}</span></div>
-        <div class="text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug">${__sp.metaHTML}</div>
-        ${__sp.placeLineHTML}
+        ${legSummaryLinesHTML(leg, { context:"section", secCompact:isIntermediate })}
       </div>
 
       <div class="shrink-0 mvLegRightRail self-stretch">
@@ -8413,6 +8426,16 @@ function __mvActSectionMeta(act, dateKey){
     const endInfo = (typeof __tlActEndDateTime === "function") ? __tlActEndDateTime(act) : null;
     if (endInfo && endInfo.endISO) endISO = String(endInfo.endISO || "").trim() || startISO;
   }catch{}
+  const isStart = !!(d && startISO && d === startISO);
+  const isEnd = !!(d && endISO && d === endISO);
+  const isIntermediate = !!(d && startISO && endISO && d !== startISO && d !== endISO && String(d) > String(startISO) && String(d) < String(endISO));
+  return { dateKey:d, startISO, endISO, isStart, isEnd, isIntermediate };
+}
+
+function __mvLegSectionMeta(leg, dateKey){
+  const d = String(dateKey || leg?.__mvDayKey || leg?.date || "").trim();
+  const startISO = String(leg?.date || "").trim();
+  const endISO = String(leg?.arriveDate || leg?.date || "").trim();
   const isStart = !!(d && startISO && d === startISO);
   const isEnd = !!(d && endISO && d === endISO);
   const isIntermediate = !!(d && startISO && endISO && d !== startISO && d !== endISO && String(d) > String(startISO) && String(d) < String(endISO));
