@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V222D_SECTIONS_OVERNIGHT_INTERMEDIATE_MICROSUMMARY</title>
+<title>V222D1_SECTIONS_MICROSUMMARY_PARTIAL_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -975,9 +975,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222D_SECTIONS_OVERNIGHT_INTERMEDIATE_MICROSUMMARY</div></div>
+<div class="leading-tight flex flex-col"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1" id="buildId">V222D1_SECTIONS_MICROSUMMARY_PARTIAL_FIX</div></div>
 </div>
-<div class="mvLegRightTop">
+<div class="flex items-center justify-end">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
           ⚙️
         </button></div>
@@ -7536,7 +7536,7 @@ function legCard(leg, idx) {
   const st = vc.st;
 
   const __days = (typeof __tlLegCoveredDays==='function') ? __tlLegCoveredDays(leg) : [];
-  const __isMid = __mvIsIntermediateDay(dateKey, __days);
+  const __isMid = false; // V222D1: desactivado microresumen intermedio de Transporte en secciones
 
   const modeIcon = (typeof legModeIcon==="function") ? legModeIcon(leg.mode) : "✈️";
   const route = `${(leg.from||"").trim() || "—"} → ${(leg.to||"").trim() || "—"}`;
@@ -7553,7 +7553,14 @@ function legCard(leg, idx) {
 
   const __sp = buildLegSummaryParts(leg);
 
-  const badgeState = ``;
+  const badgeState = (()=>{
+    const ci = String(stay?.date||"").trim();
+    const co = (typeof __tlStayCheckoutISO==="function") ? String(__tlStayCheckoutISO(stay)||"").trim() : String(stay?.checkout||"").trim();
+    const marker = (dateKey && ci && dateKey===ci) ? "Entrada" : (dateKey && co && dateKey===co) ? "Salida" : "";
+    if(!marker) return "";
+    return `<span class="text-xs font-semibold text-slate-600 border border-slate-200 bg-white/80 rounded-xl px-2 py-1">${escapeHtml(marker)}</span>`;
+  })();
+
 
   return `
   <div id="leg-${leg.id}" class="secCard border border-slate-200 rounded-2xl bg-white p-3${vc.visualClass}${__isMid ? " mvSecMicro" : ""}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}">
@@ -7571,8 +7578,9 @@ function legCard(leg, idx) {
         <div class="mvLegRightTop">
           ${buildEventIndicatorsHTML(leg,"leg")}
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
-          ${badgeState}
-        </div>
+          </div>
+        ${badgeState ? '<div class="mt-auto">'+badgeState+'</div>' : ''}
+
         <div class="mvLegRightMid">
           ${__sp.durText ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div>` : ""}
         </div>
