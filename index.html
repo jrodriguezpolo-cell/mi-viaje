@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226A_AI_TRANSPORT_REVIEW_INCOMPLETE_LEGS_AND_SENSITIVE_TRANSITIONS</title>
+<title>V226B_AI_TRANSPORT_REVIEW_TARGET_HIGHLIGHT_AND_TOP_ANCHOR</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226A_AI_TRANSPORT_REVIEW_INCOMPLETE_LEGS_AND_SENSITIVE_TRANSITIONS" rel="manifest"/>
+<link href="manifest.json?v=V226B_AI_TRANSPORT_REVIEW_TARGET_HIGHLIGHT_AND_TOP_ANCHOR" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1130,6 +1130,17 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvAiConfirmBtn:hover{
   background: rgba(168,85,247,0.08) !important;
 }
+
+/* === AI Transport Review: target highlight (V226B) === */
+.aiLegTargetHighlight{
+  border-color: rgba(139,92,246,0.9) !important; /* violet */
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.20), 0 14px 30px rgba(139,92,246,0.18) !important;
+  background: rgba(245,243,255,0.65) !important; /* violet-50 */
+}
+.aiLegTargetHighlight .mvLegRightRail{
+  filter: none;
+}
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1140,7 +1151,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226A_AI_TRANSPORT_REVIEW_INCOMPLETE_LEGS_AND_SENSITIVE_TRANSITIONS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226B_AI_TRANSPORT_REVIEW_TARGET_HIGHLIGHT_AND_TOP_ANCHOR</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1374,7 +1385,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226A_AI_TRANSPORT_REVIEW_INCOMPLETE_LEGS_AND_SENSITIVE_TRANSITIONS
+            Build cargada: V226B_AI_TRANSPORT_REVIEW_TARGET_HIGHLIGHT_AND_TOP_ANCHOR
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1411,7 +1422,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226A_AI_TRANSPORT_REVIEW_INCOMPLETE_LEGS_AND_SENSITIVE_TRANSITIONS";
+const APP_BUILD = "V226B_AI_TRANSPORT_REVIEW_TARGET_HIGHLIGHT_AND_TOP_ANCHOR";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -8765,6 +8776,25 @@ function renderLegs() {
     try { openEventSheet({ kind: "leg", id, mode: "view", sourceView: "legs" }); } catch {}
   }));
 
+  // AI Transport Review: clear target highlight when user interacts with other legs
+  try{
+    if(!box.__aiLegTargetClearBound){
+      box.__aiLegTargetClearBound = true;
+      box.addEventListener("click", (ev)=>{
+        const btn = ev.target ? ev.target.closest && ev.target.closest("[data-leg-open]") : null;
+        if(!btn) return;
+        const id = String(btn.getAttribute("data-leg-open")||"").trim();
+        const cur = String(window.__aiTransportTargetLegId||"").trim();
+        if(cur && id && id !== cur){
+          try{
+            document.querySelectorAll(".aiLegTargetHighlight").forEach(n=>n.classList.remove("aiLegTargetHighlight"));
+          }catch{}
+          try{ window.__aiTransportTargetLegId = ""; }catch{}
+        }
+      }, { capture:true });
+    }
+  }catch{}
+
   // V217: done toggle in section cards (same source of truth as timeline)
   box.querySelectorAll("[data-leg-done]").forEach(cb => {
     cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
@@ -15013,7 +15043,7 @@ __aiBuildDayBuckets(trip){
               `Tramo incompleto: falta ${missing.slice(0,2).join(" y ")}${missing.length>2 ? "…" : ""}`,
               legLabel,
               `Faltan datos (${missing.join(", ")}). ${mod}`.trim(),
-              [{label:"Ver transporte", view:"legs"}]
+              [{label:"Ver tramo", view:"legs", kind:"leg", target:String(l.id||"")}]
             );
           }
 
@@ -15030,7 +15060,7 @@ __aiBuildDayBuckets(trip){
               "Transición sensible el mismo día",
               `${legLabel}${day ? ` · ${day}` : ""}`,
               `Este tramo coincide con ${pieces.join(" + ")}. ${intensityMod}`,
-              [{label:"Revisar este día", view:"timeline"}, {label:"Ver transporte", view:"legs"}]
+              [{label:"Revisar este día", view:"timeline"}, {label:"Ver tramo", view:"legs", kind:"leg", target:String(l.id||"")}]
             );
           }
         });
@@ -15085,7 +15115,7 @@ __aiBuildDayBuckets(trip){
               </div>
               <div class="mt-3 text-sm text-slate-600">${escapeHtml(f.why)}</div>
               ${(f.ctas && f.ctas.length) ? `<div class="mt-3 flex flex-wrap gap-2">
-                ${f.ctas.map((c)=>`<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" data-ai-cta="1" data-ai-view="${escapeHtml(c.view||"")}" data-ai-id="${escapeHtml(f.id)}">${escapeHtml(c.label||"Ver")}</button>`).join("")}
+                ${f.ctas.map((c)=>`<button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" data-ai-cta="1" data-ai-view="${escapeHtml(c.view||"")}" data-ai-id="${escapeHtml(f.id)}" data-ai-target="${escapeHtml(c.target||"")}" data-ai-kind="${escapeHtml(c.kind||"")}">${escapeHtml(c.label||"Ver")}</button>`).join("")}
               </div>` : ``}
             </div>
           `).join("");
@@ -15096,17 +15126,56 @@ __aiBuildDayBuckets(trip){
       }
 
       // Wire CTAs (local)
-      const wireNav = (view)=>{
+      const __aiHighlightLegTarget = (legId)=>{
+        const id = String(legId||"").trim();
+        if(!id) return;
+        const el = document.getElementById(`leg-${id}`);
+        if(!el) return;
+        // clear previous
         try{
-          if(view) setView(view);
+          document.querySelectorAll(".aiLegTargetHighlight").forEach(n=>n.classList.remove("aiLegTargetHighlight"));
         }catch{}
+        el.classList.add("aiLegTargetHighlight");
+        // anchor just under sticky header/totals (and any section header)
+        try{
+          scrollToElWithOffset(el, 8, true);
+        }catch{
+          try{ el.scrollIntoView({behavior:"smooth", block:"start"}); }catch{}
+        }
+        // Persist until user clicks another leg / changes context
+        try{ window.__aiTransportTargetLegId = id; }catch{}
+      };
+
+      const wireNav = (view, payload)=>{
+        const p = payload || {};
+        try{
+          if(view){
+            // ensure accordion body is open (more reliable than relying on setView only)
+            if(view === "legs"){
+              try{ openAccordionKey("legs"); }catch{}
+            }
+            setView(view);
+          }
+        }catch{}
+        // Close IA sheet first so sticky offsets are stable
         try{ closeAISheet(); }catch{}
+        // After layout settles, highlight target if provided
+        if(view === "legs" && p && p.kind === "leg" && p.target){
+          const target = String(p.target||"").trim();
+          requestAnimationFrame(()=>{
+            requestAnimationFrame(()=>{
+              __aiHighlightLegTarget(target);
+            });
+          });
+        }
       };
       if(results){
         results.querySelectorAll('[data-ai-cta="1"]').forEach((btn)=>{
           btn.addEventListener("click", ()=>{
             const view = btn.getAttribute("data-ai-view") || "";
-            if(view) wireNav(view);
+            const kind = btn.getAttribute("data-ai-kind") || "";
+            const target = btn.getAttribute("data-ai-target") || "";
+            if(view) wireNav(view, { kind, target });
           });
         });
       }
