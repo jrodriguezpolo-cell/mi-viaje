@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A_AI_WIRING_RESTORE_HUB_AND_INFO_BUTTONS</title>
+<title>V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A_AI_WIRING_RESTORE_HUB_AND_INFO_BUTTONS" rel="manifest"/>
+<link href="manifest.json?v=V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1192,7 +1192,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A_AI_WIRING_RESTORE_HUB_AND_INFO_BUTTONS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1426,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A_AI_WIRING_RESTORE_HUB_AND_INFO_BUTTONS
+            Build cargada: V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1463,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A_AI_WIRING_RESTORE_HUB_AND_INFO_BUTTONS";
+const APP_BUILD = "V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14056,6 +14056,7 @@ window.addEventListener('DOMContentLoaded', () => {
         cityGroups: [],
         selectedKeys: {},
         bridgeNote: "",
+        functionInfoHtml: "",
         entrypoint: "timeline",
         entryLabel: "Cronograma",
         entryDescription: "Visión global del viaje y de los hitos del día.",
@@ -14314,13 +14315,10 @@ window.addEventListener('DOMContentLoaded', () => {
       else this.loadContextualSummary(o);
     },
     setBridgeNote(msg){
+      // V226C1B: el bridge es informativo y vive SOLO bajo demanda (botón "i")
       this.state.bridgeNote = String(msg || "").trim();
       const box = document.getElementById("aiBridgeNote");
-      if(!box) return;
-      if(this.state.bridgeNote){
-        box.classList.remove("hidden");
-        box.innerHTML = `<div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Bridge</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.bridgeNote)}</div>`;
-      }else{
+      if(box){
         box.classList.add("hidden");
         box.innerHTML = "";
       }
@@ -14329,12 +14327,21 @@ window.addEventListener('DOMContentLoaded', () => {
       const contextBox = document.getElementById("aiContextBlock");
       const prefsBox = document.getElementById("aiPreferencesBlock");
       if(contextBox){
-        contextBox.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Contexto de entrada</div><div class="mt-1 font-extrabold text-slate-900">IA abierta desde ${escapeHtml(this.state.entryLabel || "Cronograma")}</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.entryDescription || "")}</div></div><div class="inline-flex items-center rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-semibold text-violet-700">${escapeHtml(this.state.entryFocus || "")}</div></div>`;
+        const base = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Contexto de entrada</div><div class="mt-1 font-extrabold text-slate-900">IA abierta desde ${escapeHtml(this.state.entryLabel || "Cronograma")}</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.entryDescription || "")}</div></div><div class="inline-flex items-center rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-semibold text-violet-700">${escapeHtml(this.state.entryFocus || "")}</div></div>`;
+        let extra = "";
+        if(this.state.functionInfoHtml){
+          extra += `<div class="mt-3">${this.state.functionInfoHtml}</div>`;
+        }
+        if(this.state.bridgeNote){
+          extra += `<div class="mt-3 rounded-2xl border border-violet-200 bg-white p-3"><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Bridge</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.bridgeNote)}</div></div>`;
+        }
+        contextBox.innerHTML = base + extra;
       }
       if(prefsBox){
         const pref = this.state.preferenceContext || { chips:[], summary:"" };
         prefsBox.innerHTML = `<div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preferencias activas</div><div class="mt-2 flex flex-wrap gap-2">${(pref.chips && pref.chips.length) ? pref.chips.map((chip)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">${escapeHtml(chip)}</span>`).join("") : `<span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">Sin preferencias destacadas</span>`}</div><div class="mt-2 text-sm text-slate-600">${escapeHtml(pref.summary || "La IA usa el viaje actual y las preferencias guardadas cuando existen.")}</div>`;
       }
+    }
     },
     renderShell(){
       const summaryBtn = document.getElementById("aiActionSummary");
@@ -14419,7 +14426,11 @@ window.addEventListener('DOMContentLoaded', () => {
       const body = document.getElementById("aiActionBody");
       const results = document.getElementById("aiResults");
       const footer = document.getElementById("aiActionFooter");
-      if(body) body.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Resumen contextual del viaje</div><div class="mt-1 text-sm text-slate-600">Sugerencias breves moduladas por la sección desde la que abres la IA y por las preferencias ya guardadas del viaje.</div></div>`;
+      if(body){
+        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Resumen contextual del viaje</div><div class="mt-1 text-sm text-slate-600">Sugerencias breves moduladas por la sección desde la que abres la IA y por las preferencias ya guardadas del viaje.</div></div>`;
+        body.innerHTML = "";
+        this.renderContextBlocks();
+      }
       if(results){
         results.innerHTML = this.state.contextualVisible
           ? this.state.contextualTips.map((tip)=> `<div class="rounded-2xl border border-violet-100 bg-violet-50/60 px-4 py-3"><div class="text-sm font-semibold text-slate-900">${escapeHtml(tip.title || "")}</div>${tip.detail ? `<div class="mt-1 text-sm text-slate-600">${escapeHtml(tip.detail)}</div>` : ``}</div>`).join("")
@@ -14697,7 +14708,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const prefLine = (kids>0)
           ? `Perfil: ${Math.max(0, parseInt(p.adults||0,10)||0) || 0} adultos • ${kids} niño(s). Ritmo: ${escapeHtml(pace)}.`
           : `Perfil: Ritmo ${escapeHtml(pace)}.`;
-        actionBody.innerHTML = `
+        this.state.functionInfoHtml = `
           <div class="rounded-2xl border border-slate-200 bg-white p-4">
             <div class="font-extrabold text-slate-900">Revisión de puntos delicados</div>
             <div class="mt-1 text-sm text-slate-600">
@@ -14707,6 +14718,8 @@ window.addEventListener('DOMContentLoaded', () => {
             <div class="mt-2 text-xs text-slate-500">${prefLine}</div>
           </div>
         `;
+        actionBody.innerHTML = "";
+        this.renderContextBlocks();
       }
       if(results){
         if(!issues.length){
@@ -15015,7 +15028,9 @@ __aiBuildDayBuckets(trip){
       this.setBridgeNote("La IA prepara propuestas con estado local propio y las modula con preferencias ya guardadas. Solo al confirmar usa el bridge para añadir actividades seleccionadas.");
       const body = document.getElementById("aiActionBody");
       if(body){
-        body.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
+        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
+        body.innerHTML = "";
+        this.renderContextBlocks();
       }
       const results = document.getElementById("aiResults");
       if(results){
@@ -15176,11 +15191,13 @@ __aiBuildDayBuckets(trip){
       const results = document.getElementById("aiResults");
       const footer = document.getElementById("aiActionFooter");
       if(body){
-        body.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Revisión de Transporte</div>
           <div class="mt-1 font-extrabold text-slate-900">Tramos incompletos y transiciones sensibles</div>
           <div class="mt-1 text-sm text-slate-600">La IA marca lo que conviene completar o revisar usando solo datos existentes del viaje y tus preferencias.</div>
         </div>`;
+        body.innerHTML = "";
+        this.renderContextBlocks();
       }
       if(results){
         if(!findings.length){
@@ -15305,7 +15322,7 @@ loadTripGapsFill(opts){
 
       const body = document.getElementById("aiActionBody");
       if(body){
-        body.innerHTML = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
@@ -15314,6 +15331,8 @@ loadTripGapsFill(opts){
             <div class="text-xs text-slate-500 whitespace-nowrap">Tanda: ${this.state.gapRecoOffset+1}</div>
           </div>
         </div>`;
+        body.innerHTML = "";
+        this.renderContextBlocks();
       }
 
       const buckets = this.__aiBuildDayBuckets(trip);
@@ -15656,7 +15675,7 @@ commitSelectedActivities(){
       });
       aiModule.bindUI();
       aiModule.render();
-      // --- V226C1A: IA hub wiring robusto (delegación estable) ---
+      // --- V226C1B: IA hub wiring robusto (delegación estable) ---
       (function(){
         const hub = document.getElementById("aiHubStage");
         const detail = document.getElementById("aiDetailStage");
@@ -15806,7 +15825,7 @@ commitSelectedActivities(){
         // Default stage
         setStage("hub");
       })();
-// --- /V226C1A ---
+// --- /V226C1B ---
 
     }catch{}
   };
