@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7E_AI_OVERLAP_GUARD_FIX_WITHOUT_BREAKING_SAVE</title>
+<title>V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7E_AI_OVERLAP_GUARD_FIX_WITHOUT_BREAKING_SAVE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7E_AI_OVERLAP_GUARD_FIX_WITHOUT_BREAKING_SAVE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7E_AI_OVERLAP_GUARD_FIX_WITHOUT_BREAKING_SAVE
+            Build cargada: V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7E_AI_OVERLAP_GUARD_FIX_WITHOUT_BREAKING_SAVE";
+const APP_BUILD = "V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16687,7 +16687,7 @@ function scrollToDateSep(viewName, iso){
     }
     wrapped.__dj_patched = true;
     window.setView = wrapped;
-/* ================= Overlap alerts (V226C1A7E) ================= */
+/* ================= Overlap alerts (V226C1A7B) ================= */
 function __fmtHHMM_fromMinutes(m){
   try{
     const mm = Math.max(0, Math.floor(+m||0));
@@ -16724,74 +16724,52 @@ function __aiActIntervalIfPossible(act){
 }
 function __aiIntervalsOverlap(a, b){
   try{
-    return !!(a && b && String(a.date)===String(b.date) && a.startMin < b.endMin && b.startMin < a.endMin);
+    return !!(a && b && isFinite(a.startMin) && isFinite(a.endMin) && isFinite(b.startMin) && isFinite(b.endMin) && a.startMin < b.endMin && b.startMin < a.endMin);
   }catch{ return false; }
 }
-function __aiDescribeOverlapForActivity(cur, other){
+function __aiDescribeOverlapKind(cur, other){
   try{
-    const curStart = __fmtHHMM_fromMinutes(cur.startMin);
-    const curEnd = __fmtHHMM_fromMinutes(cur.endMin);
-    const otherStart = __fmtHHMM_fromMinutes(other.startMin);
-    const otherEnd = __fmtHHMM_fromMinutes(other.endMin);
-    const otherTitle = String(other.title || "Otra actividad");
-    if(other.startMin <= cur.startMin && other.endMin >= cur.endMin){
-      return `Conflicto horario: «${cur.title}» (${curStart}–${curEnd}) queda dentro del intervalo más amplio de «${otherTitle}» (${otherStart}–${otherEnd}).`;
-    }
-    if(cur.startMin <= other.startMin && cur.endMin >= other.endMin){
-      return `Conflicto horario: «${cur.title}» (${curStart}–${curEnd}) contiene por completo a «${otherTitle}» (${otherStart}–${otherEnd}).`;
-    }
-    if(other.startMin < cur.startMin && other.endMin > cur.startMin){
-      return `Conflicto horario: el evento anterior «${otherTitle}» (${otherStart}–${otherEnd}) termina después del inicio de «${cur.title}» (${curStart}–${curEnd}).`;
-    }
-    if(other.startMin < cur.endMin && other.startMin >= cur.startMin){
-      return `Conflicto horario: «${cur.title}» (${curStart}–${curEnd}) termina después de que empiece el siguiente evento «${otherTitle}» (${otherStart}–${otherEnd}).`;
-    }
-    return `Conflicto horario: «${cur.title}» (${curStart}–${curEnd}) se solapa con «${otherTitle}» (${otherStart}–${otherEnd}).`;
-  }catch{
-    return "Conflicto horario detectado entre actividades del mismo día.";
-  }
+    if(other.startMin <= cur.startMin && other.endMin >= cur.endMin) return "queda dentro de";
+    if(cur.startMin <= other.startMin && cur.endMin >= other.endMin) return "envuelve a";
+    if(other.startMin < cur.startMin && other.endMin > cur.startMin) return "empieza dentro de";
+    if(other.startMin < cur.endMin && other.endMin > cur.endMin) return "termina dentro de";
+  }catch{}
+  return "se solapa con";
 }
-function __aiCollectActivityOverlapsForSave(act){
+function __aiBuildOverlapMessageForActivityInterval(cur, conflicts){
   try{
-    const sc = (typeof curScenario==="function") ? curScenario() : null;
-    if(!sc || !Array.isArray(sc.activities)) return null;
-    const cur = __aiActIntervalIfPossible(act);
-    if(!cur) return null;
-    const conflicts = sc.activities
-      .filter(a => a && String(a.id || "") !== String(cur.id || ""))
-      .map(__aiActIntervalIfPossible)
-      .filter(Boolean)
-      .filter(x => String(x.date) === String(cur.date))
-      .filter(x => __aiIntervalsOverlap(cur, x))
-      .sort((a,b) => (a.startMin - b.startMin) || (a.endMin - b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
-    return { cur, conflicts };
-  }catch{
-    return null;
-  }
-}
-function __aiBuildOverlapMessageForSave(check){
-  try{
-    if(!check || !check.cur || !Array.isArray(check.conflicts) || !check.conflicts.length) return "";
-    const cur = check.cur;
-    const lines = check.conflicts.map(other => "• " + __aiDescribeOverlapForActivity(cur, other));
-    return [
-      `Se han detectado conflictos horarios el ${cur.date} para «${cur.title}» (${__fmtHHMM_fromMinutes(cur.startMin)}–${__fmtHHMM_fromMinutes(cur.endMin)}).`,
-      "",
-      lines.join("\n"),
-      "",
-      "Pulsa “Aceptar” para guardar igualmente o “Cancelar” para volver y corregir."
-    ].join("\n");
-  }catch{
-    return "";
-  }
+    if(!Array.isArray(conflicts) || !conflicts.length) return "";
+    const lines = [];
+    lines.push(`Conflicto horario detectado para «${cur.title}» (${__fmtHHMM_fromMinutes(cur.startMin)}–${__fmtHHMM_fromMinutes(cur.endMin)}).`);
+    lines.push("");
+    lines.push(conflicts.length === 1 ? "Conflicta con:" : "Conflicta con estas actividades:");
+    conflicts.forEach((it)=>{
+      const rel = __aiDescribeOverlapKind(cur, it);
+      lines.push(`- «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}): ${rel} este intervalo.`);
+    });
+    lines.push("");
+    lines.push("Puedes cancelar para corregir o aceptar para guardar igualmente.");
+    return lines.join("
+");
+  }catch{ return ""; }
 }
 function __aiCheckOverlapAroundActivity(act){
   try{
-    const check = __aiCollectActivityOverlapsForSave(act);
-    return __aiBuildOverlapMessageForSave(check);
+    const sc = (typeof curScenario==="function") ? curScenario() : null;
+    if(!sc || !Array.isArray(sc.activities)) return "";
+    const cur = __aiActIntervalIfPossible(act);
+    if(!cur) return "";
+    const conflicts = sc.activities
+      .filter(a => a && String(a.id||"") !== String(cur.id||""))
+      .map(__aiActIntervalIfPossible)
+      .filter(Boolean)
+      .filter(it => String(it.date) === String(cur.date))
+      .filter(it => __aiIntervalsOverlap(cur, it))
+      .sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
+    return __aiBuildOverlapMessageForActivityInterval(cur, conflicts);
   }catch{ return ""; }
 }
-/* ================= /Overlap alerts (V226C1A7E) ================= */
+/* ================= /Overlap alerts (V226C1A7B) ================= */
 
 
 
