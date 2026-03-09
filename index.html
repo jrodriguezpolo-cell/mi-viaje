@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX</title>
+<title>V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1218,7 +1218,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1452,7 +1452,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX
+            Build cargada: V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1489,7 +1489,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX";
+const APP_BUILD = "V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17051,5 +17051,191 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
   }, {passive:true});
 })();
 </script>
+
+<script>
+/* ================= Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7I) ================= */
+(function(){
+  function __mvIsoAddDays(iso, days){
+    try{
+      const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(!m) return '';
+      const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+      d.setDate(d.getDate() + Number(days||0));
+      const y = d.getFullYear();
+      const mo = String(d.getMonth()+1).padStart(2,'0');
+      const da = String(d.getDate()).padStart(2,'0');
+      return `${y}-${mo}-${da}`;
+    }catch{ return ''; }
+  }
+  function __mvCollectLegDateSegments(sc){
+    try{
+      if(!sc || !Array.isArray(sc.legs)) return [];
+      const out = [];
+      sc.legs.forEach((leg)=>{
+        try{
+          if(!leg) return;
+          const id = String(leg.id||'').trim();
+          const depDate = String(leg.date||'').trim();
+          const depTime = String(leg.time||'').trim();
+          let arrDate = String(leg.arriveDate||leg.dateIn||'').trim() || depDate;
+          const arrTime = String(leg.arriveTime||leg.timeIn||'').trim();
+          const startMin = __parseHHMM_toMinutes(depTime);
+          let endMin = __parseHHMM_toMinutes(arrTime);
+          if(!depDate || !isFinite(startMin)) return;
+          const title = ((String(leg.from||'').trim() || '—') + ' → ' + (String(leg.to||'').trim() || '—')).trim();
+          const pushSeg = (date, s, e) => {
+            if(!date || !isFinite(s) || !isFinite(e) || !(e>s)) return;
+            out.push({ kind:'leg', sourceKind:'leg', id, date, startMin:s, endMin:e, title, raw:leg });
+          };
+          if(!arrDate) arrDate = depDate;
+          if(arrDate === depDate){
+            if(isFinite(endMin) && endMin > startMin){
+              pushSeg(depDate, startMin, endMin);
+            }else if(isFinite(endMin) && endMin < startMin){
+              pushSeg(depDate, startMin, 1440);
+              pushSeg(__mvIsoAddDays(depDate, 1), 0, endMin);
+            }else{
+              pushSeg(depDate, startMin, 1440);
+            }
+            return;
+          }
+          pushSeg(depDate, startMin, 1440);
+          let cursor = __mvIsoAddDays(depDate, 1);
+          let guard = 0;
+          while(cursor && cursor < arrDate && guard < 30){
+            pushSeg(cursor, 0, 1440);
+            cursor = __mvIsoAddDays(cursor, 1);
+            guard += 1;
+          }
+          if(isFinite(endMin) && endMin > 0) pushSeg(arrDate, 0, endMin);
+          else pushSeg(arrDate, 0, 1440);
+        }catch{}
+      });
+      return out.sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title),'es'));
+    }catch{ return []; }
+  }
+  function __mvCountKinds(conflicts){
+    const c = { act:0, leg:0 };
+    try{ (conflicts||[]).forEach((x)=>{ if(x && x.kind==='leg') c.leg += 1; else c.act += 1; }); }catch{}
+    return c;
+  }
+  function __mvBuildConflictChipText(selfKind, conflicts){
+    try{
+      if(!Array.isArray(conflicts) || !conflicts.length) return '';
+      const first = conflicts[0] || {};
+      const counts = __mvCountKinds(conflicts);
+      if(conflicts.length === 1){
+        const noun = first.kind === 'leg' ? 'transporte' : '«'+String(first.title||'Actividad')+'»';
+        const when = `(${__fmtHHMM_fromMinutes(first.startMin)}–${__fmtHHMM_fromMinutes(first.endMin)})`;
+        return first.kind === 'leg'
+          ? `⚠️ Solapa con transporte «${String(first.title||'Trayecto')}» ${when}`
+          : `⚠️ Solapa con ${noun} ${when}`;
+      }
+      if(counts.leg && counts.act){
+        return `⚠️ Solapa con ${counts.act} actividade${counts.act===1?'s':'s'} y ${counts.leg} transporte${counts.leg===1?'':'s'}`;
+      }
+      if(counts.leg){
+        return `⚠️ Solapa con ${counts.leg} transporte${counts.leg===1?'':'s'} del mismo día`;
+      }
+      return `⚠️ Solapa con ${conflicts.length} actividades del mismo día`;
+    }catch{ return '⚠️ Solapamiento horario detectado'; }
+  }
+  function __mvApplyMixedConflictDecorations(kind, id, conflicts){
+    try{
+      const nodes = [document.getElementById(`${kind}-${id}`), document.getElementById(`tl-${kind}-${id}`)].filter(Boolean);
+      nodes.forEach((node)=>{
+        try{ node.classList.add('mvOverlapWarn'); }catch{}
+        try{ node.setAttribute('data-overlap-warn','1'); }catch{}
+        try{ node.setAttribute('title', `Solapamiento horario con ${conflicts.length} elemento${conflicts.length===1?'':'s'}`); }catch{}
+        let chip = node.querySelector('.mvOverlapChip');
+        if(!chip){
+          chip = document.createElement('div');
+          chip.className = 'mvOverlapChip' + (String(node.id||'').startsWith('tl-') ? ' mvOverlapChipTl' : '');
+          const host = node.querySelector('.min-w-0') || node;
+          try{ host.appendChild(chip); }catch{}
+        }
+        chip.textContent = __mvBuildConflictChipText(kind, conflicts);
+      });
+    }catch{}
+  }
+  function __mvComputeUnifiedConflictMaps(sc){
+    try{
+      const acts = __mvCollectActivityIntervals(sc);
+      const legSegs = __mvCollectLegDateSegments(sc);
+      const actMap = new Map();
+      const legMap = new Map();
+      const add = (map, key, payload) => {
+        const k = String(key||'');
+        if(!k) return;
+        if(!map.has(k)) map.set(k, []);
+        map.get(k).push(payload);
+      };
+      for(let i=0;i<acts.length;i++){
+        for(let j=i+1;j<acts.length;j++){
+          const a = acts[i], b = acts[j];
+          if(String(a.date)!==String(b.date)) continue;
+          if(__aiIntervalsOverlap(a,b)){
+            add(actMap, a.id, { ...b, kind:'act' });
+            add(actMap, b.id, { ...a, kind:'act' });
+          }
+        }
+      }
+      acts.forEach((act)=>{
+        legSegs.forEach((leg)=>{
+          if(String(act.date)!==String(leg.date)) return;
+          if(__aiIntervalsOverlap(act, leg)){
+            add(actMap, act.id, { ...leg, kind:'leg' });
+            add(legMap, leg.id, { ...act, kind:'act' });
+          }
+        });
+      });
+      [actMap, legMap].forEach((map)=>{
+        map.forEach((arr, key)=>{
+          arr.sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title),'es'));
+        });
+      });
+      return { actMap, legMap };
+    }catch{ return { actMap:new Map(), legMap:new Map() }; }
+  }
+  window.__mvRefreshActivityOverlapWarnings = function(){
+    try{
+      const sc = (typeof curScenario==='function') ? curScenario() : null;
+      __mvClearConflictDecorations();
+      const maps = __mvComputeUnifiedConflictMaps(sc);
+      maps.actMap.forEach((conflicts, id)=>{ if(id) __mvApplyMixedConflictDecorations('act', id, conflicts); });
+      maps.legMap.forEach((conflicts, id)=>{ if(id) __mvApplyMixedConflictDecorations('leg', id, conflicts); });
+      window.__mvLastActivityOverlapMap = maps.actMap;
+      window.__mvLastLegOverlapMap = maps.legMap;
+      return maps.actMap;
+    }catch{ return new Map(); }
+  };
+  window.__aiCheckOverlapAroundActivity = function(act){
+    try{
+      const sc = (typeof curScenario==='function') ? curScenario() : null;
+      if(!sc) return '';
+      const cur = __aiActIntervalIfPossible(act);
+      if(!cur) return '';
+      const maps = __mvComputeUnifiedConflictMaps(sc);
+      const conflicts = (maps.actMap.get(String(cur.id||'')) || []).slice();
+      if(!conflicts.length) return '';
+      const lines = [];
+      lines.push(`Conflicto horario detectado para «${cur.title}» (${__fmtHHMM_fromMinutes(cur.startMin)}–${__fmtHHMM_fromMinutes(cur.endMin)}).`);
+      lines.push('');
+      lines.push('Conflicta con:');
+      conflicts.forEach((it)=>{
+        if(it.kind === 'leg') lines.push(`- Transporte «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}).`);
+        else lines.push(`- Actividad «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}).`);
+      });
+      lines.push('');
+      lines.push('Puedes cancelar para corregir o aceptar para guardar igualmente.');
+      return lines.join('
+');
+    }catch{ return ''; }
+  };
+  try{ document.addEventListener('DOMContentLoaded', function(){ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }); }catch{}
+})();
+/* ================= /Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7I) ================= */
+</script>
+
 </body>
 </html>
