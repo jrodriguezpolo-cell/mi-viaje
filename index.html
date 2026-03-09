@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION</title>
+<title>V226C1A7_AI_PENDING_REVIEW_BADGE_AND_INNER_ACCESS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7_AI_PENDING_REVIEW_BADGE_AND_INNER_ACCESS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -310,6 +310,28 @@ function deleteItemById(kind, id) {
   z-index: 2500;
 }
 #fabAI:active{ transform: scale(0.98); }
+
+
+#fabAI{ position: fixed; } /* keep positioned ancestor for badge */
+#aiFabBadge{
+  position:absolute;
+  top:-5px;
+  right:-5px;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background: rgb(15 23 42);
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid #fff;
+  box-shadow: 0 6px 14px rgba(15,23,42,0.18);
+}
+#aiFabBadge.hidden{ display:none !important; }
 
 #aiSheetOverlay{
   position: fixed;
@@ -1192,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7_AI_PENDING_REVIEW_BADGE_AND_INNER_ACCESS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION
+            Build cargada: V226C1A7_AI_PENDING_REVIEW_BADGE_AND_INNER_ACCESS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION";
+const APP_BUILD = "V226C1A7_AI_PENDING_REVIEW_BADGE_AND_INNER_ACCESS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -8726,6 +8748,7 @@ function renderAll() {
   try { renderAIContextual(); } catch {}
   calcSummary();
   applyReadOnlyMode();
+  try{ if(typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); }catch{}
 }
 
 function renderTabs() {
@@ -12508,6 +12531,101 @@ function closeAISheet(){
 
 
 /* ================= IA review: confirmar incorporaciones añadidas por IA (V225F5) ================= */
+/* ================= IA pending review badge + acceso interno (V226C1A7) ================= */
+function __aiGetPendingAIReviewList(){
+  try{
+    const sc = (typeof curScenario==="function") ? curScenario() : null;
+    if(!sc || !Array.isArray(sc.activities)) return [];
+    return sc.activities.filter(a=>a && a.fromAI && a.pendingAIReview).slice();
+  }catch{ return []; }
+}
+function __aiGetPendingAIReviewCount(){
+  try{ return __aiGetPendingAIReviewList().length; }catch{ return 0; }
+}
+function __aiUpdatePendingBadge(){
+  const n = __aiGetPendingAIReviewCount();
+  // FAB badge
+  const b = document.getElementById("aiFabBadge");
+  if(b){
+    if(n>0){
+      b.textContent = String(n);
+      b.classList.remove("hidden");
+    }else{
+      b.textContent = "";
+      b.classList.add("hidden");
+    }
+  }
+  // IA hub access
+  const bar = document.getElementById("aiPendingBar");
+  const inline = document.getElementById("aiPendingCountInline");
+  if(bar && inline){
+    if(n>0){
+      inline.textContent = String(n);
+      bar.classList.remove("hidden");
+    }else{
+      inline.textContent = "0";
+      bar.classList.add("hidden");
+    }
+  }
+}
+
+function __aiOpenPendingReviewModal(){
+  const pending = __aiGetPendingAIReviewList();
+  pending.sort((a,b)=> String(a.date||"9999-99-99").localeCompare(String(b.date||"9999-99-99")) || (timeSortKey(a.time)-timeSortKey(b.time)) || String(a.title||"").localeCompare(String(b.title||"")));
+  const body = (!pending.length)
+    ? `<div class="text-sm text-slate-600">No hay incorporaciones IA pendientes.</div>`
+    : `<div class="space-y-2">` + pending.map(a=>{
+        const when = `${escapeHtml(a.date||"")}${a.time ? " · "+escapeHtml(a.time) : ""}`;
+        const where = escapeHtml(a.city||a.place||"");
+        const meta = [when, where].filter(Boolean).join(" · ");
+        return `
+          <div class="rounded-2xl border border-slate-200 bg-white p-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-extrabold text-slate-900 truncate">${escapeHtml(a.title||"Actividad")}</div>
+                <div class="text-xs text-slate-500 mt-1">${meta || "—"}</div>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-extrabold" data-ai-pend-view="${escapeHtml(String(a.id))}">Ver</button>
+                <button type="button" class="tap px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold" data-ai-pend-confirm="${escapeHtml(String(a.id))}">Confirmar</button>
+              </div>
+            </div>
+          </div>`;
+      }).join("") + `</div>`;
+
+  showModal("Revisar pendientes IA", body, []);
+  setTimeout(()=>{
+    const box = document.getElementById("modalBody");
+    if(!box) return;
+    if(box.__aiPendBound) return;
+    box.__aiPendBound = true;
+    box.addEventListener("click", (ev)=>{
+      const t = ev.target;
+      if(!(t instanceof HTMLElement)) return;
+      const vid = t.getAttribute("data-ai-pend-view");
+      const cid = t.getAttribute("data-ai-pend-confirm");
+      if(vid){
+        try{
+          if(typeof closeModal==="function") closeModal();
+        }catch{}
+        try{
+          if(typeof __aiFocusActivityInTimeline==="function") __aiFocusActivityInTimeline(vid);
+          else if(typeof openEventSheet==="function") openEventSheet("act", vid);
+        }catch{}
+        return;
+      }
+      if(cid){
+        try{ __aiConfirmActivityPendingReview(cid); }catch{}
+        try{ __aiUpdatePendingBadge(); }catch{}
+        // Re-open refreshed list to continue review
+        setTimeout(()=>{ try{ __aiOpenPendingReviewModal(); }catch{} }, 60);
+        return;
+      }
+    }, { passive:true });
+  }, 0);
+}
+
+
 function __aiConfirmActivityPendingReview(actId){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : null;
@@ -13882,7 +14000,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
-<button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨</button>
+<button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨<span id="aiFabBadge" class="hidden"></span></button>
 <div aria-hidden="true" class="hidden" id="aiSheetOverlay">
   <div aria-label="IA" aria-modal="true" id="aiSheet" role="dialog">
     <div id="aiSheetHeader">
@@ -13904,6 +14022,13 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="flex items-center justify-between gap-3 mb-3">
           <div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">IA · funciones</div>
           <div class="text-xs text-slate-500 font-semibold">Pulsa una acción · La ayuda está en la “i”</div>
+        </div>
+
+        <div id="aiPendingBar" class="hidden mb-3">
+          <button id="aiReviewPendingBtn" type="button" class="tap w-full px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-slate-900 font-extrabold flex items-center justify-between">
+            <span>Revisar pendientes IA</span>
+            <span id="aiPendingCountInline" class="text-xs font-extrabold bg-slate-900 text-white rounded-full px-2 py-1">0</span>
+          </button>
         </div>
 
         <!-- Legacy ids (kept hidden for stable wiring) -->
@@ -14254,6 +14379,8 @@ return 0;
       on("aiActionGaps", ()=> this.selectAction("gaps"));
       on("aiPick", ()=> this.selectAction("summary"));
       on("aiGenerate", ()=> this.selectAction("cities"));
+      on("aiReviewPendingBtn", ()=> { try{ __aiOpenPendingReviewModal(); }catch{} });
+      try{ if(typeof __aiUpdatePendingBadge==="function") __aiUpdatePendingBadge(); }catch{}
     },
     normalizeEntrypoint(sourceView){
       const raw = String(sourceView || (typeof activeView !== "undefined" ? activeView : document.body?.dataset?.view) || "timeline").trim().toLowerCase();
