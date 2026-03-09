@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A5_AI_DISCOVER_CITIES_ADD_ACTIVITY_WITH_SUGGESTED_DAY_AND_TIME</title>
+<title>V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A5_AI_DISCOVER_CITIES_ADD_ACTIVITY_WITH_SUGGESTED_DAY_AND_TIME" rel="manifest"/>
+<link href="manifest.json?v=V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1192,7 +1192,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A5_AI_DISCOVER_CITIES_ADD_ACTIVITY_WITH_SUGGESTED_DAY_AND_TIME</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1426,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A5_AI_DISCOVER_CITIES_ADD_ACTIVITY_WITH_SUGGESTED_DAY_AND_TIME
+            Build cargada: V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1463,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A5_AI_DISCOVER_CITIES_ADD_ACTIVITY_WITH_SUGGESTED_DAY_AND_TIME";
+const APP_BUILD = "V226C1A6_AI_DISCOVER_CITIES_ADD_ESTIMATED_DURATION";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14150,7 +14150,33 @@ window.addEventListener('DOMContentLoaded', () => {
             return Math.max(0, h*60 + mi);
           }
           if((m=/^\d+$/.exec(s))) return Math.max(0, parseInt(s,10)||0);
-          return 0;
+          
+          // Heurística simple para estimar duración (solo si no viene ya definida)
+          const t = ((it && it.title) ? String(it.title) : "") + " " + ((it && it.summary) ? String(it.summary) : "") + " " + ((it && it.why) ? String(it.why) : "") + " " + ((it && it.kind) ? String(it.kind) : "");
+          const tt = t.toLowerCase();
+
+          const est = (()=>{
+            // Full/half day experiences
+            if(/\b(universal|disney|parque tem\w+tico|theme\s*park|parque acu\w+tico)\b/.test(tt)) return 360; // ~6h
+            // Big museums
+            if(/\b(louvre|british\s*museum|metropolitan|met\b|moma|prado|vatican|vaticanos|uffizi|uffizi)\b/.test(tt)) return 180; // ~3h
+            // Generic museums / galleries
+            if(/\b(museo|museum|galer\w+a|exposici\w+n)\b/.test(tt)) return 120; // ~2h
+            // Monuments
+            if(/\b(palacio|catedral|bas\w+lica|iglesia|duomo|castillo|alc\w+zar|coliseo|colosseum|torre|tower)\b/.test(tt)) return 120; // ~2h
+            // Markets / food stops
+            if(/\b(mercado|market|food\s*hall)\b/.test(tt)) return 75; // ~1h15
+            // Parks / viewpoints / strolls
+            if(/\b(parque|jard\w+n|mirador|plaza|paseo|pasear|barrio|walking|walk)\b/.test(tt)) return 90; // ~1h30
+            // Tours / cruises
+            if(/\b(tour|visita\s*guiada|crucero|cruise|barco|boat|ferry)\b/.test(tt)) return 150; // ~2h30
+            // Shows
+            if(/\b(show|espect\w+culo|concierto|concert|teatro|opera)\b/.test(tt)) return 120; // ~2h
+            return 0;
+          })();
+
+          if(est) return est;
+return 0;
         };
         const fmtDur = (min)=>{
           const mm = Math.max(0, Math.floor(min||0));
