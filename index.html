@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7K_UNIFIED_OVERLAP_TRANSPORT_AND_SUMMARY_STYLE_FIX</title>
+<title>V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7K_UNIFIED_OVERLAP_TRANSPORT_AND_SUMMARY_STYLE_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1218,7 +1218,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7K_UNIFIED_OVERLAP_TRANSPORT_AND_SUMMARY_STYLE_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1452,7 +1452,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7K_UNIFIED_OVERLAP_TRANSPORT_AND_SUMMARY_STYLE_FIX
+            Build cargada: V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1489,7 +1489,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7K_UNIFIED_OVERLAP_TRANSPORT_AND_SUMMARY_STYLE_FIX";
+const APP_BUILD = "V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17321,6 +17321,125 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
   try{ document.addEventListener('DOMContentLoaded', function(){ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }); }catch{}
 })();
 /* ================= /Overlap alerts unified ACTIVITY + TRANSPORT (V226C1A7K) ================= */
+</script>
+
+
+<script>
+/* ================= Overlap DOM fallback + unified bottom-line chip (V226C1A7L) ================= */
+(function(){
+  function hhmmToMin(s){
+    try{ const m=String(s||'').match(/^(\d{1,2}):(\d{2})$/); if(!m) return NaN; return Number(m[1])*60+Number(m[2]); }catch{ return NaN; }
+  }
+  function normDate(raw){
+    try{
+      if(typeof window.__mvNormalizeDateKey==='function') return window.__mvNormalizeDateKey(raw);
+      const s=String(raw||'').trim();
+      const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if(m){ let y=m[3]; if(y.length===2) y='20'+y; return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`; }
+      return s;
+    }catch{ return String(raw||'').trim(); }
+  }
+  function overlap(a,b){ return a && b && a.date===b.date && Number.isFinite(a.startMin) && Number.isFinite(a.endMin) && Number.isFinite(b.startMin) && Number.isFinite(b.endMin) && a.startMin < b.endMin && b.startMin < a.endMin; }
+  function isoAdd(iso,days){ try{ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }catch{return '';} }
+  function extractActFromNode(node){
+    try{
+      const txt=String(node.innerText||node.textContent||'').replace(/ /g,' ');
+      const id=String(node.id||'').replace(/^tl-act-|^act-/,'');
+      const title=(txt.split('
+')[0]||'Actividad').replace(/^🎯\s*/,'').trim();
+      const m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2}).*?Fin:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[·•]?\s*(\d{1,2}:\d{2})/s);
+      if(!m) return null;
+      return {kind:'act', id, title, date:normDate(m[1]), startMin:hhmmToMin(m[2]), endMin:hhmmToMin(m[4]), node};
+    }catch{return null;}
+  }
+  function extractLegSegmentsFromNode(node){
+    try{
+      const txt=String(node.innerText||node.textContent||'').replace(/ /g,' ');
+      const id=String(node.id||'').replace(/^tl-leg-|^leg-/,'');
+      const title=(txt.split('
+')[0]||'Transporte').replace(/^✈️\s*/,'').trim();
+      let m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})\s*→\s*(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2})\s*→\s*(\d{1,2}:\d{2})/s);
+      if(!m) m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2})\s*→\s*(\d{1,2}:\d{2})/s);
+      if(!m) return [];
+      let depDate, arrDate, depTime, arrTime;
+      if(m.length>=5){ depDate=m[1]; arrDate=m[2]; depTime=m[3]; arrTime=m[4]; }
+      else { depDate=m[1]; arrDate=m[1]; depTime=m[2]; arrTime=m[3]; }
+      depDate=normDate(depDate); arrDate=normDate(arrDate||depDate);
+      const s=hhmmToMin(depTime), e=hhmmToMin(arrTime);
+      if(!depDate || !Number.isFinite(s)) return [];
+      const segs=[];
+      const push=(date,startMin,endMin)=>{ if(date && Number.isFinite(startMin)&&Number.isFinite(endMin)&&endMin>startMin) segs.push({kind:'leg', id, title, date, startMin, endMin, node}); };
+      if(arrDate===depDate){
+        if(Number.isFinite(e) && e>s) push(depDate,s,e);
+        else if(Number.isFinite(e) && e<s){ push(depDate,s,1440); push(isoAdd(depDate,1),0,e); }
+        else push(depDate,s,1440);
+      }else{
+        push(depDate,s,1440);
+        let cur=isoAdd(depDate,1), guard=0;
+        while(cur && cur<arrDate && guard<30){ push(cur,0,1440); cur=isoAdd(cur,1); guard++; }
+        if(Number.isFinite(e) && e>0) push(arrDate,0,e); else push(arrDate,0,1440);
+      }
+      return segs;
+    }catch{return [];}
+  }
+  function uniquePush(arr,item){ const sig=`${item.kind}|${item.id}|${item.date}|${item.startMin}|${item.endMin}`; if(!arr.some(x=>`${x.kind}|${x.id}|${x.date}|${x.startMin}|${x.endMin}`===sig)) arr.push(item); }
+  function buildMapsFromDOM(){
+    const actCards=[...document.querySelectorAll('[id^="act-"], [id^="tl-act-"]')];
+    const legCards=[...document.querySelectorAll('[id^="leg-"], [id^="tl-leg-"]')];
+    const acts=[]; const actNodesById=new Map();
+    actCards.forEach(n=>{ const row=extractActFromNode(n); if(row){ acts.push(row); if(!actNodesById.has(row.id)) actNodesById.set(row.id,[]); actNodesById.get(row.id).push(n); } });
+    const legSegs=[]; const legNodesById=new Map();
+    legCards.forEach(n=>{ const segs=extractLegSegmentsFromNode(n); segs.forEach(seg=>legSegs.push(seg)); if(segs[0]){ if(!legNodesById.has(segs[0].id)) legNodesById.set(segs[0].id,[]); legNodesById.get(segs[0].id).push(n);} });
+    const actMap=new Map(), legMap=new Map();
+    const add=(map,key,p)=>{ key=String(key||''); if(!key) return; if(!map.has(key)) map.set(key,[]); uniquePush(map.get(key),p); };
+    for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){ const a=acts[i], b=acts[j]; if(a.id===b.id) continue; if(overlap(a,b)){ add(actMap,a.id,b); add(actMap,b.id,a);} }
+    for(let i=0;i<legSegs.length;i++) for(let j=i+1;j<legSegs.length;j++){ const a=legSegs[i], b=legSegs[j]; if(a.id===b.id) continue; if(overlap(a,b)){ add(legMap,a.id,b); add(legMap,b.id,a);} }
+    acts.forEach(a=> legSegs.forEach(l=>{ if(overlap(a,l)){ add(actMap,a.id,l); add(legMap,l.id,a);} }));
+    return {actMap, legMap};
+  }
+  function buildText(self, conflicts){
+    if(!conflicts || !conflicts.length) return '';
+    const first=conflicts[0];
+    const own=self ? ` (${String(self.startMin/60|0).padStart(2,'0')}:${String(self.startMin%60).padStart(2,'0')}–${String(self.endMin/60|0).padStart(2,'0')}:${String(self.endMin%60).padStart(2,'0')})` : '';
+    if(conflicts.length===1){
+      const label=first.kind==='leg' ? `Transporte «${first.title||'Trayecto'}»` : `«${first.title||'Actividad'}»`;
+      const other=` (${String(first.startMin/60|0).padStart(2,'0')}:${String(first.startMin%60).padStart(2,'0')}–${String(first.endMin/60|0).padStart(2,'0')}:${String(first.endMin%60).padStart(2,'0')})`;
+      return `⚠️ Solapa${own} con ${label}${other}`;
+    }
+    const acts=conflicts.filter(x=>x.kind==='act').length, legs=conflicts.filter(x=>x.kind==='leg').length;
+    if(acts && legs) return `⚠️ Solapa${own} con ${acts} actividades y ${legs} transportes`;
+    if(legs) return `⚠️ Solapa${own} con ${legs} transportes`;
+    return `⚠️ Solapa${own} con ${acts} actividades`;
+  }
+  function applyToNode(node, text){
+    if(!node || !text) return;
+    node.classList.add('mvOverlapWarn');
+    node.setAttribute('data-overlap-warn','1');
+    let chip=node.querySelector(':scope > .mvOverlapChipBottom');
+    if(!chip){ chip=document.createElement('div'); chip.className='mvOverlapChip mvOverlapChipBottom'; node.appendChild(chip); }
+    chip.textContent=text;
+  }
+  function clearBottom(){ document.querySelectorAll('.mvOverlapChipBottom').forEach(n=>n.remove()); }
+  function refresh(){
+    try{ clearBottom(); }catch{}
+    const dom=buildMapsFromDOM();
+    dom.actMap.forEach((conflicts,id)=>{
+      document.querySelectorAll(`#act-${CSS.escape(id)}, #tl-act-${CSS.escape(id)}`).forEach(n=>{ const self=extractActFromNode(n); applyToNode(n, buildText(self, conflicts)); });
+    });
+    dom.legMap.forEach((conflicts,id)=>{
+      document.querySelectorAll(`#leg-${CSS.escape(id)}, #tl-leg-${CSS.escape(id)}`).forEach(n=>{ const segs=extractLegSegmentsFromNode(n); applyToNode(n, buildText(segs[0]||null, conflicts)); });
+    });
+  }
+  const prev=window.__mvRefreshActivityOverlapWarnings;
+  window.__mvRefreshActivityOverlapWarnings=function(){ try{ if(typeof prev==='function') prev(); }catch{} try{ refresh(); }catch{} };
+  document.addEventListener('DOMContentLoaded',()=>{
+    const css=document.createElement('style');
+    css.textContent=`.timelineItem,.secCard{position:relative}.mvOverlapChipBottom{display:block;margin-top:10px;padding:8px 12px;border-radius:9999px;border:2px solid #f59e0b;color:#9a3412;background:#fff7ed;font-weight:800;font-size:12px;line-height:1.2;max-width:100%;white-space:normal}.timelineItem .mvOverlapChip:not(.mvOverlapChipBottom){display:none!important}`;
+    document.head.appendChild(css);
+    setTimeout(()=>{ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }, 60);
+    setTimeout(()=>{ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }, 250);
+  });
+})();
 </script>
 
 </body>
