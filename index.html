@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</title>
+<title>V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX
+            Build cargada: V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX";
+const APP_BUILD = "V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13972,28 +13972,38 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.__bound = true;
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
-      
-      // V226C1A7B: alerta clara de solapamiento horario (anterior/siguiente) al guardar
+
+      const __ctxBeforeSave = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? {
+        kind: String(__eventSheetCtx.kind||""),
+        id: String(__eventSheetCtx.id||"")
+      } : { kind:"", id:"" };
+
       try{
-        if(typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && String(__eventSheetCtx.kind)==="act"){
-          const obj = (typeof __getEventSheetObj==="function") ? __getEventSheetObj() : null;
-          const msg = obj ? __aiCheckOverlapAroundActivity(obj) : "";
+        if(__ctxBeforeSave.kind === "act"){
+          const obj = (typeof __sheetGetCurrentActForOverlapCheck === "function") ? __sheetGetCurrentActForOverlapCheck() : ((typeof __getEventSheetObj === "function") ? __getEventSheetObj() : null);
+          const msg = obj && typeof __aiCheckOverlapAroundActivity === "function" ? __aiCheckOverlapAroundActivity(obj) : "";
           if(msg){
             const ok = confirm(msg + "\n\n¿Quieres guardar igualmente?");
             if(!ok){ return; }
           }
         }
       }catch{}
+
       try { if (typeof saveState === "function") saveState(); } catch {}
       try{ __sheetSetSnapshot(); }catch{}
-
-      // Close sheet first (keeps UI consistent)
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
 
-      // Re-render only what is needed
       try {
-        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+        if (__ctxBeforeSave.kind === "leg") {
           if (typeof renderLegs === "function") renderLegs();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else if (__ctxBeforeSave.kind === "stay") {
+          if (typeof renderStays === "function") renderStays();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else if (__ctxBeforeSave.kind === "act") {
+          if (typeof renderActivities === "function") renderActivities();
           if (typeof renderTimeline === "function") renderTimeline();
           if (typeof calcSummary === "function") calcSummary();
         } else {
@@ -16749,10 +16759,61 @@ function __aiBuildOverlapMessageForActivityInterval(cur, conflicts){
     });
     lines.push("");
     lines.push("Puedes cancelar para corregir o aceptar para guardar igualmente.");
-    return lines.join("
-");
+    return lines.join("\n");
   }catch{ return ""; }
 }
+function __sheetSyncCurrentActFieldsToObject(act){
+  try{
+    if(!act) return act || null;
+    const body = document.getElementById("eventSheetBody");
+    if(!body) return act;
+    const id = String(act.id||"").trim();
+    if(!id) return act;
+    const q = (sel) => { try{ return body.querySelector(sel); }catch{ return null; } };
+    const read = (sel) => {
+      const el = q(sel);
+      return el ? String(el.value||"") : "";
+    };
+    const readAny = (sels) => {
+      for(const sel of sels){
+        const v = read(sel);
+        if(v !== "") return v;
+      }
+      return "";
+    };
+    act.title = readAny([`[data-sheet-act="title"]`, `[data-act-title="${CSS.escape(id)}"]`]);
+    act.city = readAny([`[data-sheet-act="city"]`, `[data-act-city="${CSS.escape(id)}"]`]);
+    act.date = readAny([`[data-sheet-act="date"]`, `[data-act-date="${CSS.escape(id)}"]`]);
+    act.time = readAny([`[data-sheet-act="time"]`, `[data-act-time="${CSS.escape(id)}"]`]);
+    const durHRaw = readAny([`[data-sheet-act="durH"]`, `[data-act-durh="${CSS.escape(id)}"]`]);
+    const durMRaw = readAny([`[data-sheet-act="durM"]`, `[data-act-durm="${CSS.escape(id)}"]`]);
+    const h = Math.max(0, Math.floor(parseInt(String(durHRaw||"0"),10) || 0));
+    const mRaw = parseInt(String(durMRaw||"0"),10);
+    const m = Math.max(0, Math.min(59, Math.floor(Number.isFinite(mRaw) ? mRaw : 0)));
+    act.durationH = h;
+    act.durationM = m;
+    act.durationMin = h*60 + m;
+    act.duration = (typeof __tlFormatDurationHM === "function") ? __tlFormatDurationHM(act.durationMin) : `${h}h ${String(m).padStart(2,"0")}m`;
+    const costRaw = readAny([`[data-sheet-act="cost"]`, `[data-act-cost="${CSS.escape(id)}"]`]);
+    act.cost = (String(costRaw||"").trim() === "") ? null : (typeof parseMoney === "function" ? parseMoney(costRaw) : Number(costRaw));
+    const currencyRaw = readAny([`[data-sheet-act="currency"]`, `[data-act-currency="${CSS.escape(id)}"]`]);
+    if(String(currencyRaw||"").trim()) act.currency = String(currencyRaw||"").trim();
+  }catch{}
+  return act || null;
+}
+function __sheetGetCurrentActForOverlapCheck(){
+  try{
+    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+    if(!ctx || String(ctx.kind||"") !== "act") return null;
+    let act = (typeof __getEventSheetObj === "function") ? __getEventSheetObj() : null;
+    if(!act){
+      const sc = (typeof curScenario === "function") ? curScenario() : null;
+      if(sc && Array.isArray(sc.activities)) act = sc.activities.find(x => String(x && x.id) === String(ctx.id||"")) || null;
+    }
+    return __sheetSyncCurrentActFieldsToObject(act);
+  }catch{ return null; }
+}
+
 function __aiCheckOverlapAroundActivity(act){
   try{
     const sc = (typeof curScenario==="function") ? curScenario() : null;
