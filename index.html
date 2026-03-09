@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS</title>
+<title>V226C1A7J_AI_OVERLAP_DATE_NORMALIZATION_AND_TRANSPORT_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7J_AI_OVERLAP_DATE_NORMALIZATION_AND_TRANSPORT_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1218,7 +1218,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7J_AI_OVERLAP_DATE_NORMALIZATION_AND_TRANSPORT_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1452,7 +1452,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS
+            Build cargada: V226C1A7J_AI_OVERLAP_DATE_NORMALIZATION_AND_TRANSPORT_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1489,7 +1489,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7I_AI_OVERLAP_ACTIVITIES_AND_TRANSPORT_CONFLICTS";
+const APP_BUILD = "V226C1A7J_AI_OVERLAP_DATE_NORMALIZATION_AND_TRANSPORT_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17053,11 +17053,37 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
 </script>
 
 <script>
-/* ================= Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7I) ================= */
+/* ================= Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7J) ================= */
 (function(){
+  function __mvNormalizeDateKey(raw){
+    try{
+      const s = String(raw||'').trim();
+      if(!s) return '';
+      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+      if(m){
+        const d = String(m[1]).padStart(2,'0');
+        const mo = String(m[2]).padStart(2,'0');
+        let y = String(m[3]);
+        if(y.length === 2) y = '20' + y;
+        return `${y}-${mo}-${d}`;
+      }
+      m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
+      if(m){
+        const d = String(m[1]).padStart(2,'0');
+        const mo = String(m[2]).padStart(2,'0');
+        let y = String(m[3]);
+        if(y.length === 2) y = '20' + y;
+        return `${y}-${mo}-${d}`;
+      }
+      return s;
+    }catch{ return String(raw||'').trim(); }
+  }
   function __mvIsoAddDays(iso, days){
     try{
-      const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const norm = __mvNormalizeDateKey(iso);
+      const m = String(norm||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if(!m) return '';
       const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
       d.setDate(d.getDate() + Number(days||0));
@@ -17067,6 +17093,17 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
       return `${y}-${mo}-${da}`;
     }catch{ return ''; }
   }
+  function __mvCollectActivityIntervals(sc){
+    try{
+      if(!sc || !Array.isArray(sc.activities)) return [];
+      return sc.activities.map((act)=>{
+        const row = __aiActIntervalIfPossible(act);
+        if(!row) return null;
+        row.date = __mvNormalizeDateKey(row.date);
+        return row;
+      }).filter(Boolean).sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), 'es'));
+    }catch{ return []; }
+  }
   function __mvCollectLegDateSegments(sc){
     try{
       if(!sc || !Array.isArray(sc.legs)) return [];
@@ -17075,17 +17112,18 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
         try{
           if(!leg) return;
           const id = String(leg.id||'').trim();
-          const depDate = String(leg.date||'').trim();
-          const depTime = String(leg.time||'').trim();
-          let arrDate = String(leg.arriveDate||leg.dateIn||'').trim() || depDate;
-          const arrTime = String(leg.arriveTime||leg.timeIn||'').trim();
+          const depDate = __mvNormalizeDateKey(leg.date||leg.dateOut||leg.departDate||leg.depDate||'');
+          const depTime = String(leg.time||leg.timeOut||leg.departTime||leg.depTime||'').trim();
+          let arrDate = __mvNormalizeDateKey(leg.arriveDate||leg.dateIn||leg.arrivalDate||leg.endDate||'') || depDate;
+          const arrTime = String(leg.arriveTime||leg.timeIn||leg.arrivalTime||leg.endTime||'').trim();
           const startMin = __parseHHMM_toMinutes(depTime);
           let endMin = __parseHHMM_toMinutes(arrTime);
           if(!depDate || !isFinite(startMin)) return;
-          const title = ((String(leg.from||'').trim() || '—') + ' → ' + (String(leg.to||'').trim() || '—')).trim();
+          const title = ((String(leg.from||leg.fromCity||'').trim() || '—') + ' → ' + (String(leg.to||leg.toCity||'').trim() || '—')).trim();
           const pushSeg = (date, s, e) => {
-            if(!date || !isFinite(s) || !isFinite(e) || !(e>s)) return;
-            out.push({ kind:'leg', sourceKind:'leg', id, date, startMin:s, endMin:e, title, raw:leg });
+            const key = __mvNormalizeDateKey(date);
+            if(!key || !isFinite(s) || !isFinite(e) || !(e>s)) return;
+            out.push({ kind:'leg', sourceKind:'leg', id, date:key, startMin:s, endMin:e, title, raw:leg });
           };
           if(!arrDate) arrDate = depDate;
           if(arrDate === depDate){
@@ -17132,13 +17170,23 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
           : `⚠️ Solapa con ${noun} ${when}`;
       }
       if(counts.leg && counts.act){
-        return `⚠️ Solapa con ${counts.act} actividade${counts.act===1?'s':'s'} y ${counts.leg} transporte${counts.leg===1?'':'s'}`;
+        return `⚠️ Solapa con ${counts.act} actividades y ${counts.leg} transporte${counts.leg===1?'':'s'}`;
       }
       if(counts.leg){
         return `⚠️ Solapa con ${counts.leg} transporte${counts.leg===1?'':'s'} del mismo día`;
       }
       return `⚠️ Solapa con ${conflicts.length} actividades del mismo día`;
     }catch{ return '⚠️ Solapamiento horario detectado'; }
+  }
+  function __mvClearConflictDecorations(){
+    try{
+      document.querySelectorAll('[data-overlap-warn="1"]').forEach((node)=>{
+        try{ node.classList.remove('mvOverlapWarn'); }catch{}
+        try{ node.removeAttribute('data-overlap-warn'); }catch{}
+        try{ node.removeAttribute('title'); }catch{}
+        node.querySelectorAll('.mvOverlapChip').forEach((el)=>{ try{ el.remove(); }catch{} });
+      });
+    }catch{}
   }
   function __mvApplyMixedConflictDecorations(kind, id, conflicts){
     try{
@@ -17182,7 +17230,7 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
       }
       acts.forEach((act)=>{
         legSegs.forEach((leg)=>{
-          if(String(act.date)!==String(leg.date)) return;
+          if(String(__mvNormalizeDateKey(act.date))!==String(__mvNormalizeDateKey(leg.date))) return;
           if(__aiIntervalsOverlap(act, leg)){
             add(actMap, act.id, { ...leg, kind:'leg' });
             add(legMap, leg.id, { ...act, kind:'act' });
@@ -17190,7 +17238,7 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
         });
       });
       [actMap, legMap].forEach((map)=>{
-        map.forEach((arr, key)=>{
+        map.forEach((arr)=>{
           arr.sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title),'es'));
         });
       });
@@ -17206,6 +17254,7 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
       maps.legMap.forEach((conflicts, id)=>{ if(id) __mvApplyMixedConflictDecorations('leg', id, conflicts); });
       window.__mvLastActivityOverlapMap = maps.actMap;
       window.__mvLastLegOverlapMap = maps.legMap;
+      window.__mvNormalizeDateKey = __mvNormalizeDateKey;
       return maps.actMap;
     }catch{ return new Map(); }
   };
@@ -17215,6 +17264,7 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
       if(!sc) return '';
       const cur = __aiActIntervalIfPossible(act);
       if(!cur) return '';
+      cur.date = __mvNormalizeDateKey(cur.date);
       const maps = __mvComputeUnifiedConflictMaps(sc);
       const conflicts = (maps.actMap.get(String(cur.id||'')) || []).slice();
       if(!conflicts.length) return '';
@@ -17228,13 +17278,12 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
       });
       lines.push('');
       lines.push('Puedes cancelar para corregir o aceptar para guardar igualmente.');
-      return lines.join('
-');
+      return lines.join('\n');
     }catch{ return ''; }
   };
   try{ document.addEventListener('DOMContentLoaded', function(){ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }); }catch{}
 })();
-/* ================= /Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7I) ================= */
+/* ================= /Overlap alerts mixed ACTIVITY + TRANSPORT (V226C1A7J) ================= */
 </script>
 
 </body>
