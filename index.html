@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING</title>
+<title>V226C1A2_AI_INFO_BUTTON_MODAL_FIRST_SCROLL_FALLBACK</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING" rel="manifest"/>
+<link href="manifest.json?v=V226C1A2_AI_INFO_BUTTON_MODAL_FIRST_SCROLL_FALLBACK" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1192,7 +1192,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A2_AI_INFO_BUTTON_MODAL_FIRST_SCROLL_FALLBACK</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1426,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING
+            Build cargada: V226C1A2_AI_INFO_BUTTON_MODAL_FIRST_SCROLL_FALLBACK
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1463,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING";
+const APP_BUILD = "V226C1A2_AI_INFO_BUTTON_MODAL_FIRST_SCROLL_FALLBACK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15713,15 +15713,24 @@ commitSelectedActivities(){
           }catch(err){ console.error(err); }
         };
 
-        const openHelp = (t, d)=>{
+        const openHelp = (t, d, asHtml)=>{ 
           if(!infoOverlay) return;
           if(infoTitle) infoTitle.textContent = String(t||"Info");
-          if(infoBody) infoBody.textContent = String(d||"");
+          if(infoBody){
+            const useHtml = !!asHtml;
+            if(useHtml){
+              infoBody.innerHTML = String(d||"");
+            }else{
+              infoBody.textContent = String(d||"");
+            }
+          }
+          infoOverlay.dataset.aiInfoKind = asHtml ? "html" : "text";
           infoOverlay.classList.remove("hidden");
         };
         const closeHelp = ()=>{
           if(!infoOverlay) return;
           infoOverlay.classList.add("hidden");
+          try{ if(infoOverlay.dataset) delete infoOverlay.dataset.aiInfoScope; }catch{}
         };
 
         // Close help (idempotente)
@@ -15755,7 +15764,53 @@ commitSelectedActivities(){
           infoBtnTop.__aiToggleBound = true;
           infoBtnTop.addEventListener("click",(e)=>{
             e.preventDefault(); e.stopPropagation();
+
+            // Prefer: show info in a foreground modal (reusing the existing info overlay).
+            const wantModal = !!infoOverlay && !!infoBody && !!infoTitle;
+            const isOpen = infoOverlay && !infoOverlay.classList.contains("hidden");
+            const isDetailModal = infoOverlay && infoOverlay.dataset && infoOverlay.dataset.aiInfoScope === "detail";
+
+            if(wantModal){
+              // Toggle behavior: second tap closes if it's the same (detail) modal.
+              if(isOpen && isDetailModal){
+                closeHelp();
+                return;
+              }
+
+              const ctx = document.getElementById("aiContextBlock");
+              const prefs = document.getElementById("aiPreferencesBlock");
+              const bridge = document.getElementById("aiBridgeNote");
+              const parts = [];
+              if(ctx && ctx.innerHTML.trim()) parts.push(ctx.innerHTML);
+              if(prefs && prefs.innerHTML.trim()) parts.push(prefs.innerHTML);
+              if(bridge && !bridge.classList.contains("hidden") && bridge.innerHTML.trim()) parts.push(bridge.innerHTML);
+
+              const htmlPayload = parts.length ? parts.join('<div style="height:12px"></div>') : '<div class="text-sm text-slate-600">No hay información adicional disponible.</div>';
+              if(infoOverlay && infoOverlay.dataset) infoOverlay.dataset.aiInfoScope = "detail";
+              openHelp(titleEl ? titleEl.textContent : "Más info", htmlPayload, true);
+              return;
+            }
+
+            // Fallback: toggle the drawer and scroll to it (and back up on second tap).
+            const body = document.getElementById("aiSheetBody");
+            const drawer = infoDrawer;
+            if(!drawer || !body){
+              toggleDrawer();
+              return;
+            }
+
+            const wasHidden = drawer.classList.contains("hidden");
             toggleDrawer();
+            try{
+              if(wasHidden){
+                // Scroll to drawer
+                const top = drawer.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - 12;
+                body.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+              }else{
+                // Back to top (results)
+                body.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }catch(err){ console.error(err); }
           }, true);
         }
 
