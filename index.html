@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON</title>
+<title>V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON" rel="manifest"/>
+<link href="manifest.json?v=V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1192,7 +1192,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1426,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON
+            Build cargada: V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1463,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B_AI_MOVE_BRIDGE_AND_FUNCTION_INFO_INTO_INFO_BUTTON";
+const APP_BUILD = "V226C1A1_AI_MOVE_FUNCTION_INFO_WITHOUT_TOUCHING_HUB_WIRING";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14056,7 +14056,8 @@ window.addEventListener('DOMContentLoaded', () => {
         cityGroups: [],
         selectedKeys: {},
         bridgeNote: "",
-        functionInfoHtml: "",
+        actionInfoHtml: "",
+        actionInfoStatus: "",
         entrypoint: "timeline",
         entryLabel: "Cronograma",
         entryDescription: "Visión global del viaje y de los hitos del día.",
@@ -14315,8 +14316,8 @@ window.addEventListener('DOMContentLoaded', () => {
       else this.loadContextualSummary(o);
     },
     setBridgeNote(msg){
-      // V226C1B: el bridge es informativo y vive SOLO bajo demanda (botón "i")
       this.state.bridgeNote = String(msg || "").trim();
+      // V226C1A1: NO mostrar bridge en primer plano. Se reubica a la "i" (info bajo demanda).
       const box = document.getElementById("aiBridgeNote");
       if(box){
         box.classList.add("hidden");
@@ -14327,21 +14328,12 @@ window.addEventListener('DOMContentLoaded', () => {
       const contextBox = document.getElementById("aiContextBlock");
       const prefsBox = document.getElementById("aiPreferencesBlock");
       if(contextBox){
-        const base = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Contexto de entrada</div><div class="mt-1 font-extrabold text-slate-900">IA abierta desde ${escapeHtml(this.state.entryLabel || "Cronograma")}</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.entryDescription || "")}</div></div><div class="inline-flex items-center rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-semibold text-violet-700">${escapeHtml(this.state.entryFocus || "")}</div></div>`;
-        let extra = "";
-        if(this.state.functionInfoHtml){
-          extra += `<div class="mt-3">${this.state.functionInfoHtml}</div>`;
-        }
-        if(this.state.bridgeNote){
-          extra += `<div class="mt-3 rounded-2xl border border-violet-200 bg-white p-3"><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Bridge</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.bridgeNote)}</div></div>`;
-        }
-        contextBox.innerHTML = base + extra;
+        contextBox.innerHTML = `<div class="flex flex-wrap items-start justify-between gap-3"><div><div class="text-xs font-semibold uppercase tracking-wide text-violet-700">Contexto de entrada</div><div class="mt-1 font-extrabold text-slate-900">IA abierta desde ${escapeHtml(this.state.entryLabel || "Cronograma")}</div><div class="mt-1 text-sm text-slate-600">${escapeHtml(this.state.entryDescription || "")}</div></div><div class="inline-flex items-center rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-semibold text-violet-700">${escapeHtml(this.state.entryFocus || "")}</div></div>${(this.state.actionInfoStatus||this.state.actionInfoHtml||this.state.bridgeNote) ? `<div class="mt-3 rounded-2xl border border-slate-200 bg-white/70 p-3"><div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Info de la función</div>${this.state.actionInfoStatus ? `<div class="mt-1 text-sm font-semibold text-slate-900">${escapeHtml(this.state.actionInfoStatus)}</div>` : ``}${this.state.actionInfoHtml ? `<div class="mt-2 text-sm text-slate-600">${this.state.actionInfoHtml}</div>` : ``}${this.state.bridgeNote ? `<div class="mt-2 text-sm text-slate-600"><span class="font-semibold text-slate-700">Bridge:</span> ${escapeHtml(this.state.bridgeNote)}</div>` : ``}</div>` : ``}`;
       }
       if(prefsBox){
         const pref = this.state.preferenceContext || { chips:[], summary:"" };
         prefsBox.innerHTML = `<div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preferencias activas</div><div class="mt-2 flex flex-wrap gap-2">${(pref.chips && pref.chips.length) ? pref.chips.map((chip)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">${escapeHtml(chip)}</span>`).join("") : `<span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">Sin preferencias destacadas</span>`}</div><div class="mt-2 text-sm text-slate-600">${escapeHtml(pref.summary || "La IA usa el viaje actual y las preferencias guardadas cuando existen.")}</div>`;
       }
-    }
     },
     renderShell(){
       const summaryBtn = document.getElementById("aiActionSummary");
@@ -14405,6 +14397,8 @@ window.addEventListener('DOMContentLoaded', () => {
       return tips.sort((a,b)=> (Number(b.priority||0) - Number(a.priority||0)) || String(a.title||"").localeCompare(String(b.title||""), "es")).slice(0, 5);
     },
     loadContextualSummary(opts){
+      this.state.actionInfoHtml = "";
+      this.state.actionInfoStatus = "";
       const force = !!(opts && opts.force);
       const baseTips = (typeof __aiBuildContextualTips === "function") ? __aiBuildContextualTips() : [];
       this.state.contextualTips = this.preferenceSummaryTips(baseTips);
@@ -14418,18 +14412,19 @@ window.addEventListener('DOMContentLoaded', () => {
             : this.state.entrypoint === "stays"
               ? "Resumen listo con foco en estancias y transiciones."
               : "Resumen contextual listo con visión global del viaje.";
-        status.textContent = this.state.contextualVisible
+        this.state.actionInfoStatus = String(this.state.contextualVisible
           ? `${contextLead} Solo lectura: la IA observa el viaje actual y no cambia nada por sí sola.`
-          : "El resumen contextual está oculto. Puedes volver a mostrarlo cuando quieras.";
+          : "El resumen contextual está oculto. Puedes volver a mostrarlo cuando quieras.");
+        status.classList.add("hidden");
       }
       this.setBridgeNote("Lectura controlada del viaje actual y de las preferencias ya guardadas. No se toca el render principal ni el core del plan.");
       const body = document.getElementById("aiActionBody");
       const results = document.getElementById("aiResults");
       const footer = document.getElementById("aiActionFooter");
       if(body){
-        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Resumen contextual del viaje</div><div class="mt-1 text-sm text-slate-600">Sugerencias breves moduladas por la sección desde la que abres la IA y por las preferencias ya guardadas del viaje.</div></div>`;
+        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Resumen contextual del viaje</div><div class="mt-1 text-sm text-slate-600">Sugerencias breves moduladas por la sección desde la que abres la IA y por las preferencias ya guardadas del viaje.</div></div>`;
+        this.state.actionInfoHtml = __intro;
         body.innerHTML = "";
-        this.renderContextBlocks();
       }
       if(results){
         results.innerHTML = this.state.contextualVisible
@@ -14568,6 +14563,8 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     /* --------------------- Sensitive points review --------------------- */
     loadSensitivePointsReview(opts){
+      this.state.actionInfoHtml = "";
+      this.state.actionInfoStatus = "";
       const trip = this.bridge.readTrip();
       const prefs = this.bridge.readPreferences();
       const p = (prefs && prefs.group) ? prefs.group : {};
@@ -14708,7 +14705,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const prefLine = (kids>0)
           ? `Perfil: ${Math.max(0, parseInt(p.adults||0,10)||0) || 0} adultos • ${kids} niño(s). Ritmo: ${escapeHtml(pace)}.`
           : `Perfil: Ritmo ${escapeHtml(pace)}.`;
-        this.state.functionInfoHtml = `
+        actionBody.innerHTML = `
           <div class="rounded-2xl border border-slate-200 bg-white p-4">
             <div class="font-extrabold text-slate-900">Revisión de puntos delicados</div>
             <div class="mt-1 text-sm text-slate-600">
@@ -14718,8 +14715,6 @@ window.addEventListener('DOMContentLoaded', () => {
             <div class="mt-2 text-xs text-slate-500">${prefLine}</div>
           </div>
         `;
-        actionBody.innerHTML = "";
-        this.renderContextBlocks();
       }
       if(results){
         if(!issues.length){
@@ -15008,6 +15003,8 @@ __aiBuildDayBuckets(trip){
     },
 
     loadTripCities(opts){
+      this.state.actionInfoHtml = "";
+      this.state.actionInfoStatus = "";
       this.renderShell();
       this.state.detectedCities = this.collectTripCities();
       this.state.cityGroups = this.buildCityGroups(this.state.detectedCities);
@@ -15021,16 +15018,17 @@ __aiBuildDayBuckets(trip){
             : this.state.entrypoint === "stays"
               ? "Foco actual: propuestas cómodas de encajar alrededor de entradas y salidas de alojamiento."
               : "Foco actual: propuestas por ciudad equilibradas con el conjunto del viaje.";
-        status.textContent = this.state.detectedCities.length
+        this.state.actionInfoStatus = String(this.state.detectedCities.length
           ? `Ciudades detectadas: ${this.state.detectedCities.map(x=>x.city).join(", ")}. ${focus}`
-          : "Todavía no hay ciudades suficientes en el viaje para preparar propuestas. Añade transporte, alojamiento o actividades y vuelve a intentarlo.";
+          : "Todavía no hay ciudades suficientes en el viaje para preparar propuestas. Añade transporte, alojamiento o actividades y vuelve a intentarlo.");
+        status.classList.add("hidden");
       }
       this.setBridgeNote("La IA prepara propuestas con estado local propio y las modula con preferencias ya guardadas. Solo al confirmar usa el bridge para añadir actividades seleccionadas.");
       const body = document.getElementById("aiActionBody");
       if(body){
-        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
+        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
+        this.state.actionInfoHtml = __intro;
         body.innerHTML = "";
-        this.renderContextBlocks();
       }
       const results = document.getElementById("aiResults");
       if(results){
@@ -15081,6 +15079,8 @@ __aiBuildDayBuckets(trip){
     
     
     loadTransportReview(opts){
+      this.state.actionInfoHtml = "";
+      this.state.actionInfoStatus = "";
       const trip = this.bridge.readTrip();
       const prefs = this.bridge.readPreferences();
       const group = (prefs && prefs.group) ? prefs.group : {};
@@ -15191,13 +15191,13 @@ __aiBuildDayBuckets(trip){
       const results = document.getElementById("aiResults");
       const footer = document.getElementById("aiActionFooter");
       if(body){
-        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Revisión de Transporte</div>
           <div class="mt-1 font-extrabold text-slate-900">Tramos incompletos y transiciones sensibles</div>
           <div class="mt-1 text-sm text-slate-600">La IA marca lo que conviene completar o revisar usando solo datos existentes del viaje y tus preferencias.</div>
         </div>`;
+        this.state.actionInfoHtml = __intro;
         body.innerHTML = "";
-        this.renderContextBlocks();
       }
       if(results){
         if(!findings.length){
@@ -15294,6 +15294,8 @@ __aiBuildDayBuckets(trip){
       }
     },
 loadTripGapsFill(opts){
+      this.state.actionInfoHtml = "";
+      this.state.actionInfoStatus = "";
       this.renderShell();
       const trip = this.bridge.readTrip();
       const prefs = this.bridge.readPreferences();
@@ -15315,14 +15317,15 @@ loadTripGapsFill(opts){
 
       const status = document.getElementById("aiStatus");
       if(status){
-        status.textContent = "Analizando huecos razonables del viaje… (sin modificar nada automáticamente)";
+        this.state.actionInfoStatus = String("Analizando huecos razonables del viaje… (sin modificar nada automáticamente)");
+        status.classList.add("hidden");
       }
 
       this.setBridgeNote("Selecciona propuestas con ✓ y confirma al final. La IA NO añade nada hasta que pulses “Añadir seleccionadas a Actividades”.");
 
       const body = document.getElementById("aiActionBody");
       if(body){
-        this.state.functionInfoHtml = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <div class="font-extrabold text-slate-900">Rellenar huecos del viaje</div>
@@ -15331,8 +15334,8 @@ loadTripGapsFill(opts){
             <div class="text-xs text-slate-500 whitespace-nowrap">Tanda: ${this.state.gapRecoOffset+1}</div>
           </div>
         </div>`;
+        this.state.actionInfoHtml = __intro;
         body.innerHTML = "";
-        this.renderContextBlocks();
       }
 
       const buckets = this.__aiBuildDayBuckets(trip);
@@ -15505,9 +15508,10 @@ loadTripGapsFill(opts){
       this.state.gapBlocks = gapBlocks;
 
       if(status){
-        status.textContent = gapBlocks.length
+        this.state.actionInfoStatus = String(gapBlocks.length
           ? `Huecos encontrados: ${gapBlocks.length}. Selecciona propuestas y añade solo las que quieras.`
-          : "No he encontrado huecos claros que merezca la pena rellenar sin tensar el viaje. (Si añades fechas/ciudades, vuelve a intentarlo.)";
+          : "No he encontrado huecos claros que merezca la pena rellenar sin tensar el viaje. (Si añades fechas/ciudades, vuelve a intentarlo.)");
+        status.classList.add("hidden");
       }
 
       const results = document.getElementById("aiResults");
@@ -15599,9 +15603,10 @@ loadTripGapsFill(opts){
       const res = this.bridge.addActivities(selected);
       const status = document.getElementById("aiStatus");
       if(status){
-        status.textContent = res && res.added
+        this.state.actionInfoStatus = String(res && res.added
           ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
-          : "No hay propuestas seleccionadas para añadir.";
+          : "No hay propuestas seleccionadas para añadir.");
+        status.classList.add("hidden");
       }
       if(res && res.added){
         this.state.selectedKeys = {};
@@ -15618,9 +15623,10 @@ commitSelectedActivities(){
       const res = this.bridge.addActivities(selected);
       const status = document.getElementById("aiStatus");
       if(status){
-        status.textContent = res && res.added
+        this.state.actionInfoStatus = String(res && res.added
           ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
-          : "No hay propuestas seleccionadas para añadir.";
+          : "No hay propuestas seleccionadas para añadir.");
+        status.classList.add("hidden");
       }
       if(res && res.added){
         this.state.selectedKeys = {};
@@ -15675,7 +15681,7 @@ commitSelectedActivities(){
       });
       aiModule.bindUI();
       aiModule.render();
-      // --- V226C1B: IA hub wiring robusto (delegación estable) ---
+      // --- V226C1A: IA hub wiring robusto (delegación estable) ---
       (function(){
         const hub = document.getElementById("aiHubStage");
         const detail = document.getElementById("aiDetailStage");
@@ -15825,7 +15831,7 @@ commitSelectedActivities(){
         // Default stage
         setStage("hub");
       })();
-// --- /V226C1B ---
+// --- /V226C1A ---
 
     }catch{}
   };
