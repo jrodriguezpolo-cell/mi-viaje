@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX</title>
+<title>V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1204,6 +1204,10 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 }
 .aiInfoBtn:active{ transform: translateY(1px); }
 
+
+.mvOverlapWarn{ border-color:#f59e0b !important; box-shadow:0 0 0 2px rgba(245,158,11,.18) inset; }
+.mvOverlapChip{ display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:4px 10px; border-radius:999px; border:1px solid #f59e0b; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:800; line-height:1.2; }
+.mvOverlapChip.mvOverlapChipTl{ margin-top:6px; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1214,7 +1218,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1452,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX
+            Build cargada: V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1489,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7G_AI_OVERLAP_SAVE_HOOK_DOM_SYNC_FIX";
+const APP_BUILD = "V226C1A7H_AI_OVERLAP_RENDER_WARNINGS_AND_REAL_MAP_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16814,22 +16818,115 @@ function __sheetGetCurrentActForOverlapCheck(){
   }catch{ return null; }
 }
 
+function __mvCollectActivityIntervals(sc){
+  try{
+    if(!sc || !Array.isArray(sc.activities)) return [];
+    return sc.activities.map(__aiActIntervalIfPossible).filter(Boolean).sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
+  }catch{ return []; }
+}
+function __mvComputeActivityOverlapMap(sc){
+  try{
+    const list = __mvCollectActivityIntervals(sc);
+    const map = new Map();
+    for(let i=0;i<list.length;i++){
+      for(let j=i+1;j<list.length;j++){
+        const a = list[i], b = list[j];
+        if(String(a.date)!==String(b.date)) continue;
+        if(__aiIntervalsOverlap(a,b)){
+          if(!map.has(String(a.id||""))) map.set(String(a.id||""), []);
+          if(!map.has(String(b.id||""))) map.set(String(b.id||""), []);
+          map.get(String(a.id||"")).push(b);
+          map.get(String(b.id||"")).push(a);
+        }
+      }
+    }
+    return map;
+  }catch{ return new Map(); }
+}
+function __mvApplyConflictDecorations(id, conflicts){
+  try{
+    const nodes = [document.getElementById(`act-${id}`), document.getElementById(`tl-act-${id}`)].filter(Boolean);
+    nodes.forEach((node)=>{
+      try{ node.classList.add('mvOverlapWarn'); }catch{}
+      try{ node.setAttribute('data-overlap-warn','1'); }catch{}
+      try{ node.setAttribute('title', `Solapamiento horario con ${conflicts.length} actividad${conflicts.length===1?'':'es'}`); }catch{}
+      let chip = node.querySelector('.mvOverlapChip');
+      if(!chip){
+        chip = document.createElement('div');
+        chip.className = 'mvOverlapChip' + (String(node.id||'').startsWith('tl-act-') ? ' mvOverlapChipTl' : '');
+        const host = node.querySelector('.min-w-0') || node;
+        try{ host.appendChild(chip); }catch{}
+      }
+      const first = conflicts[0];
+      chip.textContent = conflicts.length===1
+        ? `⚠️ Solapa con «${String(first.title||'Actividad')}» (${__fmtHHMM_fromMinutes(first.startMin)}–${__fmtHHMM_fromMinutes(first.endMin)})`
+        : `⚠️ Solapa con ${conflicts.length} actividades del mismo día`;
+    });
+  }catch{}
+}
+function __mvClearConflictDecorations(){
+  try{
+    document.querySelectorAll('[data-overlap-warn="1"]').forEach((node)=>{
+      try{ node.classList.remove('mvOverlapWarn'); }catch{}
+      try{ node.removeAttribute('data-overlap-warn'); }catch{}
+      try{ node.removeAttribute('title'); }catch{}
+      node.querySelectorAll('.mvOverlapChip').forEach((el)=>{ try{ el.remove(); }catch{} });
+    });
+  }catch{}
+}
+function __mvRefreshActivityOverlapWarnings(){
+  try{
+    const sc = (typeof curScenario==="function") ? curScenario() : null;
+    __mvClearConflictDecorations();
+    const map = __mvComputeActivityOverlapMap(sc);
+    map.forEach((conflicts, id)=>{ if(id) __mvApplyConflictDecorations(id, conflicts); });
+    window.__mvLastActivityOverlapMap = map;
+    return map;
+  }catch{ return new Map(); }
+}
 function __aiCheckOverlapAroundActivity(act){
   try{
     const sc = (typeof curScenario==="function") ? curScenario() : null;
     if(!sc || !Array.isArray(sc.activities)) return "";
     const cur = __aiActIntervalIfPossible(act);
     if(!cur) return "";
-    const conflicts = sc.activities
-      .filter(a => a && String(a.id||"") !== String(cur.id||""))
-      .map(__aiActIntervalIfPossible)
-      .filter(Boolean)
-      .filter(it => String(it.date) === String(cur.date))
-      .filter(it => __aiIntervalsOverlap(cur, it))
-      .sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
+    const map = __mvComputeActivityOverlapMap(sc);
+    const conflicts = (map.get(String(cur.id||"")) || []).slice().sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
     return __aiBuildOverlapMessageForActivityInterval(cur, conflicts);
   }catch{ return ""; }
 }
+(function(){
+  const _renderActivities = (typeof renderActivities === 'function') ? renderActivities : null;
+  if(_renderActivities && !_renderActivities.__mvOverlapWrapped){
+    window.renderActivities = function(){
+      const r = _renderActivities.apply(this, arguments);
+      try{ __mvRefreshActivityOverlapWarnings(); }catch{}
+      return r;
+    };
+    window.renderActivities.__mvOverlapWrapped = true;
+  }
+  const _renderTimeline = (typeof renderTimeline === 'function') ? renderTimeline : null;
+  if(_renderTimeline && !_renderTimeline.__mvOverlapWrapped){
+    window.renderTimeline = function(){
+      const r = _renderTimeline.apply(this, arguments);
+      try{ __mvRefreshActivityOverlapWarnings(); }catch{}
+      return r;
+    };
+    window.renderTimeline.__mvOverlapWrapped = true;
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    try{ __mvRefreshActivityOverlapWarnings(); }catch{}
+    try{
+      const body = document.getElementById('eventSheetBody');
+      if(body && !body.__mvOverlapLiveBound){
+        const live = ()=>{ try{ __sheetGetCurrentActForOverlapCheck && __sheetGetCurrentActForOverlapCheck(); }catch{} try{ __mvRefreshActivityOverlapWarnings(); }catch{} };
+        body.addEventListener('input', live, true);
+        body.addEventListener('change', live, true);
+        body.__mvOverlapLiveBound = true;
+      }
+    }catch{}
+  });
+})();
 /* ================= /Overlap alerts (V226C1A7B) ================= */
 
 
