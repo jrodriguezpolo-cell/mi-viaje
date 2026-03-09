@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A3C_AI_GAPS_FORCE_FIVE_EFFECTIVE_PROPOSALS</title>
+<title>V226C1A4_AI_DISCOVER_CITIES_CONTEXTUALIZED_IN_REAL_GAPS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A3C_AI_GAPS_FORCE_FIVE_EFFECTIVE_PROPOSALS" rel="manifest"/>
+<link href="manifest.json?v=V226C1A4_AI_DISCOVER_CITIES_CONTEXTUALIZED_IN_REAL_GAPS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1192,7 +1192,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A3C_AI_GAPS_FORCE_FIVE_EFFECTIVE_PROPOSALS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A4_AI_DISCOVER_CITIES_CONTEXTUALIZED_IN_REAL_GAPS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1426,7 +1426,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A3C_AI_GAPS_FORCE_FIVE_EFFECTIVE_PROPOSALS
+            Build cargada: V226C1A4_AI_DISCOVER_CITIES_CONTEXTUALIZED_IN_REAL_GAPS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1463,7 +1463,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A3C_AI_GAPS_FORCE_FIVE_EFFECTIVE_PROPOSALS";
+const APP_BUILD = "V226C1A4_AI_DISCOVER_CITIES_CONTEXTUALIZED_IN_REAL_GAPS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15053,6 +15053,98 @@ __aiBuildDayBuckets(trip){
       this.renderShell();
       this.state.detectedCities = this.collectTripCities();
       this.state.cityGroups = this.buildCityGroups(this.state.detectedCities);
+      // V226C1A4: Contextualizar propuestas en huecos reales cuando sea razonable (sin forzar precisión).
+      try{
+        const trip = this.bridge.readTrip();
+        const buckets = this.__aiBuildDayBuckets(trip);
+        const stayRanges = this.__aiBuildStayRanges(trip);
+        const allDays = this.__aiCollectTripDays(trip, stayRanges);
+
+        const parseHM = (s)=>{
+          const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
+          if(!m) return null;
+          const hh = Math.max(0, Math.min(23, parseInt(m[1],10)||0));
+          const mm = Math.max(0, Math.min(59, parseInt(m[2],10)||0));
+          return hh*60 + mm;
+        };
+        const fmtHM = (min)=>{
+          const mm = Math.max(0, Math.min(24*60-1, Math.floor(min||0)));
+          const h = Math.floor(mm/60), m = mm%60;
+          return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+        };
+
+        const dayScore = (day)=>{
+          const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+          const legN = (b.legs||[]).length;
+          const inN = (b.checkins||[]).length;
+          const outN = (b.checkouts||[]).length;
+          const actN = (b.acts||[]).length;
+          // Menos es mejor. Penaliza traslados y entradas/salidas.
+          return (legN*4) + (inN*3) + (outN*3) + (actN*1);
+        };
+
+        const suggestTimeForDay = (day)=>{
+          const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+          const times = [];
+          (b.legs||[]).forEach(x=>{ const t=parseHM(x && (x.time||x.depTime||x.departTime)); if(t!=null) times.push(t); const t2=parseHM(x && (x.arriveTime||x.arrivalTime)); if(t2!=null) times.push(t2); });
+          (b.checkins||[]).forEach(x=>{ const t=parseHM(x && (x.time||x.checkinTime)); if(t!=null) times.push(t); });
+          (b.checkouts||[]).forEach(x=>{ const t=parseHM(x && (x.time||x.checkoutTime)); if(t!=null) times.push(t); });
+          (b.acts||[]).forEach(x=>{ const t=parseHM(x && (x.time||x.startTime)); if(t!=null) times.push(t); });
+
+          if(!times.length){
+            return { time:"", band:"tarde sugerida", label:"Franja libre recomendada: tarde" };
+          }
+          times.sort((a,b)=>a-b);
+          const last = times[times.length-1];
+          // Propón ~90 min después del último hito conocido, sin pasarte de 20:00
+          const sug = Math.min(20*60, Math.max(10*60, last + 90));
+          const hhmm = fmtHM(sug);
+          return { time: hhmm, band:"", label:`Hora sugerida ${hhmm}` };
+        };
+
+        const pickSlotForCity = (city)=>{
+          const keyCity = String(city||"").trim();
+          if(!keyCity) return null;
+          const candidates = [];
+          allDays.forEach((day)=>{
+            const b = buckets[day] || {};
+            const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+            if(!ctx || !ctx.city) return;
+            if(String(ctx.city).trim().toLowerCase() !== keyCity.toLowerCase()) return;
+            candidates.push(day);
+          });
+          if(!candidates.length) return null;
+          // Escoge el día "menos cargado"
+          candidates.sort((a,b)=> dayScore(a) - dayScore(b));
+          const day = candidates[0];
+          const t = suggestTimeForDay(day);
+          return { day, suggestedTime: t.time, suggestedBand: t.band, suggestedLabel: t.label };
+        };
+
+        (this.state.cityGroups||[]).forEach((group)=>{
+          const slot = pickSlotForCity(group && group.city);
+          if(slot){
+            group.suggestedDay = slot.day;
+            group.suggestedTime = slot.suggestedTime;
+            group.suggestedBand = slot.suggestedBand;
+            group.suggestedLabel = `${slot.day} — ${slot.suggestedTime ? "hora sugerida "+slot.suggestedTime : slot.suggestedBand || "franja sugerida"}`;
+            // Inyecta contexto en propuestas (sin forzar precisión si no hay hora)
+            (group.proposals||[]).forEach((p)=>{
+              p.date = slot.day;
+              if(slot.suggestedTime) p.time = slot.suggestedTime;
+              p.suggestedBand = slot.suggestedBand || "";
+            });
+          }else{
+            group.suggestedDay = "";
+            group.suggestedTime = "";
+            group.suggestedBand = "";
+            group.suggestedLabel = "";
+          }
+        });
+      }catch(e){
+        // fallback silencioso: si no puede contextualizar, se mantiene recomendación general por ciudad
+      }
+
       const pref = this.state.preferenceContext || {};
       const status = document.getElementById("aiStatus");
       if(status){
@@ -15071,7 +15163,7 @@ __aiBuildDayBuckets(trip){
       this.setBridgeNote("La IA prepara propuestas con estado local propio y las modula con preferencias ya guardadas. Solo al confirmar usa el bridge para añadir actividades seleccionadas.");
       const body = document.getElementById("aiActionBody");
       if(body){
-        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
+        const __intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4"><div class="font-extrabold text-slate-900">Descubrir ciudades del viaje</div><div class="mt-1 text-sm text-slate-600">Detección automática a partir de transporte, alojamiento y actividades ya guardadas. Si el itinerario tiene huecos razonables en esa ciudad, la IA intenta sugerir día y hora/franja. Las propuestas se ordenan según la sección desde la que abres la IA y tus preferencias activas.</div>${this.state.detectedCities.length ? `<div class="mt-3 flex flex-wrap gap-2">${this.state.detectedCities.map((row)=> `<span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">${escapeHtml(row.city)}</span>`).join("")}</div>` : ``}${(pref.chips && pref.chips.length) ? `<div class="mt-3 text-xs text-slate-500">Ajustando propuestas con: ${escapeHtml(pref.chips.join(" · "))}</div>` : ``}</div>`;
         this.state.actionInfoHtml = __intro;
         body.innerHTML = "";
       }
@@ -15080,7 +15172,7 @@ __aiBuildDayBuckets(trip){
         results.innerHTML = this.state.cityGroups.length ? this.state.cityGroups.map((group)=> `
           <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
             <div class="flex items-center justify-between gap-2">
-              <div class="font-extrabold text-lg text-slate-900">${escapeHtml(group.city)}</div>
+              <div class="min-w-0"><div class="font-extrabold text-lg text-slate-900">${escapeHtml(group.city)}</div>${group.suggestedLabel ? `<div class="mt-1 text-xs font-semibold text-slate-600">Sugerido: ${escapeHtml(group.suggestedLabel)}</div>` : `<div class="mt-1 text-xs text-slate-500">Recomendación general (sin hueco claro)</div>`}</div>
               <div class="text-xs text-slate-500">${group.proposals.length} propuestas</div>
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
@@ -15088,7 +15180,7 @@ __aiBuildDayBuckets(trip){
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
                   <div>
-                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
                   </div>
