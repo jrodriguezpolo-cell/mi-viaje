@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX</title>
+<title>V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1204,10 +1204,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 }
 .aiInfoBtn:active{ transform: translateY(1px); }
 
-
-.mvOverlapWarn{ border-color:#f59e0b !important; box-shadow:0 0 0 2px rgba(245,158,11,.18) inset; }
-.mvOverlapChip{ display:block; width:100%; margin-top:10px; padding:8px 12px; border-radius:999px; border:1px solid #f59e0b; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:800; line-height:1.2; box-sizing:border-box; white-space:normal; }
-.mvOverlapChip.mvOverlapChipTl{ margin-top:10px; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1218,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1452,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX
+            Build cargada: V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1489,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7L_OVERLAP_DOM_TRANSPORT_FALLBACK_AND_TIMELINE_STYLE_FIX";
+const APP_BUILD = "V226C1A7F_AI_OVERLAP_REAL_INTERVAL_DETECTION_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13976,38 +13972,28 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.__bound = true;
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
-
-      const __ctxBeforeSave = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? {
-        kind: String(__eventSheetCtx.kind||""),
-        id: String(__eventSheetCtx.id||"")
-      } : { kind:"", id:"" };
-
+      
+      // V226C1A7B: alerta clara de solapamiento horario (anterior/siguiente) al guardar
       try{
-        if(__ctxBeforeSave.kind === "act"){
-          const obj = (typeof __sheetGetCurrentActForOverlapCheck === "function") ? __sheetGetCurrentActForOverlapCheck() : ((typeof __getEventSheetObj === "function") ? __getEventSheetObj() : null);
-          const msg = obj && typeof __aiCheckOverlapAroundActivity === "function" ? __aiCheckOverlapAroundActivity(obj) : "";
+        if(typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && String(__eventSheetCtx.kind)==="act"){
+          const obj = (typeof __getEventSheetObj==="function") ? __getEventSheetObj() : null;
+          const msg = obj ? __aiCheckOverlapAroundActivity(obj) : "";
           if(msg){
             const ok = confirm(msg + "\n\n¿Quieres guardar igualmente?");
             if(!ok){ return; }
           }
         }
       }catch{}
-
       try { if (typeof saveState === "function") saveState(); } catch {}
       try{ __sheetSetSnapshot(); }catch{}
+
+      // Close sheet first (keeps UI consistent)
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
 
+      // Re-render only what is needed
       try {
-        if (__ctxBeforeSave.kind === "leg") {
+        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
           if (typeof renderLegs === "function") renderLegs();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else if (__ctxBeforeSave.kind === "stay") {
-          if (typeof renderStays === "function") renderStays();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else if (__ctxBeforeSave.kind === "act") {
-          if (typeof renderActivities === "function") renderActivities();
           if (typeof renderTimeline === "function") renderTimeline();
           if (typeof calcSummary === "function") calcSummary();
         } else {
@@ -16736,197 +16722,54 @@ function __aiActIntervalIfPossible(act){
     };
   }catch{ return null; }
 }
-function __aiIntervalsOverlap(a, b){
+function __aiIntervalsReallyOverlap(a, b){
   try{
-    return !!(a && b && isFinite(a.startMin) && isFinite(a.endMin) && isFinite(b.startMin) && isFinite(b.endMin) && a.startMin < b.endMin && b.startMin < a.endMin);
+    if(!a || !b) return false;
+    return a.startMin < b.endMin && b.startMin < a.endMin;
   }catch{ return false; }
 }
-function __aiDescribeOverlapKind(cur, other){
+function __aiFindActivityOverlapConflicts(act){
   try{
-    if(other.startMin <= cur.startMin && other.endMin >= cur.endMin) return "queda dentro de";
-    if(cur.startMin <= other.startMin && cur.endMin >= other.endMin) return "envuelve a";
-    if(other.startMin < cur.startMin && other.endMin > cur.startMin) return "empieza dentro de";
-    if(other.startMin < cur.endMin && other.endMin > cur.endMin) return "termina dentro de";
-  }catch{}
-  return "se solapa con";
+    const sc = (typeof curScenario==="function") ? curScenario() : null;
+    if(!sc || !Array.isArray(sc.activities)) return null;
+    const cur = __aiActIntervalIfPossible(act);
+    if(!cur) return null; // sin fecha/hora/duración suficiente, no bloquear el save
+    const conflicts = sc.activities
+      .filter(a => a && String(a.id) !== String(cur.id))
+      .map(__aiActIntervalIfPossible)
+      .filter(Boolean)
+      .filter(x => String(x.date) === String(cur.date))
+      .filter(x => __aiIntervalsReallyOverlap(cur, x))
+      .sort((a, b) => {
+        if(a.startMin !== b.startMin) return a.startMin - b.startMin;
+        if(a.endMin !== b.endMin) return a.endMin - b.endMin;
+        return String(a.title).localeCompare(String(b.title), "es");
+      });
+    return { cur, conflicts };
+  }catch{ return null; }
 }
-function __aiBuildOverlapMessageForActivityInterval(cur, conflicts){
+function __aiBuildOverlapMessageForActivityInterval(payload){
   try{
-    if(!Array.isArray(conflicts) || !conflicts.length) return "";
+    if(!payload || !payload.cur || !Array.isArray(payload.conflicts) || !payload.conflicts.length) return "";
+    const cur = payload.cur;
     const lines = [];
     lines.push(`Conflicto horario detectado para «${cur.title}» (${__fmtHHMM_fromMinutes(cur.startMin)}–${__fmtHHMM_fromMinutes(cur.endMin)}).`);
-    lines.push("");
-    lines.push(conflicts.length === 1 ? "Conflicta con:" : "Conflicta con estas actividades:");
-    conflicts.forEach((it)=>{
-      const rel = __aiDescribeOverlapKind(cur, it);
-      lines.push(`- «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}): ${rel} este intervalo.`);
+    lines.push(`Se solapa con ${payload.conflicts.length === 1 ? "esta actividad" : "estas actividades"} del mismo escenario:`);
+    payload.conflicts.forEach((it) => {
+      lines.push(`• «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)})`);
     });
     lines.push("");
-    lines.push("Puedes cancelar para corregir o aceptar para guardar igualmente.");
+    lines.push("Pulsa Cancelar para volver al editor o Aceptar para guardar igualmente.");
     return lines.join("\n");
   }catch{ return ""; }
 }
-function __sheetSyncCurrentActFieldsToObject(act){
-  try{
-    if(!act) return act || null;
-    const body = document.getElementById("eventSheetBody");
-    if(!body) return act;
-    const id = String(act.id||"").trim();
-    if(!id) return act;
-    const q = (sel) => { try{ return body.querySelector(sel); }catch{ return null; } };
-    const read = (sel) => {
-      const el = q(sel);
-      return el ? String(el.value||"") : "";
-    };
-    const readAny = (sels) => {
-      for(const sel of sels){
-        const v = read(sel);
-        if(v !== "") return v;
-      }
-      return "";
-    };
-    act.title = readAny([`[data-sheet-act="title"]`, `[data-act-title="${CSS.escape(id)}"]`]);
-    act.city = readAny([`[data-sheet-act="city"]`, `[data-act-city="${CSS.escape(id)}"]`]);
-    act.date = readAny([`[data-sheet-act="date"]`, `[data-act-date="${CSS.escape(id)}"]`]);
-    act.time = readAny([`[data-sheet-act="time"]`, `[data-act-time="${CSS.escape(id)}"]`]);
-    const durHRaw = readAny([`[data-sheet-act="durH"]`, `[data-act-durh="${CSS.escape(id)}"]`]);
-    const durMRaw = readAny([`[data-sheet-act="durM"]`, `[data-act-durm="${CSS.escape(id)}"]`]);
-    const h = Math.max(0, Math.floor(parseInt(String(durHRaw||"0"),10) || 0));
-    const mRaw = parseInt(String(durMRaw||"0"),10);
-    const m = Math.max(0, Math.min(59, Math.floor(Number.isFinite(mRaw) ? mRaw : 0)));
-    act.durationH = h;
-    act.durationM = m;
-    act.durationMin = h*60 + m;
-    act.duration = (typeof __tlFormatDurationHM === "function") ? __tlFormatDurationHM(act.durationMin) : `${h}h ${String(m).padStart(2,"0")}m`;
-    const costRaw = readAny([`[data-sheet-act="cost"]`, `[data-act-cost="${CSS.escape(id)}"]`]);
-    act.cost = (String(costRaw||"").trim() === "") ? null : (typeof parseMoney === "function" ? parseMoney(costRaw) : Number(costRaw));
-    const currencyRaw = readAny([`[data-sheet-act="currency"]`, `[data-act-currency="${CSS.escape(id)}"]`]);
-    if(String(currencyRaw||"").trim()) act.currency = String(currencyRaw||"").trim();
-  }catch{}
-  return act || null;
-}
-function __sheetGetCurrentActForOverlapCheck(){
-  try{
-    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-    if(!ctx || String(ctx.kind||"") !== "act") return null;
-    let act = (typeof __getEventSheetObj === "function") ? __getEventSheetObj() : null;
-    if(!act){
-      const sc = (typeof curScenario === "function") ? curScenario() : null;
-      if(sc && Array.isArray(sc.activities)) act = sc.activities.find(x => String(x && x.id) === String(ctx.id||"")) || null;
-    }
-    return __sheetSyncCurrentActFieldsToObject(act);
-  }catch{ return null; }
-}
-
-function __mvCollectActivityIntervals(sc){
-  try{
-    if(!sc || !Array.isArray(sc.activities)) return [];
-    return sc.activities.map(__aiActIntervalIfPossible).filter(Boolean).sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
-  }catch{ return []; }
-}
-function __mvComputeActivityOverlapMap(sc){
-  try{
-    const list = __mvCollectActivityIntervals(sc);
-    const map = new Map();
-    for(let i=0;i<list.length;i++){
-      for(let j=i+1;j<list.length;j++){
-        const a = list[i], b = list[j];
-        if(String(a.date)!==String(b.date)) continue;
-        if(__aiIntervalsOverlap(a,b)){
-          if(!map.has(String(a.id||""))) map.set(String(a.id||""), []);
-          if(!map.has(String(b.id||""))) map.set(String(b.id||""), []);
-          map.get(String(a.id||"")).push(b);
-          map.get(String(b.id||"")).push(a);
-        }
-      }
-    }
-    return map;
-  }catch{ return new Map(); }
-}
-function __mvApplyConflictDecorations(id, conflicts){
-  try{
-    const nodes = [document.getElementById(`act-${id}`), document.getElementById(`tl-act-${id}`)].filter(Boolean);
-    nodes.forEach((node)=>{
-      try{ node.classList.add('mvOverlapWarn'); }catch{}
-      try{ node.setAttribute('data-overlap-warn','1'); }catch{}
-      try{ node.setAttribute('title', `Solapamiento horario con ${conflicts.length} actividad${conflicts.length===1?'':'es'}`); }catch{}
-      let chip = node.querySelector('.mvOverlapChip');
-      if(!chip){
-        chip = document.createElement('div');
-        chip.className = 'mvOverlapChip' + (String(node.id||'').startsWith('tl-act-') ? ' mvOverlapChipTl' : '');
-        const host = node.querySelector('.min-w-0') || node;
-        try{ host.appendChild(chip); }catch{}
-      }
-      const first = conflicts[0];
-      chip.textContent = conflicts.length===1
-        ? `⚠️ Solapa con «${String(first.title||'Actividad')}» (${__fmtHHMM_fromMinutes(first.startMin)}–${__fmtHHMM_fromMinutes(first.endMin)})`
-        : `⚠️ Solapa con ${conflicts.length} actividades del mismo día`;
-    });
-  }catch{}
-}
-function __mvClearConflictDecorations(){
-  try{
-    document.querySelectorAll('[data-overlap-warn="1"]').forEach((node)=>{
-      try{ node.classList.remove('mvOverlapWarn'); }catch{}
-      try{ node.removeAttribute('data-overlap-warn'); }catch{}
-      try{ node.removeAttribute('title'); }catch{}
-      node.querySelectorAll('.mvOverlapChip').forEach((el)=>{ try{ el.remove(); }catch{} });
-    });
-  }catch{}
-}
-function __mvRefreshActivityOverlapWarnings(){
-  try{
-    const sc = (typeof curScenario==="function") ? curScenario() : null;
-    __mvClearConflictDecorations();
-    const map = __mvComputeActivityOverlapMap(sc);
-    map.forEach((conflicts, id)=>{ if(id) __mvApplyConflictDecorations(id, conflicts); });
-    window.__mvLastActivityOverlapMap = map;
-    return map;
-  }catch{ return new Map(); }
-}
 function __aiCheckOverlapAroundActivity(act){
   try{
-    const sc = (typeof curScenario==="function") ? curScenario() : null;
-    if(!sc || !Array.isArray(sc.activities)) return "";
-    const cur = __aiActIntervalIfPossible(act);
-    if(!cur) return "";
-    const map = __mvComputeActivityOverlapMap(sc);
-    const conflicts = (map.get(String(cur.id||"")) || []).slice().sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
-    return __aiBuildOverlapMessageForActivityInterval(cur, conflicts);
+    const payload = __aiFindActivityOverlapConflicts(act);
+    if(!payload || !payload.conflicts.length) return "";
+    return __aiBuildOverlapMessageForActivityInterval(payload) || "";
   }catch{ return ""; }
 }
-(function(){
-  const _renderActivities = (typeof renderActivities === 'function') ? renderActivities : null;
-  if(_renderActivities && !_renderActivities.__mvOverlapWrapped){
-    window.renderActivities = function(){
-      const r = _renderActivities.apply(this, arguments);
-      try{ __mvRefreshActivityOverlapWarnings(); }catch{}
-      return r;
-    };
-    window.renderActivities.__mvOverlapWrapped = true;
-  }
-  const _renderTimeline = (typeof renderTimeline === 'function') ? renderTimeline : null;
-  if(_renderTimeline && !_renderTimeline.__mvOverlapWrapped){
-    window.renderTimeline = function(){
-      const r = _renderTimeline.apply(this, arguments);
-      try{ __mvRefreshActivityOverlapWarnings(); }catch{}
-      return r;
-    };
-    window.renderTimeline.__mvOverlapWrapped = true;
-  }
-  document.addEventListener('DOMContentLoaded', function(){
-    try{ __mvRefreshActivityOverlapWarnings(); }catch{}
-    try{
-      const body = document.getElementById('eventSheetBody');
-      if(body && !body.__mvOverlapLiveBound){
-        const live = ()=>{ try{ __sheetGetCurrentActForOverlapCheck && __sheetGetCurrentActForOverlapCheck(); }catch{} try{ __mvRefreshActivityOverlapWarnings(); }catch{} };
-        body.addEventListener('input', live, true);
-        body.addEventListener('change', live, true);
-        body.__mvOverlapLiveBound = true;
-      }
-    }catch{}
-  });
-})();
 /* ================= /Overlap alerts (V226C1A7B) ================= */
 
 
@@ -17051,396 +16894,5 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
   }, {passive:true});
 })();
 </script>
-
-<script>
-/* ================= Overlap alerts unified ACTIVITY + TRANSPORT (V226C1A7K) ================= */
-(function(){
-  function __mvNormalizeDateKey(raw){
-    try{
-      const s = String(raw||'').trim();
-      if(!s) return '';
-      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(m) return `${m[1]}-${m[2]}-${m[3]}`;
-      m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if(m){
-        const d = String(m[1]).padStart(2,'0');
-        const mo = String(m[2]).padStart(2,'0');
-        let y = String(m[3]);
-        if(y.length === 2) y = '20' + y;
-        return `${y}-${mo}-${d}`;
-      }
-      m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{2,4})$/);
-      if(m){
-        const d = String(m[1]).padStart(2,'0');
-        const mo = String(m[2]).padStart(2,'0');
-        let y = String(m[3]);
-        if(y.length === 2) y = '20' + y;
-        return `${y}-${mo}-${d}`;
-      }
-      return s;
-    }catch{ return String(raw||'').trim(); }
-  }
-  function __mvIsoAddDays(iso, days){
-    try{
-      const norm = __mvNormalizeDateKey(iso);
-      const m = String(norm||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(!m) return '';
-      const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
-      d.setDate(d.getDate() + Number(days||0));
-      const y = d.getFullYear();
-      const mo = String(d.getMonth()+1).padStart(2,'0');
-      const da = String(d.getDate()).padStart(2,'0');
-      return `${y}-${mo}-${da}`;
-    }catch{ return ''; }
-  }
-  function __mvReadFirst(obj, keys){
-    try{
-      for(const k of keys){
-        const v = obj && obj[k];
-        if(v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
-      }
-    }catch{}
-    return '';
-  }
-  function __mvCollectActivityIntervals(sc){
-    try{
-      if(!sc || !Array.isArray(sc.activities)) return [];
-      return sc.activities.map((act)=>{
-        const row = __aiActIntervalIfPossible(act);
-        if(!row) return null;
-        row.kind = 'act';
-        row.sourceKind = 'act';
-        row.date = __mvNormalizeDateKey(row.date);
-        return row;
-      }).filter(Boolean).sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title), 'es'));
-    }catch{ return []; }
-  }
-  function __mvCollectLegDateSegments(sc){
-    try{
-      if(!sc || !Array.isArray(sc.legs)) return [];
-      const out = [];
-      sc.legs.forEach((leg)=>{
-        try{
-          if(!leg) return;
-          const id = String(leg.id||'').trim();
-          const depDate = __mvNormalizeDateKey(__mvReadFirst(leg, ['date','dateOut','departDate','depDate','startDate']));
-          const depTime = __mvReadFirst(leg, ['time','timeOut','departTime','depTime','startTime']);
-          let arrDate = __mvNormalizeDateKey(__mvReadFirst(leg, ['arriveDate','dateIn','arrivalDate','endDate']));
-          const arrTime = __mvReadFirst(leg, ['arriveTime','timeIn','arrivalTime','endTime']);
-          const startMin = __parseHHMM_toMinutes(depTime);
-          let endMin = __parseHHMM_toMinutes(arrTime);
-          if(!depDate || !isFinite(startMin)) return;
-          if(!arrDate) arrDate = depDate;
-          const title = ((String(leg.from||leg.fromCity||leg.origin||'').trim() || '—') + ' → ' + (String(leg.to||leg.toCity||leg.destination||'').trim() || '—')).trim();
-          const pushSeg = (date, s, e) => {
-            const key = __mvNormalizeDateKey(date);
-            if(!key || !isFinite(s) || !isFinite(e) || !(e > s)) return;
-            out.push({ kind:'leg', sourceKind:'leg', id, date:key, startMin:s, endMin:e, title, raw:leg });
-          };
-          if(arrDate === depDate){
-            if(isFinite(endMin) && endMin > startMin){
-              pushSeg(depDate, startMin, endMin);
-            }else if(isFinite(endMin) && endMin < startMin){
-              pushSeg(depDate, startMin, 1440);
-              pushSeg(__mvIsoAddDays(depDate, 1), 0, endMin);
-            }else{
-              pushSeg(depDate, startMin, 1440);
-            }
-            return;
-          }
-          pushSeg(depDate, startMin, 1440);
-          let cursor = __mvIsoAddDays(depDate, 1);
-          let guard = 0;
-          while(cursor && cursor < arrDate && guard < 30){
-            pushSeg(cursor, 0, 1440);
-            cursor = __mvIsoAddDays(cursor, 1);
-            guard += 1;
-          }
-          if(isFinite(endMin) && endMin > 0) pushSeg(arrDate, 0, endMin);
-          else pushSeg(arrDate, 0, 1440);
-        }catch{}
-      });
-      return out.sort((a,b)=> String(a.date).localeCompare(String(b.date)) || (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title),'es'));
-    }catch{ return []; }
-  }
-  function __mvCountKinds(conflicts){
-    const c = { act:0, leg:0 };
-    try{ (conflicts||[]).forEach((x)=>{ if(x && x.kind==='leg') c.leg += 1; else c.act += 1; }); }catch{}
-    return c;
-  }
-  function __mvBuildConflictChipText(selfKind, selfItem, conflicts){
-    try{
-      if(!Array.isArray(conflicts) || !conflicts.length) return '';
-      const first = conflicts[0] || {};
-      if(conflicts.length === 1){
-        const label = first.kind === 'leg'
-          ? `Transporte «${String(first.title||'Trayecto')}»`
-          : `«${String(first.title||'Actividad')}»`;
-        const own = selfItem ? ` (${__fmtHHMM_fromMinutes(selfItem.startMin)}–${__fmtHHMM_fromMinutes(selfItem.endMin)})` : '';
-        const other = ` (${__fmtHHMM_fromMinutes(first.startMin)}–${__fmtHHMM_fromMinutes(first.endMin)})`;
-        return `⚠️ Solapa ${own} con ${label}${other}`;
-      }
-      const counts = __mvCountKinds(conflicts);
-      const own = selfItem ? ` ${__fmtHHMM_fromMinutes(selfItem.startMin)}–${__fmtHHMM_fromMinutes(selfItem.endMin)}.` : '';
-      if(counts.leg && counts.act){
-        return `⚠️ Solapa${own} Conflicta con ${counts.act} actividades y ${counts.leg} transporte${counts.leg===1?'':'s'}.`;
-      }
-      if(counts.leg){
-        return `⚠️ Solapa${own} Conflicta con ${counts.leg} transporte${counts.leg===1?'':'s'} del mismo día.`;
-      }
-      return `⚠️ Solapa${own} Conflicta con ${conflicts.length} actividades del mismo día.`;
-    }catch{ return '⚠️ Solapamiento horario detectado'; }
-  }
-  function __mvClearConflictDecorations(){
-    try{
-      document.querySelectorAll('[data-overlap-warn="1"]').forEach((node)=>{
-        try{ node.classList.remove('mvOverlapWarn'); }catch{}
-        try{ node.removeAttribute('data-overlap-warn'); }catch{}
-        try{ node.removeAttribute('title'); }catch{}
-        node.querySelectorAll('.mvOverlapChip').forEach((el)=>{ try{ el.remove(); }catch{} });
-      });
-    }catch{}
-  }
-  function __mvFindCardBody(node){
-    try{
-      return node.querySelector('.min-w-0.flex-1') ||
-             node.querySelector('.min-w-0') ||
-             node.querySelector('[class*="min-w-0"]') ||
-             node;
-    }catch{ return node; }
-  }
-  function __mvApplyMixedConflictDecorations(kind, id, selfItem, conflicts){
-    try{
-      const nodes = [document.getElementById(`${kind}-${id}`), document.getElementById(`tl-${kind}-${id}`)].filter(Boolean);
-      nodes.forEach((node)=>{
-        try{ node.classList.add('mvOverlapWarn'); }catch{}
-        try{ node.setAttribute('data-overlap-warn','1'); }catch{}
-        try{ node.setAttribute('title', `Solapamiento horario con ${conflicts.length} elemento${conflicts.length===1?'':'s'}`); }catch{}
-        let chip = node.querySelector('.mvOverlapChip');
-        if(!chip){
-          chip = document.createElement('div');
-          chip.className = 'mvOverlapChip';
-          const host = __mvFindCardBody(node);
-          try{ host.appendChild(chip); }catch{ try{ node.appendChild(chip); }catch{} }
-        }
-        chip.textContent = __mvBuildConflictChipText(kind, selfItem, conflicts);
-      });
-    }catch{}
-  }
-  function __mvComputeUnifiedConflictMaps(sc){
-    try{
-      const acts = __mvCollectActivityIntervals(sc);
-      const legs = __mvCollectLegDateSegments(sc);
-      const actMap = new Map();
-      const legMap = new Map();
-      const actIndex = new Map(acts.map(x => [String(x.id||''), x]));
-      const legIndex = new Map();
-      legs.forEach(seg => { if(seg && seg.id && !legIndex.has(String(seg.id))) legIndex.set(String(seg.id), seg); });
-      const add = (map, key, payload) => {
-        const k = String(key||'');
-        if(!k) return;
-        if(!map.has(k)) map.set(k, []);
-        const arr = map.get(k);
-        const sig = `${payload.kind}|${payload.id}|${payload.date}|${payload.startMin}|${payload.endMin}`;
-        if(!arr.some(x => `${x.kind}|${x.id}|${x.date}|${x.startMin}|${x.endMin}` === sig)) arr.push(payload);
-      };
-      for(let i=0;i<acts.length;i++){
-        for(let j=i+1;j<acts.length;j++){
-          const a = acts[i], b = acts[j];
-          if(String(a.date)!==String(b.date)) continue;
-          if(__aiIntervalsOverlap(a,b)){
-            add(actMap, a.id, { ...b, kind:'act' });
-            add(actMap, b.id, { ...a, kind:'act' });
-          }
-        }
-      }
-      for(let i=0;i<legs.length;i++){
-        for(let j=i+1;j<legs.length;j++){
-          const a = legs[i], b = legs[j];
-          if(String(a.id||'') === String(b.id||'')) continue;
-          if(String(a.date)!==String(b.date)) continue;
-          if(__aiIntervalsOverlap(a,b)){
-            add(legMap, a.id, { ...b, kind:'leg' });
-            add(legMap, b.id, { ...a, kind:'leg' });
-          }
-        }
-      }
-      acts.forEach((act)=>{
-        legs.forEach((leg)=>{
-          if(String(__mvNormalizeDateKey(act.date))!==String(__mvNormalizeDateKey(leg.date))) return;
-          if(__aiIntervalsOverlap(act, leg)){
-            add(actMap, act.id, { ...leg, kind:'leg' });
-            add(legMap, leg.id, { ...act, kind:'act' });
-          }
-        });
-      });
-      [actMap, legMap].forEach((map)=>{
-        map.forEach((arr)=>{
-          arr.sort((a,b)=> (a.startMin-b.startMin) || (a.endMin-b.endMin) || String(a.title).localeCompare(String(b.title),'es'));
-        });
-      });
-      return { actMap, legMap, actIndex, legIndex };
-    }catch{ return { actMap:new Map(), legMap:new Map(), actIndex:new Map(), legIndex:new Map() }; }
-  }
-  window.__mvRefreshActivityOverlapWarnings = function(){
-    try{
-      const sc = (typeof curScenario==='function') ? curScenario() : null;
-      __mvClearConflictDecorations();
-      const maps = __mvComputeUnifiedConflictMaps(sc);
-      maps.actMap.forEach((conflicts, id)=>{ if(id) __mvApplyMixedConflictDecorations('act', id, maps.actIndex.get(String(id||'')) || null, conflicts); });
-      maps.legMap.forEach((conflicts, id)=>{ if(id) __mvApplyMixedConflictDecorations('leg', id, maps.legIndex.get(String(id||'')) || null, conflicts); });
-      window.__mvLastActivityOverlapMap = maps.actMap;
-      window.__mvLastLegOverlapMap = maps.legMap;
-      window.__mvNormalizeDateKey = __mvNormalizeDateKey;
-      return maps.actMap;
-    }catch{ return new Map(); }
-  };
-  window.__aiCheckOverlapAroundActivity = function(act){
-    try{
-      const sc = (typeof curScenario==='function') ? curScenario() : null;
-      if(!sc) return '';
-      const cur = __aiActIntervalIfPossible(act);
-      if(!cur) return '';
-      cur.date = __mvNormalizeDateKey(cur.date);
-      const maps = __mvComputeUnifiedConflictMaps(sc);
-      const conflicts = (maps.actMap.get(String(cur.id||'')) || []).slice();
-      if(!conflicts.length) return '';
-      const lines = [];
-      lines.push(`Conflicto horario detectado para «${cur.title}» (${__fmtHHMM_fromMinutes(cur.startMin)}–${__fmtHHMM_fromMinutes(cur.endMin)}).`);
-      lines.push('');
-      lines.push('Conflicta con:');
-      conflicts.forEach((it)=>{
-        if(it.kind === 'leg') lines.push(`- Transporte «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}).`);
-        else lines.push(`- Actividad «${it.title}» (${__fmtHHMM_fromMinutes(it.startMin)}–${__fmtHHMM_fromMinutes(it.endMin)}).`);
-      });
-      lines.push('');
-      lines.push('Puedes cancelar para corregir o aceptar para guardar igualmente.');
-      return lines.join('\n');
-    }catch{ return ''; }
-  };
-  try{ document.addEventListener('DOMContentLoaded', function(){ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }); }catch{}
-})();
-/* ================= /Overlap alerts unified ACTIVITY + TRANSPORT (V226C1A7K) ================= */
-</script>
-
-
-<script>
-/* ================= Overlap DOM fallback + unified bottom-line chip (V226C1A7L) ================= */
-(function(){
-  function hhmmToMin(s){
-    try{ const m=String(s||'').match(/^(\d{1,2}):(\d{2})$/); if(!m) return NaN; return Number(m[1])*60+Number(m[2]); }catch{ return NaN; }
-  }
-  function normDate(raw){
-    try{
-      if(typeof window.__mvNormalizeDateKey==='function') return window.__mvNormalizeDateKey(raw);
-      const s=String(raw||'').trim();
-      const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-      if(m){ let y=m[3]; if(y.length===2) y='20'+y; return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`; }
-      return s;
-    }catch{ return String(raw||'').trim(); }
-  }
-  function overlap(a,b){ return a && b && a.date===b.date && Number.isFinite(a.startMin) && Number.isFinite(a.endMin) && Number.isFinite(b.startMin) && Number.isFinite(b.endMin) && a.startMin < b.endMin && b.startMin < a.endMin; }
-  function isoAdd(iso,days){ try{ const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+days); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }catch{return '';} }
-  function extractActFromNode(node){
-    try{
-      const txt=String(node.innerText||node.textContent||'').replace(/ /g,' ');
-      const id=String(node.id||'').replace(/^tl-act-|^act-/,'');
-      const title=(txt.split('
-')[0]||'Actividad').replace(/^🎯\s*/,'').trim();
-      const m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2}).*?Fin:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*[·•]?\s*(\d{1,2}:\d{2})/s);
-      if(!m) return null;
-      return {kind:'act', id, title, date:normDate(m[1]), startMin:hhmmToMin(m[2]), endMin:hhmmToMin(m[4]), node};
-    }catch{return null;}
-  }
-  function extractLegSegmentsFromNode(node){
-    try{
-      const txt=String(node.innerText||node.textContent||'').replace(/ /g,' ');
-      const id=String(node.id||'').replace(/^tl-leg-|^leg-/,'');
-      const title=(txt.split('
-')[0]||'Transporte').replace(/^✈️\s*/,'').trim();
-      let m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4})\s*→\s*(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2})\s*→\s*(\d{1,2}:\d{2})/s);
-      if(!m) m=txt.match(/(\d{1,2}\/\d{1,2}\/\d{2,4}).*?(\d{1,2}:\d{2})\s*→\s*(\d{1,2}:\d{2})/s);
-      if(!m) return [];
-      let depDate, arrDate, depTime, arrTime;
-      if(m.length>=5){ depDate=m[1]; arrDate=m[2]; depTime=m[3]; arrTime=m[4]; }
-      else { depDate=m[1]; arrDate=m[1]; depTime=m[2]; arrTime=m[3]; }
-      depDate=normDate(depDate); arrDate=normDate(arrDate||depDate);
-      const s=hhmmToMin(depTime), e=hhmmToMin(arrTime);
-      if(!depDate || !Number.isFinite(s)) return [];
-      const segs=[];
-      const push=(date,startMin,endMin)=>{ if(date && Number.isFinite(startMin)&&Number.isFinite(endMin)&&endMin>startMin) segs.push({kind:'leg', id, title, date, startMin, endMin, node}); };
-      if(arrDate===depDate){
-        if(Number.isFinite(e) && e>s) push(depDate,s,e);
-        else if(Number.isFinite(e) && e<s){ push(depDate,s,1440); push(isoAdd(depDate,1),0,e); }
-        else push(depDate,s,1440);
-      }else{
-        push(depDate,s,1440);
-        let cur=isoAdd(depDate,1), guard=0;
-        while(cur && cur<arrDate && guard<30){ push(cur,0,1440); cur=isoAdd(cur,1); guard++; }
-        if(Number.isFinite(e) && e>0) push(arrDate,0,e); else push(arrDate,0,1440);
-      }
-      return segs;
-    }catch{return [];}
-  }
-  function uniquePush(arr,item){ const sig=`${item.kind}|${item.id}|${item.date}|${item.startMin}|${item.endMin}`; if(!arr.some(x=>`${x.kind}|${x.id}|${x.date}|${x.startMin}|${x.endMin}`===sig)) arr.push(item); }
-  function buildMapsFromDOM(){
-    const actCards=[...document.querySelectorAll('[id^="act-"], [id^="tl-act-"]')];
-    const legCards=[...document.querySelectorAll('[id^="leg-"], [id^="tl-leg-"]')];
-    const acts=[]; const actNodesById=new Map();
-    actCards.forEach(n=>{ const row=extractActFromNode(n); if(row){ acts.push(row); if(!actNodesById.has(row.id)) actNodesById.set(row.id,[]); actNodesById.get(row.id).push(n); } });
-    const legSegs=[]; const legNodesById=new Map();
-    legCards.forEach(n=>{ const segs=extractLegSegmentsFromNode(n); segs.forEach(seg=>legSegs.push(seg)); if(segs[0]){ if(!legNodesById.has(segs[0].id)) legNodesById.set(segs[0].id,[]); legNodesById.get(segs[0].id).push(n);} });
-    const actMap=new Map(), legMap=new Map();
-    const add=(map,key,p)=>{ key=String(key||''); if(!key) return; if(!map.has(key)) map.set(key,[]); uniquePush(map.get(key),p); };
-    for(let i=0;i<acts.length;i++) for(let j=i+1;j<acts.length;j++){ const a=acts[i], b=acts[j]; if(a.id===b.id) continue; if(overlap(a,b)){ add(actMap,a.id,b); add(actMap,b.id,a);} }
-    for(let i=0;i<legSegs.length;i++) for(let j=i+1;j<legSegs.length;j++){ const a=legSegs[i], b=legSegs[j]; if(a.id===b.id) continue; if(overlap(a,b)){ add(legMap,a.id,b); add(legMap,b.id,a);} }
-    acts.forEach(a=> legSegs.forEach(l=>{ if(overlap(a,l)){ add(actMap,a.id,l); add(legMap,l.id,a);} }));
-    return {actMap, legMap};
-  }
-  function buildText(self, conflicts){
-    if(!conflicts || !conflicts.length) return '';
-    const first=conflicts[0];
-    const own=self ? ` (${String(self.startMin/60|0).padStart(2,'0')}:${String(self.startMin%60).padStart(2,'0')}–${String(self.endMin/60|0).padStart(2,'0')}:${String(self.endMin%60).padStart(2,'0')})` : '';
-    if(conflicts.length===1){
-      const label=first.kind==='leg' ? `Transporte «${first.title||'Trayecto'}»` : `«${first.title||'Actividad'}»`;
-      const other=` (${String(first.startMin/60|0).padStart(2,'0')}:${String(first.startMin%60).padStart(2,'0')}–${String(first.endMin/60|0).padStart(2,'0')}:${String(first.endMin%60).padStart(2,'0')})`;
-      return `⚠️ Solapa${own} con ${label}${other}`;
-    }
-    const acts=conflicts.filter(x=>x.kind==='act').length, legs=conflicts.filter(x=>x.kind==='leg').length;
-    if(acts && legs) return `⚠️ Solapa${own} con ${acts} actividades y ${legs} transportes`;
-    if(legs) return `⚠️ Solapa${own} con ${legs} transportes`;
-    return `⚠️ Solapa${own} con ${acts} actividades`;
-  }
-  function applyToNode(node, text){
-    if(!node || !text) return;
-    node.classList.add('mvOverlapWarn');
-    node.setAttribute('data-overlap-warn','1');
-    let chip=node.querySelector(':scope > .mvOverlapChipBottom');
-    if(!chip){ chip=document.createElement('div'); chip.className='mvOverlapChip mvOverlapChipBottom'; node.appendChild(chip); }
-    chip.textContent=text;
-  }
-  function clearBottom(){ document.querySelectorAll('.mvOverlapChipBottom').forEach(n=>n.remove()); }
-  function refresh(){
-    try{ clearBottom(); }catch{}
-    const dom=buildMapsFromDOM();
-    dom.actMap.forEach((conflicts,id)=>{
-      document.querySelectorAll(`#act-${CSS.escape(id)}, #tl-act-${CSS.escape(id)}`).forEach(n=>{ const self=extractActFromNode(n); applyToNode(n, buildText(self, conflicts)); });
-    });
-    dom.legMap.forEach((conflicts,id)=>{
-      document.querySelectorAll(`#leg-${CSS.escape(id)}, #tl-leg-${CSS.escape(id)}`).forEach(n=>{ const segs=extractLegSegmentsFromNode(n); applyToNode(n, buildText(segs[0]||null, conflicts)); });
-    });
-  }
-  const prev=window.__mvRefreshActivityOverlapWarnings;
-  window.__mvRefreshActivityOverlapWarnings=function(){ try{ if(typeof prev==='function') prev(); }catch{} try{ refresh(); }catch{} };
-  document.addEventListener('DOMContentLoaded',()=>{
-    const css=document.createElement('style');
-    css.textContent=`.timelineItem,.secCard{position:relative}.mvOverlapChipBottom{display:block;margin-top:10px;padding:8px 12px;border-radius:9999px;border:2px solid #f59e0b;color:#9a3412;background:#fff7ed;font-weight:800;font-size:12px;line-height:1.2;max-width:100%;white-space:normal}.timelineItem .mvOverlapChip:not(.mvOverlapChipBottom){display:none!important}`;
-    document.head.appendChild(css);
-    setTimeout(()=>{ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }, 60);
-    setTimeout(()=>{ try{ window.__mvRefreshActivityOverlapWarnings(); }catch{} }, 250);
-  });
-})();
-</script>
-
 </body>
 </html>
