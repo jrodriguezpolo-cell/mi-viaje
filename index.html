@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7G_AI_OVERLAP_SAVE_FORM_STATE_TRUTH_FIX</title>
+<title>V226C1A7H_AI_OVERLAP_DIAGNOSTIC_HARD_BLOCK_TEST</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7G_AI_OVERLAP_SAVE_FORM_STATE_TRUTH_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7H_AI_OVERLAP_DIAGNOSTIC_HARD_BLOCK_TEST" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7G_AI_OVERLAP_SAVE_FORM_STATE_TRUTH_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7H_AI_OVERLAP_DIAGNOSTIC_HARD_BLOCK_TEST</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7G_AI_OVERLAP_SAVE_FORM_STATE_TRUTH_FIX
+            Build cargada: V226C1A7H_AI_OVERLAP_DIAGNOSTIC_HARD_BLOCK_TEST
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7G_AI_OVERLAP_SAVE_FORM_STATE_TRUTH_FIX";
+const APP_BUILD = "V226C1A7H_AI_OVERLAP_DIAGNOSTIC_HARD_BLOCK_TEST";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13973,13 +13973,15 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       
-      // V226C1A7G: validar overlap usando el estado real del formulario abierto justo al pulsar Guardar
+      // V226C1A7H: diagnóstico visible y bloqueo duro por conflicto en actividades
       try{
         if(typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && String(__eventSheetCtx.kind)==="act"){
-          const msg = (typeof __aiCheckOverlapAgainstOpenActivityForm==="function") ? __aiCheckOverlapAgainstOpenActivityForm() : "";
-          if(msg){
-            const ok = confirm(msg + "\n\n¿Quieres guardar igualmente?");
-            if(!ok){ return; }
+          const diag = (typeof __aiRunActivityOverlapDiagnosticFromSheet === "function") ? __aiRunActivityOverlapDiagnosticFromSheet() : null;
+          if(diag && typeof __aiShowActivityOverlapDiagnostic === "function"){
+            __aiShowActivityOverlapDiagnostic(diag);
+            if(Number(diag.conflictCount||0) > 0){
+              return;
+            }
           }
         }
       }catch{}
@@ -16686,104 +16688,156 @@ function scrollToDateSep(viewName, iso){
     }
     wrapped.__dj_patched = true;
     window.setView = wrapped;
-/* ================= Overlap alerts (V226C1A7B) ================= */
-function __fmtHHMM_fromMinutes(min){
-  const m = Math.max(0, Math.floor(Number(min)||0));
-  const hh = String(Math.floor(m/60)).padStart(2,"0");
-  const mm = String(m%60).padStart(2,"0");
-  return `${hh}:${mm}`;
+/* ================= Overlap diagnostic hard-block test (V226C1A7H) ================= */
+function __parseHHMM_toMinutes(hhmm){
+  const s = String(hhmm||"").trim();
+  const m = s.match(/^([0-9]{1,2}):([0-9]{2})$/);
+  if(!m) return NaN;
+  const h = Math.min(23, Math.max(0, parseInt(m[1],10)));
+  const mi = Math.min(59, Math.max(0, parseInt(m[2],10)));
+  return h*60+mi;
+}
+function __fmtHHMM_fromMinutes(total){
+  const n = Math.max(0, Math.floor(Number(total)||0));
+  const h = Math.floor(n/60) % 24;
+  const m = n % 60;
+  return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
+}
+function __aiReadActivityIntervalFromSheet(){
+  try{
+    const body = document.getElementById("eventSheetBody");
+    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : (window.__eventSheetCtx || null);
+    if(!body || !ctx || String(ctx.kind)!=="act") return null;
+    const q = (k)=> body.querySelector(`[data-sheet-act="${k}"]`);
+    const date = String(q("date")?.value || "").trim();
+    const time = String(q("time")?.value || "").trim();
+    const startMin = __parseHHMM_toMinutes(time);
+    const hRaw = parseInt(String(q("durH")?.value || "0").trim() || "0", 10);
+    const mRaw = parseInt(String(q("durM")?.value || "0").trim() || "0", 10);
+    const durH = Number.isFinite(hRaw) ? Math.max(0, Math.floor(hRaw)) : 0;
+    const durM = Number.isFinite(mRaw) ? Math.max(0, Math.min(59, Math.floor(mRaw))) : 0;
+    const durationMin = durH*60 + durM;
+    const title = String(q("title")?.value || "").trim() || "Actividad";
+    if(!date || !time || !isFinite(startMin) || !(durationMin>0)) return null;
+    return {
+      source: "sheet",
+      id: String(ctx.id||""),
+      title,
+      date,
+      startMin,
+      endMin: startMin + durationMin,
+      durationMin
+    };
+  }catch{ return null; }
 }
 function __aiActIntervalIfPossible(act){
   try{
-    if(!act) return null;
     const date = String(act?.date||"").trim();
     const time = String(act?.time||"").trim();
-    if(!date || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
-    const [hh,mm] = time.split(":").map(x=>parseInt(x,10));
-    const startMin = hh*60 + mm;
+    if(!date || !time) return null;
+    const startMin = __parseHHMM_toMinutes(time);
+    if(!isFinite(startMin)) return null;
     const durMin = (typeof __tlActDurationMinutes==="function") ? Math.max(0, Math.floor(__tlActDurationMinutes(act)||0)) : 0;
     if(!(durMin>0)) return null;
     return {
+      source: "state",
       date,
       startMin,
       endMin: startMin + durMin,
+      durationMin: durMin,
       title: String(act?.title||act?.name||"Actividad").trim() || "Actividad",
       id: String(act?.id||"")
     };
   }catch{ return null; }
 }
-function __aiReadOpenActivityFormInterval(){
+function __aiIntervalsOverlap(a,b){
   try{
-    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-    if(!ctx || String(ctx.kind)!=="act") return null;
-    const body = document.getElementById("eventSheetBody");
-    if(!body) return null;
-    const q = (key)=> body.querySelector(`[data-sheet-act="${key}"]`);
-    const date = String(q("date")?.value || "").trim();
-    const time = String(q("time")?.value || "").trim();
-    const rawH = String(q("durH")?.value || "").trim();
-    const rawM = String(q("durM")?.value || "").trim();
-    if(!date || !time || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) return null;
-
-    const hh = parseInt(time.slice(0,2), 10);
-    const mm = parseInt(time.slice(3,5), 10);
-    if(!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-
-    const durH = Math.max(0, Math.floor(parseInt(rawH || "0", 10) || 0));
-    const durMParsed = parseInt(rawM || "0", 10);
-    const durM = Math.max(0, Math.min(59, Math.floor(Number.isFinite(durMParsed) ? durMParsed : 0)));
-    const durMin = durH*60 + durM;
-    if(!(durMin > 0)) return null;
-
+    return String(a?.date||"") === String(b?.date||"") && Number(a?.startMin) < Number(b?.endMin) && Number(b?.startMin) < Number(a?.endMin);
+  }catch{ return false; }
+}
+function __aiCollectActivityOverlapDiagnostic(cur){
+  const diag = {
+    editedId: String(cur?.id||""),
+    start: cur ? `${cur.date} ${__fmtHHMM_fromMinutes(cur.startMin)}` : "",
+    end: cur ? `${cur.date} ${__fmtHHMM_fromMinutes(cur.endMin)}` : "",
+    comparedCount: 0,
+    comparedIds: [],
+    conflicts: [],
+    conflictCount: 0,
+    blocked: false,
+    reason: ""
+  };
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    const acts = Array.isArray(sc?.activities) ? sc.activities : [];
+    const candidates = acts.filter(a => a && String(a.id||"") !== String(cur?.id||""));
+    const evaluated = [];
+    for(const act of candidates){
+      const interval = __aiActIntervalIfPossible(act);
+      if(!interval) continue;
+      evaluated.push(interval);
+    }
+    diag.comparedCount = evaluated.length;
+    diag.comparedIds = evaluated.map(x=>String(x.id||""));
+    diag.conflicts = evaluated.filter(x=>__aiIntervalsOverlap(cur, x)).map(x=>({
+      id: String(x.id||""),
+      title: String(x.title||"Actividad"),
+      start: `${x.date} ${__fmtHHMM_fromMinutes(x.startMin)}`,
+      end: `${x.date} ${__fmtHHMM_fromMinutes(x.endMin)}`
+    }));
+    diag.conflictCount = diag.conflicts.length;
+    diag.blocked = diag.conflictCount > 0;
+    diag.reason = diag.blocked ? "BLOQUEO DURO DE TEST: conflicto detectado, no se guarda." : "0 conflictos detectados: guardado permitido.";
+  }catch(err){
+    diag.reason = "Error al generar diagnóstico: " + (err && err.message ? err.message : String(err));
+  }
+  return diag;
+}
+function __aiRunActivityOverlapDiagnosticFromSheet(){
+  const cur = __aiReadActivityIntervalFromSheet();
+  if(!cur){
     return {
-      date,
-      startMin: hh*60 + mm,
-      endMin: hh*60 + mm + durMin,
-      title: String(q("title")?.value || ctx.objRef?.title || "Actividad").trim() || "Actividad",
-      id: String(ctx.id || ctx.objRef?.id || "")
+      editedId: String((window.__eventSheetCtx && window.__eventSheetCtx.id) || ""),
+      start: "",
+      end: "",
+      comparedCount: 0,
+      comparedIds: [],
+      conflicts: [],
+      conflictCount: 0,
+      blocked: false,
+      reason: "Sin diagnóstico temporal válido: faltan fecha, hora o duración positiva en el formulario."
     };
-  }catch{ return null; }
+  }
+  return __aiCollectActivityOverlapDiagnostic(cur);
 }
-function __aiGetRealActivityConflicts(interval, excludeId){
+function __aiShowActivityOverlapDiagnostic(diag){
   try{
-    const sc = (typeof curScenario==="function") ? curScenario() : null;
-    if(!sc || !Array.isArray(sc.activities) || !interval) return [];
-    const excluded = String(excludeId || interval.id || "");
-    return sc.activities
-      .filter(a => a && String(a.id || "") !== excluded)
-      .map(__aiActIntervalIfPossible)
-      .filter(Boolean)
-      .filter(x => String(x.date) === String(interval.date))
-      .filter(x => interval.startMin < x.endMin && x.startMin < interval.endMin)
-      .sort((a,b) => (a.startMin - b.startMin) || (a.endMin - b.endMin) || String(a.title).localeCompare(String(b.title), "es"));
-  }catch{
-    return [];
+    const lines = [];
+    lines.push("DIAGNÓSTICO OVERLAP ACTIVIDAD");
+    lines.push(`id actividad editada: ${String(diag?.editedId||"—")}`);
+    lines.push(`inicio leído: ${String(diag?.start||"—")}`);
+    lines.push(`fin calculado: ${String(diag?.end||"—")}`);
+    lines.push(`actividades comparadas: ${Number(diag?.comparedCount||0)}`);
+    lines.push(`ids evaluadas: ${diag?.comparedIds && diag.comparedIds.length ? diag.comparedIds.join(", ") : "(ninguna)"}`);
+    if(Number(diag?.conflictCount||0) > 0){
+      lines.push(`conflictos detectados: ${diag.conflictCount}`);
+      diag.conflicts.forEach((c, idx)=>{
+        lines.push(`${idx+1}. id=${c.id} · ${c.title} · ${c.start} → ${c.end}`);
+      });
+      lines.push("Resultado: BLOQUEADO por conflicto en build de test.");
+    }else{
+      lines.push("0 conflictos detectados");
+      lines.push("Resultado: guardado permitido.");
+    }
+    if(diag?.reason) lines.push(`Detalle: ${diag.reason}`);
+    alert(lines.join("
+"));
+  }catch(err){
+    alert("DIAGNÓSTICO OVERLAP ACTIVIDAD
+No se pudo mostrar el diagnóstico.");
   }
 }
-function __aiBuildActivityConflictsMessage(interval, conflicts){
-  try{
-    if(!interval || !Array.isArray(conflicts) || !conflicts.length) return "";
-    const header = conflicts.length === 1
-      ? "Conflicto horario detectado con 1 actividad:"
-      : `Conflicto horario detectado con ${conflicts.length} actividades:`;
-    const currentLine = `Actividad actual «${interval.title}» · ${__fmtHHMM_fromMinutes(interval.startMin)} → ${__fmtHHMM_fromMinutes(interval.endMin)}`;
-    const lines = conflicts.map(it => `• «${it.title}» · ${__fmtHHMM_fromMinutes(it.startMin)} → ${__fmtHHMM_fromMinutes(it.endMin)}`);
-    return [header, currentLine, "", ...lines].join("\n");
-  }catch{
-    return "";
-  }
-}
-function __aiCheckOverlapAgainstOpenActivityForm(){
-  try{
-    const current = __aiReadOpenActivityFormInterval();
-    if(!current) return "";
-    const conflicts = __aiGetRealActivityConflicts(current, current.id);
-    return __aiBuildActivityConflictsMessage(current, conflicts);
-  }catch{
-    return "";
-  }
-}
-/* ================= /Overlap alerts (V226C1A7G) ================= */
+/* ================= /Overlap diagnostic hard-block test (V226C1A7H) ================= */
 
 
 
