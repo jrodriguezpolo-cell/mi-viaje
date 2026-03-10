@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7Q_AI_PENDING_REVIEW_FLOW_REFINEMENT</title>
+<title>V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7Q_AI_PENDING_REVIEW_FLOW_REFINEMENT" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7Q_AI_PENDING_REVIEW_FLOW_REFINEMENT</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7Q_AI_PENDING_REVIEW_FLOW_REFINEMENT
+            Build cargada: V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1602,7 +1602,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7Q_AI_PENDING_REVIEW_FLOW_REFINEMENT";
+const APP_BUILD = "V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15423,8 +15423,102 @@ window.addEventListener('DOMContentLoaded', () => {
       if((pref.tastes || []).includes("Cultura") && /museo|foro|coliseo|library|capitol|sagrada|louvre|notre/i.test(`${item.title} ${summary}`)){
         why += " Gana peso porque el viaje tiene una preferencia cultural activa.";
       }
-      return { title: item.title, summary: summary.trim(), why: why.trim() };
+      return { title: item.title, summary: summary.trim(), why: why.trim(), description: String(item.description || "").trim(), image: String(item.image || "").trim(), link: String(item.link || "").trim(), heroEmoji: String(item.heroEmoji || "").trim() };
     },
+
+__aiProposalHeroEmoji(item){
+  const hay = `${item && item.title || ""} ${item && item.summary || ""} ${item && item.why || ""}`.toLowerCase();
+  if(/museo|museum|prado|louvre|library|capitol|vaticano|foro|coliseo|sagrada/.test(hay)) return "🏛️";
+  if(/parque|park|jingu|retiro|garden|montjuic|campos de marte/.test(hay)) return "🌿";
+  if(/mercado|market|gastron|food|chelsea|tsukiji|camden/.test(hay)) return "🍽️";
+  if(/mirador|top of the rock|views|vista|tower|eiffel|bridge/.test(hay)) return "🌇";
+  if(/barrio|bairro|trastevere|g[oó]tico|montmartre|georgetown|alfama|shibuya|harajuku/.test(hay)) return "🏙️";
+  if(/disney|universal|magic kingdom|citywalk/.test(hay)) return "🎢";
+  return "✨";
+},
+__aiProposalImageData(item){
+  const title = String(item && item.title || "Propuesta").trim();
+  const city = String(item && item.city || "Mi Viaje").trim();
+  const emoji = String(item && item.heroEmoji || "").trim() || this.__aiProposalHeroEmoji(item);
+  const safe = (s)=> String(s||"")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="${safe(title)}">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f5f3ff"/>
+          <stop offset="55%" stop-color="#ede9fe"/>
+          <stop offset="100%" stop-color="#dbeafe"/>
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="720" rx="36" fill="url(#g)"/>
+      <circle cx="1010" cy="135" r="108" fill="#ffffff" fill-opacity="0.52"/>
+      <circle cx="1110" cy="602" r="132" fill="#ffffff" fill-opacity="0.3"/>
+      <text x="84" y="186" font-size="112">${safe(emoji)}</text>
+      <text x="84" y="300" font-size="64" font-weight="700" fill="#0f172a" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">${safe(title.slice(0,34))}</text>
+      <text x="84" y="362" font-size="34" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">${safe(city.slice(0,44))}</text>
+      <text x="84" y="640" font-size="24" fill="#64748b" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">Vista previa informativa · Mi Viaje IA</text>
+    </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+},
+__aiProposalExternalUrl(item){
+  const explicit = String(item && item.link || "").trim();
+  if(explicit) return explicit;
+  const q = `${String(item && item.title || "").trim()} ${String(item && item.city || "").trim()}`.trim();
+  if(!q) return "";
+  return `https://es.wikipedia.org/wiki/Especial:Buscar?search=${encodeURIComponent(q)}`;
+},
+__aiProposalDetail(item){
+  const title = String(item && item.title || "Propuesta IA").trim();
+  const city = String(item && item.city || "").trim();
+  const timeBits = [];
+  if(item && item.date) timeBits.push(String(item.date).trim());
+  if(item && item.time) timeBits.push(String(item.time).trim());
+  else if(item && item.suggestedBand) timeBits.push(String(item.suggestedBand).trim());
+  if(item && item.duration) timeBits.push(String(item.duration).trim());
+  const subtitle = [city, timeBits.join(" · ")].filter(Boolean).join(" — ");
+  const summary = String(item && item.summary || "").trim();
+  const why = String(item && item.why || "").trim();
+  const extra = String(item && item.description || "").trim();
+  const description = extra || [
+    summary ? `${summary}` : "",
+    why ? `Por qué la IA la recomienda: ${why}` : "",
+    city ? `Esta propuesta está contextualizada para ${city} y se muestra dentro del flujo actual para que puedas valorarla sin salir del listado.` : "Puedes revisar esta propuesta sin perder el contexto del listado actual."
+  ].filter(Boolean).join(" ");
+  return {
+    title,
+    subtitle,
+    description,
+    image: String(item && item.image || "").trim() || this.__aiProposalImageData(item),
+    link: this.__aiProposalExternalUrl(item),
+    linkLabel: "Ampliar información"
+  };
+},
+openProposalDetail(item){
+  const detail = this.__aiProposalDetail(item || {});
+  const overlay = document.getElementById("aiActionInfoOverlay");
+  const titleEl = document.getElementById("aiActionInfoTitle");
+  const bodyEl = document.getElementById("aiActionInfoBody");
+  if(!overlay || !bodyEl) return;
+  if(titleEl) titleEl.textContent = detail.title || "Más info";
+  bodyEl.innerHTML = `
+    <div class="space-y-4">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+        <img alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${detail.image}" />
+      </div>
+      <div>
+        <div class="text-lg font-extrabold text-slate-900">${escapeHtml(detail.title || "Propuesta IA")}</div>
+        ${detail.subtitle ? `<div class="mt-1 text-xs font-semibold text-slate-500">${escapeHtml(detail.subtitle)}</div>` : ``}
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-700">${escapeHtml(detail.description || "Sin detalle adicional.")}</div>
+      ${detail.link ? `<div class="flex items-center justify-end"><a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a></div>` : ``}
+    </div>`;
+  overlay.classList.remove("hidden");
+},
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
         const catalog = AI_CITY_CATALOG[row.key] || this.genericSuggestions(row.city);
@@ -16045,14 +16139,19 @@ __aiBuildDayBuckets(trip){
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
               ${group.proposals.map((item)=> `
-                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div>
-                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
-                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                    <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-start gap-3">
+                    <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                    <div class="min-w-0 flex-1">
+                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
+                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                      <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
+                      <div class="mt-3 flex flex-wrap gap-2">
+                        <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700" data-ai-proposal-more="${escapeHtml(item.id)}" type="button">Más info</button>
+                      </div>
+                    </div>
                   </div>
-                </label>`).join("")}
+                </div>`).join("")}
             </div>
           </div>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas todavía. Cuando el viaje tenga ciudades identificables, aparecerán aquí.</div>`;
         results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
@@ -16061,6 +16160,16 @@ __aiBuildDayBuckets(trip){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
+          });
+        });
+        results.querySelectorAll("[data-ai-proposal-more]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault();
+            ev.stopPropagation();
+            const key = String(btn.getAttribute("data-ai-proposal-more") || "");
+            if(!key) return;
+            const found = (this.state.cityGroups || []).flatMap(g => Array.isArray(g.proposals) ? g.proposals : []).find(p => String(p.id||"") === key);
+            if(found) this.openProposalDetail(found);
           });
         });
       }
@@ -16536,17 +16645,22 @@ loadTripGapsFill(opts){
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
               ${blk.proposals.map((item)=>`
-                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-start gap-3">
+                    <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+                      </div>
+                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                      <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                      <div class="mt-3 flex flex-wrap gap-2">
+                        <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700" data-ai-gap-more="${escapeHtml(item.id)}" type="button">Más info</button>
+                      </div>
                     </div>
-                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
                   </div>
-                </label>
+                </div>
               `).join("")}
             </div>
           </div>
@@ -16558,6 +16672,16 @@ loadTripGapsFill(opts){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
+          });
+        });
+        results.querySelectorAll("[data-ai-gap-more]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault();
+            ev.stopPropagation();
+            const key = String(btn.getAttribute("data-ai-gap-more") || "");
+            if(!key) return;
+            const found = (this.state.gapBlocks || []).flatMap(g => Array.isArray(g.proposals) ? g.proposals : []).find(p => String(p.id||"") === key);
+            if(found) this.openProposalDetail(found);
           });
         });
       }
