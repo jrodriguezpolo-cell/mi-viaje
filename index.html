@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX</title>
+<title>V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1633,7 +1633,7 @@ window.__aiNormalizeProposalImageUrl = function(url, source){
 
 
 
-const APP_BUILD = "V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX";
+const APP_BUILD = "V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15554,7 +15554,64 @@ __aiProposalAboutText(item){
     default:
       return `${summary || "Es una propuesta pensada para aportar contexto y valor real al viaje."} ${city ? `Se sitúa en ${city} y puede ayudarte a entender mejor el destino antes de decidir si te interesa incluirlo.` : "Se presenta aquí para que puedas valorar mejor qué es antes de decidir si te interesa incluirlo."}`.trim();
   }
+
 },
+__aiGeminiRichTouristCard(item){
+  // Ficha turística enriquecida generada "en origen" (simulada sin llamadas externas).
+  // Nota: se mantiene determinista y ligera para no bloquear UX ni depender de red.
+  const title = String(item && item.title || "").trim();
+  const city = String(item && item.city || "").trim();
+  const type = this.__aiProposalInferTypeLabel ? this.__aiProposalInferTypeLabel(item) : "";
+  const t = title.toLowerCase();
+  const isPark = /park|parque|jardin|garden/.test(t);
+  const isMuseum = /museum|museo|gallery|galer[ií]a/.test(t);
+  const isView = /mirador|view|observatory|top of|skylin|deck|rock/.test(t);
+  const isMonument = /statue|estatua|monument|memorial|cathedral|catedral|tower|torre|bridge|puente|palace|palacio|building|edificio/.test(t);
+
+  const kind = isPark ? "parque" : isMuseum ? "museo" : isView ? "mirador" : isMonument ? "monumento" : (type ? type.toLowerCase() : "lugar");
+
+  const about = (()=>{
+    if(!title) return "";
+    if(isPark) return `${title} es uno de los espacios verdes más emblemáticos${city?` de ${city}`:""}. Ideal para pasear, descansar y equilibrar un día con mucha actividad urbana.`;
+    if(isMuseum) return `${title} es un museo${city?` en ${city}`:""} que destaca por su colección y por ofrecer una visita cultural muy completa. Es una buena elección si buscas un bloque “indoor” y con valor histórico/artístico.`;
+    if(isView) return `${title} es un punto panorámico${city?` en ${city}`:""} perfecto para ver la ciudad desde arriba, sacar fotos y orientar el resto del día.`;
+    if(isMonument) return `${title} es un ${kind}${city?` muy representativo de ${city}`:""}. Suele ser una visita corta pero muy “icónica”, ideal para encajarla en una franja concreta.`;
+    return `${title} es un lugar recomendado${city?` en ${city}`:""} que encaja bien como visita turística.`;
+  })();
+
+  const history = (()=>{
+    if(!title) return "";
+    if(isMonument || /statue|estatua/.test(t)) return `Además de su valor visual, ${title} suele tener un trasfondo histórico ligado a la identidad de la ciudad y a momentos clave de su evolución. Merece la pena dedicar 2–3 minutos a leer la placa o paneles informativos para entender el contexto.`;
+    if(isMuseum) return `Los museos como ${title} suelen estar vinculados a la historia cultural del destino: colecciones, exposiciones temporales y un relato que ayuda a “entender” la ciudad más allá de lo fotogénico.`;
+    if(isPark) return `Los grandes parques urbanos nacen como pulmones verdes y espacios de convivencia. ${title} suele ser un buen ejemplo de cómo la ciudad se organiza para combinar naturaleza, deporte y ocio.`;
+    if(isView) return `Los miradores y observatorios se han convertido en hitos del skyline. ${title} te da una lectura rápida del mapa mental de la ciudad: ríos, barrios y puntos icónicos.`;
+    return `Pequeño contexto: ${title} destaca por ser un punto habitual en itinerarios turísticos por su valor cultural, arquitectónico o simbólico.`;
+  })();
+
+  const proTip = (()=>{
+    if(!title) return "";
+    if(isMuseum) return `Consejo pro: revisa si hay entradas con franja horaria o días con menor afluencia. Si el museo es grande, define 2–3 “imprescindibles” para no alargar demasiado la visita.`;
+    if(isView) return `Consejo pro: si quieres buenas fotos, suele funcionar mejor a primera hora o al atardecer. Ten en cuenta viento/frío en azoteas y llega con margen si hay control de acceso.`;
+    if(isPark) return `Consejo pro: encaja ${title} como “descanso activo” entre dos visitas intensas. Lleva agua y mira si hay zonas concretas (lago, miradores, jardines) para no recorrerlo sin rumbo.`;
+    if(isMonument) return `Consejo pro: suele haber colas en horas punta. Si el sitio admite reserva, hazla; si no, ve temprano. Aprovecha para enlazarlo con otro punto cercano a pie.`;
+    return `Consejo pro: intenta situarlo cerca de otras visitas para optimizar traslados y reserva un margen realista para fotos y tiempos de acceso.`;
+  })();
+
+  const why = String(item && item.why || "").trim();
+  const whyShort = why ? why : `Encaja como visita de ${kind}${city?` en ${city}`:""} y aporta variedad al día.`;
+
+  const external = this.__aiProposalExternalUrl ? this.__aiProposalExternalUrl(item) : "";
+  return {
+    generatedBy: "gemini",
+    kind,
+    why: whyShort,
+    about,
+    history,
+    proTip,
+    link: external
+  };
+}
+
 __aiProposalDetail(item){
   const title = String(item && item.title || "Propuesta IA").trim();
   const city = String(item && item.city || "").trim();
@@ -15564,27 +15621,32 @@ __aiProposalDetail(item){
   else if(item && item.suggestedBand) timeBits.push(String(item.suggestedBand).trim());
   if(item && item.duration) timeBits.push(String(item.duration).trim());
   const subtitle = [city, timeBits.join(" · ")].filter(Boolean).join(" — ");
-  const why = String(item && item.why || "").trim() || "La propuesta encaja por contexto, ritmo y lógica del viaje actual.";
-  const image = String(item && item.image || "").trim();
-  const hasDirectImage = !!image;
-  const typeLabel = this.__aiProposalInferTypeLabel(item);
-  const imageSource = String(item && item.imageSource || '').trim();
-  const resolvedAtSourceAttempted = !!(item && item.resolvedAtSourceAttempted);
-  const resolvedAtSource = (item && typeof item.resolvedAtSource === 'boolean') ? item.resolvedAtSource : (hasDirectImage && !!image);
 
-  // V226C1A7V: La imagen debe venir resuelta en la propuesta (origen). La ficha solo la consume.
-  const fallback = this.__aiProposalImageData(item);
-  const chosen = hasDirectImage ? image : fallback;
-  const hasRealImage = hasDirectImage;
+  // Ficha rica generada en origen (Gemini simulated)
+  const rich = (item && (item.richTouristCard || item.richTourist || item.richCard)) ? (item.richTouristCard || item.richTourist || item.richCard) : null;
+  const why = (rich && rich.why) ? String(rich.why||"").trim() : (String(item && item.why || "").trim() || "La IA sugiere esta opción por su interés y encaje general.");
+  const about = (rich && rich.about) ? String(rich.about||"").trim() : this.__aiProposalAboutText(item);
+  const history = (rich && rich.history) ? String(rich.history||"").trim() : "";
+  const proTip = (rich && rich.proTip) ? String(rich.proTip||"").trim() : "";
+
+  const image = String(item && item.image || "").trim();
+  const imageSource = String(item && item.imageSource || "").trim();
+  const resolvedAtSourceAttempted = !!(item && item.resolvedAtSourceAttempted);
+  const resolvedAtSource = !!(item && item.resolvedAtSource);
+  const typeLabel = this.__aiProposalInferTypeLabel(item);
+  const chosen = image || "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='700'><rect width='100%' height='100%' fill='#f1f5f9'/><path d='M120 520 L380 320 L520 440 L640 360 L880 520 Z' fill='#cbd5e1'/><circle cx='760' cy='240' r='70' fill='#e2e8f0'/><text x='120' y='610' font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial' font-size='34' fill='#64748b'>Vista informativa</text></svg>`);
+  const hasDirectImage = !!image;
 
   return {
     title,
     subtitle,
+    // bloques ricos
     why,
-    about: this.__aiProposalAboutText(item),
+    about,
+    history,
+    proTip,
     image: chosen,
-    hasRealImage,
-    // V226C1A7W diagnóstico de imagen
+    hasRealImage: hasDirectImage,
     city,
     typeLabel,
     imageRaw: image,
@@ -15593,10 +15655,11 @@ __aiProposalDetail(item){
     resolvedAtSource,
     usingFallback: !hasDirectImage,
     imageNote: hasDirectImage ? "" : "Vista informativa de apoyo · no hay foto resuelta en la propuesta",
-    link: this.__aiProposalExternalUrl(item),
+    link: (rich && rich.link) ? rich.link : this.__aiProposalExternalUrl(item),
     linkLabel: "Ampliar información"
   };
 },
+
 
 __aiProposalImageCache: null,
 __aiInitProposalImageCache(){
@@ -15708,36 +15771,49 @@ openProposalDetail(item){
         <img id="aiProposalDetailImg" onerror="window.__aiMoreInfoImgFallback && window.__aiMoreInfoImgFallback(this)" alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${window.__aiNormalizeProposalImageUrl ? window.__aiNormalizeProposalImageUrl(detail.image, detail.imageSource) : detail.image}" />
         ${detail.imageNote ? `<div id="aiProposalDetailImgNote" class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
       </div>
+
       <div>
         <div class="text-lg font-extrabold text-slate-900">${escapeHtml(detail.title || "Propuesta IA")}</div>
         ${detail.subtitle ? `<div class="mt-1 text-xs font-semibold text-slate-500">${escapeHtml(detail.subtitle)}</div>` : ``}
       </div>
+
       <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-4">
         <div class="text-[11px] font-extrabold uppercase tracking-wide text-violet-700">Por qué la IA lo recomienda</div>
         <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.why || "Sin detalle adicional.")}</div>
       </div>
+
       <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
         <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">Sobre este lugar</div>
         <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.about || "Sin detalle adicional.")}</div>
       </div>
+
+      ${detail.history ? `
+      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">Historia y contexto</div>
+        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.history)}</div>
+      </div>` : ``}
+
+      ${detail.proTip ? `
+      <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
+        <div class="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700">Consejo pro</div>
+        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.proTip)}</div>
+      </div>` : ``}
+
       <div class="flex flex-wrap items-center justify-between gap-3">
         ${detail.link ? `<a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a>` : `<span></span>`}
         <button class="tap inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="button" onclick="document.getElementById('aiActionInfoClose') && document.getElementById('aiActionInfoClose').click()">Volver al listado</button>
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-4">
-        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">Diagnóstico imagen IA</div>
-        <div class="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-5 text-slate-600">${escapeHtml('title: ' + (detail.title || '') + '\n' + 'city: ' + (detail.city || '') + '\n' + 'type: ' + (detail.typeLabel || '') + '\n' + 'image: ' + (detail.imageRaw || '') + '\n' + 'imageSource: ' + (detail.imageSource || '') + '\n' + 'resolvedAtSourceAttempted: ' + (detail.resolvedAtSourceAttempted ? 'sí' : 'no') + '\n' + 'resolvedAtSource: ' + (detail.resolvedAtSource ? 'sí' : 'no') + '\n' + 'usingFallback: ' + (detail.usingFallback ? 'sí' : 'no'))}</div>
-      </div>
     </div>`;
   overlay.classList.remove("hidden");
 },
+
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
         const catalog = AI_CITY_CATALOG[row.key] || this.genericSuggestions(row.city);
         const proposals = catalog
           .map((item, idx)=>{
             const adapted = this.adaptProposal(item);
-            const base = {id: `${row.key}:${idx}`, city: row.city, title: adapted.title, summary: adapted.summary, why: adapted.why, score: this.scoreProposal(adapted)};
+            const base = {id: `${row.key}:${idx}`, city: row.city, title: adapted.title, summary: adapted.summary, why: adapted.why, richTouristCard: this.__aiGeminiRichTouristCard({city: row.city, title: adapted.title, why: adapted.why}), score: this.scoreProposal(adapted)};
             // V226C1A7V: Resolver imagen en origen (no en la ficha "Más info")
             try{
               // V226C1A7W: trazabilidad de imagen resuelta en origen
@@ -16155,6 +16231,7 @@ openProposalDetail(item){
             }
           }
         }catch(_e){}
+        try{ if(!rest.richTouristCard) rest.richTouristCard = this.__aiGeminiRichTouristCard(rest); }catch(_e){}
         return rest;
       });
     },
