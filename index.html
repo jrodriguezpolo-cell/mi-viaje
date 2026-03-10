@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7J_ROLLBACK_RESTORE_LAST_SAFE_OVERLAP_BRANCH_BASE</title>
+<title>V226C1A7K_AI_OVERLAP_PASSIVE_INSPECTOR_FROM_SAFE_BASE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7J_ROLLBACK_RESTORE_LAST_SAFE_OVERLAP_BRANCH_BASE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7K_AI_OVERLAP_PASSIVE_INSPECTOR_FROM_SAFE_BASE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7J_ROLLBACK_RESTORE_LAST_SAFE_OVERLAP_BRANCH_BASE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7K_AI_OVERLAP_PASSIVE_INSPECTOR_FROM_SAFE_BASE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7J_ROLLBACK_RESTORE_LAST_SAFE_OVERLAP_BRANCH_BASE
+            Build cargada: V226C1A7K_AI_OVERLAP_PASSIVE_INSPECTOR_FROM_SAFE_BASE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7J_ROLLBACK_RESTORE_LAST_SAFE_OVERLAP_BRANCH_BASE";
+const APP_BUILD = "V226C1A7K_AI_OVERLAP_PASSIVE_INSPECTOR_FROM_SAFE_BASE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -7699,10 +7699,114 @@ qs("currency").value = v(actObj.currency || "EUR");
     el.addEventListener("change", () => { try { fn(el.value); } catch {} });
   };
 
-  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
-  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} });
-  bind("date", (val)=>{ actObj.date = val; });
-  bind("time", (val)=>{ actObj.time = val; });
+  const __sheetActInspector = document.createElement("div");
+  __sheetActInspector.className = "mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700";
+  __sheetActInspector.setAttribute("data-act-overlap-inspector", String(itemId));
+  __sheetActInspector.innerHTML = `
+    <div class="font-semibold text-slate-800">Inspector pasivo de solapamientos</div>
+    <div class="mt-1 text-xs text-slate-500">Solo diagnóstico visual. No bloquea Guardar.</div>
+    <div class="mt-2" data-act-overlap-inspector-body>Calculando…</div>
+  `;
+  try{ wrap.querySelector('.actEditorStack')?.appendChild(__sheetActInspector); }catch{}
+
+  const __fmtInspectorDT = (d)=>{
+    try{
+      if(!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mi = String(d.getMinutes()).padStart(2,'0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+    }catch{ return '—'; }
+  };
+
+  const __sheetActReadDraftInterval = ()=>{
+    try{
+      const dateStr = String(qs('date')?.value || '').trim();
+      const timeStr = String(qs('time')?.value || '').trim();
+      const rawH = parseInt(String(qs('durH')?.value || '0'), 10);
+      const rawM = parseInt(String(qs('durM')?.value || '0'), 10);
+      const h = Math.max(0, Number.isFinite(rawH) ? rawH : 0);
+      const m = Math.max(0, Math.min(59, Number.isFinite(rawM) ? rawM : 0));
+      const durationMin = h*60 + m;
+      if(!dateStr || !timeStr || durationMin <= 0) return { ok:false, date:dateStr, time:timeStr, durationMin, reason:'Datos temporales insuficientes' };
+      const start = new Date(`${dateStr}T${timeStr}:00`);
+      if(Number.isNaN(start.getTime())) return { ok:false, date:dateStr, time:timeStr, durationMin, reason:'Inicio inválido' };
+      const end = new Date(start.getTime() + durationMin*60000);
+      return { ok:true, date:dateStr, time:timeStr, durationMin, start, end };
+    }catch(err){
+      return { ok:false, reason:'Error leyendo formulario' };
+    }
+  };
+
+  const __sheetActExistingInterval = (item)=>{
+    try{
+      if(!item) return null;
+      const dateStr = String(item.date || '').trim();
+      const timeStr = String(item.time || '').trim();
+      const mins = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)),10) || 0);
+      if(!dateStr || !timeStr || mins <= 0) return null;
+      const start = new Date(`${dateStr}T${timeStr}:00`);
+      if(Number.isNaN(start.getTime())) return null;
+      const end = new Date(start.getTime() + mins*60000);
+      return { start, end, durationMin: mins, item };
+    }catch{ return null; }
+  };
+
+  const __sheetActCollectConflicts = ()=>{
+    const draft = __sheetActReadDraftInterval();
+    const out = { draft, compared: [], conflicts: [] };
+    try{
+      const sc = (typeof curScenario === 'function') ? curScenario() : null;
+      const arr = (sc && Array.isArray(sc.activities)) ? sc.activities : [];
+      arr.forEach((item)=>{
+        try{
+          if(!item) return;
+          if(String(item.id) === String(itemId)) return;
+          const interval = __sheetActExistingInterval(item);
+          if(!interval) return;
+          out.compared.push({
+            id: String(item.id || ''),
+            title: String(item.title || item.name || 'Actividad'),
+            start: interval.start,
+            end: interval.end
+          });
+          if(draft.ok && draft.start < interval.end && interval.start < draft.end){
+            out.conflicts.push({
+              id: String(item.id || ''),
+              title: String(item.title || item.name || 'Actividad'),
+              start: interval.start,
+              end: interval.end
+            });
+          }
+        }catch{}
+      });
+    }catch{}
+    return out;
+  };
+
+  const __renderSheetActInspector = ()=>{
+    const host = __sheetActInspector.querySelector('[data-act-overlap-inspector-body]');
+    if(!host) return;
+    const data = __sheetActCollectConflicts();
+    const draft = data.draft || {};
+    const conflictHtml = data.conflicts.length
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">[#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}]</span></li>`).join('')}</ul>`
+      : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
+    host.innerHTML = `
+      <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
+      <div><span class="font-medium text-slate-800">Fin calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.end))}</div>
+      <div><span class="font-medium text-slate-800">Actividades comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
+      ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
+      <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
+    `;
+  };
+
+  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} __renderSheetActInspector(); });
+  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} __renderSheetActInspector(); });
+  bind("date", (val)=>{ actObj.date = val; __renderSheetActInspector(); });
+  bind("time", (val)=>{ actObj.time = val; __renderSheetActInspector(); });
 
   const __actRecalcDuration = ()=>{
     const h = Math.max(0, Math.floor(parseInt(qs("durH")?.value || "0",10) || 0));
@@ -7713,13 +7817,16 @@ qs("currency").value = v(actObj.currency || "EUR");
     actObj.durationMin = h*60 + m;
     // Keep legacy string for backwards compatibility / older renders
     actObj.duration = __tlFormatDurationHM(actObj.durationMin);
+    __renderSheetActInspector();
   };
 
   bind("durH", ()=>{ __actRecalcDuration(); });
   bind("durM", ()=>{ __actRecalcDuration(); });
 
-  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); });
+  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; __renderSheetActInspector(); });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); __renderSheetActInspector(); });
+
+  try{ __renderSheetActInspector(); }catch{}
 
   return true;
 }
