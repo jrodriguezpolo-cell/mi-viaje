@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN</title>
+<title>V226C1A7T_AI_PROPOSALS_REAL_IMAGE_ENRICHMENT_PRIORITY_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7T_AI_PROPOSALS_REAL_IMAGE_ENRICHMENT_PRIORITY_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7T_AI_PROPOSALS_REAL_IMAGE_ENRICHMENT_PRIORITY_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN
+            Build cargada: V226C1A7T_AI_PROPOSALS_REAL_IMAGE_ENRICHMENT_PRIORITY_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1602,7 +1602,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN";
+const APP_BUILD = "V226C1A7T_AI_PROPOSALS_REAL_IMAGE_ENRICHMENT_PRIORITY_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15548,6 +15548,104 @@ __aiProposalDetail(item){
     linkLabel: "Ampliar información"
   };
 },
+
+__aiProposalImageCache: null,
+__aiInitProposalImageCache(){
+  if(!this.__aiProposalImageCache) this.__aiProposalImageCache = Object.create(null);
+},
+__aiProposalUnsplashUrl(item){
+  const title = String(item && item.title || "").trim();
+  const city = String(item && item.city || "").trim();
+  const type = this.__aiProposalInferTypeLabel(item);
+  const q = [title, city, type].filter(Boolean).join(" ");
+  if(!q) return "";
+  // Fuente pública sin API key (devuelve una imagen real relacionada con la búsqueda)
+  return `https://source.unsplash.com/featured/1000x700/?${encodeURIComponent(q)}`;
+},
+__aiWikiKey(q){
+  return String(q||"").trim().replace(/\s+/g, "_");
+},
+async __aiFetchWikiThumb(query, lang){
+  try{
+    const key = this.__aiWikiKey(query);
+    if(!key) return "";
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}`;
+    const res = await fetch(url, { method:"GET", mode:"cors", credentials:"omit" });
+    if(!res.ok) return "";
+    const j = await res.json();
+    const t = (j && j.originalimage && j.originalimage.source) || (j && j.thumbnail && j.thumbnail.source) || "";
+    return String(t||"").trim();
+  }catch(_e){
+    return "";
+  }
+},
+async __aiResolveProposalRealImage(item){
+  this.__aiInitProposalImageCache();
+  const id = String(item && item.id || "").trim();
+  if(id && this.__aiProposalImageCache[id]) return this.__aiProposalImageCache[id];
+
+  const title = String(item && item.title || "").trim();
+  const city = String(item && item.city || "").trim();
+  const type = this.__aiProposalInferTypeLabel(item);
+
+  // 1) Si ya viene imagen directa, úsala.
+  const direct = String(item && item.image || "").trim();
+  if(direct){
+    if(id) this.__aiProposalImageCache[id] = direct;
+    return direct;
+  }
+
+  // 2) Intentar Wikipedia (ES y EN) con varias variantes.
+  const candidates = [];
+  if(title) candidates.push(title);
+  if(title && city) candidates.push(`${title}, ${city}`);
+  if(title && city) candidates.push(`${title} (${city})`);
+  if(title && type && city) candidates.push(`${title} ${type} ${city}`);
+  if(title && type) candidates.push(`${title} ${type}`);
+
+  for(const q of candidates){
+    const es = await this.__aiFetchWikiThumb(q, "es");
+    if(es){
+      if(id) this.__aiProposalImageCache[id] = es;
+      return es;
+    }
+    const en = await this.__aiFetchWikiThumb(q, "en");
+    if(en){
+      if(id) this.__aiProposalImageCache[id] = en;
+      return en;
+    }
+  }
+
+  // 3) Último recurso: Unsplash por query (imagen real genérica relacionada).
+  const u = this.__aiProposalUnsplashUrl(item);
+  if(u){
+    if(id) this.__aiProposalImageCache[id] = u;
+    return u;
+  }
+
+  return "";
+},
+async __aiEnrichProposalDetailImage(item, detail){
+  try{
+    if(detail && detail.hasRealImage) return;
+    const imgEl = document.getElementById("aiProposalDetailImg");
+    if(!imgEl) return;
+    // Evitar carreras si el usuario abre otra ficha rápido
+    const token = Math.random().toString(36).slice(2);
+    imgEl.dataset.token = token;
+
+    const resolved = await this.__aiResolveProposalRealImage(item);
+    if(!resolved) return;
+    if(imgEl.dataset.token !== token) return;
+
+    // Aplicar y quitar nota de fallback si existía
+    imgEl.src = resolved;
+    const noteEl = document.getElementById("aiProposalDetailImgNote");
+    if(noteEl) noteEl.remove();
+  }catch(_e){
+    // Silencioso: mantenemos fallback sin romper el flujo
+  }
+},
 openProposalDetail(item){
   const detail = this.__aiProposalDetail(item || {});
   const overlay = document.getElementById("aiActionInfoOverlay");
@@ -15558,8 +15656,8 @@ openProposalDetail(item){
   bodyEl.innerHTML = `
     <div class="space-y-4">
       <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-        <img alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${detail.image}" />
-        ${detail.imageNote ? `<div class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
+        <img id="aiProposalDetailImg" alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${detail.image}" />
+        ${detail.imageNote ? `<div id="aiProposalDetailImgNote" class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
       </div>
       <div>
         <div class="text-lg font-extrabold text-slate-900">${escapeHtml(detail.title || "Propuesta IA")}</div>
@@ -15579,6 +15677,8 @@ openProposalDetail(item){
       </div>
     </div>`;
   overlay.classList.remove("hidden");
+  // Enriquecimiento de imagen (solo si no viene imagen directa)
+  this.__aiEnrichProposalDetailImage(item || {}, detail);
 },
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
