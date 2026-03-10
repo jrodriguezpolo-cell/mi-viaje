@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7M_AI_ACTIVITY_INSERT_CONFLICT_GUARD_AGAINST_TIMED_EVENTS</title>
+<title>V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7M_AI_ACTIVITY_INSERT_CONFLICT_GUARD_AGAINST_TIMED_EVENTS" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7M_AI_ACTIVITY_INSERT_CONFLICT_GUARD_AGAINST_TIMED_EVENTS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7M_AI_ACTIVITY_INSERT_CONFLICT_GUARD_AGAINST_TIMED_EVENTS
+            Build cargada: V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7M_AI_ACTIVITY_INSERT_CONFLICT_GUARD_AGAINST_TIMED_EVENTS";
+const APP_BUILD = "V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -7750,7 +7750,23 @@ qs("currency").value = v(actObj.currency || "EUR");
       const start = new Date(`${dateStr}T${timeStr}:00`);
       if(Number.isNaN(start.getTime())) return null;
       const end = new Date(start.getTime() + mins*60000);
-      return { start, end, durationMin: mins, item };
+      return { start, end, durationMin: mins, item, type:'act', typeLabel:'Actividad' };
+    }catch{ return null; }
+  };
+
+  const __sheetActExistingLegInterval = (item)=>{
+    try{
+      if(!item) return null;
+      const depDate = String(item.date || '').trim();
+      const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+      const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+      const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+      if(!depDate || !depTime || !arrDate || !arrTime) return null;
+      const start = new Date(`${depDate}T${depTime}:00`);
+      const end = new Date(`${arrDate}T${arrTime}:00`);
+      if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+      if(!(start < end)) return null;
+      return { start, end, item, type:'leg', typeLabel:'Transporte' };
     }catch{ return null; }
   };
 
@@ -7759,14 +7775,16 @@ qs("currency").value = v(actObj.currency || "EUR");
     const out = { draft, compared: [], conflicts: [] };
     try{
       const sc = (typeof curScenario === 'function') ? curScenario() : null;
-      const arr = (sc && Array.isArray(sc.activities)) ? sc.activities : [];
-      arr.forEach((item)=>{
+      const acts = (sc && Array.isArray(sc.activities)) ? sc.activities : [];
+      acts.forEach((item)=>{
         try{
           if(!item) return;
           if(String(item.id) === String(itemId)) return;
           const interval = __sheetActExistingInterval(item);
           if(!interval) return;
           out.compared.push({
+            type: 'act',
+            typeLabel: 'Actividad',
             id: String(item.id || ''),
             title: String(item.title || item.name || 'Actividad'),
             start: interval.start,
@@ -7774,8 +7792,37 @@ qs("currency").value = v(actObj.currency || "EUR");
           });
           if(draft.ok && draft.start < interval.end && interval.start < draft.end){
             out.conflicts.push({
+              type: 'act',
+              typeLabel: 'Actividad',
               id: String(item.id || ''),
               title: String(item.title || item.name || 'Actividad'),
+              start: interval.start,
+              end: interval.end
+            });
+          }
+        }catch{}
+      });
+      const legs = (sc && Array.isArray(sc.legs)) ? sc.legs : [];
+      legs.forEach((item)=>{
+        try{
+          if(!item) return;
+          const interval = __sheetActExistingLegInterval(item);
+          if(!interval) return;
+          const title = `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`;
+          out.compared.push({
+            type: 'leg',
+            typeLabel: 'Transporte',
+            id: String(item.id || ''),
+            title,
+            start: interval.start,
+            end: interval.end
+          });
+          if(draft.ok && draft.start < interval.end && interval.start < draft.end){
+            out.conflicts.push({
+              type: 'leg',
+              typeLabel: 'Transporte',
+              id: String(item.id || ''),
+              title,
               start: interval.start,
               end: interval.end
             });
@@ -7799,12 +7846,12 @@ qs("currency").value = v(actObj.currency || "EUR");
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
     const conflictHtml = data.conflicts.length
-      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">[#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}]</span></li>`).join('')}</ul>`
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}]</span></li>`).join('')}</ul>`
       : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
     host.innerHTML = `
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
       <div><span class="font-medium text-slate-800">Fin calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.end))}</div>
-      <div><span class="font-medium text-slate-800">Actividades comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
+      <div><span class="font-medium text-slate-800">Eventos comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
       ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
       <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
     `;
@@ -12192,7 +12239,7 @@ function renderAIResults(sections) {
   const btnAdd = document.createElement("button");
   btnAdd.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
   btnAdd.textContent = "Añadir seleccionadas a Actividades";
-  btnAdd.onclick = async () => {
+  btnAdd.onclick = () => {
     const checks = Array.from(document.querySelectorAll("[data-ai-spot]")).filter(x=>x.checked);
     const items = [];
     for (const c of checks) {
@@ -12216,21 +12263,22 @@ function renderAIResults(sections) {
       });
     }
 
+    const __applyBridgeResult = (res)=>{
+      const added = (res && typeof res.added === "number") ? res.added : 0;
+      try{
+        const ids = (res && Array.isArray(res.ids)) ? res.ids : [];
+        if(ids.length){
+          __aiFocusActivityInTimeline(ids[0]);
+        }
+      }catch{}
+      $("aiStatus").textContent = added ? `Añadidas ${added} actividades a Actividades.` : "No has seleccionado ninguna recomendación.";
+    };
+
     const res = (typeof aiModule !== "undefined" && aiModule && aiModule.bridge && typeof aiModule.bridge.addActivities === "function")
-      ? await aiModule.bridge.addActivities(items)
+      ? aiModule.bridge.addActivities(items, { onCommitted: __applyBridgeResult })
       : { added: 0, error: true };
 
-    const added = (res && typeof res.added === "number") ? res.added : 0;
-
-    try{
-      const ids = (res && Array.isArray(res.ids)) ? res.ids : [];
-      if(ids.length){
-        // Foco al primer elemento añadido por IA (queda marcado como pendiente)
-        __aiFocusActivityInTimeline(ids[0]);
-      }
-    }catch{}
-
-    $("aiStatus").textContent = added ? `Añadidas ${added} actividades a Actividades.` : "No has seleccionado ninguna recomendación.";
+    if(!(res && res.deferred)) __applyBridgeResult(res);
   };
 
   // attach under results
@@ -14107,9 +14155,9 @@ window.addEventListener('DOMContentLoaded', () => {
           const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
           if(conflicts.length > 0){
             const body = `
-              <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} actividad${conflicts.length===1?'':'es'}.</div>
+              <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'}.</div>
               <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
-                <div class="font-semibold text-slate-900">Actividades conflictivas</div>
+                <div class="font-semibold text-slate-900">Eventos conflictivos</div>
                 <ul class="mt-2 space-y-1">${conflicts.map(c=>{
                   const hh = (d)=>{
                     try{
@@ -14117,7 +14165,7 @@ window.addEventListener('DOMContentLoaded', () => {
                       return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
                     }catch{ return '—'; }
                   };
-                  return `<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Actividad'))}</span> <span class="text-slate-500">[#${escapeHtml(String(c.id || ''))} · ${escapeHtml(hh(c.start))} → ${escapeHtml(hh(c.end))}]</span></li>`;
+                  return `<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(hh(c.start))} → ${escapeHtml(hh(c.end))}]</span></li>`;
                 }).join('')}</ul>
               </div>
               <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
@@ -14431,19 +14479,124 @@ window.addEventListener('DOMContentLoaded', () => {
           return {};
         }
       },
-
-      async addActivities(items){
+      __fmtDT(dt){
+        try{
+          if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
+          const yyyy = dt.getFullYear();
+          const mm = String(dt.getMonth()+1).padStart(2,'0');
+          const dd = String(dt.getDate()).padStart(2,'0');
+          const hh = String(dt.getHours()).padStart(2,'0');
+          const mi = String(dt.getMinutes()).padStart(2,'0');
+          return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+        }catch{ return '—'; }
+      },
+      __fmtHHMM(dt){
+        try{
+          if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
+          return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        }catch{ return '—'; }
+      },
+      __activityInterval(item){
+        try{
+          if(!item) return null;
+          const dateStr = String(item.date || '').trim();
+          const timeStr = String(item.time || '').trim();
+          const mins = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)),10) || 0);
+          if(!dateStr || !timeStr || mins <= 0) return null;
+          const start = new Date(`${dateStr}T${timeStr}:00`);
+          if(Number.isNaN(start.getTime())) return null;
+          const end = new Date(start.getTime() + mins*60000);
+          return { start, end };
+        }catch{ return null; }
+      },
+      __legInterval(item){
+        try{
+          if(!item) return null;
+          const depDate = String(item.date || '').trim();
+          const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+          const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+          const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+          if(!depDate || !depTime || !arrDate || !arrTime) return null;
+          const start = new Date(`${depDate}T${depTime}:00`);
+          const end = new Date(`${arrDate}T${arrTime}:00`);
+          if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+          if(!(start < end)) return null;
+          return { start, end };
+        }catch{ return null; }
+      },
+      __collectTimedConflictsForActivity(sc, draftAct){
+        const interval = this.__activityInterval(draftAct);
+        const out = { interval, conflicts: [] };
+        if(!sc || !interval) return out;
+        try{
+          (Array.isArray(sc.activities) ? sc.activities : []).forEach((item)=>{
+            try{
+              if(!item) return;
+              if(String(item.id || '') === String(draftAct.id || '')) return;
+              const other = this.__activityInterval(item);
+              if(!other) return;
+              if(interval.start < other.end && other.start < interval.end){
+                out.conflicts.push({
+                  type: 'act',
+                  typeLabel: 'Actividad',
+                  id: String(item.id || ''),
+                  title: String(item.title || item.name || 'Actividad'),
+                  start: other.start,
+                  end: other.end
+                });
+              }
+            }catch{}
+          });
+          (Array.isArray(sc.legs) ? sc.legs : []).forEach((item)=>{
+            try{
+              if(!item) return;
+              const other = this.__legInterval(item);
+              if(!other) return;
+              if(interval.start < other.end && other.start < interval.end){
+                out.conflicts.push({
+                  type: 'leg',
+                  typeLabel: 'Transporte',
+                  id: String(item.id || ''),
+                  title: `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`,
+                  start: other.start,
+                  end: other.end
+                });
+              }
+            }catch{}
+          });
+        }catch{}
+        return out;
+      },
+      __insertActivities(sc, acts){
+        let added = 0;
+        const ids = [];
+        (Array.isArray(acts) ? acts : []).forEach((act)=>{
+          if(!act || !String(act.title || '').trim()) return;
+          sc.activities.unshift(act);
+          ids.push(String(act.id));
+          added += 1;
+        });
+        try{ if(typeof saveState === "function") saveState(); }catch{}
+        try{ if(typeof renderAll === "function") renderAll(); }catch{}
+        try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
+        try{ window.__aiPendingReviewQueue = (window.__aiPendingReviewQueue || []).concat(ids); }catch{}
+        return { added, ids };
+      },
+      addActivities(items, opts){
         const sc = (typeof curScenario === "function") ? curScenario() : null;
         if(!sc || !Array.isArray(sc.activities)) return { added:0, error:true };
+        const cfg = (opts && typeof opts === 'object') ? opts : {};
         const durMinFromItem = (it)=>{
           if(it && Number.isFinite(it.durationMin)) return Math.max(0, Math.floor(it.durationMin));
           const dh = Math.max(0, Math.floor(parseInt(it && it.durationH || 0,10) || 0));
           const dm = Math.max(0, Math.floor(parseInt(it && it.durationM || 0,10) || 0));
           if(dh || dm) return dh*60 + Math.min(59, dm);
           const s = String(it && it.duration || "").trim();
+          let mm = 0;
           let m;
           if((m=/^(\d{1,2}):(\d{2})$/.exec(s))){
-            return Math.max(0, (parseInt(m[1],10)||0)*60 + (parseInt(m[2],10)||0));
+            mm = (parseInt(m[1],10)||0)*60 + (parseInt(m[2],10)||0);
+            return Math.max(0, mm);
           }
           if((m=/^(\d+)\s*m$/i.exec(s))) return Math.max(0, parseInt(m[1],10)||0);
           if((m=/^(\d+)\s*h\s*(\d+)?\s*m?$/i.exec(s))){
@@ -14465,7 +14618,8 @@ window.addEventListener('DOMContentLoaded', () => {
             if(/\b(show|espect\w+culo|concierto|concert|teatro|opera)\b/.test(tt)) return 120;
             return 0;
           })();
-          return est || 0;
+          if(est) return est;
+          return 0;
         };
         const fmtDur = (min)=>{
           const mm = Math.max(0, Math.floor(min||0));
@@ -14475,138 +14629,29 @@ window.addEventListener('DOMContentLoaded', () => {
           if(m<=0) return `${h}h`;
           return `${h}h ${String(m).padStart(2,"0")}m`;
         };
-        const fmtHM = (d)=>{
-          try{
-            if(!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
-            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-          }catch{ return '—'; }
-        };
-        const buildDraftInterval = (act)=>{
-          try{
-            const dateStr = String(act && act.date || '').trim();
-            const timeStr = String(act && act.time || '').trim();
-            const mins = Math.max(0, parseInt(String(act && (act.durationMin ?? ((act.durationH||0)*60 + (act.durationM||0)))),10) || 0);
-            if(!dateStr || !timeStr || mins <= 0) return null;
-            const start = new Date(`${dateStr}T${timeStr}:00`);
-            if(Number.isNaN(start.getTime())) return null;
-            return { start, end:new Date(start.getTime() + mins*60000), durationMin: mins };
-          }catch{ return null; }
-        };
-        const buildExistingActInterval = (item)=>{
-          try{
-            if(!item) return null;
-            const dateStr = String(item.date || '').trim();
-            const timeStr = String(item.time || '').trim();
-            const mins = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)),10) || 0);
-            if(!dateStr || !timeStr || mins <= 0) return null;
-            const start = new Date(`${dateStr}T${timeStr}:00`);
-            if(Number.isNaN(start.getTime())) return null;
-            return { start, end:new Date(start.getTime() + mins*60000), durationMin: mins };
-          }catch{ return null; }
-        };
-        const buildExistingLegInterval = (leg)=>{
-          try{
-            if(!leg) return null;
-            const dep = (typeof __mvLegDepartureUTC === 'function') ? __mvLegDepartureUTC(leg) : NaN;
-            const arr = (typeof __mvLegArrivalUTC === 'function') ? __mvLegArrivalUTC(leg) : NaN;
-            if(!Number.isFinite(dep) || !Number.isFinite(arr)) return null;
-            const startMs = Math.min(dep, arr);
-            const endMs = Math.max(dep, arr);
-            if(!(endMs > startMs)) return null;
-            return { start:new Date(startMs), end:new Date(endMs) };
-          }catch{ return null; }
-        };
-        const collectTimedConflicts = (draftAct)=>{
-          const draft = buildDraftInterval(draftAct);
-          const out = { draft, conflicts: [] };
-          if(!draft) return out;
-          try{
-            (Array.isArray(sc.activities) ? sc.activities : []).forEach((item)=>{
-              try{
-                if(!item) return;
-                if(String(item.id||'') === String(draftAct.id||'')) return;
-                const interval = buildExistingActInterval(item);
-                if(!interval) return;
-                if(draft.start < interval.end && interval.start < draft.end){
-                  out.conflicts.push({
-                    id: String(item.id || ''),
-                    type: 'actividad',
-                    title: String(item.title || item.name || 'Actividad'),
-                    start: interval.start,
-                    end: interval.end
-                  });
-                }
-              }catch{}
-            });
-            (Array.isArray(sc.legs) ? sc.legs : []).forEach((leg)=>{
-              try{
-                if(!leg) return;
-                const interval = buildExistingLegInterval(leg);
-                if(!interval) return;
-                if(draft.start < interval.end && interval.start < draft.end){
-                  out.conflicts.push({
-                    id: String(leg.id || ''),
-                    type: 'transporte',
-                    title: `${String(leg.from || '').trim() || '—'} → ${String(leg.to || '').trim() || '—'}`,
-                    start: interval.start,
-                    end: interval.end
-                  });
-                }
-              }catch{}
-            });
-          }catch{}
-          return out;
-        };
-        const confirmInsertWithConflicts = (act, conflicts)=> new Promise((resolve)=>{
-          try{
-            const body = `
-              <div class="text-sm text-slate-700">La propuesta de IA <span class="font-semibold text-slate-900">${escapeHtml(String(act.title || 'Actividad'))}</span> tiene conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'}.</div>
-              <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
-                <div class="font-semibold text-slate-900">Eventos conflictivos</div>
-                <ul class="mt-2 space-y-1">${conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.type || 'evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(fmtHM(c.start))} → ${escapeHtml(fmtHM(c.end))}]</span></li>`).join('')}</ul>
-              </div>
-              <div class="mt-3 text-sm text-slate-600">Puedes cancelar para no insertar la propuesta o añadirla igualmente.</div>
-            `;
-            const btnCancel = document.createElement('button');
-            btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
-            btnCancel.type = 'button';
-            btnCancel.textContent = 'Cancelar';
-            btnCancel.onclick = ()=>{ try{ closeModal(); }catch{} resolve(false); };
-            const btnContinue = document.createElement('button');
-            btnContinue.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
-            btnContinue.type = 'button';
-            btnContinue.textContent = 'Añadir de todas formas';
-            btnContinue.onclick = ()=>{ try{ closeModal(); }catch{} resolve(true); };
-            showModal('Conflicto horario al añadir propuesta IA', body, [btnCancel, btnContinue]);
-          }catch(_){
-            resolve(window.confirm('Hay conflicto horario con eventos existentes. ¿Añadir de todas formas?'));
-          }
-        });
-
-        let added = 0;
-        const ids = [];
-        for (const item of (Array.isArray(items) ? items : [])){
-          const title = String(item && item.title || '').trim();
-          if(!title) continue;
-          const city = String(item && item.city || '').trim();
-          const date = String(item && item.date || '').trim();
-          const __timeRaw = String(item && item.time || '').trim();
+        const acts = [];
+        (Array.isArray(items) ? items : []).forEach((item)=>{
+          const title = String(item && item.title || "").trim();
+          if(!title) return;
+          const city = String(item && item.city || "").trim();
+          const date = String(item && item.date || "").trim();
+          const __timeRaw = String(item && item.time || "").trim();
           let time = __timeRaw;
-          let suggestedBand = String(item && (item.suggestedBand || item.band || item.timeBand || item.timeWindow || '') || '').trim();
+          let suggestedBand = String(item && (item.suggestedBand || item.band || item.timeBand || item.timeWindow || "") || "").trim();
           const __isHM = /^\d{1,2}:\d{2}$/.test(time);
           if(time && !__isHM){
             if(!suggestedBand) suggestedBand = time;
-            time = '';
+            time = "";
           }
           const durMin = durMinFromItem(item);
           const noteParts = [
-            suggestedBand ? `Horario sugerido: ${suggestedBand}` : '',
-            String(item && item.summary || '').trim(),
-            String(item && item.why || '').trim()
+            suggestedBand ? `Horario sugerido: ${suggestedBand}` : "",
+            String(item && item.summary || "").trim(),
+            String(item && item.why || "").trim()
           ].filter(Boolean);
-          const note = noteParts.join(' · ');
-          const act = {
-            id: (typeof nowId === 'function') ? nowId() : ('ai-' + Date.now() + '-' + Math.random().toString(16).slice(2)),
+          const note = noteParts.join(" · ");
+          acts.push({
+            id: (typeof nowId === "function") ? nowId() : ("ai-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
             title,
             city,
             date,
@@ -14615,29 +14660,58 @@ window.addEventListener('DOMContentLoaded', () => {
             durationH: Math.floor(durMin/60),
             durationM: durMin%60,
             duration: fmtDur(durMin),
-            cost: '',
-            notes: note ? `IA · ${note}` : 'IA · propuesta añadida desde el módulo IA',
+            cost: "",
+            notes: note ? `IA · ${note}` : "IA · propuesta añadida desde el módulo IA",
             fromAI: true,
             pendingAIReview: true,
             aiAddedAt: Date.now()
+          });
+        });
+        if(!acts.length) return { added:0, ids:[] };
+        const inspections = acts.map((act)=>{
+          const probe = this.__collectTimedConflictsForActivity(sc, act);
+          return { act, interval: probe.interval, conflicts: probe.conflicts || [] };
+        });
+        const conflictGroups = inspections.filter(x => Array.isArray(x.conflicts) && x.conflicts.length > 0);
+        const commitInsert = ()=>{
+          const res = this.__insertActivities(sc, acts);
+          try{ if(typeof cfg.onCommitted === 'function') cfg.onCommitted(res); }catch{}
+          return res;
+        };
+        if(conflictGroups.length > 0){
+          const body = `
+            <div class="text-sm text-slate-700">Hay conflicto horario en ${conflictGroups.length} propuesta${conflictGroups.length===1?'':'s'} de IA respecto a eventos temporales ya existentes.</div>
+            <div class="mt-3 space-y-3">${conflictGroups.map((group)=>{
+              const act = group.act || {};
+              const interval = group.interval || {};
+              return `<div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
+                <div class="font-semibold text-slate-900">${escapeHtml(String(act.title || 'Actividad'))}</div>
+                <div class="mt-1 text-slate-600">${escapeHtml(this.__fmtDT(interval.start))} → ${escapeHtml(this.__fmtDT(interval.end))}</div>
+                <ul class="mt-2 space-y-1">${group.conflicts.map((c)=>`<li>• <span class="font-medium">${escapeHtml(String(c.typeLabel || 'Evento'))}:</span> <span class="font-medium">${escapeHtml(String(c.title || ''))}</span> <span class="text-slate-500">[#${escapeHtml(String(c.id || ''))} · ${escapeHtml(this.__fmtHHMM(c.start))} → ${escapeHtml(this.__fmtHHMM(c.end))}]</span></li>`).join('')}</ul>
+              </div>`;
+            }).join('')}</div>
+            <div class="mt-3 text-sm text-slate-600">Puedes cancelar para no insertar la propuesta IA o añadir de todas formas.</div>
+          `;
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
+          btnCancel.type = 'button';
+          btnCancel.textContent = 'Cancelar';
+          btnCancel.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            try{ if(typeof cfg.onCancelled === 'function') cfg.onCancelled({ added:0, ids:[], cancelled:true, promptShown:true }); }catch{}
           };
-          const diag = collectTimedConflicts(act);
-          const conflicts = Array.isArray(diag.conflicts) ? diag.conflicts : [];
-          if(conflicts.length > 0){
-            const allow = await confirmInsertWithConflicts(act, conflicts);
-            if(!allow) continue;
-          }
-          sc.activities.unshift(act);
-          ids.push(String(act.id));
-          added += 1;
+          const btnForce = document.createElement('button');
+          btnForce.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
+          btnForce.type = 'button';
+          btnForce.textContent = 'Añadir de todas formas';
+          btnForce.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            commitInsert();
+          };
+          try{ showModal('Conflicto horario al añadir desde IA', body, [btnCancel, btnForce]); }catch{}
+          return { added:0, ids:[], deferred:true, promptShown:true, conflicts: conflictGroups };
         }
-        if(added > 0){
-          try{ if(typeof saveState === 'function') saveState(); }catch{}
-          try{ if(typeof renderAll === 'function') renderAll(); }catch{}
-          try{ if(typeof syncStickyTotalsHeightVar === 'function') syncStickyTotalsHeightVar(); }catch{}
-          try{ window.__aiPendingReviewQueue = (window.__aiPendingReviewQueue || []).concat(ids); }catch{}
-        }
-        return { added, ids };
+        return commitInsert();
       }
     },
     bindUI(){
@@ -16185,7 +16259,7 @@ loadTripGapsFill(opts){
         footer.appendChild(add);
       }
     },
-    async commitSelectedGapActivities(){
+    commitSelectedGapActivities(){
       const selected = [];
       const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
       blocks.forEach((blk)=>{
@@ -16193,38 +16267,44 @@ loadTripGapsFill(opts){
           if(this.state.selectedKeys[item.id]) selected.push(item);
         });
       });
-      const res = await this.bridge.addActivities(selected);
-      const status = document.getElementById("aiStatus");
-      if(status){
-        this.state.actionInfoStatus = String(res && res.added
-          ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
-          : "No hay propuestas seleccionadas para añadir.");
-        status.classList.add("hidden");
-      }
-      if(res && res.added){
-        this.state.selectedKeys = {};
-        this.loadTripGapsFill({ force:true });
-      }
+      const __applyBridgeResult = (res)=>{
+        const status = document.getElementById("aiStatus");
+        if(status){
+          this.state.actionInfoStatus = String(res && res.added
+            ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
+            : "No hay propuestas seleccionadas para añadir.");
+          status.classList.add("hidden");
+        }
+        if(res && res.added){
+          this.state.selectedKeys = {};
+          this.loadTripGapsFill({ force:true });
+        }
+      };
+      const res = this.bridge.addActivities(selected, { onCommitted: (r)=>__applyBridgeResult(r) });
+      if(!(res && res.deferred)) __applyBridgeResult(res);
     },
-async commitSelectedActivities(){
+commitSelectedActivities(){
       const selected = [];
       this.state.cityGroups.forEach((group)=>{
         group.proposals.forEach((item)=>{
           if(this.state.selectedKeys[item.id]) selected.push(item);
         });
       });
-      const res = await this.bridge.addActivities(selected);
-      const status = document.getElementById("aiStatus");
-      if(status){
-        this.state.actionInfoStatus = String(res && res.added
-          ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
-          : "No hay propuestas seleccionadas para añadir.");
-        status.classList.add("hidden");
-      }
-      if(res && res.added){
-        this.state.selectedKeys = {};
-        this.loadTripCities({ force:true });
-      }
+      const __applyBridgeResult = (res)=>{
+        const status = document.getElementById("aiStatus");
+        if(status){
+          this.state.actionInfoStatus = String(res && res.added
+            ? `Añadidas ${res.added} actividades al viaje mediante el bridge seguro del módulo IA.`
+            : "No hay propuestas seleccionadas para añadir.");
+          status.classList.add("hidden");
+        }
+        if(res && res.added){
+          this.state.selectedKeys = {};
+          this.loadTripCities({ force:true });
+        }
+      };
+      const res = this.bridge.addActivities(selected, { onCommitted: (r)=>__applyBridgeResult(r) });
+      if(!(res && res.deferred)) __applyBridgeResult(res);
     },
     render(){
       this.syncContext(this.state.entrypoint);
