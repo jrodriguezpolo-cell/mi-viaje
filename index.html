@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD</title>
+<title>V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7U_AI_PROPOSALS_REAL_PHOTO_ACTUAL_FIX_NO_PLACEHOLDER_LOOP</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7U_AI_PROPOSALS_REAL_PHOTO_ACTUAL_FIX_NO_PLACEHOLDER_LOOP
+            Build cargada: V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1601,39 +1601,8 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
-// Fallback único para evitar bucles de placeholder/imagen rota en la ficha "Más info"
-window.__aiMoreInfoImgFallback = function(imgEl){
-  try{
-    if(!imgEl || imgEl.dataset.fallbackDone) return;
-    imgEl.dataset.fallbackDone = "1";
-    // Placeholder discreto (último recurso)
-    imgEl.src = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#eef2ff'/><stop offset='1' stop-color='#f8fafc'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><text x='50%' y='52%' text-anchor='middle' font-family='ui-sans-serif,system-ui' font-size='36' fill='#64748b'>Vista informativa</text></svg>`);
-  }catch(_e){}
 
-// Normalizador de URL de imagen para que sea estable y renderizable.
-// Problema observado: URLs dinámicas tipo source.unsplash.com pueden no renderizar en algunos entornos.
-// Estrategia: proxy estable vía images.weserv.nl (sin API key) cuando la fuente sea "unsplash" y la URL sea dinámica.
-window.__aiNormalizeProposalImageUrl = function(url, source){
-  try{
-    const u = String(url||"").trim();
-    if(!u) return "";
-    const src = String(source||"").toLowerCase();
-    const isUnsplashDynamic = u.includes("source.unsplash.com/");
-    if(isUnsplashDynamic || src==="unsplash"){
-      // Weserv espera URL sin esquema en el parámetro url=
-      const naked = u.replace(/^https?:\/\//i,"");
-      return "https://images.weserv.nl/?url=" + encodeURIComponent(naked) + "&w=1200&h=700&fit=cover&we";
-    }
-    return u;
-  }catch(_e){
-    return String(url||"");
-  }
-};
-};
-
-
-
-const APP_BUILD = "V226C1A7Y_AI_PROPOSALS_GEMINI_RICH_TOURIST_DETAIL_CARD";
+const APP_BUILD = "V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15454,383 +15423,22 @@ window.addEventListener('DOMContentLoaded', () => {
       if((pref.tastes || []).includes("Cultura") && /museo|foro|coliseo|library|capitol|sagrada|louvre|notre/i.test(`${item.title} ${summary}`)){
         why += " Gana peso porque el viaje tiene una preferencia cultural activa.";
       }
-      return { title: item.title, summary: summary.trim(), why: why.trim(), description: String(item.description || "").trim(), image: String(item.image || "").trim(), link: String(item.link || "").trim(), heroEmoji: String(item.heroEmoji || "").trim() };
+      return { title: item.title, summary: summary.trim(), why: why.trim() };
     },
-
-__aiProposalHeroEmoji(item){
-  const hay = `${item && item.title || ""} ${item && item.summary || ""} ${item && item.why || ""}`.toLowerCase();
-  if(/museo|museum|prado|louvre|library|capitol|vaticano|foro|coliseo|sagrada/.test(hay)) return "🏛️";
-  if(/parque|park|jingu|retiro|garden|montjuic|campos de marte/.test(hay)) return "🌿";
-  if(/mercado|market|gastron|food|chelsea|tsukiji|camden/.test(hay)) return "🍽️";
-  if(/mirador|top of the rock|views|vista|tower|eiffel|bridge/.test(hay)) return "🌇";
-  if(/barrio|bairro|trastevere|g[oó]tico|montmartre|georgetown|alfama|shibuya|harajuku/.test(hay)) return "🏙️";
-  if(/disney|universal|magic kingdom|citywalk/.test(hay)) return "🎢";
-  return "✨";
-},
-__aiProposalImageData(item){
-  const title = String(item && item.title || "Propuesta").trim();
-  const city = String(item && item.city || "Mi Viaje").trim();
-  const emoji = String(item && item.heroEmoji || "").trim() || this.__aiProposalHeroEmoji(item);
-  const safe = (s)=> String(s||"")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="${safe(title)}">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#f5f3ff"/>
-          <stop offset="55%" stop-color="#ede9fe"/>
-          <stop offset="100%" stop-color="#dbeafe"/>
-        </linearGradient>
-      </defs>
-      <rect width="1200" height="720" rx="36" fill="url(#g)"/>
-      <circle cx="1010" cy="135" r="108" fill="#ffffff" fill-opacity="0.52"/>
-      <circle cx="1110" cy="602" r="132" fill="#ffffff" fill-opacity="0.3"/>
-      <text x="84" y="186" font-size="112">${safe(emoji)}</text>
-      <text x="84" y="300" font-size="64" font-weight="700" fill="#0f172a" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">${safe(title.slice(0,34))}</text>
-      <text x="84" y="362" font-size="34" fill="#475569" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">${safe(city.slice(0,44))}</text>
-      <text x="84" y="640" font-size="24" fill="#64748b" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif">Vista previa informativa · Mi Viaje IA</text>
-    </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-},
-__aiProposalExternalUrl(item){
-  const explicit = String(item && item.link || "").trim();
-  if(explicit) return explicit;
-  const q = `${String(item && item.title || "").trim()} ${String(item && item.city || "").trim()}`.trim();
-  if(!q) return "";
-  return `https://es.wikipedia.org/wiki/Especial:Buscar?search=${encodeURIComponent(q)}`;
-},
-__aiProposalInferTypeLabel(item){
-  const hay = `${String(item && item.title || "")} ${String(item && item.summary || "")} ${String(item && item.description || "")}`.toLowerCase();
-  if(/museo|museum|galer[ií]a|colecci[oó]n/.test(hay)) return "museo";
-  if(/parque|park|jard[ií]n|garden/.test(hay)) return "parque";
-  if(/mirador|views|vista|tower|top of the rock|sky/.test(hay)) return "mirador";
-  if(/mercado|market|gastron|food|chelsea/.test(hay)) return "mercado";
-  if(/barrio|bairro|district|quarter|g[oó]tico|trastevere|alfama|harajuku|shibuya/.test(hay)) return "barrio";
-  if(/palacio|palace|capitolio|capitol|templo|catedral|bas[ií]lica|monasterio|iglesia|castle|castillo/.test(hay)) return "monumento";
-  if(/puente|bridge/.test(hay)) return "puente";
-  if(/plaza|square/.test(hay)) return "plaza";
-  if(/playa|beach|coast|costa/.test(hay)) return "zona costera";
-  if(/ruta|paseo|walk|line/.test(hay)) return "recorrido";
-  return "lugar de interés";
-},
-__aiProposalAboutText(item){
-  const summary = String(item && item.summary || "").trim();
-  const raw = String(item && item.description || "").trim();
-  const city = String(item && item.city || "").trim();
-  const place = this.__aiProposalInferTypeLabel(item);
-  let cleaned = raw
-    .replace(/Por qu[eé] la IA (lo|la) recomienda:?/gi, "")
-    .replace(/Esta propuesta est[aá] contextualizada[^.]*\.?/gi, "")
-    .replace(/Puedes revisar esta propuesta[^.]*\.?/gi, "")
-    .trim();
-  if(cleaned && cleaned.length < 220 && summary && !cleaned.toLowerCase().includes(summary.toLowerCase())){
-    cleaned = `${cleaned} ${summary}`.trim();
-  }
-  if(cleaned) return cleaned;
-  const ctx = city ? `en ${city}` : "en el destino";
-  switch(place){
-    case "museo":
-      return `Es un ${place} destacado ${ctx}, pensado para una visita cultural con contenido histórico, artístico o patrimonial. ${summary || "Suele funcionar bien como bloque principal o como visita con bastante contenido."}`.trim();
-    case "parque":
-      return `Es un ${place} o zona verde ${ctx}, útil para pasear, bajar el ritmo y combinar vistas o descanso con un plan urbano. ${summary || "Encaja bien cuando apetece una pausa más abierta y flexible."}`.trim();
-    case "mirador":
-      return `Es un ${place} ${ctx}, orientado a disfrutar de panorámicas y a situarte mejor en la ciudad o el entorno. ${summary || "Suele ser una visita corta o media con mucho impacto visual."}`.trim();
-    case "mercado":
-      return `Es un ${place} ${ctx}, interesante por ambiente, gastronomía y facilidad para encajarlo en una jornada de paseo. ${summary || "Aporta una experiencia más viva y práctica del destino."}`.trim();
-    case "barrio":
-      return `Es un ${place} o zona con identidad propia ${ctx}, ideal para caminar, ver ambiente local y descubrir rincones representativos. ${summary || "Suele funcionar muy bien como bloque flexible del día."}`.trim();
-    case "monumento":
-      return `Es un ${place} destacado ${ctx}, normalmente con valor histórico, arquitectónico o simbólico dentro del viaje. ${summary || "Tiene perfil de visita principal o imprescindible del destino."}`.trim();
-    case "puente":
-      return `Es un ${place} o punto emblemático ${ctx}, interesante tanto por el recorrido como por las vistas y el contexto urbano. ${summary || "Puede encajar como visita corta o como parte de una ruta más amplia."}`.trim();
-    case "plaza":
-      return `Es una ${place} o espacio central ${ctx}, útil para captar ambiente, arquitectura y vida urbana del destino. ${summary || "Encaja bien en paseos y tramos libres."}`.trim();
-    case "zona costera":
-      return `Es una ${place} ${ctx}, pensada para vistas, paseo y cambio de ritmo frente al núcleo más urbano. ${summary || "Aporta una experiencia más abierta y panorámica."}`.trim();
-    default:
-      return `${summary || "Es una propuesta pensada para aportar contexto y valor real al viaje."} ${city ? `Se sitúa en ${city} y puede ayudarte a entender mejor el destino antes de decidir si te interesa incluirlo.` : "Se presenta aquí para que puedas valorar mejor qué es antes de decidir si te interesa incluirlo."}`.trim();
-  }
-
-},
-__aiGeminiRichTouristCard(item){
-  // Ficha turística enriquecida generada "en origen" (simulada sin llamadas externas).
-  // Nota: se mantiene determinista y ligera para no bloquear UX ni depender de red.
-  const title = String(item && item.title || "").trim();
-  const city = String(item && item.city || "").trim();
-  const type = this.__aiProposalInferTypeLabel ? this.__aiProposalInferTypeLabel(item) : "";
-  const t = title.toLowerCase();
-  const isPark = /park|parque|jardin|garden/.test(t);
-  const isMuseum = /museum|museo|gallery|galer[ií]a/.test(t);
-  const isView = /mirador|view|observatory|top of|skylin|deck|rock/.test(t);
-  const isMonument = /statue|estatua|monument|memorial|cathedral|catedral|tower|torre|bridge|puente|palace|palacio|building|edificio/.test(t);
-
-  const kind = isPark ? "parque" : isMuseum ? "museo" : isView ? "mirador" : isMonument ? "monumento" : (type ? type.toLowerCase() : "lugar");
-
-  const about = (()=>{
-    if(!title) return "";
-    if(isPark) return `${title} es uno de los espacios verdes más emblemáticos${city?` de ${city}`:""}. Ideal para pasear, descansar y equilibrar un día con mucha actividad urbana.`;
-    if(isMuseum) return `${title} es un museo${city?` en ${city}`:""} que destaca por su colección y por ofrecer una visita cultural muy completa. Es una buena elección si buscas un bloque “indoor” y con valor histórico/artístico.`;
-    if(isView) return `${title} es un punto panorámico${city?` en ${city}`:""} perfecto para ver la ciudad desde arriba, sacar fotos y orientar el resto del día.`;
-    if(isMonument) return `${title} es un ${kind}${city?` muy representativo de ${city}`:""}. Suele ser una visita corta pero muy “icónica”, ideal para encajarla en una franja concreta.`;
-    return `${title} es un lugar recomendado${city?` en ${city}`:""} que encaja bien como visita turística.`;
-  })();
-
-  const history = (()=>{
-    if(!title) return "";
-    if(isMonument || /statue|estatua/.test(t)) return `Además de su valor visual, ${title} suele tener un trasfondo histórico ligado a la identidad de la ciudad y a momentos clave de su evolución. Merece la pena dedicar 2–3 minutos a leer la placa o paneles informativos para entender el contexto.`;
-    if(isMuseum) return `Los museos como ${title} suelen estar vinculados a la historia cultural del destino: colecciones, exposiciones temporales y un relato que ayuda a “entender” la ciudad más allá de lo fotogénico.`;
-    if(isPark) return `Los grandes parques urbanos nacen como pulmones verdes y espacios de convivencia. ${title} suele ser un buen ejemplo de cómo la ciudad se organiza para combinar naturaleza, deporte y ocio.`;
-    if(isView) return `Los miradores y observatorios se han convertido en hitos del skyline. ${title} te da una lectura rápida del mapa mental de la ciudad: ríos, barrios y puntos icónicos.`;
-    return `Pequeño contexto: ${title} destaca por ser un punto habitual en itinerarios turísticos por su valor cultural, arquitectónico o simbólico.`;
-  })();
-
-  const proTip = (()=>{
-    if(!title) return "";
-    if(isMuseum) return `Consejo pro: revisa si hay entradas con franja horaria o días con menor afluencia. Si el museo es grande, define 2–3 “imprescindibles” para no alargar demasiado la visita.`;
-    if(isView) return `Consejo pro: si quieres buenas fotos, suele funcionar mejor a primera hora o al atardecer. Ten en cuenta viento/frío en azoteas y llega con margen si hay control de acceso.`;
-    if(isPark) return `Consejo pro: encaja ${title} como “descanso activo” entre dos visitas intensas. Lleva agua y mira si hay zonas concretas (lago, miradores, jardines) para no recorrerlo sin rumbo.`;
-    if(isMonument) return `Consejo pro: suele haber colas en horas punta. Si el sitio admite reserva, hazla; si no, ve temprano. Aprovecha para enlazarlo con otro punto cercano a pie.`;
-    return `Consejo pro: intenta situarlo cerca de otras visitas para optimizar traslados y reserva un margen realista para fotos y tiempos de acceso.`;
-  })();
-
-  const why = String(item && item.why || "").trim();
-  const whyShort = why ? why : `Encaja como visita de ${kind}${city?` en ${city}`:""} y aporta variedad al día.`;
-
-  const external = this.__aiProposalExternalUrl ? this.__aiProposalExternalUrl(item) : "";
-  return {
-    generatedBy: "gemini",
-    kind,
-    why: whyShort,
-    about,
-    history,
-    proTip,
-    link: external
-  };
-}
-
-__aiProposalDetail(item){
-  const title = String(item && item.title || "Propuesta IA").trim();
-  const city = String(item && item.city || "").trim();
-  const timeBits = [];
-  if(item && item.date) timeBits.push(String(item.date).trim());
-  if(item && item.time) timeBits.push(String(item.time).trim());
-  else if(item && item.suggestedBand) timeBits.push(String(item.suggestedBand).trim());
-  if(item && item.duration) timeBits.push(String(item.duration).trim());
-  const subtitle = [city, timeBits.join(" · ")].filter(Boolean).join(" — ");
-
-  // Ficha rica generada en origen (Gemini simulated)
-  const rich = (item && (item.richTouristCard || item.richTourist || item.richCard)) ? (item.richTouristCard || item.richTourist || item.richCard) : null;
-  const why = (rich && rich.why) ? String(rich.why||"").trim() : (String(item && item.why || "").trim() || "La IA sugiere esta opción por su interés y encaje general.");
-  const about = (rich && rich.about) ? String(rich.about||"").trim() : this.__aiProposalAboutText(item);
-  const history = (rich && rich.history) ? String(rich.history||"").trim() : "";
-  const proTip = (rich && rich.proTip) ? String(rich.proTip||"").trim() : "";
-
-  const image = String(item && item.image || "").trim();
-  const imageSource = String(item && item.imageSource || "").trim();
-  const resolvedAtSourceAttempted = !!(item && item.resolvedAtSourceAttempted);
-  const resolvedAtSource = !!(item && item.resolvedAtSource);
-  const typeLabel = this.__aiProposalInferTypeLabel(item);
-  const chosen = image || "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1000' height='700'><rect width='100%' height='100%' fill='#f1f5f9'/><path d='M120 520 L380 320 L520 440 L640 360 L880 520 Z' fill='#cbd5e1'/><circle cx='760' cy='240' r='70' fill='#e2e8f0'/><text x='120' y='610' font-family='system-ui, -apple-system, Segoe UI, Roboto, Arial' font-size='34' fill='#64748b'>Vista informativa</text></svg>`);
-  const hasDirectImage = !!image;
-
-  return {
-    title,
-    subtitle,
-    // bloques ricos
-    why,
-    about,
-    history,
-    proTip,
-    image: chosen,
-    hasRealImage: hasDirectImage,
-    city,
-    typeLabel,
-    imageRaw: image,
-    imageSource,
-    resolvedAtSourceAttempted,
-    resolvedAtSource,
-    usingFallback: !hasDirectImage,
-    imageNote: hasDirectImage ? "" : "Vista informativa de apoyo · no hay foto resuelta en la propuesta",
-    link: (rich && rich.link) ? rich.link : this.__aiProposalExternalUrl(item),
-    linkLabel: "Ampliar información"
-  };
-},
-
-
-__aiProposalImageCache: null,
-__aiInitProposalImageCache(){
-  if(!this.__aiProposalImageCache) this.__aiProposalImageCache = Object.create(null);
-},
-__aiProposalUnsplashUrl(item){
-  const title = String(item && item.title || "").trim();
-  const city = String(item && item.city || "").trim();
-  const type = this.__aiProposalInferTypeLabel(item);
-  const q = [title, city, type].filter(Boolean).join(" ");
-  if(!q) return "";
-  // Fuente pública sin API key (devuelve una imagen real relacionada con la búsqueda)
-  return window.__aiNormalizeProposalImageUrl(`https://source.unsplash.com/featured/1000x700/?${encodeURIComponent(q)}`,"unsplash");
-},
-__aiWikiKey(q){
-  return String(q||"").trim().replace(/\s+/g, "_");
-},
-async __aiFetchWikiThumb(query, lang){
-  try{
-    const key = this.__aiWikiKey(query);
-    if(!key) return "";
-    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(key)}`;
-    const res = await fetch(url, { method:"GET", mode:"cors", credentials:"omit" });
-    if(!res.ok) return "";
-    const j = await res.json();
-    const t = (j && j.originalimage && j.originalimage.source) || (j && j.thumbnail && j.thumbnail.source) || "";
-    return String(t||"").trim();
-  }catch(_e){
-    return "";
-  }
-},
-async __aiResolveProposalRealImage(item){
-  this.__aiInitProposalImageCache();
-  const id = String(item && item.id || "").trim();
-  if(id && this.__aiProposalImageCache[id]) return this.__aiProposalImageCache[id];
-
-  const title = String(item && item.title || "").trim();
-  const city = String(item && item.city || "").trim();
-  const type = this.__aiProposalInferTypeLabel(item);
-
-  // 1) Si ya viene imagen directa, úsala.
-  const direct = String(item && item.image || "").trim();
-  if(direct){
-    if(id) this.__aiProposalImageCache[id] = direct;
-    return direct;
-  }
-
-  // 2) Intentar Wikipedia (ES y EN) con varias variantes.
-  const candidates = [];
-  if(title) candidates.push(title);
-  if(title && city) candidates.push(`${title}, ${city}`);
-  if(title && city) candidates.push(`${title} (${city})`);
-  if(title && type && city) candidates.push(`${title} ${type} ${city}`);
-  if(title && type) candidates.push(`${title} ${type}`);
-
-  for(const q of candidates){
-    const es = await this.__aiFetchWikiThumb(q, "es");
-    if(es){
-      if(id) this.__aiProposalImageCache[id] = es;
-      return es;
-    }
-    const en = await this.__aiFetchWikiThumb(q, "en");
-    if(en){
-      if(id) this.__aiProposalImageCache[id] = en;
-      return en;
-    }
-  }
-
-  // 3) Último recurso: Unsplash por query (imagen real genérica relacionada).
-  const u = this.__aiProposalUnsplashUrl(item);
-  if(u){
-    if(id) this.__aiProposalImageCache[id] = u;
-    return u;
-  }
-
-  return "";
-},
-async __aiEnrichProposalDetailImage(item, detail){
-  try{
-    if(detail && detail.hasRealImage) return;
-    const imgEl = document.getElementById("aiProposalDetailImg");
-    if(!imgEl) return;
-    // Evitar carreras si el usuario abre otra ficha rápido
-    const token = Math.random().toString(36).slice(2);
-    imgEl.dataset.token = token;
-
-    const resolved = await this.__aiResolveProposalRealImage(item);
-    if(!resolved) return;
-    if(imgEl.dataset.token !== token) return;
-
-    // Aplicar y quitar nota de fallback si existía
-    imgEl.src = resolved;
-    const noteEl = document.getElementById("aiProposalDetailImgNote");
-    if(noteEl) noteEl.remove();
-  }catch(_e){
-    // Silencioso: mantenemos fallback sin romper el flujo
-  }
-},
-openProposalDetail(item){
-  const detail = this.__aiProposalDetail(item || {});
-  const overlay = document.getElementById("aiActionInfoOverlay");
-  const titleEl = document.getElementById("aiActionInfoTitle");
-  const bodyEl = document.getElementById("aiActionInfoBody");
-  if(!overlay || !bodyEl) return;
-  if(titleEl) titleEl.textContent = detail.title || "Más info";
-  bodyEl.innerHTML = `
-    <div class="space-y-4">
-      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-        <img id="aiProposalDetailImg" onerror="window.__aiMoreInfoImgFallback && window.__aiMoreInfoImgFallback(this)" alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${window.__aiNormalizeProposalImageUrl ? window.__aiNormalizeProposalImageUrl(detail.image, detail.imageSource) : detail.image}" />
-        ${detail.imageNote ? `<div id="aiProposalDetailImgNote" class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
-      </div>
-
-      <div>
-        <div class="text-lg font-extrabold text-slate-900">${escapeHtml(detail.title || "Propuesta IA")}</div>
-        ${detail.subtitle ? `<div class="mt-1 text-xs font-semibold text-slate-500">${escapeHtml(detail.subtitle)}</div>` : ``}
-      </div>
-
-      <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-4">
-        <div class="text-[11px] font-extrabold uppercase tracking-wide text-violet-700">Por qué la IA lo recomienda</div>
-        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.why || "Sin detalle adicional.")}</div>
-      </div>
-
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">Sobre este lugar</div>
-        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.about || "Sin detalle adicional.")}</div>
-      </div>
-
-      ${detail.history ? `
-      <div class="rounded-2xl border border-slate-200 bg-white p-4">
-        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">Historia y contexto</div>
-        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.history)}</div>
-      </div>` : ``}
-
-      ${detail.proTip ? `
-      <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4">
-        <div class="text-[11px] font-extrabold uppercase tracking-wide text-emerald-700">Consejo pro</div>
-        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.proTip)}</div>
-      </div>` : ``}
-
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        ${detail.link ? `<a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a>` : `<span></span>`}
-        <button class="tap inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="button" onclick="document.getElementById('aiActionInfoClose') && document.getElementById('aiActionInfoClose').click()">Volver al listado</button>
-      </div>
-    </div>`;
-  overlay.classList.remove("hidden");
-},
-
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
         const catalog = AI_CITY_CATALOG[row.key] || this.genericSuggestions(row.city);
         const proposals = catalog
           .map((item, idx)=>{
             const adapted = this.adaptProposal(item);
-            const base = {id: `${row.key}:${idx}`, city: row.city, title: adapted.title, summary: adapted.summary, why: adapted.why, richTouristCard: this.__aiGeminiRichTouristCard({city: row.city, title: adapted.title, why: adapted.why}), score: this.scoreProposal(adapted)};
-            // V226C1A7V: Resolver imagen en origen (no en la ficha "Más info")
-            try{
-              // V226C1A7W: trazabilidad de imagen resuelta en origen
-              base.resolvedAtSourceAttempted = true;
-              if(base.image){
-                base.resolvedAtSource = true;
-              }else{
-                base.image = this.__aiProposalUnsplashUrl(base);
-                if(base.image){
-                  base.imageSource = "unsplash";
-                  base.resolvedAtSource = true;
-                }else{
-                  base.resolvedAtSource = false;
-                }
-              }
-            }catch(_e){}
-            return base;
+            return {
+              id: `${row.key}:${idx}`,
+              city: row.city,
+              title: adapted.title,
+              summary: adapted.summary,
+              why: adapted.why,
+              score: this.scoreProposal(adapted)
+            };
           })
           .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"))
           .slice(0,5)
@@ -16214,26 +15822,7 @@ openProposalDetail(item){
         if(it) picked.push(it);
       }
 
-      return picked.map(({score, ...rest})=>{
-        // V226C1A7V: Resolver imagen en origen para que la propuesta ya nazca con foto
-        try{
-          // V226C1A7W: trazabilidad de imagen resuelta en origen
-          rest.resolvedAtSourceAttempted = true;
-          if(rest.image){
-            rest.resolvedAtSource = true;
-          }else{
-            rest.image = this.__aiProposalUnsplashUrl(rest);
-            if(rest.image){
-              rest.imageSource = "unsplash";
-              rest.resolvedAtSource = true;
-            }else{
-              rest.resolvedAtSource = false;
-            }
-          }
-        }catch(_e){}
-        try{ if(!rest.richTouristCard) rest.richTouristCard = this.__aiGeminiRichTouristCard(rest); }catch(_e){}
-        return rest;
-      });
+      return picked.map(({score, ...rest})=> rest);
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
@@ -16456,19 +16045,14 @@ __aiBuildDayBuckets(trip){
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
               ${group.proposals.map((item)=> `
-                <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                  <div class="flex items-start gap-3">
-                    <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                    <div class="min-w-0 flex-1">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
-                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                      <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
-                      <div class="mt-3 flex flex-wrap gap-2">
-                        <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700" data-ai-proposal-more="${escapeHtml(item.id)}" type="button">Más info</button>
-                      </div>
-                    </div>
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                  <div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
+                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
                   </div>
-                </div>`).join("")}
+                </label>`).join("")}
             </div>
           </div>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas todavía. Cuando el viaje tenga ciudades identificables, aparecerán aquí.</div>`;
         results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
@@ -16477,16 +16061,6 @@ __aiBuildDayBuckets(trip){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
-          });
-        });
-        results.querySelectorAll("[data-ai-proposal-more]").forEach((btn)=>{
-          btn.addEventListener("click", (ev)=>{
-            ev.preventDefault();
-            ev.stopPropagation();
-            const key = String(btn.getAttribute("data-ai-proposal-more") || "");
-            if(!key) return;
-            const found = (this.state.cityGroups || []).flatMap(g => Array.isArray(g.proposals) ? g.proposals : []).find(p => String(p.id||"") === key);
-            if(found) this.openProposalDetail(found);
           });
         });
       }
@@ -16962,22 +16536,17 @@ loadTripGapsFill(opts){
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
               ${blk.proposals.map((item)=>`
-                <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                  <div class="flex items-start gap-3">
-                    <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                    <div class="min-w-0 flex-1">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
-                      </div>
-                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                      <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
-                      <div class="mt-3 flex flex-wrap gap-2">
-                        <button class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700" data-ai-gap-more="${escapeHtml(item.id)}" type="button">Más info</button>
-                      </div>
+                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
                     </div>
+                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
                   </div>
-                </div>
+                </label>
               `).join("")}
             </div>
           </div>
@@ -16989,16 +16558,6 @@ loadTripGapsFill(opts){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
-          });
-        });
-        results.querySelectorAll("[data-ai-gap-more]").forEach((btn)=>{
-          btn.addEventListener("click", (ev)=>{
-            ev.preventDefault();
-            ev.stopPropagation();
-            const key = String(btn.getAttribute("data-ai-gap-more") || "");
-            if(!key) return;
-            const found = (this.state.gapBlocks || []).flatMap(g => Array.isArray(g.proposals) ? g.proposals : []).find(p => String(p.id||"") === key);
-            if(found) this.openProposalDetail(found);
           });
         });
       }
