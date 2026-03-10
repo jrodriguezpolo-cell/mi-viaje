@@ -1613,7 +1613,7 @@ window.__aiMoreInfoImgFallback = function(imgEl){
 
 
 
-const APP_BUILD = "V226C1A7U_AI_PROPOSALS_REAL_PHOTO_ACTUAL_FIX_NO_PLACEHOLDER_LOOP";
+const APP_BUILD = "V226C1A7V_AI_PROPOSALS_IMAGE_AT_SOURCE_WIRING_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15548,14 +15548,10 @@ __aiProposalDetail(item){
   const image = String(item && item.image || "").trim();
   const hasDirectImage = !!image;
 
-  // En S/T se caía demasiado en placeholder porque el enriquecimiento era async y podía fallar.
-  // Aquí priorizamos una foto real "inmediata" cuando no haya imagen directa, para evitar huecos/placeholder habitual.
-  const unsplash = (!hasDirectImage) ? this.__aiProposalUnsplashUrl(item) : "";
+  // V226C1A7V: La imagen debe venir resuelta en la propuesta (origen). La ficha solo la consume.
   const fallback = this.__aiProposalImageData(item);
-  const chosen = hasDirectImage ? image : (unsplash || fallback);
-
-  // Consideramos "real" también la foto de Unsplash (aunque pueda ser aproximada), para que el placeholder sea último recurso.
-  const hasRealImage = hasDirectImage || !!unsplash;
+  const chosen = hasDirectImage ? image : fallback;
+  const hasRealImage = hasDirectImage;
 
   return {
     title,
@@ -15564,7 +15560,7 @@ __aiProposalDetail(item){
     about: this.__aiProposalAboutText(item),
     image: chosen,
     hasRealImage,
-    imageNote: hasDirectImage ? "" : (unsplash ? "" : "Vista informativa de apoyo · no hay foto real asociada a esta propuesta"),
+    imageNote: hasDirectImage ? "" : "Vista informativa de apoyo · no hay foto resuelta en la propuesta",
     link: this.__aiProposalExternalUrl(item),
     linkLabel: "Ampliar información"
   };
@@ -15698,8 +15694,6 @@ openProposalDetail(item){
       </div>
     </div>`;
   overlay.classList.remove("hidden");
-  // Enriquecimiento de imagen (solo si no viene imagen directa)
-  this.__aiEnrichProposalDetailImage(item || {}, detail);
 },
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
@@ -15707,14 +15701,15 @@ openProposalDetail(item){
         const proposals = catalog
           .map((item, idx)=>{
             const adapted = this.adaptProposal(item);
-            return {
-              id: `${row.key}:${idx}`,
-              city: row.city,
-              title: adapted.title,
-              summary: adapted.summary,
-              why: adapted.why,
-              score: this.scoreProposal(adapted)
-            };
+            const base = {id: `${row.key}:${idx}`, city: row.city, title: adapted.title, summary: adapted.summary, why: adapted.why, score: this.scoreProposal(adapted)};
+            // V226C1A7V: Resolver imagen en origen (no en la ficha "Más info")
+            try{
+              if(!base.image){
+                base.image = this.__aiProposalUnsplashUrl(base);
+                if(base.image) base.imageSource = "unsplash";
+              }
+            }catch(_e){}
+            return base;
           })
           .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"))
           .slice(0,5)
@@ -16098,7 +16093,16 @@ openProposalDetail(item){
         if(it) picked.push(it);
       }
 
-      return picked.map(({score, ...rest})=> rest);
+      return picked.map(({score, ...rest})=>{
+        // V226C1A7V: Resolver imagen en origen para que la propuesta ya nazca con foto
+        try{
+          if(!rest.image){
+            rest.image = this.__aiProposalUnsplashUrl(rest);
+            if(rest.image) rest.imageSource = "unsplash";
+          }
+        }catch(_e){}
+        return rest;
+      });
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
