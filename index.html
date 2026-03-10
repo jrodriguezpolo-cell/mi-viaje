@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8H_AI_MORE_INFO_GEMINI_IMAGE_REAL_WIRING_FIX</title>
+<title>V226C1A8I_AI_HUB_RECOVERY_AFTER_GEMINI_WIRING_BREAK</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8H_AI_MORE_INFO_GEMINI_IMAGE_REAL_WIRING_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8I_AI_HUB_RECOVERY_AFTER_GEMINI_WIRING_BREAK" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8H_AI_MORE_INFO_GEMINI_IMAGE_REAL_WIRING_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8I_AI_HUB_RECOVERY_AFTER_GEMINI_WIRING_BREAK</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8H_AI_MORE_INFO_GEMINI_IMAGE_REAL_WIRING_FIX
+            Build cargada: V226C1A8I_AI_HUB_RECOVERY_AFTER_GEMINI_WIRING_BREAK
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1602,7 +1602,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8H_AI_MORE_INFO_GEMINI_IMAGE_REAL_WIRING_FIX";
+const APP_BUILD = "V226C1A8I_AI_HUB_RECOVERY_AFTER_GEMINI_WIRING_BREAK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16285,131 +16285,89 @@ showModal(title, html, [btn]);
             const imgEl = document.getElementById("aiMoreInfoImgEl");
             if(!box || !status || !imgEl) return;
 
-            // Fuente de verdad de API key: misma que usa geminiGenerateJSON()
-            let apiKey = "";
-            try{ apiKey = String(getGeminiKey && getGeminiKey() || "").trim(); }catch{}
+            const apiKey = String((localStorage.getItem("gemini_api_key") || localStorage.getItem("GEMINI_API_KEY") || window.GEMINI_API_KEY || "")).trim();
             if(!apiKey){
-              try{
-                apiKey = String(
-                  localStorage.getItem(LS_KEY_GEMINI) ||
-                  localStorage.getItem("gemini_api_key") ||
-                  localStorage.getItem("GEMINI_API_KEY") ||
-                  window.GEMINI_API_KEY || ""
-                ).trim();
-              }catch{}
-            }
-
-            // Reservamos siempre el bloque visual; si falta key o falla, no bloquea la ficha.
-            status.classList.remove("hidden");
-            imgEl.classList.add("hidden");
-            status.textContent = "Generando imagen IA…";
-
-            if(!apiKey){
-              status.textContent = "Imagen IA no disponible (falta API key en Herramientas).";
+              // Sin API key: ocultamos la zona de imagen (la ficha textual sigue siendo el valor)
+              box.classList.add("hidden");
               return;
             }
 
             const placeLabel = [title, city].filter(Boolean).join(", ");
             const visualPrompt = [
-              "Photorealistic, high-resolution tourist photograph.",
+              "Professional high-resolution tourist photograph.",
               "Realistic lighting, natural colors, documentary travel photo style.",
-              "The main subject must be the recognizable place/landmark:",
+              "The main subject must be the recognizable place:",
               placeLabel + ".",
-              type ? ("Place type: " + type + ".") : "",
-              "Show the real place, not abstract art.",
+              type ? ("Type: " + type + ".") : "",
               "No abstract art, no patterns, no monochrome background, no vector illustration.",
               "No text, no logos, no watermark.",
-              "Wide 16:9 composition, include context (skyline/park/architecture) if relevant."
+              "Wide composition, include context (skyline/park/architecture) if relevant."
             ].filter(Boolean).join(" ");
 
-            const endpointBase = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict";
-            const endpoint = endpointBase + "?key=" + encodeURIComponent(apiKey);
-
+            const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict";
             const body = {
               instances: [{ prompt: visualPrompt }],
-              parameters: { sampleCount: 1, aspectRatio: "16:9" }
+              parameters: {
+                sampleCount: 1,
+                aspectRatio: "16:9",
+                // personGeneration omitted to avoid location restrictions; defaults to allow_adult
+              }
             };
 
-            const controller = ("AbortController" in window) ? new AbortController() : null;
-            const tId = setTimeout(()=>{ try{ controller && controller.abort(); }catch{} }, 20000);
+            status.textContent = "Generando imagen IA…";
+            imgEl.classList.add("hidden");
 
-            console.debug && console.debug("[AI More Info] imagen: start", { placeLabel });
+            const controller = ("AbortController" in window) ? new AbortController() : null;
+            const tId = setTimeout(()=>{ try{ controller && controller.abort(); }catch{} }, 15000);
 
             fetch(endpoint, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "x-goog-api-key": apiKey,
+                "Content-Type": "application/json"
+              },
               body: JSON.stringify(body),
               signal: controller ? controller.signal : undefined
-            })
-              .then(r=> r.ok ? r.json() : r.text().then(t=>{ throw new Error(t || ("HTTP " + r.status)); }))
-              .then(json=>{
-                clearTimeout(tId);
-                const pred = (json && json.predictions && json.predictions[0]) ? json.predictions[0] : null;
-                const b64 = pred && (pred.bytesBase64Encoded || pred.bytes_base64_encoded || pred.imageBytes || pred.image_bytes);
-                const mime = (pred && pred.mimeType) ? pred.mimeType : "image/png";
-                if(!b64 || typeof b64 !== "string") throw new Error("No bytesBase64Encoded");
-
-                const dataUrl = `data:${mime};base64,${b64}`;
-
-                imgEl.onload = async ()=>{
-                  try{
-                    // Heurística simple para ocultar “imágenes planas/abstractas” (monocolor, poca varianza).
+            }).then(r=> r.ok ? r.json() : r.text().then(t=>{ throw new Error(t || ("HTTP " + r.status)); }))
+            .then(json=>{
+              clearTimeout(tId);
+              const pred = (json && json.predictions && json.predictions[0]) ? json.predictions[0] : null;
+              const b64 = pred && (pred.bytesBase64Encoded || pred.bytes_base64_encoded || pred.imageBytes);
+              const mime = (pred && pred.mimeType) ? pred.mimeType : "image/png";
+              if(!b64 || typeof b64 !== "string") throw new Error("No image bytes in response");
+              const dataUrl = `data:${mime};base64,${b64}`;
+              // Carga y filtro básico anti-“imagen abstracta/monocolor”
+              imgEl.onload = async ()=>{
+                try{
+                  const looksBad = await (async ()=>{
+                    // Heurística simple: baja varianza de luminancia o muy pocos colores => suele ser fondo monocolor/abstracto
                     const w = 64, h = 64;
                     const c = document.createElement("canvas");
                     c.width = w; c.height = h;
                     const ctx = c.getContext("2d");
-                    if(ctx){
-                      ctx.drawImage(imgEl, 0, 0, w, h);
-                      const d = ctx.getImageData(0,0,w,h).data;
-                      let n=0, sum=0, sum2=0;
-                      const buckets = new Set();
-                      for(let i=0;i<d.length;i+=4){
-                        const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
-                        if(a<32) continue;
-                        const y = 0.2126*r + 0.7152*g + 0.0722*b;
-                        sum += y; sum2 += y*y; n++;
-                        buckets.add(((r>>5)<<10) | ((g>>5)<<5) | (b>>5));
-                      }
-                      if(n > 50){
-                        const mean = sum/n;
-                        const varY = (sum2/n) - (mean*mean);
-                        const colorCount = buckets.size;
-                        if(varY < 110 || colorCount < 16){
-                          // No es útil: ocultamos imagen.
-                          box.classList.add("hidden");
-                          console.debug && console.debug("[AI More Info] imagen: hidden (low-detail)", { varY, colorCount });
-                          return;
-                        }
-                      }
+                    if(!ctx) return false;
+                    ctx.drawImage(imgEl, 0, 0, w, h);
+                    const d = ctx.getImageData(0,0,w,h).data;
+                    let n=0;
+                    let sum=0, sum2=0;
+                    const buckets = new Set();
+                    for(let i=0;i<d.length;i+=4){
+                      const r=d[i], g=d[i+1], b=d[i+2], a=d[i+3];
+                      if(a<32) continue;
+                      const y = 0.2126*r + 0.7152*g + 0.0722*b;
+                      sum += y; sum2 += y*y; n++;
+                      // bucket colors to estimate diversity
+                      const br = r>>5, bg = g>>5, bb = b>>5;
+                      buckets.add((br<<10) | (bg<<5) | bb);
                     }
-                  }catch(e){}
-                  status.classList.add("hidden");
-                  imgEl.classList.remove("hidden");
-                  console.debug && console.debug("[AI More Info] imagen: shown");
-                };
-
-                imgEl.onerror = ()=>{
-                  box.classList.add("hidden");
-                  console.debug && console.debug("[AI More Info] imagen: error");
-                };
-
-                // Forzamos visibilidad del contenedor (por si quedó oculto en aperturas previas)
-                box.classList.remove("hidden");
-                imgEl.src = dataUrl;
-              })
-              .catch(err=>{
-                clearTimeout(tId);
-                // Si falla, ocultamos el bloque de imagen para no degradar la ficha textual.
-                box.classList.add("hidden");
-                console.debug && console.debug("[AI More Info] imagen: fail", String(err||""));
-              });
-          }catch(e){
-            try{
-              const box = document.getElementById("aiMoreInfoImgBox");
-              if(box) box.classList.add("hidden");
-            }catch{}
-          }
-        })();
+                    if(n < 50) return true;
+                    const mean = sum/n;
+                    const varY = (sum2/n) - (mean*mean);
+                    const colorCount = buckets.size;
+                    // thresholds tuned to hide very flat images
+                    if(varY < 120 || colorCount < 18) return true;
+                    return false;
+                  })();
                   if(looksBad){
                     // Ocultar imagen si es poco útil/abstracta
                     box.classList.add("hidden");
