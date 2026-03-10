@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7U_AI_PROPOSALS_REAL_PHOTO_ACTUAL_FIX_NO_PLACEHOLDER_LOOP</title>
+<title>V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7U_AI_PROPOSALS_REAL_PHOTO_ACTUAL_FIX_NO_PLACEHOLDER_LOOP" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1609,11 +1609,31 @@ window.__aiMoreInfoImgFallback = function(imgEl){
     // Placeholder discreto (último recurso)
     imgEl.src = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='700'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop stop-color='#eef2ff'/><stop offset='1' stop-color='#f8fafc'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)'/><text x='50%' y='52%' text-anchor='middle' font-family='ui-sans-serif,system-ui' font-size='36' fill='#64748b'>Vista informativa</text></svg>`);
   }catch(_e){}
+
+// Normalizador de URL de imagen para que sea estable y renderizable.
+// Problema observado: URLs dinámicas tipo source.unsplash.com pueden no renderizar en algunos entornos.
+// Estrategia: proxy estable vía images.weserv.nl (sin API key) cuando la fuente sea "unsplash" y la URL sea dinámica.
+window.__aiNormalizeProposalImageUrl = function(url, source){
+  try{
+    const u = String(url||"").trim();
+    if(!u) return "";
+    const src = String(source||"").toLowerCase();
+    const isUnsplashDynamic = u.includes("source.unsplash.com/");
+    if(isUnsplashDynamic || src==="unsplash"){
+      // Weserv espera URL sin esquema en el parámetro url=
+      const naked = u.replace(/^https?:\/\//i,"");
+      return "https://images.weserv.nl/?url=" + encodeURIComponent(naked) + "&w=1200&h=700&fit=cover&we";
+    }
+    return u;
+  }catch(_e){
+    return String(url||"");
+  }
+};
 };
 
 
 
-const APP_BUILD = "V226C1A7W_AI_PROPOSALS_IMAGE_SOURCE_DIAGNOSTIC_TRACE";
+const APP_BUILD = "V226C1A7X_AI_PROPOSALS_STABLE_IMAGE_RENDER_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15589,7 +15609,7 @@ __aiProposalUnsplashUrl(item){
   const q = [title, city, type].filter(Boolean).join(" ");
   if(!q) return "";
   // Fuente pública sin API key (devuelve una imagen real relacionada con la búsqueda)
-  return `https://source.unsplash.com/featured/1000x700/?${encodeURIComponent(q)}`;
+  return window.__aiNormalizeProposalImageUrl(`https://source.unsplash.com/featured/1000x700/?${encodeURIComponent(q)}`,"unsplash");
 },
 __aiWikiKey(q){
   return String(q||"").trim().replace(/\s+/g, "_");
@@ -15685,7 +15705,7 @@ openProposalDetail(item){
   bodyEl.innerHTML = `
     <div class="space-y-4">
       <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-        <img id="aiProposalDetailImg" onerror="window.__aiMoreInfoImgFallback && window.__aiMoreInfoImgFallback(this)" alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${detail.image}" />
+        <img id="aiProposalDetailImg" onerror="window.__aiMoreInfoImgFallback && window.__aiMoreInfoImgFallback(this)" alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${window.__aiNormalizeProposalImageUrl ? window.__aiNormalizeProposalImageUrl(detail.image, detail.imageSource) : detail.image}" />
         ${detail.imageNote ? `<div id="aiProposalDetailImgNote" class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
       </div>
       <div>
