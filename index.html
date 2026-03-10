@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8M_AI_MORE_INFO_TEXT_PREMIUM_PLUS_GEMINI_IMAGE_ON_DEMAND</title>
+<title>V226C1A8N_AI_MORE_INFO_GEMINI_RESPONSE_DIAGNOSTIC_VISIBLE_FALLBACK</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8M_AI_MORE_INFO_TEXT_PREMIUM_PLUS_GEMINI_IMAGE_ON_DEMAND" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8N_AI_MORE_INFO_GEMINI_RESPONSE_DIAGNOSTIC_VISIBLE_FALLBACK" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8M_AI_MORE_INFO_TEXT_PREMIUM_PLUS_GEMINI_IMAGE_ON_DEMAND</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8N_AI_MORE_INFO_GEMINI_RESPONSE_DIAGNOSTIC_VISIBLE_FALLBACK</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8M_AI_MORE_INFO_TEXT_PREMIUM_PLUS_GEMINI_IMAGE_ON_DEMAND
+            Build cargada: V226C1A8N_AI_MORE_INFO_GEMINI_RESPONSE_DIAGNOSTIC_VISIBLE_FALLBACK
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8M_AI_MORE_INFO_TEXT_PREMIUM_PLUS_GEMINI_IMAGE_ON_DEMAND";
+const APP_BUILD = "V226C1A8N_AI_MORE_INFO_GEMINI_RESPONSE_DIAGNOSTIC_VISIBLE_FALLBACK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15699,19 +15699,30 @@ window.addEventListener('DOMContentLoaded', () => {
       return { key: "", source: "" };
     },
 
+    
     async generateGeminiImage(placeName){
       const place = String(placeName || "").trim();
-      if(!place) return null;
+      console.log("[AI MoreInfo] Gemini key present:", !!(getGeminiKey && getGeminiKey()));
+      if(!place){
+        console.warn("[AI MoreInfo] Gemini image skipped (no placeName)");
+        return null;
+      }
 
-      const { key, source } = this.__mvGetGeminiKey();
+      // Read key in the same way the app stores it (Tools key entry in A8L/A8M).
+      const keyInfo = (typeof readGeminiKeyFromStorage === "function")
+        ? readGeminiKeyFromStorage()
+        : { key: (typeof getGeminiKey==="function" ? getGeminiKey() : ""), source: "getGeminiKey" };
+
+      const key = String(keyInfo && keyInfo.key ? keyInfo.key : "").trim();
+      const source = String(keyInfo && keyInfo.source ? keyInfo.source : "unknown");
       if(!key){
         console.warn("[AI MoreInfo] Gemini key missing (localStorage).");
         return null;
       }
       console.log("[AI MoreInfo] Gemini key found from", source);
 
-      // Endpoint Generative Language (Imagen). Mantenerlo simple y robusto.
-      const url = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=" + encodeURIComponent(key);
+      const modelId = "imagen-4.0-generate-001";
+      const url = "https://generativelanguage.googleapis.com/v1beta/models/" + modelId + ":predict?key=" + encodeURIComponent(key);
 
       const prompt = `Professional high-resolution realistic travel photo of ${place}. Photorealistic, natural lighting, tourism style, clearly recognizable landmark/place. No abstract art, no patterns, no flat monochrome background, no text, no logo.`;
 
@@ -15720,30 +15731,69 @@ window.addEventListener('DOMContentLoaded', () => {
         parameters: { sampleCount: 1, aspectRatio: "16:9" }
       };
 
+      console.log("[AI MoreInfo] Gemini request start", { modelId, place });
+
       try{
-        console.log("[AI MoreInfo] Gemini image request started for:", place);
         const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
+
+        console.log("[AI MoreInfo] Gemini HTTP status", res.status, res.ok ? "(ok)" : "(error)");
+
         const txt = await res.text();
         let data = null;
-        try{ data = JSON.parse(txt); }catch(parseErr){
-          console.error("[AI MoreInfo] Gemini image response not JSON", txt.slice(0,200));
+        try{ data = JSON.parse(txt); }
+        catch(parseErr){
+          console.error("[AI MoreInfo] Gemini response not JSON", txt.slice(0, 260));
           return null;
         }
-        const b64 = data && data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded
-          ? String(data.predictions[0].bytesBase64Encoded)
-          : "";
+
+        // Log only structure (no flooding, no API key, no base64).
+        try{
+          console.log("[AI MoreInfo] Gemini response keys", Object.keys(data || {}));
+          console.log("[AI MoreInfo] Gemini predictions present", !!(data && data.predictions && Array.isArray(data.predictions)));
+        }catch{}
+
+        // Surface explicit API errors
+        const apiErrMsg = data && data.error && (data.error.message || data.error.status) ? (data.error.message || String(data.error.status)) : "";
+        if(apiErrMsg || !res.ok){
+          console.warn("[AI MoreInfo] Gemini API error", apiErrMsg || ("HTTP " + res.status));
+          // Keep a small snippet to help diagnose, but avoid spam
+          if(!res.ok) console.warn("[AI MoreInfo] Gemini error payload (snippet)", txt.slice(0, 260));
+          return null;
+        }
+
+        const pred0 = data && data.predictions && data.predictions[0] ? data.predictions[0] : null;
+
+        const pickB64 = (p) => {
+          if(!p) return "";
+          // Primary path
+          if(p.bytesBase64Encoded) return String(p.bytesBase64Encoded);
+          // Common alternates seen in some SDKs
+          if(p.bytes_base64_encoded) return String(p.bytes_base64_encoded);
+          if(p.bytesBase64) return String(p.bytesBase64);
+          if(p.imageBytesBase64Encoded) return String(p.imageBytesBase64Encoded);
+          // As a last resort, scan shallow keys (no deep recursion)
+          for(const k of Object.keys(p)){
+            if(/base64/i.test(k) && typeof p[k] === "string" && p[k].length > 64) return String(p[k]);
+          }
+          return "";
+        };
+
+        const b64 = pickB64(pred0);
+        console.log("[AI MoreInfo] Gemini bytesBase64Encoded present", !!b64);
+
         if(!b64){
-          console.warn("[AI MoreInfo] Gemini image empty predictions", data);
+          console.warn("[AI MoreInfo] Gemini image missing bytesBase64Encoded", pred0 ? Object.keys(pred0) : null);
           return null;
         }
+
         console.log("[AI MoreInfo] Gemini image success");
         return "data:image/png;base64," + b64;
       }catch(err){
-        console.error("[AI MoreInfo] Gemini image failed", err);
+        console.error("[AI MoreInfo] Gemini request failed", err);
         return null;
       }
     },
@@ -15813,14 +15863,31 @@ window.addEventListener('DOMContentLoaded', () => {
         const placeName = [c.title, c.city].filter(Boolean).join(" ");
         this.generateGeminiImage(placeName).then((src)=>{
           if(src){
-            container.innerHTML = `<img src="${src}" class="w-full h-full object-cover" alt="${escapeHtml(c.title)}" />`;
+            container.innerHTML = `<img src="${src}" class="w-full h-full object-cover" alt="${escapeHtml(c.title)}" onerror="this.remove();"/>`;
+            console.log("[AI MoreInfo] Gemini image painted");
           }else{
-            container.classList.add("hidden");
-            console.warn("[AI MoreInfo] hide image block (no image)");
+            console.warn("[AI MoreInfo] Gemini fallback shown (no image)");
+            container.innerHTML = `
+              <div class="w-full h-full flex items-center justify-center bg-slate-50">
+                <div class="text-center px-4">
+                  <div class="text-2xl">🖼️</div>
+                  <div class="mt-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-600">No se pudo generar la imagen</div>
+                  <div class="mt-1 text-[11px] text-slate-500">Se mantiene la ficha textual.</div>
+                </div>
+              </div>
+            `;
           }
         }).catch((e)=>{
-          console.warn("[AI MoreInfo] hide image block (error)", e);
-          container.classList.add("hidden");
+          console.error("[AI MoreInfo] Gemini request failed", e);
+          container.innerHTML = `
+            <div class="w-full h-full flex items-center justify-center bg-slate-50">
+              <div class="text-center px-4">
+                <div class="text-2xl">🖼️</div>
+                <div class="mt-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-600">Imagen no disponible</div>
+                <div class="mt-1 text-[11px] text-slate-500">Error al generar con Gemini.</div>
+              </div>
+            </div>
+          `;
         });
 
       }catch(err){
