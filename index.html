@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS</title>
+<title>V226C1A7O_LEG_SAVE_CONFLICT_GUARD_AGAINST_LEGS_AND_ACTS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7O_LEG_SAVE_CONFLICT_GUARD_AGAINST_LEGS_AND_ACTS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1214,7 +1214,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7O_LEG_SAVE_CONFLICT_GUARD_AGAINST_LEGS_AND_ACTS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS
+            Build cargada: V226C1A7O_LEG_SAVE_CONFLICT_GUARD_AGAINST_LEGS_AND_ACTS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1485,7 +1485,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7N_ACTIVITY_SAVE_CONFLICT_GUARD_AGAINST_ACTS_AND_LEGS";
+const APP_BUILD = "V226C1A7O_LEG_SAVE_CONFLICT_GUARD_AGAINST_LEGS_AND_ACTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -8666,6 +8666,94 @@ function __initEventSheetBindings(){
   }catch{}
 });
 }
+
+function __mvFmtHHMM(dt){
+  try{
+    if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
+    return String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+  }catch{ return '—'; }
+}
+function __mvSheetActInterval(item){
+  try{
+    if(!item) return null;
+    const dateStr = String(item.date || '').trim();
+    const timeStr = String(item.time || '').trim();
+    const mins = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)),10) || 0);
+    if(!dateStr || !timeStr || mins <= 0) return null;
+    const start = new Date(`${dateStr}T${timeStr}:00`);
+    if(Number.isNaN(start.getTime())) return null;
+    const end = new Date(start.getTime() + mins*60000);
+    return { start, end };
+  }catch{ return null; }
+}
+function __mvSheetLegInterval(item){
+  try{
+    if(!item) return null;
+    const depDate = String(item.date || '').trim();
+    const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+    const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+    const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+    if(!depDate || !depTime || !arrDate || !arrTime) return null;
+    const start = new Date(`${depDate}T${depTime}:00`);
+    const end = new Date(`${arrDate}T${arrTime}:00`);
+    if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+    if(!(start < end)) return null;
+    return { start, end };
+  }catch{ return null; }
+}
+function __mvCollectLegSaveConflictsFromSheet(){
+  const out = { draft:{ ok:false, reason:'Datos temporales insuficientes' }, compared:[], conflicts:[] };
+  try{
+    const ctx = (typeof __eventSheetCtx !== 'undefined' && __eventSheetCtx) ? __eventSheetCtx : null;
+    if(!ctx || String(ctx.kind)!=='leg') return out;
+    const root = document.getElementById('eventSheetBody') || document;
+    const q = (k)=> root.querySelector(`[data-sheet-leg="${k}"]`);
+    const depDate = String(q('dateOut')?.value || '').trim();
+    const depTime = String(q('timeOut')?.value || '').trim();
+    const arrDate = String(q('dateIn')?.value || '').trim();
+    const arrTime = String(q('timeIn')?.value || '').trim();
+    if(!depDate || !depTime || !arrDate || !arrTime){
+      out.draft = { ok:false, depDate, depTime, arrDate, arrTime, reason:'Datos temporales insuficientes' };
+      return out;
+    }
+    const start = new Date(`${depDate}T${depTime}:00`);
+    const end = new Date(`${arrDate}T${arrTime}:00`);
+    if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || !(start < end)){
+      out.draft = { ok:false, depDate, depTime, arrDate, arrTime, start, end, reason:'Intervalo de transporte inválido' };
+      return out;
+    }
+    out.draft = { ok:true, depDate, depTime, arrDate, arrTime, start, end };
+    const sc = (typeof curScenario === 'function') ? curScenario() : null;
+    const ownId = String(ctx.id || '');
+    (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((item)=>{
+      try{
+        if(!item) return;
+        if(String(item.id || '') === ownId) return;
+        const other = __mvSheetLegInterval(item);
+        if(!other) return;
+        const title = `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`;
+        out.compared.push({ type:'leg', typeLabel:'Transporte', id:String(item.id || ''), title, start:other.start, end:other.end });
+        if(start < other.end && other.start < end){
+          out.conflicts.push({ type:'leg', typeLabel:'Transporte', id:String(item.id || ''), title, start:other.start, end:other.end });
+        }
+      }catch{}
+    });
+    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((item)=>{
+      try{
+        if(!item) return;
+        const other = __mvSheetActInterval(item);
+        if(!other) return;
+        const title = String(item.title || item.name || 'Actividad');
+        out.compared.push({ type:'act', typeLabel:'Actividad', id:String(item.id || ''), title, start:other.start, end:other.end });
+        if(start < other.end && other.start < end){
+          out.conflicts.push({ type:'act', typeLabel:'Actividad', id:String(item.id || ''), title, start:other.start, end:other.end });
+        }
+      }catch{}
+    });
+  }catch{}
+  return out;
+}
+
 try{
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", __initEventSheetBindings, { once:true });
   else __initEventSheetBindings();
@@ -14145,64 +14233,60 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
       
-      // V226C1A7L: reutilizar exactamente la detección validada en el inspector pasivo
+      // V226C1A7O: guard de conflicto para actividad y transporte reutilizando la detección ya validada
       try{
-        if(typeof __eventSheetCtx !== "undefined" && __eventSheetCtx && String(__eventSheetCtx.kind)==="act"){
+        const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+        let data = null;
+        if(ctx && String(ctx.kind)==="act"){
           const detector = (window && window.__actOverlapPassiveInspector && typeof window.__actOverlapPassiveInspector.collect === "function")
             ? window.__actOverlapPassiveInspector
             : null;
-          const data = detector ? detector.collect() : null;
-          const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
-          if(conflicts.length > 0){
-            const body = `
-              <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'}.</div>
-              <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
-                <div class="font-semibold text-slate-900">Eventos conflictivos</div>
-                <ul class="mt-2 space-y-1">${conflicts.map(c=>{
-                  const hh = (d)=>{
-                    try{
-                      if(!(d instanceof Date) || Number.isNaN(d.getTime())) return '—';
-                      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-                    }catch{ return '—'; }
-                  };
-                  return `<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(hh(c.start))} → ${escapeHtml(hh(c.end))}]</span></li>`;
-                }).join('')}</ul>
-              </div>
-              <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
-            `;
-            const btnCancel = document.createElement('button');
-            btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
-            btnCancel.type = 'button';
-            btnCancel.textContent = 'Cancelar';
-            btnCancel.onclick = ()=>{ try{ closeModal(); }catch{} };
-            const btnForceSave = document.createElement('button');
-            btnForceSave.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
-            btnForceSave.type = 'button';
-            btnForceSave.textContent = 'Guardar de todas formas';
-            btnForceSave.onclick = ()=>{
-              try{ closeModal(); }catch{}
-              try { if (typeof saveState === "function") saveState(); } catch {}
-              try{ __sheetSetSnapshot(); }catch{}
-              try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
-              try {
-                if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
-                  if (typeof renderLegs === "function") renderLegs();
-                  if (typeof renderTimeline === "function") renderTimeline();
-                  if (typeof calcSummary === "function") calcSummary();
-                } else if (__eventSheetCtx && __eventSheetCtx.kind === "stay") {
-                  if (typeof renderStays === "function") renderStays();
-                  if (typeof renderTimeline === "function") renderTimeline();
-                  if (typeof calcSummary === "function") calcSummary();
-                } else if (__eventSheetCtx && __eventSheetCtx.kind === "act") {
-                  if (typeof renderActivities === "function") renderActivities();
-                  if (typeof renderTimeline === "function") renderTimeline();
-                  if (typeof calcSummary === "function") calcSummary();
-                }
-              } catch {}
-            };
-            try{ showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]); }catch{}
-            return;
-          }
+          data = detector ? detector.collect() : null;
+        } else if(ctx && String(ctx.kind)==="leg"){
+          data = __mvCollectLegSaveConflictsFromSheet();
+        }
+        const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
+        if(conflicts.length > 0){
+          const body = `
+            <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'}.</div>
+            <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
+              <div class="font-semibold text-slate-900">Eventos conflictivos</div>
+              <ul class="mt-2 space-y-1">${conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(__mvFmtHHMM(c.start))} → ${escapeHtml(__mvFmtHHMM(c.end))}]</span></li>`).join('')}</ul>
+            </div>
+            <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
+          `;
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
+          btnCancel.type = 'button';
+          btnCancel.textContent = 'Cancelar';
+          btnCancel.onclick = ()=>{ try{ closeModal(); }catch{} };
+          const btnForceSave = document.createElement('button');
+          btnForceSave.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
+          btnForceSave.type = 'button';
+          btnForceSave.textContent = 'Guardar de todas formas';
+          btnForceSave.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            try { if (typeof saveState === "function") saveState(); } catch {}
+            try{ __sheetSetSnapshot(); }catch{}
+            try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+            try {
+              if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+                if (typeof renderLegs === "function") renderLegs();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              } else if (__eventSheetCtx && __eventSheetCtx.kind === "stay") {
+                if (typeof renderStays === "function") renderStays();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              } else if (__eventSheetCtx && __eventSheetCtx.kind === "act") {
+                if (typeof renderActivities === "function") renderActivities();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              }
+            } catch {}
+          };
+          try{ showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]); }catch{}
+          return;
         }
       }catch{}
       try { if (typeof saveState === "function") saveState(); } catch {}
