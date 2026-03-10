@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD</title>
+<title>V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD" rel="manifest"/>
+<link href="manifest.json?v=V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD
+            Build cargada: V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1602,7 +1602,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7R_AI_PROPOSALS_MORE_INFO_LIGHT_DETAIL_CARD";
+const APP_BUILD = "V226C1A7S_AI_PROPOSALS_MORE_INFO_FIX_REAL_CONTENT_AND_RETURN";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15472,6 +15472,58 @@ __aiProposalExternalUrl(item){
   if(!q) return "";
   return `https://es.wikipedia.org/wiki/Especial:Buscar?search=${encodeURIComponent(q)}`;
 },
+__aiProposalInferTypeLabel(item){
+  const hay = `${String(item && item.title || "")} ${String(item && item.summary || "")} ${String(item && item.description || "")}`.toLowerCase();
+  if(/museo|museum|galer[ií]a|colecci[oó]n/.test(hay)) return "museo";
+  if(/parque|park|jard[ií]n|garden/.test(hay)) return "parque";
+  if(/mirador|views|vista|tower|top of the rock|sky/.test(hay)) return "mirador";
+  if(/mercado|market|gastron|food|chelsea/.test(hay)) return "mercado";
+  if(/barrio|bairro|district|quarter|g[oó]tico|trastevere|alfama|harajuku|shibuya/.test(hay)) return "barrio";
+  if(/palacio|palace|capitolio|capitol|templo|catedral|bas[ií]lica|monasterio|iglesia|castle|castillo/.test(hay)) return "monumento";
+  if(/puente|bridge/.test(hay)) return "puente";
+  if(/plaza|square/.test(hay)) return "plaza";
+  if(/playa|beach|coast|costa/.test(hay)) return "zona costera";
+  if(/ruta|paseo|walk|line/.test(hay)) return "recorrido";
+  return "lugar de interés";
+},
+__aiProposalAboutText(item){
+  const summary = String(item && item.summary || "").trim();
+  const raw = String(item && item.description || "").trim();
+  const city = String(item && item.city || "").trim();
+  const place = this.__aiProposalInferTypeLabel(item);
+  let cleaned = raw
+    .replace(/Por qu[eé] la IA (lo|la) recomienda:?/gi, "")
+    .replace(/Esta propuesta est[aá] contextualizada[^.]*\.?/gi, "")
+    .replace(/Puedes revisar esta propuesta[^.]*\.?/gi, "")
+    .trim();
+  if(cleaned && cleaned.length < 220 && summary && !cleaned.toLowerCase().includes(summary.toLowerCase())){
+    cleaned = `${cleaned} ${summary}`.trim();
+  }
+  if(cleaned) return cleaned;
+  const ctx = city ? `en ${city}` : "en el destino";
+  switch(place){
+    case "museo":
+      return `Es un ${place} destacado ${ctx}, pensado para una visita cultural con contenido histórico, artístico o patrimonial. ${summary || "Suele funcionar bien como bloque principal o como visita con bastante contenido."}`.trim();
+    case "parque":
+      return `Es un ${place} o zona verde ${ctx}, útil para pasear, bajar el ritmo y combinar vistas o descanso con un plan urbano. ${summary || "Encaja bien cuando apetece una pausa más abierta y flexible."}`.trim();
+    case "mirador":
+      return `Es un ${place} ${ctx}, orientado a disfrutar de panorámicas y a situarte mejor en la ciudad o el entorno. ${summary || "Suele ser una visita corta o media con mucho impacto visual."}`.trim();
+    case "mercado":
+      return `Es un ${place} ${ctx}, interesante por ambiente, gastronomía y facilidad para encajarlo en una jornada de paseo. ${summary || "Aporta una experiencia más viva y práctica del destino."}`.trim();
+    case "barrio":
+      return `Es un ${place} o zona con identidad propia ${ctx}, ideal para caminar, ver ambiente local y descubrir rincones representativos. ${summary || "Suele funcionar muy bien como bloque flexible del día."}`.trim();
+    case "monumento":
+      return `Es un ${place} destacado ${ctx}, normalmente con valor histórico, arquitectónico o simbólico dentro del viaje. ${summary || "Tiene perfil de visita principal o imprescindible del destino."}`.trim();
+    case "puente":
+      return `Es un ${place} o punto emblemático ${ctx}, interesante tanto por el recorrido como por las vistas y el contexto urbano. ${summary || "Puede encajar como visita corta o como parte de una ruta más amplia."}`.trim();
+    case "plaza":
+      return `Es una ${place} o espacio central ${ctx}, útil para captar ambiente, arquitectura y vida urbana del destino. ${summary || "Encaja bien en paseos y tramos libres."}`.trim();
+    case "zona costera":
+      return `Es una ${place} ${ctx}, pensada para vistas, paseo y cambio de ritmo frente al núcleo más urbano. ${summary || "Aporta una experiencia más abierta y panorámica."}`.trim();
+    default:
+      return `${summary || "Es una propuesta pensada para aportar contexto y valor real al viaje."} ${city ? `Se sitúa en ${city} y puede ayudarte a entender mejor el destino antes de decidir si te interesa incluirlo.` : "Se presenta aquí para que puedas valorar mejor qué es antes de decidir si te interesa incluirlo."}`.trim();
+  }
+},
 __aiProposalDetail(item){
   const title = String(item && item.title || "Propuesta IA").trim();
   const city = String(item && item.city || "").trim();
@@ -15481,19 +15533,17 @@ __aiProposalDetail(item){
   else if(item && item.suggestedBand) timeBits.push(String(item.suggestedBand).trim());
   if(item && item.duration) timeBits.push(String(item.duration).trim());
   const subtitle = [city, timeBits.join(" · ")].filter(Boolean).join(" — ");
-  const summary = String(item && item.summary || "").trim();
-  const why = String(item && item.why || "").trim();
-  const extra = String(item && item.description || "").trim();
-  const description = extra || [
-    summary ? `${summary}` : "",
-    why ? `Por qué la IA la recomienda: ${why}` : "",
-    city ? `Esta propuesta está contextualizada para ${city} y se muestra dentro del flujo actual para que puedas valorarla sin salir del listado.` : "Puedes revisar esta propuesta sin perder el contexto del listado actual."
-  ].filter(Boolean).join(" ");
+  const why = String(item && item.why || "").trim() || "La propuesta encaja por contexto, ritmo y lógica del viaje actual.";
+  const image = String(item && item.image || "").trim();
+  const hasRealImage = !!image;
   return {
     title,
     subtitle,
-    description,
-    image: String(item && item.image || "").trim() || this.__aiProposalImageData(item),
+    why,
+    about: this.__aiProposalAboutText(item),
+    image: hasRealImage ? image : this.__aiProposalImageData(item),
+    hasRealImage,
+    imageNote: hasRealImage ? "" : "Vista informativa de apoyo · no hay foto real asociada a esta propuesta",
     link: this.__aiProposalExternalUrl(item),
     linkLabel: "Ampliar información"
   };
@@ -15509,13 +15559,24 @@ openProposalDetail(item){
     <div class="space-y-4">
       <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
         <img alt="${escapeHtml(detail.title || "Propuesta IA")}" class="block w-full h-44 object-cover" src="${detail.image}" />
+        ${detail.imageNote ? `<div class="border-t border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500">${escapeHtml(detail.imageNote)}</div>` : ``}
       </div>
       <div>
         <div class="text-lg font-extrabold text-slate-900">${escapeHtml(detail.title || "Propuesta IA")}</div>
         ${detail.subtitle ? `<div class="mt-1 text-xs font-semibold text-slate-500">${escapeHtml(detail.subtitle)}</div>` : ``}
       </div>
-      <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-6 text-slate-700">${escapeHtml(detail.description || "Sin detalle adicional.")}</div>
-      ${detail.link ? `<div class="flex items-center justify-end"><a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a></div>` : ``}
+      <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-4">
+        <div class="text-[11px] font-extrabold uppercase tracking-wide text-violet-700">Por qué la IA lo recomienda</div>
+        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.why || "Sin detalle adicional.")}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-600">Sobre este lugar</div>
+        <div class="mt-1 text-sm leading-6 text-slate-700">${escapeHtml(detail.about || "Sin detalle adicional.")}</div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        ${detail.link ? `<a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a>` : `<span></span>`}
+        <button class="tap inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="button" onclick="document.getElementById('aiActionInfoClose') && document.getElementById('aiActionInfoClose').click()">Volver al listado</button>
+      </div>
     </div>`;
   overlay.classList.remove("hidden");
 },
