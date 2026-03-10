@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE</title>
+<title>V226C1A8A_AI_MORE_INFO_ON_DEMAND_PERSISTED_RICH_CARD</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8A_AI_MORE_INFO_ON_DEMAND_PERSISTED_RICH_CARD" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8A_AI_MORE_INFO_ON_DEMAND_PERSISTED_RICH_CARD</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE
+            Build cargada: V226C1A8A_AI_MORE_INFO_ON_DEMAND_PERSISTED_RICH_CARD
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1602,7 +1602,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A7Z_ROLLBACK_RESTORE_LAST_STABLE_IA_MODULE_BASE";
+const APP_BUILD = "V226C1A8A_AI_MORE_INFO_ON_DEMAND_PERSISTED_RICH_CARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14689,6 +14689,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <script>
 (function(){
   const AI_PREFS_KEY = "miviaje.aiModulePrefs.v225f2";
+  const AI_RICH_CACHE_KEY = "miviaje.aiMoreInfo.richCache.v1";
   const AI_CITY_CATALOG = {
     "madrid":[
       { title:"Museo del Prado", summary:"Colección icónica para una visita potente sin dispersarte.", why:"Es una de las visitas más redondas si quieres asegurar un gran imprescindible." },
@@ -14782,6 +14783,7 @@ window.addEventListener('DOMContentLoaded', () => {
         preferenceContext: { chips: [], summary: "", tastes: [], pace: "Normal", kids: 0, restrictions: [] }
       };
       this.loadPrefs();
+      this.loadRichCache();
       this.bindUI();
       this.render();
       return this.state;
@@ -14794,6 +14796,245 @@ window.addEventListener('DOMContentLoaded', () => {
         if(data && typeof data.contextualVisible === "boolean") this.state.contextualVisible = data.contextualVisible;
         if(data && (data.currentAction === "summary" || data.currentAction === "cities" || data.currentAction === "sensitive" || data.currentAction === "transport" || data.currentAction === "gaps")) this.state.currentAction = data.currentAction;
       }catch{}
+    },
+
+    /* ---------------------- Más info (rich card) cache ---------------------- */
+    loadRichCache(){
+      try{
+        const raw = localStorage.getItem(AI_RICH_CACHE_KEY);
+        const data = raw ? JSON.parse(raw) : null;
+        this.state.richInfoCache = (data && typeof data === "object") ? data : {};
+      }catch{
+        this.state.richInfoCache = {};
+      }
+    },
+    saveRichCache(){
+      try{
+        localStorage.setItem(AI_RICH_CACHE_KEY, JSON.stringify(this.state.richInfoCache || {}));
+      }catch{}
+    },
+    __attachCachedRichCard(proposal){
+      try{
+        if(!proposal || !proposal.id) return proposal;
+        const cache = this.state.richInfoCache || {};
+        const hit = cache[String(proposal.id)];
+        if(hit && typeof hit === "object"){
+          proposal.richCard = hit;
+        }
+      }catch{}
+      return proposal;
+    },
+    __findProposalById(pid){
+      pid = String(pid||"");
+      if(!pid) return null;
+      try{
+        // ciudades
+        for(const g of (this.state.cityGroups||[])){
+          for(const p of (g.proposals||[])){
+            if(String(p.id)===pid) return p;
+          }
+        }
+        // huecos
+        for(const b of (this.state.gapBlocks||[])){
+          for(const p of (b.proposals||[])){
+            if(String(p.id)===pid) return p;
+          }
+        }
+      }catch{}
+      return null;
+    },
+
+    async openProposalMoreInfo(pid){
+      const p = this.__findProposalById(pid);
+      if(!p) return;
+      // Si ya existe richCard persistida, mostrar directamente
+      if(p.richCard && typeof p.richCard === "object"){
+        this.__openRichCardModal(p, { loading:false });
+        return;
+      }
+      // Generación bajo demanda + persistencia
+      this.__openRichCardModal(p, { loading:true });
+      try{
+        const rich = await this.__generateRichCardOnce(p);
+        if(rich && typeof rich === "object"){
+          p.richCard = rich;
+          if(!this.state.richInfoCache) this.state.richInfoCache = {};
+          this.state.richInfoCache[String(p.id)] = rich;
+          this.saveRichCache();
+        }
+        this.__openRichCardModal(p, { loading:false });
+      }catch(err){
+        // fallback honesto
+        p.richCard = this.__fallbackRichCard(p, err);
+        if(!this.state.richInfoCache) this.state.richInfoCache = {};
+        this.state.richInfoCache[String(p.id)] = p.richCard;
+        this.saveRichCache();
+        this.__openRichCardModal(p, { loading:false, error:true });
+      }
+    },
+
+    __fallbackRichCard(p, err){
+      const now = new Date().toISOString();
+      const title = String(p && p.title || "").trim();
+      const city = String(p && p.city || "").trim();
+      const why = String(p && (p.why || p.summary) || "").trim();
+      const about = (p && p.summary) ? String(p.summary) : "Propuesta de interés turístico para encajar en tu itinerario.";
+      return {
+        richTitle: title || "Propuesta",
+        aboutPlace: about,
+        historyContext: "",
+        proTip: "Si vas en hora punta, compra entradas o reserva con antelación cuando aplique.",
+        whyRecommended: why || "",
+        imageUrl: (p && (p.image || p.imageUrl)) ? String(p.image || p.imageUrl) : "",
+        imageGeneratedByAI: false,
+        richInfoGeneratedAt: now,
+        externalLink: (p && p.link) ? String(p.link) : "",
+        generator: "fallback",
+        error: (err && err.message) ? String(err.message).slice(0,120) : ""
+      };
+    },
+
+    async __generateRichCardOnce(p){
+      // Si ya se intentó y hay marcador, no regenerar: devolver fallback/lo que haya.
+      if(p && p.__richInfoGenerating) throw new Error("ALREADY_GENERATING");
+      if(p) p.__richInfoGenerating = true;
+      const now = new Date().toISOString();
+      try{
+        const title = String(p && p.title || "").trim();
+        const city = String(p && p.city || "").trim();
+        const type = String(p && (p.type || p.kind || "") || "").trim();
+        const pref = this.state.preferenceContext || {};
+        const chips = (pref && Array.isArray(pref.chips)) ? pref.chips.slice(0,6).join(" · ") : "";
+        const schema = `Devuelve SOLO JSON válido con este formato:
+{
+  "richTitle": "string",
+  "aboutPlace": "string",
+  "historyContext": "string",
+  "proTip": "string",
+  "whyRecommended": "string",
+  "externalLink": "string"
+}`;
+        const prompt = `Eres un asistente turístico. Genera una ficha breve y útil para un viajero.
+Lugar/actividad: ${title}${city ? " (en "+city+")" : ""}.
+${type ? "Tipo: "+type+"." : ""}
+Contexto de preferencias del viaje (si existe): ${chips || "—"}.
+
+Reglas:
+- aboutPlace: explica QUÉ ES y qué aporta.
+- historyContext: 2-4 frases con contexto o historia si aplica.
+- proTip: consejo práctico (mejor hora, reservas, duración sugerida, etc.).
+- whyRecommended: una línea breve de por qué encaja.
+- externalLink: si puedes, un link oficial o Wikipedia. Si no, deja "".
+No inventes datos demasiado específicos si no estás seguro; prioriza utilidad general.`;
+
+        let data = null;
+        try{
+          // Usa Gemini si hay clave. Si no, saltará NO_KEY y caeremos a fallback.
+          data = await geminiGenerateJSON(prompt, schema);
+        }catch(e){
+          throw e;
+        }
+
+        const card = (data && typeof data === "object") ? data : {};
+        return {
+          richTitle: String(card.richTitle || title || "Propuesta").trim(),
+          aboutPlace: String(card.aboutPlace || "").trim(),
+          historyContext: String(card.historyContext || "").trim(),
+          proTip: String(card.proTip || "").trim(),
+          whyRecommended: String(card.whyRecommended || (p && p.why) || "").trim(),
+          imageUrl: (p && (p.image || p.imageUrl)) ? String(p.image || p.imageUrl) : "",
+          imageGeneratedByAI: false,
+          richInfoGeneratedAt: now,
+          externalLink: String(card.externalLink || "").trim(),
+          generator: "gemini"
+        };
+      }finally{
+        if(p) p.__richInfoGenerating = false;
+      }
+    },
+
+    __ensureRichCardModal(){
+      let el = document.getElementById("aiMoreInfoModal");
+      if(el) return el;
+      // Modal ligero dentro del overlay de IA (no bloquea la app fuera)
+      el = document.createElement("div");
+      el.id = "aiMoreInfoModal";
+      el.className = "fixed inset-0 z-[9999] hidden";
+      el.innerHTML = `
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="absolute inset-0 flex items-end sm:items-center justify-center p-3">
+          <div class="w-full max-w-xl rounded-3xl bg-white shadow-xl overflow-hidden">
+            <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-200">
+              <div class="min-w-0">
+                <div class="text-sm font-extrabold text-slate-900">Más info</div>
+                <div class="text-xs text-slate-500" id="aiMoreInfoSub">Ficha enriquecida bajo demanda</div>
+              </div>
+              <button type="button" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="aiMoreInfoClose">✕</button>
+            </div>
+            <div class="p-4 space-y-3 max-h-[70vh] overflow-auto" id="aiMoreInfoBody"></div>
+            <div class="px-4 py-3 border-t border-slate-200 flex justify-end">
+              <button type="button" class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="aiMoreInfoBack">Volver al listado</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(el);
+
+      const close = el.querySelector("#aiMoreInfoClose");
+      const back = el.querySelector("#aiMoreInfoBack");
+      const hide = ()=>{ el.classList.add("hidden"); };
+      if(close) close.addEventListener("click", (ev)=>{ ev.preventDefault(); hide(); });
+      if(back) back.addEventListener("click", (ev)=>{ ev.preventDefault(); hide(); });
+      // click en backdrop
+      const bg = el.firstElementChild;
+      if(bg) bg.addEventListener("click", (ev)=>{ ev.preventDefault(); hide(); });
+
+      return el;
+    },
+
+    __openRichCardModal(p, opts){
+      const modal = this.__ensureRichCardModal();
+      const body = modal.querySelector("#aiMoreInfoBody");
+      const sub = modal.querySelector("#aiMoreInfoSub");
+      const loading = !!(opts && opts.loading);
+      const err = !!(opts && opts.error);
+      if(sub){
+        sub.textContent = (p && p.city) ? `${p.city}` : "Ficha enriquecida bajo demanda";
+      }
+      if(body){
+        const card = (p && p.richCard && typeof p.richCard === "object") ? p.richCard : null;
+        const title = (card && card.richTitle) ? String(card.richTitle) : String(p && p.title || "Propuesta");
+        const why = (card && card.whyRecommended) ? String(card.whyRecommended) : String(p && p.why || "");
+        const about = (card && card.aboutPlace) ? String(card.aboutPlace) : "";
+        const hist = (card && card.historyContext) ? String(card.historyContext) : "";
+        const tip = (card && card.proTip) ? String(card.proTip) : "";
+        const link = (card && card.externalLink) ? String(card.externalLink) : "";
+        const img = (card && card.imageUrl) ? String(card.imageUrl) : "";
+
+        const imgBlock = img ? `
+          <img src="${escapeHtml(img)}" alt="${escapeHtml(title)}" class="w-full h-44 object-cover rounded-2xl border border-slate-200" onerror="this.style.display='none';" />
+        ` : `
+          <div class="w-full h-36 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-xs text-slate-500">
+            Sin imagen (vista informativa)
+          </div>
+        `;
+
+        body.innerHTML = `
+          ${imgBlock}
+          <div class="text-lg font-extrabold text-slate-900">${escapeHtml(title)}</div>
+          ${(p && (p.date || p.time || p.suggestedBand)) ? `<div class="text-xs font-semibold text-slate-600">${escapeHtml(p.date||"")}${p.time?` — ${escapeHtml(p.time)}`:(p.suggestedBand?` — ${escapeHtml(p.suggestedBand)}`:"")}</div>` : ``}
+          ${why ? `<div class="rounded-2xl border border-slate-200 bg-slate-50 p-3"><div class="text-xs font-extrabold text-slate-700">Por qué la IA lo recomienda</div><div class="mt-1 text-sm text-slate-700">${escapeHtml(why)}</div></div>` : ``}
+          ${about ? `<div class="rounded-2xl border border-slate-200 bg-white p-3"><div class="text-xs font-extrabold text-slate-700">Sobre este lugar</div><div class="mt-1 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(about)}</div></div>` : ``}
+          ${hist ? `<div class="rounded-2xl border border-slate-200 bg-white p-3"><div class="text-xs font-extrabold text-slate-700">Historia y contexto</div><div class="mt-1 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(hist)}</div></div>` : ``}
+          ${tip ? `<div class="rounded-2xl border border-slate-200 bg-white p-3"><div class="text-xs font-extrabold text-slate-700">Consejo pro</div><div class="mt-1 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(tip)}</div></div>` : ``}
+          ${link ? `<a class="tap inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold text-slate-700" href="${escapeHtml(link)}" target="_blank" rel="noopener">Abrir enlace externo ↗</a>` : ``}
+          ${loading ? `<div class="mt-2 text-sm text-slate-600">Generando ficha enriquecida…</div>` : ``}
+          ${err ? `<div class="mt-2 text-sm text-amber-700">No se pudo generar con Gemini. Se muestra una ficha básica guardada.</div>` : ``}
+        `;
+      }
+      modal.classList.remove("hidden");
+    },
+
     },
     savePrefs(){
       try{
@@ -15431,7 +15672,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const proposals = catalog
           .map((item, idx)=>{
             const adapted = this.adaptProposal(item);
-            return {
+            const obj = {
               id: `${row.key}:${idx}`,
               city: row.city,
               title: adapted.title,
@@ -15439,6 +15680,7 @@ window.addEventListener('DOMContentLoaded', () => {
               why: adapted.why,
               score: this.scoreProposal(adapted)
             };
+            return this.__attachCachedRichCard(obj);
           })
           .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"))
           .slice(0,5)
@@ -16051,6 +16293,9 @@ __aiBuildDayBuckets(trip){
                     <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
+                    <div class="mt-2 flex gap-2">
+                      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}">Más info</button>
+                    </div>
                   </div>
                 </label>`).join("")}
             </div>
@@ -16061,6 +16306,15 @@ __aiBuildDayBuckets(trip){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
+          });
+        });
+        // Más info bajo demanda (no intercepta guardado; solo abre ficha)
+        results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault(); ev.stopPropagation();
+            const pid = String(btn.getAttribute("data-ai-moreinfo")||"");
+            if(!pid) return;
+            this.openProposalMoreInfo(pid);
           });
         });
       }
@@ -16498,7 +16752,7 @@ loadTripGapsFill(opts){
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
             const dMin = suggestDurationMin(pr.title, pr.summary);
-            return Object.assign({}, pr, {
+            const obj = Object.assign({}, pr, {
               id: `gap:${day}:${this.__aiCityKey(city)}:${this.state.gapRecoOffset}:${idx}`,
               city,
               date: day,
@@ -16506,12 +16760,14 @@ loadTripGapsFill(opts){
               durationMin: dMin,
               duration: fmtDur(dMin)
             });
+            return this.__attachCachedRichCard(obj);
           })
         });
       }
 
       this.state.gapBlocks = gapBlocks;
 
+      this.state.gapBlocks = gapBlocks;
       if(status){
         this.state.actionInfoStatus = String(gapBlocks.length
           ? `Huecos encontrados: ${gapBlocks.length}. Selecciona propuestas y añade solo las que quieras.`
@@ -16545,6 +16801,9 @@ loadTripGapsFill(opts){
                     </div>
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                    <div class="mt-2 flex gap-2">
+                      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}">Más info</button>
+                    </div>
                   </div>
                 </label>
               `).join("")}
@@ -16558,6 +16817,15 @@ loadTripGapsFill(opts){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
+          });
+        });
+        // Más info bajo demanda en propuestas de huecos
+        results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault(); ev.stopPropagation();
+            const pid = String(btn.getAttribute("data-ai-moreinfo")||"");
+            if(!pid) return;
+            this.openProposalMoreInfo(pid);
           });
         });
       }
