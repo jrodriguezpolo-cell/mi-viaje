@@ -1613,7 +1613,7 @@ window.__aiMoreInfoImgFallback = function(imgEl){
 
 
 
-const APP_BUILD = "V226C1A7V_AI_PROPOSALS_IMAGE_AT_SOURCE_WIRING_FIX";
+const APP_BUILD = "V226C1A7W_AI_PROPOSALS_IMAGE_SOURCE_DIAGNOSTIC_TRACE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15547,6 +15547,10 @@ __aiProposalDetail(item){
   const why = String(item && item.why || "").trim() || "La propuesta encaja por contexto, ritmo y lógica del viaje actual.";
   const image = String(item && item.image || "").trim();
   const hasDirectImage = !!image;
+  const typeLabel = this.__aiProposalInferTypeLabel(item);
+  const imageSource = String(item && item.imageSource || '').trim();
+  const resolvedAtSourceAttempted = !!(item && item.resolvedAtSourceAttempted);
+  const resolvedAtSource = (item && typeof item.resolvedAtSource === 'boolean') ? item.resolvedAtSource : (hasDirectImage && !!image);
 
   // V226C1A7V: La imagen debe venir resuelta en la propuesta (origen). La ficha solo la consume.
   const fallback = this.__aiProposalImageData(item);
@@ -15560,6 +15564,14 @@ __aiProposalDetail(item){
     about: this.__aiProposalAboutText(item),
     image: chosen,
     hasRealImage,
+    // V226C1A7W diagnóstico de imagen
+    city,
+    typeLabel,
+    imageRaw: image,
+    imageSource,
+    resolvedAtSourceAttempted,
+    resolvedAtSource,
+    usingFallback: !hasDirectImage,
     imageNote: hasDirectImage ? "" : "Vista informativa de apoyo · no hay foto resuelta en la propuesta",
     link: this.__aiProposalExternalUrl(item),
     linkLabel: "Ampliar información"
@@ -15692,6 +15704,10 @@ openProposalDetail(item){
         ${detail.link ? `<a class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="${detail.link}" rel="noopener noreferrer" target="_blank">${escapeHtml(detail.linkLabel || "Abrir enlace")}</a>` : `<span></span>`}
         <button class="tap inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800" type="button" onclick="document.getElementById('aiActionInfoClose') && document.getElementById('aiActionInfoClose').click()">Volver al listado</button>
       </div>
+      <div class="rounded-2xl border border-slate-200 bg-white p-4">
+        <div class="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">Diagnóstico imagen IA</div>
+        <div class="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-5 text-slate-600">${escapeHtml('title: ' + (detail.title || '') + '\n' + 'city: ' + (detail.city || '') + '\n' + 'type: ' + (detail.typeLabel || '') + '\n' + 'image: ' + (detail.imageRaw || '') + '\n' + 'imageSource: ' + (detail.imageSource || '') + '\n' + 'resolvedAtSourceAttempted: ' + (detail.resolvedAtSourceAttempted ? 'sí' : 'no') + '\n' + 'resolvedAtSource: ' + (detail.resolvedAtSource ? 'sí' : 'no') + '\n' + 'usingFallback: ' + (detail.usingFallback ? 'sí' : 'no'))}</div>
+      </div>
     </div>`;
   overlay.classList.remove("hidden");
 },
@@ -15704,9 +15720,18 @@ openProposalDetail(item){
             const base = {id: `${row.key}:${idx}`, city: row.city, title: adapted.title, summary: adapted.summary, why: adapted.why, score: this.scoreProposal(adapted)};
             // V226C1A7V: Resolver imagen en origen (no en la ficha "Más info")
             try{
-              if(!base.image){
+              // V226C1A7W: trazabilidad de imagen resuelta en origen
+              base.resolvedAtSourceAttempted = true;
+              if(base.image){
+                base.resolvedAtSource = true;
+              }else{
                 base.image = this.__aiProposalUnsplashUrl(base);
-                if(base.image) base.imageSource = "unsplash";
+                if(base.image){
+                  base.imageSource = "unsplash";
+                  base.resolvedAtSource = true;
+                }else{
+                  base.resolvedAtSource = false;
+                }
               }
             }catch(_e){}
             return base;
@@ -16096,9 +16121,18 @@ openProposalDetail(item){
       return picked.map(({score, ...rest})=>{
         // V226C1A7V: Resolver imagen en origen para que la propuesta ya nazca con foto
         try{
-          if(!rest.image){
+          // V226C1A7W: trazabilidad de imagen resuelta en origen
+          rest.resolvedAtSourceAttempted = true;
+          if(rest.image){
+            rest.resolvedAtSource = true;
+          }else{
             rest.image = this.__aiProposalUnsplashUrl(rest);
-            if(rest.image) rest.imageSource = "unsplash";
+            if(rest.image){
+              rest.imageSource = "unsplash";
+              rest.resolvedAtSource = true;
+            }else{
+              rest.resolvedAtSource = false;
+            }
           }
         }catch(_e){}
         return rest;
