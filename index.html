@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8B_ROLLBACK_RESTORE_LAST_SAFE_AI_MODULE_AFTER_A8A_BREAK</title>
+<title>V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8B_ROLLBACK_RESTORE_LAST_SAFE_AI_MODULE_AFTER_A8A_BREAK" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8B_ROLLBACK_RESTORE_LAST_SAFE_AI_MODULE_AFTER_A8A_BREAK</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,11 +1565,19 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8B_ROLLBACK_RESTORE_LAST_SAFE_AI_MODULE_AFTER_A8A_BREAK
+            Build cargada: V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
           </button>
+
+<button class="tap w-full px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-800 font-semibold" id="btnGeminiKey">
+            Configurar Gemini API key
+          </button>
+<div class="rounded-2xl border border-violet-100 bg-violet-50/40 px-4 py-3 text-left text-xs text-violet-800/90">
+            La clave se guarda localmente en este dispositivo. Puedes cambiarla o borrarla cuando quieras.
+          </div>
+
 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left" id="toolsDiagnosticsPanel">
             Diagnóstico no disponible todavía.
           </div>
@@ -1602,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8B_ROLLBACK_RESTORE_LAST_SAFE_AI_MODULE_AFTER_A8A_BREAK";
+const APP_BUILD = "V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14237,6 +14245,114 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const resetBtn = $("toolsReset");
   const copyAtoBBtn = $("btnCopyAtoB");
   const copyBtoABtn = $("btnCopyBtoA");
+  const geminiKeyBtn = $("btnGeminiKey");
+
+  function __mvGetGeminiKey(){
+    try{
+      const candidates = ["miViaje.geminiApiKey","mv.geminiApiKey","GEMINI_API_KEY"];
+      for (const k of candidates){
+        const v = localStorage.getItem(k);
+        if (v && String(v).trim()) return { key: String(v).trim(), source: k };
+      }
+    }catch(e){}
+    return { key: "", source: "" };
+  }
+
+  function __mvSetGeminiKey(newKey){
+    const v = String(newKey || "").trim();
+    try{
+      if (!v) return false;
+      localStorage.setItem("miViaje.geminiApiKey", v);
+      // Compat (no rompe nada si no se usa aún)
+      localStorage.setItem("mv.geminiApiKey", v);
+      localStorage.setItem("GEMINI_API_KEY", v);
+      console.log("[GeminiKey] guardada en localStorage (miViaje.geminiApiKey)");
+      return true;
+    }catch(e){
+      console.error("[GeminiKey] error guardando", e);
+      return false;
+    }
+  }
+
+  function __mvClearGeminiKey(){
+    try{
+      localStorage.removeItem("miViaje.geminiApiKey");
+      localStorage.removeItem("mv.geminiApiKey");
+      localStorage.removeItem("GEMINI_API_KEY");
+      console.log("[GeminiKey] borrada de localStorage");
+      return true;
+    }catch(e){
+      console.error("[GeminiKey] error borrando", e);
+      return false;
+    }
+  }
+
+  function openGeminiKeyModal(){
+    try{
+      closeTools();
+      const cur = __mvGetGeminiKey();
+      const masked = cur.key ? ("•".repeat(Math.min(10, cur.key.length)) + (cur.key.length>10 ? "…" : "")) : "—";
+      const body = `
+        <div class="space-y-3">
+          <div class="text-sm text-slate-700">
+            Configura tu <b>Gemini API key</b> para futuras funciones de imagen IA.
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            Estado actual: <span class="font-extrabold text-slate-900">${masked}</span>
+            ${cur.source ? `<span class="ml-2 opacity-75">(desde ${escapeHtml(cur.source)})</span>` : ``}
+          </div>
+          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Nueva API key</label>
+          <input id="geminiKeyInput" type="password" placeholder="Pega aquí tu API key…" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-semibold text-sm" autocomplete="off" />
+          <div id="geminiKeyStatus" class="text-xs text-slate-500"></div>
+          <div class="text-[11px] text-slate-500">
+            La clave se guarda localmente en este dispositivo (localStorage). No se sube a ningún servidor desde esta app.
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.addEventListener("click", ()=>{ try{ closeModal(); }catch{} });
+
+      const btnSave = document.createElement("button");
+      btnSave.type = "button";
+      btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold";
+      btnSave.textContent = "Guardar";
+      btnSave.addEventListener("click", ()=>{
+        const inp = document.getElementById("geminiKeyInput");
+        const status = document.getElementById("geminiKeyStatus");
+        const v = inp ? String(inp.value||"").trim() : "";
+        if (!v){
+          if(status) status.textContent = "No se ha introducido ninguna clave.";
+          console.warn("[GeminiKey] guardar: clave vacía");
+          return;
+        }
+        const ok = __mvSetGeminiKey(v);
+        if(status) status.textContent = ok ? "Clave guardada." : "No se pudo guardar la clave.";
+        if(ok){
+          setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
+        }
+      });
+
+      const btnClear = document.createElement("button");
+      btnClear.type = "button";
+      btnClear.className = "tap px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-extrabold";
+      btnClear.textContent = "Borrar";
+      btnClear.addEventListener("click", ()=>{
+        const status = document.getElementById("geminiKeyStatus");
+        const ok = __mvClearGeminiKey();
+        if(status) status.textContent = ok ? "Clave borrada." : "No se pudo borrar la clave.";
+        setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
+      });
+
+      const footer = cur.key ? [btnCancel, btnClear, btnSave] : [btnCancel, btnSave];
+      showModal("Gemini API key", body, footer);
+    }catch(e){
+      console.error("[GeminiKey] open modal error", e);
+    }
+  }
+
 
   function openTripsAndFocus(targetId){
     closeTools();
@@ -14253,6 +14369,8 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
   if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
+  if (geminiKeyBtn) geminiKeyBtn.addEventListener("click", openGeminiKeyModal);
+
 
   const __deepClone = (obj) => {
     try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
@@ -15767,62 +15885,311 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       return { city, reason };
     },
+    __aiNormLoose(text){
+      return String(text||"").trim().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/&/g, " y ")
+        .replace(/[+]/g, " y ")
+        .replace(/['’`´]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\b(el|la|los|las|de|del|da|do|dos|das|the|and|y|en|of|le|les|du|des)\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    },
+    __aiCanonicalPoi(text, city){
+      let s = this.__aiNormLoose(text);
+      const cityNorm = this.__aiNormLoose(city);
+      if(cityNorm){
+        const escapedCity = cityNorm.replace(/[-/\^$*+?.()|[\]{}]/g, '\\$&');
+        const rx = new RegExp(`\\b${escapedCity}\\b`, "g");
+        s = s.replace(rx, " ").replace(/\s+/g, " ").trim();
+      }
+      const aliases = {
+        "prado": "museo prado",
+        "museo prado": "museo prado",
+        "palacio real madrid": "palacio real",
+        "palacio real": "palacio real",
+        "retiro": "parque retiro",
+        "parque retiro": "parque retiro",
+        "mercado san miguel": "mercado san miguel",
+        "san miguel market": "mercado san miguel",
+        "templo debod": "templo debod",
+        "torre eiffel": "torre eiffel",
+        "eiffel tower": "torre eiffel",
+        "montmartre": "montmartre",
+        "sainte chapelle": "sainte chapelle",
+        "louvre": "museo louvre",
+        "museo louvre": "museo louvre",
+        "notre dame": "notre dame",
+        "ile cite": "ile cite",
+        "ile la cite": "ile cite",
+        "gran via plaza mayor": "gran via plaza mayor",
+        "plaza mayor gran via": "gran via plaza mayor",
+        "statue liberty": "statue liberty",
+        "estatua libertad": "statue liberty",
+        "high line": "high line",
+        "central park": "central park"
+      };
+      if(aliases[s]) return aliases[s];
+      return s;
+    },
+    __aiIsGenericGapTitle(title, city){
+      const s = this.__aiNormLoose(title);
+      if(!s) return true;
+      const cityNorm = this.__aiNormLoose(city);
+      const genericPatterns = [
+        /^centro historico(?:\s+\w+)?$/,
+        /^museo(?:\s+o\s+visita\s+cultural\s+imprescindible)?$/,
+        /^barrio(?:\s+con\s+encanto)?(?:\s+para\s+pasear)?$/,
+        /^mirador(?:\s+o\s+paseo\s+principal)?$/,
+        /^mercado(?:\s+o\s+zona\s+gastronomica)?$/,
+        /^ruta gastronomica(?:\s+suave)?$/,
+        /^actividad cultural$/,
+        /^zona comercial$/,
+        /^monumentos?$/,
+        /^paseo$/,
+        /^parque$/
+      ];
+      if(genericPatterns.some((rx)=> rx.test(s))) return true;
+      if(cityNorm && s === cityNorm) return true;
+      const genericTerms = ["centro historico","visita cultural","barrio con encanto","mirador","paseo principal","zona gastronomica","ruta gastronomica","actividad cultural","zona comercial","monumentos","comida tipica","pasear"];
+      for(const term of genericTerms){
+        if(s === term) return true;
+        if(cityNorm && s === `${term} ${cityNorm}`) return true;
+        if(cityNorm && s === `${term} ${cityNorm}`.replace(/\s+/g,' ').trim()) return true;
+      }
+      return false;
+    },
+    __aiMatchesExistingPoi(title, existingTitlesSet, city){
+      const existing = (existingTitlesSet instanceof Set) ? existingTitlesSet : new Set();
+      const canon = this.__aiCanonicalPoi(title, city);
+      if(!canon) return true;
+      if(existing.has(canon)) return true;
+      const candTokens = canon.split(' ').filter(t => t.length >= 4);
+      for(const ex of existing){
+        if(!ex) continue;
+        if(ex === canon) return true;
+        if(ex.includes(canon) || canon.includes(ex)){
+          const minLen = Math.min(ex.length, canon.length);
+          if(minLen >= 5) return true;
+        }
+        if(candTokens.length){
+          const overlap = candTokens.filter(t => ex.split(' ').includes(t));
+          if(overlap.length >= Math.min(2, candTokens.length)) return true;
+        }
+      }
+      return false;
+    },
+    __aiDescribePoiKind(title){
+      const s = this.__aiNormLoose(title);
+      if(/museo|museum|galer/.test(s)) return "museum";
+      if(/palacio|palace|royal/.test(s)) return "palace";
+      if(/parque|park|garden|jardin/.test(s)) return "park";
+      if(/mercado|market/.test(s)) return "market";
+      if(/barrio|gothic|montmartre|trastevere|georgetown|dumbo|alfama|chiado|baixa|harajuku|akihabara/.test(s)) return "neighborhood";
+      if(/catedral|cathedral|basilica|notre dame|senso ji|templo|temple|jingu|san pedro/.test(s)) return "temple";
+      if(/torre|tower|mirador|top of|rock|observatory|eiffel/.test(s)) return "viewpoint";
+      if(/bridge|puente/.test(s)) return "bridge";
+      if(/mall|capitolio|library of congress|lincoln memorial|monument|memorial/.test(s)) return "monumental";
+      if(/foro|coliseo|colosseum|pantheon|panteon|vaticano|louvre|sagrada familia/.test(s)) return "monumental";
+      if(/sena|seine|crucero|cruise|ferry|island|citywalk|springs/.test(s)) return "experience";
+      return "landmark";
+    },
+    __aiCityCulturalAngle(city){
+      const key = this.__aiCityKey(city);
+      const map = {
+        madrid: "En Madrid suele funcionar muy bien combinar patrimonio cortesano, grandes colecciones artísticas y vida urbana muy paseable en distancias relativamente cómodas.",
+        barcelona: "En Barcelona el valor cultural suele venir de la mezcla entre modernismo, trama histórica y una relación muy directa entre arquitectura y vida de calle.",
+        'nueva york': "En Nueva York muchas visitas ganan sentido cuando se leen como capas de inmigración, skyline, barrios con identidad propia y reutilización creativa del espacio urbano.",
+        washington: "En Washington la lectura cultural suele apoyarse en símbolos institucionales, memoria cívica y museos planteados como relato público accesible.",
+        orlando: "En Orlando conviene leer las propuestas no solo como ocio, sino también como distintas intensidades de experiencia: parques, zonas de ambiente y escapes tranquilos fuera del núcleo temático.",
+        londres: "En Londres encaja muy bien alternar capas históricas, barrios con personalidad y grandes instituciones culturales muy integradas en la ciudad cotidiana.",
+        roma: "En Roma casi cualquier visita mejora si se entiende como superposición de ciudad antigua, poder religioso, vida de barrio y escenas urbanas muy caminables.",
+        paris: "En París suele aportar mucho leer cada parada como una mezcla de monumento, vida de barrio, museo y puesta en escena urbana alrededor del Sena.",
+        lisboa: "En Lisboa muchas visitas brillan por la relación entre colinas, miradores, memoria marítima, barrios históricos y una atmósfera muy viva a escala humana.",
+        tokyo: "En Tokyo funciona muy bien alternar tradición, barrios hiperespecializados y espacios de pausa para captar mejor sus contrastes culturales."
+      };
+      return map[key] || `En ${city} merece la pena entender cada parada no solo como foto o check de lista, sino como una pieza del carácter cultural de la ciudad.`;
+    },
+    __aiBuildGapPoiRichInfo(item){
+      const title = String(item && item.title || '').trim();
+      const city = String(item && item.city || '').trim();
+      const summary = String(item && item.summary || '').trim();
+      const why = String(item && item.why || '').trim();
+      const kind = this.__aiDescribePoiKind(title);
+      const canon = this.__aiCanonicalPoi(title, city);
+      const specificMap = {
+        "museo prado": {
+          whatIs: `El Museo del Prado es la gran pinacoteca clásica de Madrid y una de las instituciones artísticas más importantes de Europa. Su fuerza no está en ser “otro museo más”, sino en reunir obras clave de Velázquez, Goya, El Bosco, Tiziano, Rubens o Fra Angelico dentro de un relato muy reconocible de la pintura occidental. Es una visita muy potente cuando quieres darle densidad cultural real a una jornada.`,
+          history: `El museo abrió al público en 1819, durante el reinado de Fernando VII, a partir del edificio diseñado por Juan de Villanueva en el siglo XVIII. Nació ligado a las colecciones reales españolas, por eso su fondo tiene una calidad excepcional y refleja siglos de gusto cortesano y mecenazgo. Con el tiempo se convirtió en una institución central del patrimonio español y en una parada imprescindible para entender la pintura europea entre los siglos XVI y XIX.`,
+          proTip: `Conviene visitarlo a primera hora o a última hora del día, cuando la experiencia suele sentirse algo menos saturada. Si te interesa entrar con calma, merece la pena llevar una pequeña selección previa de salas u obras, porque intentar verlo “todo” agota y dispersa mucho. Si vas en temporada alta o en fin de semana, comprar la entrada con antelación suele compensar claramente.`
+        },
+        "parque retiro": {
+          whatIs: `El Parque del Retiro es el gran jardín histórico del centro de Madrid y funciona muy bien como pausa elegante entre visitas más intensas. No es solo un parque para caminar: mezcla trazado paisajístico, monumentos, estanque, esculturas, escenas locales y una atmósfera muy madrileña. Sirve tanto para bajar el ritmo como para seguir leyendo la ciudad desde otro registro.`,
+          history: `Su origen está en el siglo XVII, cuando formaba parte del entorno del antiguo Palacio del Buen Retiro, vinculado a la corte de los Austrias. Con el tiempo fue perdiendo su carácter exclusivamente palaciego y acabó consolidándose como gran parque urbano abierto al público. Hoy conserva capas de esa historia cortesana, pero ya plenamente integradas en la vida cotidiana de Madrid.`,
+          proTip: `Funciona especialmente bien por la mañana o a media tarde, cuando la luz y la temperatura suelen hacer más agradable el paseo. No hace falta plantearlo como visita larguísima: con una ruta sencilla por el estanque, el Palacio de Cristal y algún paseo arbolado ya rinde mucho. Es ideal para encajarlo entre museo y zona histórica sin forzar demasiado el día.`
+        },
+        "mercado san miguel": {
+          whatIs: `El Mercado de San Miguel es uno de los espacios gastronómicos más conocidos del centro histórico de Madrid. Tiene un formato muy visual y muy accesible para picar varias cosas, observar ambiente y hacer una parada con identidad. Más que un mercado de compra diaria al uso, hoy funciona como escaparate gastronómico y social para el visitante.`,
+          history: `El edificio conserva la estructura de hierro de comienzos del siglo XX, un tipo de arquitectura comercial muy característica de la época. Durante décadas fue mercado tradicional de abastos y después vivió una gran transformación hasta convertirse en un espacio gastronómico orientado al paseo, la degustación y el turismo urbano. Esa evolución cuenta bastante bien cómo ha cambiado el centro de Madrid.`,
+          proTip: `Suele funcionar mejor fuera de las horas punta, cuando puedes moverte con más comodidad y elegir mejor qué probar. Si vas con la idea de comer tranquilo sentado, conviene ajustar expectativas porque el formato es más de tapeo y ambiente que de comida reposada. Encaja muy bien antes o después de Plaza Mayor y Palacio Real.`
+        },
+        "palacio real": {
+          whatIs: `El Palacio Real de Madrid es la gran residencia oficial histórica de la monarquía española en la capital, aunque hoy se usa sobre todo para actos de Estado. Es un edificio monumental, muy escénico y con fuerte carga simbólica, ideal para entender la dimensión ceremonial, representativa y artística de la corte. Aporta una visita muy sólida cuando buscas patrimonio con peso.`,
+          history: `Se levantó en el siglo XVIII sobre el solar del antiguo Alcázar, destruido por un incendio en 1734. Su construcción se impulsó bajo Felipe V y después distintos monarcas fueron completando decoración, colecciones y dependencias. Aunque los reyes dejaron de vivir allí de forma habitual, sigue siendo una de las piezas clave para leer la historia de la monarquía y la imagen oficial del poder en España.`,
+          proTip: `Conviene intentar visitarlo a primera hora o con entrada comprada de antemano, especialmente en días con mucha afluencia. Merece la pena reservar energía para interiores, porque las salas, la escalera y la armería concentran gran parte del interés. Encaja muy bien combinado con Plaza de Oriente, Catedral de la Almudena o una bajada posterior hacia el Madrid de los Austrias.`
+        },
+        "gran via plaza mayor": {
+          whatIs: `Gran Vía y Plaza Mayor representan dos caras muy reconocibles de Madrid: la avenida monumental y comercial del siglo XX y la gran plaza histórica del casco antiguo. Juntas forman una combinación muy útil para sentir ciudad, arquitectura, ambiente y vida urbana en poco tiempo. Es una propuesta muy flexible para un hueco porque permite paseo, fotos, compras ligeras y contexto histórico.`,
+          history: `La Plaza Mayor se consolidó en la época de los Austrias como gran espacio cívico, comercial y ceremonial del viejo Madrid. Gran Vía, en cambio, es fruto de la gran reforma urbana de comienzos del siglo XX y reúne edificios emblemáticos del Madrid moderno. Recorrer ambas seguidas ayuda a ver cómo pasó la ciudad del trazado histórico al gran escaparate metropolitano.`,
+          proTip: `Suele rendir mejor a pie y sin demasiada prisa, dejando margen para mirar fachadas, soportales y pequeños desvíos. Gran Vía luce mucho al final de la tarde y Plaza Mayor funciona bien en franjas algo más tranquilas, evitando horas muy saturadas. Si el objetivo es sentir ambiente, es mejor llevarlo como paseo urbano que como visita cronometrada.`
+        },
+        "statue liberty ellis island": {
+          whatIs: `La Estatua de la Libertad y Ellis Island forman una visita muy simbólica y muy potente para entender la identidad histórica de Nueva York y de Estados Unidos. No es solo un icono visual: habla de libertad, llegada, esperanza e inmigración. Bien planteada, es una de las visitas con más carga narrativa del viaje.`,
+          history: `La estatua fue un regalo de Francia a Estados Unidos y se inauguró en 1886 como gran símbolo de libertad e ideal republicano. Ellis Island funcionó durante décadas como principal puerta de entrada de millones de inmigrantes al país. Por eso la visita tiene una lectura muy humana además de monumental: condensa expectativas, miedo, ruptura y comienzo.`,
+          proTip: `Aquí sí conviene reservar con tiempo, porque la logística lleva ferri, controles y bastante demanda en determinadas fechas. Mejor plantearlo como medio día claro o un bloque generoso, no como visita comprimida. Si te interesa vivirlo con menos estrés, llegar temprano suele ayudar mucho.`
+        }
+      };
+      const kindMap = {
+        museum: `Qué es
+${title} es una visita cultural de primer nivel en ${city || 'la ciudad'}, muy adecuada para convertir un hueco libre en una experiencia con contenido real y no solo en un paseo sin foco. ${summary || 'Suele funcionar especialmente bien cuando quieres una actividad principal clara, con ritmo propio y valor cultural reconocible.'} Además, este tipo de parada permite ordenar mejor el día porque tiene identidad, narrativa y sensación de visita completa.`,
+        palace: `Qué es
+${title} es una visita patrimonial muy potente, asociada al relato institucional, ceremonial o cortesano de ${city || 'la ciudad'}. ${summary || 'Suele ser una de esas paradas que estructuran el viaje porque dan contexto histórico y visual al destino.'} Encaja muy bien cuando quieres que el hueco libre se convierta en un bloque memorable y con peso cultural.`,
+        park: `Qué es
+${title} es una propuesta ideal para bajar o modular el ritmo del viaje sin perder interés cultural. ${summary || 'No es solo un espacio verde: suele concentrar escenas urbanas, perspectiva local y un tipo de disfrute muy agradecido entre visitas más intensas.'} Sirve para respirar la ciudad con más calma y, a la vez, seguir sumando contexto.`,
+        market: `Qué es
+${title} funciona como una visita muy agradecida para entender el pulso cotidiano, gastronómico y social de ${city || 'la ciudad'}. ${summary || 'Suele ser una parada flexible, fácil de encajar y con retorno inmediato en ambiente y logística.'} Bien planteado, no es solo comer: es leer la ciudad desde sus ritmos, su producto y su mezcla de público local y viajero.`,
+        neighborhood: `Qué es
+${title} es una zona con identidad propia, útil para llenar un hueco con algo más rico que una actividad genérica. ${summary || 'Este tipo de propuesta suele mezclar paseo, atmósfera, patrimonio y vida de calle.'} Aporta una lectura más viva de ${city || 'la ciudad'} porque te deja notar cómo cambia el carácter urbano según el barrio.`,
+        temple: `Qué es
+${title} es una visita de fuerte carga simbólica y cultural en ${city || 'la ciudad'}. ${summary || 'Suele ofrecer una combinación muy buena entre arquitectura, contexto histórico y percepción del lugar.'} Es una de esas paradas que elevan el viaje porque añaden profundidad, no solo recorrido.`,
+        viewpoint: `Qué es
+${title} es una propuesta pensada para ganar perspectiva de ${city || 'la ciudad'}, tanto visual como mentalmente. ${summary || 'Este tipo de visita suele funcionar muy bien al comienzo o al cierre de una jornada.'} Ayuda a ordenar mentalmente barrios, ejes y monumentos, y por eso rinde más de lo que parece.`,
+        monumental: `Qué es
+${title} es una visita de gran peso simbólico, histórica o monumental, especialmente adecuada para dar entidad a un hueco relevante del viaje. ${summary || 'Suele ser una de las piezas que más ayudan a que el destino “se entienda” de verdad.'} Encaja bien cuando quieres una actividad clara, con relato y memoria.`,
+        experience: `Qué es
+${title} es una propuesta experiencial muy útil para convertir un tramo libre en algo reconocible, atmosférico y fácil de recordar. ${summary || 'Tiene la ventaja de combinar disfrute, contexto y una logística razonable.'} Suele rendir especialmente bien cuando el viaje necesita variedad sin perder calidad.`,
+        landmark: `Qué es
+${title} es un punto de interés claro y reconocible en ${city || 'la ciudad'}, ideal para transformar un hueco libre en una visita con sentido. ${summary || 'Aporta una pieza concreta y fácil de insertar dentro del itinerario.'} Su valor está en que no rellena por rellenar: añade identidad real al plan.`
+      };
+      const historyMap = {
+        museum: `${title} suele leerse mejor no solo por las obras o la colección, sino por el papel que desempeña dentro de la memoria cultural de ${city || 'la ciudad'}. Estos espacios suelen condensar cómo un destino se representa a sí mismo: qué conserva, qué exhibe y qué considera parte de su relato público. ${this.__aiCityCulturalAngle(city)}`,
+        palace: `La dimensión histórica de ${title} suele estar unida a poder, representación y ritual urbano. Este tipo de edificios ayuda a entender quién mandó, cómo quiso mostrarse y de qué manera la ciudad organizó su imagen pública a lo largo del tiempo. ${this.__aiCityCulturalAngle(city)}`,
+        park: `Aunque a veces se perciben como una pausa ligera, espacios como ${title} suelen tener mucho valor histórico porque muestran cómo la ciudad imaginó el ocio, la sociabilidad y la relación entre naturaleza y vida urbana. ${this.__aiCityCulturalAngle(city)}`,
+        market: `Lugares como ${title} cuentan bien la historia cotidiana de una ciudad: abastecimiento, mezcla social, cambios de gusto y adaptación del comercio tradicional al presente. Mirarlos con calma da una lectura muy rica del destino. ${this.__aiCityCulturalAngle(city)}`,
+        neighborhood: `La historia de ${title} suele apreciarse mejor cuando se observa su tejido urbano, sus usos y la manera en que conviven capas antiguas y contemporáneas. No es solo “un barrio bonito”: es una forma de entender cómo vive y se reconoce ${city || 'la ciudad'}. ${this.__aiCityCulturalAngle(city)}`,
+        temple: `${title} suele tener interés más allá de lo religioso: concentra símbolos, estilo arquitectónico, memoria colectiva y momentos decisivos del relato local. Suele ser uno de los lugares donde mejor se percibe la profundidad histórica del destino. ${this.__aiCityCulturalAngle(city)}`,
+        viewpoint: `La importancia de ${title} no está solo en la foto o la vista, sino en la capacidad de revelar la forma de la ciudad: ejes, barrios, densidad, monumentos y paisaje urbano. Muchas veces es ahí donde el destino “encaja” mentalmente. ${this.__aiCityCulturalAngle(city)}`,
+        monumental: `${title} suele condensar memoria cívica, capas históricas y una imagen muy potente del destino. Este tipo de parada no solo impresiona: ayuda a comprender qué episodios, símbolos o formas urbanas han acabado definiendo a ${city || 'la ciudad'}. ${this.__aiCityCulturalAngle(city)}`,
+        experience: `Aunque se viva como una experiencia ligera o muy disfrutable, ${title} también suele tener un trasfondo cultural claro: resume formas de ocio, maneras de usar la ciudad y determinados códigos sociales del destino. ${this.__aiCityCulturalAngle(city)}`,
+        landmark: `${title} gana mucho cuando se lee como algo más que una visita rápida. Normalmente estos puntos acaban siendo importantes porque concentran una imagen, un uso urbano o una memoria colectiva muy reconocible. ${this.__aiCityCulturalAngle(city)}`
+      };
+      const proTip = `Consejo pro
+${why ? why + ' ' : ''}Para disfrutar mejor ${title}, intenta tratarlo como bloque propio y no como simple relleno entre dos cosas grandes. Suele funcionar mejor si llegas con algo de margen, te fijas en los detalles que cuentan el carácter del lugar y dejas espacio para una salida natural hacia comida, paseo o siguiente visita. En general, en ${city || 'esta ciudad'} compensa priorizar calidad de experiencia sobre cantidad de paradas.`;
+      const specific = specificMap[canon];
+      if(specific){
+        return {
+          whatIs: `Qué es
+${specific.whatIs}`,
+          history: specific.history,
+          proTip: `Consejo pro
+${why ? why + ' ' : ''}${specific.proTip}`
+        };
+      }
+      return {
+        whatIs: kindMap[kind] || kindMap.landmark,
+        history: historyMap[kind] || historyMap.landmark,
+        proTip
+      };
+    },
+    __aiOpenGapMoreInfo(item){
+      const title = String(item && item.title || "Más info").trim();
+      const htmlPayload = this.__aiRenderGapMoreInfoModal(item);
+      const overlay = document.getElementById("aiActionInfoOverlay");
+      const titleEl = document.getElementById("aiActionInfoTitle");
+      const bodyEl = document.getElementById("aiActionInfoBody");
+      if(overlay && titleEl && bodyEl){
+        titleEl.textContent = title;
+        bodyEl.innerHTML = htmlPayload;
+        try{
+          if(overlay.dataset){
+            overlay.dataset.aiInfoKind = "html";
+            overlay.dataset.aiInfoScope = "gapMoreInfo";
+          }
+        }catch{}
+        overlay.classList.remove("hidden");
+        return true;
+      }
+      if(typeof showModal === "function"){
+        try{ showModal(title, htmlPayload); return true; }catch{}
+      }
+      return false;
+    },
+    __aiRenderGapMoreInfoModal(item){
+      const rich = this.__aiBuildGapPoiRichInfo(item);
+      const title = String(item && item.title || 'Más info').trim();
+      return `
+        <div class="space-y-3">
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Más info cultural</div>
+            <div class="mt-1 text-sm leading-6 text-slate-700">Información ampliada para ayudarte a decidir si ${escapeHtml(title)} encaja de verdad en el viaje.</div>
+          </div>
+          <details class="group rounded-2xl border border-slate-200 bg-white px-4 py-3" open>
+            <summary class="cursor-pointer list-none font-bold text-slate-900">Qué es</summary>
+            <div class="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-line">${escapeHtml(String(rich.whatIs||'').replace(/^Qué es\s*/, ''))}</div>
+          </details>
+          <details class="group rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <summary class="cursor-pointer list-none font-bold text-slate-900">Historia</summary>
+            <div class="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-line">${escapeHtml(rich.history)}</div>
+          </details>
+          <details class="group rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <summary class="cursor-pointer list-none font-bold text-slate-900">Consejo pro</summary>
+            <div class="mt-3 text-sm leading-6 text-slate-700 whitespace-pre-line">${escapeHtml(String(rich.proTip||'').replace(/^Consejo pro\s*/, ''))}</div>
+          </details>
+        </div>
+      `;
+    },
     __aiTopProposalsForCity(city, existingTitlesSet, maxN, offsetIndex){
       const cityName = String(city||"").trim();
       if(!cityName) return [];
       const key = this.__aiCityKey(cityName);
-      // Base catalog: city-specific if available, otherwise generic.
-      // If the city catalog is shorter than requested, complete it with genericSuggestions(city) (dedup by title).
-      let catalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && AI_CITY_CATALOG[key])
+      const baseCatalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && Array.isArray(AI_CITY_CATALOG[key]))
         ? AI_CITY_CATALOG[key]
-        : null;
+        : [];
+      if(!baseCatalog.length) return [];
 
-      if(Array.isArray(catalog)){
-        // Always supplement with generic suggestions to ensure enough distinct items
-        // after filtering existing activities/titles (kept under control by later dedup).
-        const extra = this.genericSuggestions(cityName) || [];
-        if(extra && extra.length) catalog = catalog.concat(extra);
-      }else{
-        catalog = this.genericSuggestions(cityName);
-      }
-
-      // Deduplicate by normalized title (keeps first occurrence).
-      if(Array.isArray(catalog)){
-        const seen = new Set();
-        catalog = catalog.filter((it)=>{
-          const t = String((it && it.title) || "").trim().toLowerCase();
-          if(!t) return false;
-          if(seen.has(t)) return false;
-          seen.add(t);
-          return true;
-        });
-      }
-
-      const existing = existingTitlesSet || new Set();
+      const existing = (existingTitlesSet instanceof Set) ? existingTitlesSet : new Set();
       const n = Math.max(1, parseInt(maxN,10)||5);
       const idx = Math.max(0, parseInt(offsetIndex,10)||0);
       const startAt = idx * n;
 
-      const ranked = (Array.isArray(catalog)?catalog:[])
-        .map((item)=>{
-          const adapted = this.adaptProposal(item);
-          return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
-        })
-        .filter((it)=>{
-          const t = String(it.title||"").trim().toLowerCase();
-          return t && !existing.has(t);
-        })
-        .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
+      const dedup = [];
+      const seen = new Set();
+      baseCatalog.forEach((item)=>{
+        const rawTitle = String((item && item.title) || "").trim();
+        if(!rawTitle) return;
+        if(this.__aiIsGenericGapTitle(rawTitle, cityName)) return;
+        const canon = this.__aiCanonicalPoi(rawTitle, cityName);
+        if(!canon || seen.has(canon)) return;
+        if(this.__aiMatchesExistingPoi(rawTitle, existing, cityName)) return;
+        seen.add(canon);
+        const adapted = this.adaptProposal(item);
+        dedup.push(Object.assign({}, adapted, {
+          city: cityName,
+          __canon: canon,
+          score: this.scoreProposal(adapted)
+        }));
+      });
 
-      // Slice with gentle wrap-around so “otras recomendaciones” cambia la tanda sin quedarse vacío.
+      if(!dedup.length) return [];
+      const ranked = dedup.sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
       const picked = [];
       for(let i=0; i<ranked.length && picked.length<n; i++){
         const j = (startAt + i) % ranked.length;
         const it = ranked[j];
-        if(it) picked.push(it);
+        if(it && !picked.some(p => p.__canon === it.__canon)) picked.push(it);
       }
-
-      return picked.map(({score, ...rest})=> rest);
+      return picked.map(({score, __canon, ...rest})=> rest);
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
@@ -16347,7 +16714,22 @@ loadTripGapsFill(opts){
       const stayRanges = this.__aiBuildStayRanges(trip);
       const allDays = this.__aiCollectTripDays(trip, stayRanges);
 
-      const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> String(a && (a.title||a.name)||"").trim().toLowerCase()).filter(Boolean));
+      const existingTitles = new Set();
+      const pushExistingTitle = (value, cityHint)=>{
+        const s = String(value||"").trim();
+        if(!s) return;
+        const canon = this.__aiCanonicalPoi(s, cityHint || "");
+        if(canon) existingTitles.add(canon);
+      };
+      (Array.isArray(trip.activities)?trip.activities:[]).forEach((a)=>{
+        pushExistingTitle(a && (a.title||a.name), a && (a.city||a.place));
+      });
+      (Array.isArray(trip.stays)?trip.stays:[]).forEach((s)=>{
+        pushExistingTitle(s && (s.name||s.title||s.place), s && s.city);
+      });
+      (Array.isArray(trip.legs)?trip.legs:[]).forEach((l)=>{
+        pushExistingTitle(l && (l.title||l.name), l && (l.to||l.toCity||l.from||l.fromCity));
+      });
 
       const parseHM = (s)=>{
         const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
@@ -16535,19 +16917,23 @@ loadTripGapsFill(opts){
               <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
-              ${blk.proposals.map((item)=>`
-                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+              ${blk.proposals.map((item)=>{
+                return `
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-start gap-3">
+                    <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+                        <button type="button" class="tap inline-flex items-center rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50" data-ai-gap-more-btn="${escapeHtml(item.id)}">Más info</button>
+                      </div>
+                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                      <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
                     </div>
-                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
                   </div>
-                </label>
-              `).join("")}
+                </div>
+              `;}).join("")}
             </div>
           </div>
         `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay huecos claros que rellenar ahora mismo.</div>`;
@@ -16558,6 +16944,17 @@ loadTripGapsFill(opts){
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
+          });
+        });
+        results.querySelectorAll("[data-ai-gap-more-btn]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+            const key = String(btn.getAttribute("data-ai-gap-more-btn") || "");
+            if(!key) return;
+            const blk = (Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : []).find((b)=> Array.isArray(b.proposals) && b.proposals.some((p)=> String(p.id||"")===key));
+            const item = blk && blk.proposals.find((p)=> String(p.id||"")===key);
+            if(!item) return;
+            this.__aiOpenGapMoreInfo(item);
           });
         });
       }
