@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A9L_AI_GAPS_RICH_MORE_INFO_PARITY_WITH_CITIES</title>
+<title>V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A9L_AI_GAPS_RICH_MORE_INFO_PARITY_WITH_CITIES" rel="manifest"/>
+<link href="manifest.json?v=V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9L_AI_GAPS_RICH_MORE_INFO_PARITY_WITH_CITIES</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A9L_AI_GAPS_RICH_MORE_INFO_PARITY_WITH_CITIES
+            Build cargada: V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A9L_AI_GAPS_RICH_MORE_INFO_PARITY_WITH_CITIES";
+const APP_BUILD = "V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15627,6 +15627,68 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     },
+    bindMoreInfoButtons(root){
+      try{
+        if(!root) return;
+        const buttons = root.querySelectorAll('[data-ai-moreinfo]');
+        buttons.forEach((btn)=>{
+          if(btn.__aiBound) return;
+          btn.__aiBound = true;
+          btn.addEventListener('click', (ev)=>{
+            try{
+              ev.preventDefault();
+              ev.stopPropagation();
+              const id = String(btn.getAttribute('data-ai-moreinfo') || '').trim();
+              if(!id) return;
+
+              let found = null;
+              let ctx = { city:'', day:'', suggestedTime:'' };
+
+              // 1) Buscar en Descubrir ciudades
+              try{
+                const groups = Array.isArray(this.state.cityGroups) ? this.state.cityGroups : [];
+                for(const g of groups){
+                  const list = Array.isArray(g && g.proposals) ? g.proposals : [];
+                  const hit = list.find(x => String(x && x.id) === id);
+                  if(hit){
+                    found = hit;
+                    ctx.city = String(g.city || hit.city || '');
+                    ctx.day = String(hit.date || g.suggestedDay || '');
+                    ctx.suggestedTime = String(hit.time || g.suggestedTime || '');
+                    break;
+                  }
+                }
+              }catch(e){}
+
+              // 2) Buscar en Rellenar huecos
+              if(!found){
+                try{
+                  const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
+                  for(const blk of blocks){
+                    const list = Array.isArray(blk && blk.proposals) ? blk.proposals : [];
+                    const hit = list.find(x => String(x && x.id) === id);
+                    if(hit){
+                      found = hit;
+                      ctx.city = String(blk.city || hit.city || '');
+                      ctx.day = String(blk.day || hit.date || '');
+                      ctx.suggestedTime = String(blk.suggestedTime || hit.time || '');
+                      break;
+                    }
+                  }
+                }catch(e){}
+              }
+
+              if(!found) return;
+              const htmlPayload = this.buildMoreInfoHtml(found, ctx);
+              openHelp(found.title || 'Más info', htmlPayload, true);
+            }catch(err){
+              console.error('[ai moreinfo] click failed', err);
+            }
+          });
+        });
+      }catch(e){}
+    },
+
 buildExistingLandmarkSet(){
       const trip = this.bridge.readTrip();
       const set = new Set();
@@ -16362,8 +16424,11 @@ __aiBuildDayBuckets(trip){
               ${group.proposals.map((item)=> `
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div>
-                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                      <button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100 flex-shrink-0" data-ai-moreinfo="${escapeHtml(item.id)}" aria-label="Más info">Más info</button>
+                    </div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
                   </div>
@@ -16379,6 +16444,9 @@ __aiBuildDayBuckets(trip){
           });
         });
       }
+
+        // Más info (unificado): mismo wiring compartido para ciudades y huecos.
+        try{ this.bindMoreInfoButtons(results); }catch(e){}
       const footer = document.getElementById("aiActionFooter");
       if(footer){
         footer.innerHTML = "";
@@ -16855,7 +16923,7 @@ loadTripGapsFill(opts){
                   <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
                   <div class="min-w-0">
                   <div class="ml-auto flex-shrink-0">
-                    <button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100" data-ai-gap-moreinfo="${escapeHtml(item.id)}" aria-label="Más info">Más info</button>
+                    <button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" aria-label="Más info">Más info</button>
                   </div>
                     <div class="flex flex-wrap items-center gap-2">
                       <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
@@ -16879,37 +16947,8 @@ loadTripGapsFill(opts){
           });
         });
 
-        // Más info (paridad con Descubrir ciudades): wiring local y reutilizando la misma ficha premium.
-        results.querySelectorAll("[data-ai-gap-moreinfo]").forEach((btn)=>{
-          if(btn.__aiBound) return;
-          btn.__aiBound = true;
-          btn.addEventListener("click", (ev)=>{
-            try{
-              ev.preventDefault();
-              ev.stopPropagation();
-              const id = String(btn.getAttribute("data-ai-gap-moreinfo") || "");
-              if(!id) return;
-              let found = null;
-              let ctx = { city:"", day:"", suggestedTime:"" };
-              for(const blk of (gapBlocks || [])){
-                const list = blk && blk.proposals ? blk.proposals : [];
-                const hit = list.find(x => String(x && x.id) === id);
-                if(hit){
-                  found = hit;
-                  ctx.city = String(blk.city || "");
-                  ctx.day = String(blk.day || "");
-                  ctx.suggestedTime = String(blk.suggestedTime || "");
-                  break;
-                }
-              }
-              if(!found) return;
-              const htmlPayload = this.buildMoreInfoHtml(found, ctx);
-              openHelp(found.title || "Más info", htmlPayload, true);
-            }catch(err){
-              console.error("[ai gaps] more info click failed", err);
-            }
-          });
-        });
+        // Más info (unificado): mismo wiring compartido para ciudades y huecos.
+        try{ this.bindMoreInfoButtons(results); }catch(e){}
       }
 
       const footer = document.getElementById("aiActionFooter");
