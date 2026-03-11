@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8S_AI_MORE_INFO_BUTTON_WIRING_FIX</title>
+<title>V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8S_AI_MORE_INFO_BUTTON_WIRING_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8S_AI_MORE_INFO_BUTTON_WIRING_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8S_AI_MORE_INFO_BUTTON_WIRING_FIX
+            Build cargada: V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,53 +1610,192 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 // --- A8R: Wikimedia single-image lookup (on-demand only) ---
-async function fetchWikipediaPlaceImage(placeName){
-  const q = String(placeName || "").trim();
-  if(!q) return null;
-  // Use Wikipedia API (no key). Return a single thumbnail URL or null.
+async function fetchWikipediaPlaceImage(placeTitle, placeCity){
+  // Returns { url, pageTitle, queryUsed, score } or null
+  const rawTitle = String(placeTitle || "").trim();
+  const rawCity  = String(placeCity || "").trim();
+
+  // Backwards compatibility: previous signature was (placeName) where caller passed "title city"
+  // If placeCity is missing and title looks like "X Y" we still try with rawTitle as the full query,
+  // but we will extract a main landmark from it.
+  if(!rawTitle) return null;
+
+  const norm = (s)=> String(s||"")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/['"`´]/g,"")
+    .replace(/[^a-z0-9\s]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+
+  const STOP = new Set(["of","the","a","an","and","or","to","in","on","at","for","from",
+                        "de","del","la","el","los","las","y","en","al","un","una"]);
+  const tokens = (s)=> norm(s).split(" ").filter(Boolean);
+  const sigTokens = (s)=> tokens(s).filter(t=>t.length>=3 && !STOP.has(t));
+
+  const splitMainLandmark = (t)=>{
+    const s = String(t||"").trim();
+    // Split composite titles and keep the first strong chunk
+    const parts = s.split(/\s*(?:\+|&|\/|,|·|\||\band\b|\by\b)\s*/i).map(p=>p.trim()).filter(Boolean);
+    return parts[0] || s;
+  };
+
+  const titleMain = splitMainLandmark(rawTitle);
+  const ntMain = norm(titleMain);
+
+  // Small alias map for known recurring landmarks (kept intentionally tiny)
+  const ALIAS = {
+    "top of the rock": "Top of the Rock Observation Deck",
+    "rockefeller": "Rockefeller Center",
+    "empire state building": "Empire State Building",
+    "statue of liberty": "Statue of Liberty",
+    "estatua de la libertad": "Statue of Liberty",
+    "ellis island": "Ellis Island",
+    "high line": "High Line",
+    "central park": "Central Park",
+    "mercado de san miguel": "Mercado de San Miguel"
+  };
+
+  const aliasKey = (()=>{
+    const k = ntMain;
+    if(k.includes("top of the rock")) return "top of the rock";
+    if(k.includes("rockefeller")) return "rockefeller";
+    if(k.includes("empire state")) return "empire state building";
+    if(k.includes("statue of liberty") || k.includes("estatua de la libertad")) return "statue of liberty";
+    if(k.includes("ellis island")) return "ellis island";
+    if(k.includes("high line")) return "high line";
+    if(k.includes("central park")) return "central park";
+    if(k.includes("mercado de san miguel")) return "mercado de san miguel";
+    return "";
+  })();
+
+  const expectedLabel = aliasKey ? ALIAS[aliasKey] : titleMain;
+  const expectedNorm  = norm(expectedLabel);
+  const expectedSig   = sigTokens(expectedLabel);
+
+  // Build query: landmark first, city as support (not dominant)
+  const cityNorm = norm(rawCity);
+  const hasCity = !!cityNorm && cityNorm.length>=3;
+
+  let queryUsed = expectedLabel;
+  if(hasCity){
+    // add city only if it helps disambiguate and isn't already present
+    const citySig = sigTokens(rawCity);
+    const cityToken = citySig[0] || "";
+    if(cityToken && !expectedNorm.includes(cityToken)){
+      queryUsed = `${expectedLabel} ${rawCity}`.trim();
+    }
+  }
+
+  // Wikipedia search (no key). Use pageimages thumbnails.
   const url = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search"
-    + "&gsrsearch=" + encodeURIComponent(q)
-    + "&gsrlimit=5"
+    + "&gsrsearch=" + encodeURIComponent(queryUsed)
+    + "&gsrlimit=8"
     + "&prop=pageimages"
     + "&piprop=thumbnail"
     + "&pithumbsize=900";
+
   try{
     const res = await fetch(url, { method:"GET" });
     if(!res.ok) return null;
     const data = await res.json();
     const pagesObj = data && data.query && data.query.pages ? data.query.pages : null;
     if(!pagesObj) return null;
-    const pages = Object.values(pagesObj).filter(Boolean);
-    // Prefer pages with thumbnail and whose title roughly matches query tokens
-    const norm = (s)=> String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
-    const nq = norm(q);
-    const qTokens = new Set(nq.split(" ").filter(t=>t.length>=3));
-    const score = (p)=>{
-      const t = norm(p.title||"");
+
+    const pages = Object.values(pagesObj).filter(Boolean).filter(p=>p.thumbnail && p.thumbnail.source && p.title);
+
+    if(!pages.length) return null;
+
+    const badGeneric = (t)=>{
+      const n = norm(t);
+      // Generic city pages / broad areas / skyline-like results
+      if(/\b(city|ciudad|manhattan|midtown|downtown|skyline|new york city|new york)\b/.test(n) && expectedSig.length>=2) return true;
+      if(/\b(avenue|street|st|road|district|borough|neighborhood)\b/.test(n) && expectedSig.length>=2) return true;
+      return false;
+    };
+
+    const badRockMusic = (t)=>{
+      const n = norm(t);
+      // "Top of the Rock" ambiguity: reject music-related pages hard
+      if(expectedNorm.includes("top of the rock") || expectedNorm.includes("rockefeller")){
+        if(/\b(band|album|song|music|musician|rock band|single)\b/.test(n)) return true;
+      }
+      return false;
+    };
+
+    const overlapCount = (aTokens, bNorm)=>{
+      let c = 0;
+      for(const tok of aTokens){ if(tok && bNorm.includes(tok)) c++; }
+      return c;
+    };
+
+    const scorePage = (p)=>{
+      const pt = String(p.title||"");
+      const pn = norm(pt);
       let sc = 0;
-      if(t === nq) sc += 20;
-      // token overlap
-      for(const tok of qTokens){ if(t.includes(tok)) sc += 2; }
-      // small penalty for overly generic titles
-      if(/\b(new york city|new york|madrid|barcelona|manhattan|city|ciudad|downtown|skyline)\b/.test(t) && qTokens.size>=2) sc -= 3;
-      // bonus if has thumbnail
-      if(p.thumbnail && p.thumbnail.source) sc += 5;
+
+      // Exact / near match
+      if(pn === expectedNorm) sc += 60;
+      if(pn.startsWith(expectedNorm)) sc += 30;
+      if(pn.includes(expectedNorm)) sc += 22;
+
+      // Token overlap (expected tokens are the ones that matter)
+      const ov = overlapCount(expectedSig, pn);
+      sc += ov * 10;
+
+      // Penalize missing core tokens (too weak match)
+      if(expectedSig.length >= 2 && ov === 0) sc -= 50;
+      if(expectedSig.length >= 3 && ov <= 1) sc -= 25;
+
+      // Penalize generic / misleading pages
+      if(badGeneric(pt)) sc -= 35;
+      if(badRockMusic(pt)) sc -= 80;
+
+      // Thumbnail bonus (already filtered but keep small)
+      sc += 6;
+
+      // Bonus if city is present AND landmark already matches
+      if(hasCity){
+        const citySig = sigTokens(rawCity);
+        const cityTok = citySig[0] || "";
+        if(cityTok && pn.includes(cityTok) && ov >= 1) sc += 4;
+      }
+
       return sc;
     };
-    const candidates = pages.filter(p=>p.thumbnail && p.thumbnail.source);
-    if(!candidates.length) return null;
-    candidates.sort((a,b)=> score(b)-score(a));
-    const best = candidates[0];
-    const src = best && best.thumbnail ? String(best.thumbnail.source||"").trim() : "";
-    if(!src) return null;
-    return src;
+
+    const ranked = pages
+      .map(p=>({ p, sc: scorePage(p) }))
+      .sort((a,b)=> b.sc - a.sc);
+
+    // Conservative acceptance threshold: ensure landmark relevance
+    const best = ranked[0];
+    if(!best || !best.p || !best.p.thumbnail || !best.p.thumbnail.source) return null;
+
+    const bestTitle = String(best.p.title||"").trim();
+    const bestSrc = String(best.p.thumbnail.source||"").trim();
+
+    // Minimum requirements
+    const bestNorm = norm(bestTitle);
+    const ovBest = overlapCount(expectedSig, bestNorm);
+
+    const minScore = 22; // conservative but allows exact/alias matches
+    const minOverlap = expectedSig.length >= 3 ? 2 : expectedSig.length >= 2 ? 1 : 0;
+
+    if(best.sc < minScore) return null;
+    if(ovBest < minOverlap && !(bestNorm === expectedNorm || bestNorm.includes(expectedNorm))) return null;
+
+    // Extra guard for "rock" ambiguity
+    if(badRockMusic(bestTitle)) return null;
+
+    return { url: bestSrc, pageTitle: bestTitle, queryUsed, score: best.sc };
   }catch(e){
     return null;
   }
 }
 
 
-const APP_BUILD = "V226C1A8S_AI_MORE_INFO_BUTTON_WIRING_FIX";
+const APP_BUILD = "V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16167,6 +16306,7 @@ __aiBuildDayBuckets(trip){
                 <span class="text-[10px] font-bold uppercase tracking-widest">Buscando imagen…</span>
               </div>
             </div>
+            <div id="${imgId}_cap" class="hidden text-[10px] font-semibold text-slate-500 tracking-wide">Imagen: Wikipedia</div>
             ${metaLine ? `<div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml(metaLine)}</div>` : ``}
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
@@ -16211,17 +16351,23 @@ __aiBuildDayBuckets(trip){
         const container = document.getElementById(imgId);
         console.log("[AI MoreInfo] Wikimedia image search start", { q, hasContainer: !!container });
         if(container && q){
-          fetchWikipediaPlaceImage(q).then((url)=>{
+          fetchWikipediaPlaceImage(title, city).then((info)=>{
             const c = document.getElementById(imgId);
             if(!c) return;
             c.classList.remove("animate-pulse");
-            if(url){
-              console.log("[AI MoreInfo] Wikimedia image OK", url);
-              c.innerHTML = `<img src="${url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" referrerpolicy="no-referrer"
+            if(info && info.url){
+              console.log("[AI MoreInfo] Wikimedia image OK", info);
+              c.innerHTML = `<img src="${info.url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" referrerpolicy="no-referrer"
                 onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold&quot;>Imagen no disponible</div>';">`;
+              const cap = document.getElementById(imgId + "_cap");
+              if(cap){
+                cap.classList.remove("hidden");
+                cap.textContent = "Imagen: Wikipedia · " + String((info && info.pageTitle) ? info.pageTitle : "").trim();
+              }
             }else{
-              console.warn("[AI MoreInfo] Wikimedia image not found");
+              console.warn("[AI MoreInfo] Wikimedia image not found or rejected", info);
               c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
+              const cap = document.getElementById(imgId + "_cap"); if(cap){ cap.classList.add("hidden"); }
             }
           }).catch((err)=>{
             const c = document.getElementById(imgId);
