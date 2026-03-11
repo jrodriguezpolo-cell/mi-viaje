@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX</title>
+<title>V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,19 +1565,11 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX
+            Build cargada: V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
           </button>
-
-<button class="tap w-full px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-800 font-semibold" id="btnGeminiKey">
-            Configurar Gemini API key
-          </button>
-<div class="rounded-2xl border border-violet-100 bg-violet-50/40 px-4 py-3 text-left text-xs text-violet-800/90">
-            La clave se guarda localmente en este dispositivo. Puedes cambiarla o borrarla cuando quieras.
-          </div>
-
 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left" id="toolsDiagnosticsPanel">
             Diagnóstico no disponible todavía.
           </div>
@@ -1609,193 +1601,8 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
-// --- A8R: Wikimedia single-image lookup (on-demand only) ---
-async function fetchWikipediaPlaceImage(placeTitle, placeCity){
-  // Returns { url, pageTitle, queryUsed, score } or null
-  const rawTitle = String(placeTitle || "").trim();
-  const rawCity  = String(placeCity || "").trim();
 
-  // Backwards compatibility: previous signature was (placeName) where caller passed "title city"
-  // If placeCity is missing and title looks like "X Y" we still try with rawTitle as the full query,
-  // but we will extract a main landmark from it.
-  if(!rawTitle) return null;
-
-  const norm = (s)=> String(s||"")
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/['"`´]/g,"")
-    .replace(/[^a-z0-9\s]/g," ")
-    .replace(/\s+/g," ")
-    .trim();
-
-  const STOP = new Set(["of","the","a","an","and","or","to","in","on","at","for","from",
-                        "de","del","la","el","los","las","y","en","al","un","una"]);
-  const tokens = (s)=> norm(s).split(" ").filter(Boolean);
-  const sigTokens = (s)=> tokens(s).filter(t=>t.length>=3 && !STOP.has(t));
-
-  const splitMainLandmark = (t)=>{
-    const s = String(t||"").trim();
-    // Split composite titles and keep the first strong chunk
-    const parts = s.split(/\s*(?:\+|&|\/|,|·|\||\band\b|\by\b)\s*/i).map(p=>p.trim()).filter(Boolean);
-    return parts[0] || s;
-  };
-
-  const titleMain = splitMainLandmark(rawTitle);
-  const ntMain = norm(titleMain);
-
-  // Small alias map for known recurring landmarks (kept intentionally tiny)
-  const ALIAS = {
-    "top of the rock": "Top of the Rock Observation Deck",
-    "rockefeller": "Rockefeller Center",
-    "empire state building": "Empire State Building",
-    "statue of liberty": "Statue of Liberty",
-    "estatua de la libertad": "Statue of Liberty",
-    "ellis island": "Ellis Island",
-    "high line": "High Line",
-    "central park": "Central Park",
-    "mercado de san miguel": "Mercado de San Miguel"
-  };
-
-  const aliasKey = (()=>{
-    const k = ntMain;
-    if(k.includes("top of the rock")) return "top of the rock";
-    if(k.includes("rockefeller")) return "rockefeller";
-    if(k.includes("empire state")) return "empire state building";
-    if(k.includes("statue of liberty") || k.includes("estatua de la libertad")) return "statue of liberty";
-    if(k.includes("ellis island")) return "ellis island";
-    if(k.includes("high line")) return "high line";
-    if(k.includes("central park")) return "central park";
-    if(k.includes("mercado de san miguel")) return "mercado de san miguel";
-    return "";
-  })();
-
-  const expectedLabel = aliasKey ? ALIAS[aliasKey] : titleMain;
-  const expectedNorm  = norm(expectedLabel);
-  const expectedSig   = sigTokens(expectedLabel);
-
-  // Build query: landmark first, city as support (not dominant)
-  const cityNorm = norm(rawCity);
-  const hasCity = !!cityNorm && cityNorm.length>=3;
-
-  let queryUsed = expectedLabel;
-  if(hasCity){
-    // add city only if it helps disambiguate and isn't already present
-    const citySig = sigTokens(rawCity);
-    const cityToken = citySig[0] || "";
-    if(cityToken && !expectedNorm.includes(cityToken)){
-      queryUsed = `${expectedLabel} ${rawCity}`.trim();
-    }
-  }
-
-  // Wikipedia search (no key). Use pageimages thumbnails.
-  const url = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search"
-    + "&gsrsearch=" + encodeURIComponent(queryUsed)
-    + "&gsrlimit=8"
-    + "&prop=pageimages"
-    + "&piprop=thumbnail"
-    + "&pithumbsize=900";
-
-  try{
-    const res = await fetch(url, { method:"GET" });
-    if(!res.ok) return null;
-    const data = await res.json();
-    const pagesObj = data && data.query && data.query.pages ? data.query.pages : null;
-    if(!pagesObj) return null;
-
-    const pages = Object.values(pagesObj).filter(Boolean).filter(p=>p.thumbnail && p.thumbnail.source && p.title);
-
-    if(!pages.length) return null;
-
-    const badGeneric = (t)=>{
-      const n = norm(t);
-      // Generic city pages / broad areas / skyline-like results
-      if(/\b(city|ciudad|manhattan|midtown|downtown|skyline|new york city|new york)\b/.test(n) && expectedSig.length>=2) return true;
-      if(/\b(avenue|street|st|road|district|borough|neighborhood)\b/.test(n) && expectedSig.length>=2) return true;
-      return false;
-    };
-
-    const badRockMusic = (t)=>{
-      const n = norm(t);
-      // "Top of the Rock" ambiguity: reject music-related pages hard
-      if(expectedNorm.includes("top of the rock") || expectedNorm.includes("rockefeller")){
-        if(/\b(band|album|song|music|musician|rock band|single)\b/.test(n)) return true;
-      }
-      return false;
-    };
-
-    const overlapCount = (aTokens, bNorm)=>{
-      let c = 0;
-      for(const tok of aTokens){ if(tok && bNorm.includes(tok)) c++; }
-      return c;
-    };
-
-    const scorePage = (p)=>{
-      const pt = String(p.title||"");
-      const pn = norm(pt);
-      let sc = 0;
-
-      // Exact / near match
-      if(pn === expectedNorm) sc += 60;
-      if(pn.startsWith(expectedNorm)) sc += 30;
-      if(pn.includes(expectedNorm)) sc += 22;
-
-      // Token overlap (expected tokens are the ones that matter)
-      const ov = overlapCount(expectedSig, pn);
-      sc += ov * 10;
-
-      // Penalize missing core tokens (too weak match)
-      if(expectedSig.length >= 2 && ov === 0) sc -= 50;
-      if(expectedSig.length >= 3 && ov <= 1) sc -= 25;
-
-      // Penalize generic / misleading pages
-      if(badGeneric(pt)) sc -= 35;
-      if(badRockMusic(pt)) sc -= 80;
-
-      // Thumbnail bonus (already filtered but keep small)
-      sc += 6;
-
-      // Bonus if city is present AND landmark already matches
-      if(hasCity){
-        const citySig = sigTokens(rawCity);
-        const cityTok = citySig[0] || "";
-        if(cityTok && pn.includes(cityTok) && ov >= 1) sc += 4;
-      }
-
-      return sc;
-    };
-
-    const ranked = pages
-      .map(p=>({ p, sc: scorePage(p) }))
-      .sort((a,b)=> b.sc - a.sc);
-
-    // Conservative acceptance threshold: ensure landmark relevance
-    const best = ranked[0];
-    if(!best || !best.p || !best.p.thumbnail || !best.p.thumbnail.source) return null;
-
-    const bestTitle = String(best.p.title||"").trim();
-    const bestSrc = String(best.p.thumbnail.source||"").trim();
-
-    // Minimum requirements
-    const bestNorm = norm(bestTitle);
-    const ovBest = overlapCount(expectedSig, bestNorm);
-
-    const minScore = 22; // conservative but allows exact/alias matches
-    const minOverlap = expectedSig.length >= 3 ? 2 : expectedSig.length >= 2 ? 1 : 0;
-
-    if(best.sc < minScore) return null;
-    if(ovBest < minOverlap && !(bestNorm === expectedNorm || bestNorm.includes(expectedNorm))) return null;
-
-    // Extra guard for "rock" ambiguity
-    if(badRockMusic(bestTitle)) return null;
-
-    return { url: bestSrc, pageTitle: bestTitle, queryUsed, score: best.sc };
-  }catch(e){
-    return null;
-  }
-}
-
-
-const APP_BUILD = "V226C1A8T_AI_WIKIMEDIA_EXACT_LANDMARK_MATCH_FIX";
+const APP_BUILD = "V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14430,114 +14237,6 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const resetBtn = $("toolsReset");
   const copyAtoBBtn = $("btnCopyAtoB");
   const copyBtoABtn = $("btnCopyBtoA");
-  const geminiKeyBtn = $("btnGeminiKey");
-
-  function __mvGetGeminiKey(){
-    try{
-      const candidates = ["miViaje.geminiApiKey","mv.geminiApiKey","GEMINI_API_KEY"];
-      for (const k of candidates){
-        const v = localStorage.getItem(k);
-        if (v && String(v).trim()) return { key: String(v).trim(), source: k };
-      }
-    }catch(e){}
-    return { key: "", source: "" };
-  }
-
-  function __mvSetGeminiKey(newKey){
-    const v = String(newKey || "").trim();
-    try{
-      if (!v) return false;
-      localStorage.setItem("miViaje.geminiApiKey", v);
-      // Compat (no rompe nada si no se usa aún)
-      localStorage.setItem("mv.geminiApiKey", v);
-      localStorage.setItem("GEMINI_API_KEY", v);
-      console.log("[GeminiKey] guardada en localStorage (miViaje.geminiApiKey)");
-      return true;
-    }catch(e){
-      console.error("[GeminiKey] error guardando", e);
-      return false;
-    }
-  }
-
-  function __mvClearGeminiKey(){
-    try{
-      localStorage.removeItem("miViaje.geminiApiKey");
-      localStorage.removeItem("mv.geminiApiKey");
-      localStorage.removeItem("GEMINI_API_KEY");
-      console.log("[GeminiKey] borrada de localStorage");
-      return true;
-    }catch(e){
-      console.error("[GeminiKey] error borrando", e);
-      return false;
-    }
-  }
-
-  function openGeminiKeyModal(){
-    try{
-      closeTools();
-      const cur = __mvGetGeminiKey();
-      const masked = cur.key ? ("•".repeat(Math.min(10, cur.key.length)) + (cur.key.length>10 ? "…" : "")) : "—";
-      const body = `
-        <div class="space-y-3">
-          <div class="text-sm text-slate-700">
-            Configura tu <b>Gemini API key</b> para futuras funciones de imagen IA.
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-            Estado actual: <span class="font-extrabold text-slate-900">${masked}</span>
-            ${cur.source ? `<span class="ml-2 opacity-75">(desde ${escapeHtml(cur.source)})</span>` : ``}
-          </div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Nueva API key</label>
-          <input id="geminiKeyInput" type="password" placeholder="Pega aquí tu API key…" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-semibold text-sm" autocomplete="off" />
-          <div id="geminiKeyStatus" class="text-xs text-slate-500"></div>
-          <div class="text-[11px] text-slate-500">
-            La clave se guarda localmente en este dispositivo (localStorage). No se sube a ningún servidor desde esta app.
-          </div>
-        </div>
-      `;
-      const btnCancel = document.createElement("button");
-      btnCancel.type = "button";
-      btnCancel.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
-      btnCancel.textContent = "Cancelar";
-      btnCancel.addEventListener("click", ()=>{ try{ closeModal(); }catch{} });
-
-      const btnSave = document.createElement("button");
-      btnSave.type = "button";
-      btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold";
-      btnSave.textContent = "Guardar";
-      btnSave.addEventListener("click", ()=>{
-        const inp = document.getElementById("geminiKeyInput");
-        const status = document.getElementById("geminiKeyStatus");
-        const v = inp ? String(inp.value||"").trim() : "";
-        if (!v){
-          if(status) status.textContent = "No se ha introducido ninguna clave.";
-          console.warn("[GeminiKey] guardar: clave vacía");
-          return;
-        }
-        const ok = __mvSetGeminiKey(v);
-        if(status) status.textContent = ok ? "Clave guardada." : "No se pudo guardar la clave.";
-        if(ok){
-          setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
-        }
-      });
-
-      const btnClear = document.createElement("button");
-      btnClear.type = "button";
-      btnClear.className = "tap px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-extrabold";
-      btnClear.textContent = "Borrar";
-      btnClear.addEventListener("click", ()=>{
-        const status = document.getElementById("geminiKeyStatus");
-        const ok = __mvClearGeminiKey();
-        if(status) status.textContent = ok ? "Clave borrada." : "No se pudo borrar la clave.";
-        setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
-      });
-
-      const footer = cur.key ? [btnCancel, btnClear, btnSave] : [btnCancel, btnSave];
-      showModal("Gemini API key", body, footer);
-    }catch(e){
-      console.error("[GeminiKey] open modal error", e);
-    }
-  }
-
 
   function openTripsAndFocus(targetId){
     closeTools();
@@ -14554,8 +14253,6 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
   if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
-  if (geminiKeyBtn) geminiKeyBtn.addEventListener("click", openGeminiKeyModal);
-
 
   const __deepClone = (obj) => {
     try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
@@ -16218,174 +15915,7 @@ __aiBuildDayBuckets(trip){
       return { count };
     },
 
-    
-    // === A8R: "Más info" premium textual + Wikimedia image (on-demand, non-invasive) ===
-    __aiOpenMoreInfoCard(item){
-      try{
-        const it = item || {};
-        const title = String(it.title || it.name || "Más info").trim() || "Más info";
-        const city = String(it.city || it.placeCity || it.contextCity || it.context || "").trim();
-        const type = String(it.type || it.category || it.kind || "").trim();
-        const summary = String(it.summary || "").trim();
-        const why = String(it.whyRecommended || it.why || "").trim();
-
-        const norm = (s)=> String(s||"").trim();
-        const lc = (s)=> norm(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-        const keyFromTitle = (t)=>{
-          const k = lc(t);
-          if(k.includes("statue of liberty") || k.includes("estatua de la libertad")) return "statue of liberty";
-          if(k.includes("central park")) return "central park";
-          if(k.includes("empire state")) return "empire state building";
-          if(k.includes("top of the rock") || k.includes("rockefeller")) return "top of the rock";
-          if(k.includes("high line")) return "high line";
-          if(k.includes("chelsea market")) return "chelsea market";
-          if(k.includes("mercado de san miguel")) return "mercado de san miguel";
-          return "";
-        };
-
-        const catalog = {
-          "statue of liberty":{
-            what:"Icono de Nueva York situado en Liberty Island. Uno de los monumentos más reconocibles de EE. UU. y símbolo histórico de bienvenida.",
-            special:"La experiencia del ferry y las vistas del skyline lo convierten en una visita muy redonda.",
-            context:"Inaugurada en 1886, fue un regalo de Francia a EE. UU. y representa libertad y esperanza para quienes llegaron por Ellis Island.",
-            tip:"Reserva el ferry con antelación si quieres acceso a pedestal/corona. Calcula 2–3 h con traslados."
-          },
-          "central park":{
-            what:"Parque urbano gigante en el corazón de Manhattan, ideal para descansar entre visitas y caminar sin prisas.",
-            special:"Tiene zonas muy distintas (lagos, praderas, puentes, miradores) y cambia mucho según la estación.",
-            context:"Diseñado en el siglo XIX, es un hito del urbanismo y uno de los parques más filmados del mundo.",
-            tip:"Con poco tiempo: 59th St → The Mall → Bethesda Terrace. Mejor a primera hora o al atardecer."
-          },
-          "empire state building":{
-            what:"Rascacielos art déco con miradores en altura y una de las postales clásicas de Manhattan.",
-            special:"Su ubicación céntrica ofrece una panorámica muy equilibrada de la ciudad.",
-            context:"Fue el edificio más alto del mundo al inaugurarse en 1931 y se convirtió en símbolo de la ciudad.",
-            tip:"Compra entrada con hora. Suele ir mejor a primera hora o en días despejados; de noche también es muy buena opción."
-          },
-          "top of the rock":{
-            what:"Mirador del Rockefeller Center con vistas abiertas de Midtown (incluye Central Park y el Empire State).",
-            special:"Muy fotogénico: ves Central Park y además tienes el Empire State dentro de la foto.",
-            context:"El Rockefeller Center nació en los años 30 como gran complejo cultural y comercial; su mirador se popularizó como alternativa premium.",
-            tip:"Reserva atardecer si quieres golden hour. Lleva abrigo: arriba suele hacer viento."
-          },
-          "high line":{
-            what:"Parque elevado construido sobre una antigua vía férrea, con paseo lineal y vistas urbanas de Chelsea.",
-            special:"Combina arquitectura, diseño y ambiente local. Perfecto para paseo suave entre barrios.",
-            context:"La High Line es un ejemplo de regeneración urbana: de infraestructura industrial a espacio verde contemporáneo.",
-            tip:"Mejor por la mañana o al final del día. Combínalo con una parada en Chelsea Market si te apetece comer algo."
-          },
-          "chelsea market":{
-            what:"Mercado gastronómico muy popular en Chelsea, ideal para comer variado en un solo sitio.",
-            special:"Gran variedad de puestos y ambiente animado; buen plan si llueve o quieres algo cómodo.",
-            context:"Ubicado en un antiguo complejo industrial, se ha convertido en un icono foodie de la zona.",
-            tip:"Ve fuera de horas punta (antes de 12:30 o después de 14:30)."
-          },
-          "mercado de san miguel":{
-            what:"Mercado gastronómico histórico en el centro de Madrid, famoso por sus tapas y ambiente.",
-            special:"Muy fácil de encajar: es ‘picar algo’ en un entorno bonito y con mucha variedad.",
-            context:"Nació como mercado de abastos y hoy es un punto clásico para probar sabores en poco tiempo.",
-            tip:"Suele llenarse: ve temprano o entre horas. Si hay mucha cola, usa el plan como parada rápida."
-          }
-        };
-
-        const catKey = keyFromTitle(title);
-        const infer = (fallback, k)=> (catKey && catalog[catKey] && catalog[catKey][k]) ? catalog[catKey][k] : fallback;
-
-        const whatIs = infer(summary || "Información ampliada no disponible.", "what");
-        const special = infer("Es una propuesta muy representativa y fácil de encajar en tu ruta.", "special");
-        const context = infer("Contexto: propuesta seleccionada por su interés turístico y relevancia en el destino.", "context");
-        const proTip  = infer("Consejo: revisa horarios y reserva online si es posible para evitar esperas.", "tip");
-
-        const imgId = `mvAiWikiImg_${Math.random().toString(36).slice(2,9)}`;
-
-        const metaLine = [city, type].filter(Boolean).join(" · ");
-        const html = `
-          <div class="space-y-3 pb-4">
-            <div id="${imgId}" class="w-full h-44 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 relative animate-pulse">
-              <div class="absolute inset-0 flex items-center justify-center text-slate-400">
-                <span class="text-[10px] font-bold uppercase tracking-widest">Buscando imagen…</span>
-              </div>
-            </div>
-            <div id="${imgId}_cap" class="hidden text-[10px] font-semibold text-slate-500 tracking-wide">Imagen: Wikipedia</div>
-            ${metaLine ? `<div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml(metaLine)}</div>` : ``}
-
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
-              <div class="text-xs font-extrabold text-slate-700 uppercase">Qué es</div>
-              <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(whatIs)}</div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-3">
-              <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                <div class="text-xs font-extrabold text-slate-700 uppercase">Lo especial</div>
-                <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(special)}</div>
-              </div>
-              <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                <div class="text-xs font-extrabold text-slate-700 uppercase">Contexto</div>
-                <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(context)}</div>
-              </div>
-            </div>
-
-            <div class="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
-              <div class="text-xs font-extrabold text-violet-700 uppercase">Consejo pro</div>
-              <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(proTip)}</div>
-            </div>
-
-            ${why ? `<div class="rounded-2xl border border-slate-200 bg-white p-3">
-              <div class="text-xs font-extrabold text-slate-700 uppercase">Por qué la IA lo recomienda</div>
-              <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(why)}</div>
-            </div>` : ``}
-          </div>
-        `;
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
-        btn.textContent = "Volver";
-        btn.addEventListener("click", ()=>{ try{ closeModal(); }catch{} });
-
-        console.log("[AI MoreInfo] Open", { title, city });
-        showModal(title, html, [btn]);
-
-        // Wikimedia lookup after opening (never blocks shell/bindings)
-        const q = (city ? `${title} ${city}` : title).trim();
-        const container = document.getElementById(imgId);
-        console.log("[AI MoreInfo] Wikimedia image search start", { q, hasContainer: !!container });
-        if(container && q){
-          fetchWikipediaPlaceImage(title, city).then((info)=>{
-            const c = document.getElementById(imgId);
-            if(!c) return;
-            c.classList.remove("animate-pulse");
-            if(info && info.url){
-              console.log("[AI MoreInfo] Wikimedia image OK", info);
-              c.innerHTML = `<img src="${info.url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" referrerpolicy="no-referrer"
-                onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold&quot;>Imagen no disponible</div>';">`;
-              const cap = document.getElementById(imgId + "_cap");
-              if(cap){
-                cap.classList.remove("hidden");
-                cap.textContent = "Imagen: Wikipedia · " + String((info && info.pageTitle) ? info.pageTitle : "").trim();
-              }
-            }else{
-              console.warn("[AI MoreInfo] Wikimedia image not found or rejected", info);
-              c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
-              const cap = document.getElementById(imgId + "_cap"); if(cap){ cap.classList.add("hidden"); }
-            }
-          }).catch((err)=>{
-            const c = document.getElementById(imgId);
-            if(!c) return;
-            console.warn("[AI MoreInfo] Wikimedia image failed", err);
-            c.classList.remove("animate-pulse");
-            c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
-          });
-        }else if(container){
-          container.classList.remove("animate-pulse");
-          container.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
-        }
-      }catch(err){
-        console.error("[AI MoreInfo] error", err);
-      }
-    },
-
-loadTripCities(opts){
+    loadTripCities(opts){
       this.state.actionInfoHtml = "";
       this.state.actionInfoStatus = "";
       this.renderShell();
@@ -16521,9 +16051,7 @@ loadTripCities(opts){
                     <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
-                    <div class="mt-2 flex items-center gap-2">
-                      <button type="button" class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-mi-title="${escapeHtml(item.title)}" data-ai-mi-city="${escapeHtml(item.city||'')}" data-ai-mi-type="${escapeHtml(item.type||'')}" data-ai-mi-summary="${escapeHtml(item.summary||'')}" data-ai-mi-why="${escapeHtml(item.why||'')}" data-ai-mi-time="${escapeHtml(item.time||'')}" data-ai-mi-date="${escapeHtml(item.date||'')}" data-ai-mi-duration="${escapeHtml(item.duration||'')}" >Más info</button>
-                    </div>
+                    <button type="button" class="tap mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-extrabold text-slate-900" data-ai-moreinfo="${escapeHtml(item.id)}">Más info</button>
                   </div>
                 </label>`).join("")}
             </div>
@@ -16536,29 +16064,37 @@ loadTripCities(opts){
             else delete this.state.selectedKeys[key];
           });
         });
-      }
-      
-      // A8R: bind "Más info" buttons (idempotente, no afecta al shell IA)
-      results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
-        if(btn.__aiMoreInfoBound) return;
-        btn.__aiMoreInfoBound = true;
-        btn.addEventListener("click", (ev)=>{
-          ev.preventDefault(); ev.stopPropagation();
-          const title = String(btn.getAttribute("data-ai-mi-title")||"").trim();
-          const city  = String(btn.getAttribute("data-ai-mi-city")||"").trim();
-          const type  = String(btn.getAttribute("data-ai-mi-type")||"").trim();
-          const summary = String(btn.getAttribute("data-ai-mi-summary")||"").trim();
-          const why = String(btn.getAttribute("data-ai-mi-why")||"").trim();
-          const date = String(btn.getAttribute("data-ai-mi-date")||"").trim();
-          const time = String(btn.getAttribute("data-ai-mi-time")||"").trim();
-          const duration = String(btn.getAttribute("data-ai-mi-duration")||"").trim();
-          const id = String(btn.getAttribute("data-ai-moreinfo")||"").trim();
-          const item = { id, title, city, type, summary, why, date, time, duration };
-          try{ this.__aiOpenMoreInfoCard(item); }catch(e){ console.error(e); }
-        }, true);
-      });
 
-const footer = document.getElementById("aiActionFooter");
+        results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+            const pid = String(btn.getAttribute("data-ai-moreinfo") || "");
+            const title = String(btn.closest("label")?.querySelector(".font-extrabold")?.textContent || "");
+            console.log("AI more info opened", { id: pid, title });
+            console.log("generateGeminiImage available:", (typeof generateGeminiImage === "function"));
+            const item = (()=> {
+              try{
+                const groups = Array.isArray(this.state.cityGroups) ? this.state.cityGroups : [];
+                for(const g of groups){
+                  const ps = Array.isArray(g && g.proposals) ? g.proposals : [];
+                  for(const p of ps){
+                    if(String(p && p.id) === pid) return p;
+                  }
+                }
+              }catch{}
+              return null;
+            })();
+            if(!item){ console.warn("AI more info: proposal not found in cityGroups", pid); return; }
+            try{
+              if(typeof __aiOpenAiProposalTextInfo === "function") __aiOpenAiProposalTextInfo(item);
+              else console.warn("__aiOpenAiProposalTextInfo not available");
+            }catch(err){
+              console.error("AI more info open error", err);
+            }
+          });
+        });
+      }
+      const footer = document.getElementById("aiActionFooter");
       if(footer){
         footer.innerHTML = "";
         const refresh = document.createElement("button");
@@ -17038,10 +16574,8 @@ loadTripGapsFill(opts){
                       <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
                     </div>
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    <button type="button" class="tap mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-extrabold text-slate-900" data-ai-moreinfo="${escapeHtml(item.id)}">Más info</button>
                     <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
-                    <div class="mt-2 flex items-center gap-2">
-                      <button type="button" class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-mi-title="${escapeHtml(item.title)}" data-ai-mi-city="${escapeHtml(item.city||'')}" data-ai-mi-type="${escapeHtml(item.type||'')}" data-ai-mi-summary="${escapeHtml(item.summary||'')}" data-ai-mi-why="${escapeHtml(item.why||'')}" data-ai-mi-time="${escapeHtml(item.time||'')}" data-ai-mi-date="${escapeHtml(item.date||'')}" data-ai-mi-duration="${escapeHtml(item.duration||'')}" >Más info</button>
-                    </div>
                   </div>
                 </label>
               `).join("")}
@@ -17057,30 +16591,38 @@ loadTripGapsFill(opts){
             else delete this.state.selectedKeys[key];
           });
         });
+
+        results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+            const pid = String(btn.getAttribute("data-ai-moreinfo") || "");
+            const title = String(btn.closest("label")?.querySelector(".font-extrabold")?.textContent || "");
+            console.log("AI more info opened", { id: pid, title });
+            console.log("generateGeminiImage available:", (typeof generateGeminiImage === "function"));
+            const item = (()=> {
+              try{
+                const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
+                for(const b of blocks){
+                  const ps = Array.isArray(b && b.proposals) ? b.proposals : [];
+                  for(const p of ps){
+                    if(String(p && p.id) === pid) return p;
+                  }
+                }
+              }catch{}
+              return null;
+            })();
+            if(!item){ console.warn("AI more info: proposal not found in gapBlocks", pid); return; }
+            try{
+              if(typeof __aiOpenAiProposalTextInfo === "function") __aiOpenAiProposalTextInfo(item);
+              else console.warn("__aiOpenAiProposalTextInfo not available");
+            }catch(err){
+              console.error("AI more info open error", err);
+            }
+          });
+        });
       }
 
-      
-      // A8R: bind "Más info" buttons (idempotente, no afecta al shell IA)
-      results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
-        if(btn.__aiMoreInfoBound) return;
-        btn.__aiMoreInfoBound = true;
-        btn.addEventListener("click", (ev)=>{
-          ev.preventDefault(); ev.stopPropagation();
-          const title = String(btn.getAttribute("data-ai-mi-title")||"").trim();
-          const city  = String(btn.getAttribute("data-ai-mi-city")||"").trim();
-          const type  = String(btn.getAttribute("data-ai-mi-type")||"").trim();
-          const summary = String(btn.getAttribute("data-ai-mi-summary")||"").trim();
-          const why = String(btn.getAttribute("data-ai-mi-why")||"").trim();
-          const date = String(btn.getAttribute("data-ai-mi-date")||"").trim();
-          const time = String(btn.getAttribute("data-ai-mi-time")||"").trim();
-          const duration = String(btn.getAttribute("data-ai-mi-duration")||"").trim();
-          const id = String(btn.getAttribute("data-ai-moreinfo")||"").trim();
-          const item = { id, title, city, type, summary, why, date, time, duration };
-          try{ this.__aiOpenMoreInfoCard(item); }catch(e){ console.error(e); }
-        }, true);
-      });
-
-const footer = document.getElementById("aiActionFooter");
+      const footer = document.getElementById("aiActionFooter");
       if(footer){
         footer.innerHTML = "";
         const other = document.createElement("button");
@@ -18072,6 +17614,249 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
     if(__v195MealsField(a)) __v195SyncAndKeep(a);
   }, {passive:true});
 })();
+
+/* ============================================================
+   V226C1A8J_AI_MORE_INFO_GEMINI_IMAGE_DIAGNOSTIC_SAFE_TEST
+   AI "Más info" + Gemini Imagen 4.0 (diagnóstico seguro)
+   - Build de test: NO persistencia, NO shell IA changes.
+   ============================================================ */
+
+async function generateGeminiImage(placeName){
+  const pn = String(placeName || "").trim();
+  if(!pn){ console.warn("Gemini image: empty placeName"); return null; }
+  console.log("Gemini image request started for:", pn);
+  try{
+    const apiKey = String(
+      (localStorage.getItem("miViaje.geminiApiKey") || localStorage.getItem("mv.geminiApiKey") || localStorage.getItem("GEMINI_API_KEY") || "")
+    ).trim();
+    if(!apiKey){
+      console.warn("Gemini image: missing API key (set miViaje.geminiApiKey in localStorage)");
+      return null;
+    }
+
+    const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=" + encodeURIComponent(apiKey);
+
+    const prompt = [
+      "Professional high-resolution realistic tourist photo.",
+      "A clear, recognizable view of the landmark/place:",
+      pn + ".",
+      "Realistic lighting, natural colors, photographic style.",
+      "No abstract art, no decorative patterns, no minimalist monochrome background, no text, no logos."
+    ].join(" ");
+
+    const payload = {
+      instances: [{ prompt }],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: "1:1"
+      }
+    };
+
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    let data = null;
+    try{ data = await resp.json(); }catch(e){ data = null; }
+
+    if(!resp.ok){
+      console.error("Gemini image failed", { status: resp.status, statusText: resp.statusText, data });
+      return null;
+    }
+
+    const b64 = data && data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded;
+    if(!b64){
+      console.warn("Gemini image: no bytesBase64Encoded", data);
+      return null;
+    }
+
+    console.log("Gemini image success");
+    return "data:image/png;base64," + b64;
+  } catch(err){
+    console.error("Gemini image failed", err);
+    return null;
+  }
+}
+
+function __aiOpenAiProposalTextInfo(item){
+  try {
+    const title = String(item && item.title ? item.title : "Detalle");
+    const city = String(item && (item.city || item.placeCity || item.contextCity) ? (item.city || item.placeCity || item.contextCity) : "");
+    const type = String(item && (item.type || item.category || item.kind) ? (item.type || item.category || item.kind) : "");
+    const summary = String(item && item.summary ? item.summary : "");
+    const why = String(item && (item.whyRecommended || item.why) ? (item.whyRecommended || item.why) : "");
+    const tipRaw = String(item && (item.proTip || item.tip || item.consejo) ? (item.proTip || item.tip || item.consejo) : "");
+    const aboutRaw = String(item && (item.aboutPlace || item.about) ? (item.aboutPlace || item.about) : "");
+
+    console.log("AI more info opened", { title, city });
+
+    const norm = (s) => String(s || "").trim();
+    const lc = (s) => norm(s).toLowerCase();
+
+    // catálogo mínimo (texto premium, sin tocar shell)
+    const catalog = {
+      "statue of liberty": {
+        what: "Icono de Nueva York situado en Liberty Island. Es uno de los monumentos más reconocibles de EE. UU. y un símbolo histórico de bienvenida.",
+        special: "Las vistas del skyline y la experiencia del ferry hacen que merezca la pena aunque no subas al pedestal.",
+        context: "Fue inaugurada en 1886 y es un regalo de Francia a Estados Unidos. Representa libertad y esperanza para quienes llegaron por Ellis Island.",
+        tip: "Reserva ferry con antelación (las franjas tempranas suelen ir mejor). Calcula 2–3 h con traslados. Lleva documento si has comprado acceso a pedestal/corona."
+      },
+      "central park": {
+        what: "Parque urbano enorme en el corazón de Manhattan, perfecto para desconectar entre visitas y caminar sin prisas.",
+        special: "Tiene rincones muy distintos (lagos, praderas, puentes, miradores) y cambia muchísimo según la estación.",
+        context: "Diseñado en el siglo XIX, es un ejemplo clave de parque urbano planificado y ha sido escenario de innumerables películas.",
+        tip: "Si vas con poco tiempo, entra por 59th St y recorre Bethesda Terrace + The Mall. Mejor a primera hora o al atardecer para evitar multitudes."
+      },
+      "empire state building": {
+        what: "Rascacielos emblemático de estilo art déco con miradores en altura y una de las postales clásicas de Manhattan.",
+        special: "Su ubicación céntrica ofrece una panorámica equilibrada de la ciudad.",
+        context: "Inaugurado en 1931, fue el edificio más alto del mundo y se convirtió en símbolo de la ambición arquitectónica neoyorquina.",
+        tip: "Compra entrada con hora para evitar colas. Suele ir mejor a primera hora o en días despejados."
+      },
+      "top of the rock": {
+        what: "Mirador del Rockefeller Center con vistas abiertas de Midtown, incluyendo Central Park y el Empire State.",
+        special: "Muy fotogénico: Central Park + Empire State en la misma perspectiva.",
+        context: "El Rockefeller Center nació en los años 30 como gran complejo cultural y comercial; su mirador se popularizó como alternativa premium.",
+        tip: "Elige atardecer si quieres golden hour, pero reserva. Suele hacer viento: lleva algo de abrigo."
+      }
+    };
+
+    const keyFromTitle = (t) => {
+      const k = lc(t);
+      if (k.includes("statue of liberty") || k.includes("estatua de la libertad")) return "statue of liberty";
+      if (k.includes("central park")) return "central park";
+      if (k.includes("empire state")) return "empire state building";
+      if (k.includes("top of the rock") || k.includes("rockefeller")) return "top of the rock";
+      return "";
+    };
+
+    const inferredType = () => {
+      const t = lc(type + " " + title + " " + summary);
+      if (t.includes("museum") || t.includes("museo")) return "museo";
+      if (t.includes("park") || t.includes("parque")) return "parque";
+      if (t.includes("viewpoint") || t.includes("mirador") || t.includes("observatory") || t.includes("observatorio")) return "mirador";
+      if (t.includes("neighborhood") || t.includes("barrio")) return "barrio";
+      if (t.includes("bridge") || t.includes("puente")) return "puente";
+      if (t.includes("cathedral") || t.includes("catedral") || t.includes("church") || t.includes("iglesia")) return "templo";
+      if (t.includes("market") || t.includes("mercado")) return "mercado";
+      if (t.includes("monument") || t.includes("monumento") || t.includes("statue") || t.includes("estatua")) return "monumento";
+      return "";
+    };
+
+    const whatIs = (() => {
+      const catKey = keyFromTitle(title);
+      if (catKey && catalog[catKey]) return catalog[catKey].what;
+      if (norm(aboutRaw)) return aboutRaw;
+      const t = inferredType();
+      if (t === "museo") return "Un museo ideal para ver colecciones destacadas y entender mejor la cultura local.";
+      if (t === "parque") return "Un parque o zona verde para pasear, descansar y ver otra cara de la ciudad.";
+      if (t === "mirador") return "Un mirador/observatorio con vistas amplias, pensado para fotos y orientación de la ciudad.";
+      if (t === "barrio") return "Un barrio con personalidad propia para pasear, descubrir ambiente y sitios con encanto.";
+      if (t === "puente") return "Un puente emblemático con buenas vistas y fotos clásicas.";
+      if (t === "templo") return "Un templo con interés arquitectónico y ambiente interior tranquilo.";
+      if (t === "mercado") return "Un mercado popular para picar algo y ver la vida local de cerca.";
+      if (t === "monumento") return "Un monumento destacado y muy representativo de la ciudad.";
+      return summary ? summary : "Información ampliada no disponible.";
+    })();
+
+    const special = (() => {
+      const catKey = keyFromTitle(title);
+      if (catKey && catalog[catKey]) return catalog[catKey].special;
+      const t = inferredType();
+      if (t === "museo") return "Suele merecer la pena si buscas una visita de interior de calidad.";
+      if (t === "parque") return "Buen plan para bajar el ritmo entre visitas intensas.";
+      if (t === "mirador") return "Ideal para fotos del skyline y perspectiva de la ciudad.";
+      return "Es una propuesta muy representativa y fácil de encajar en tu ruta.";
+    })();
+
+    const context = (() => {
+      const catKey = keyFromTitle(title);
+      if (catKey && catalog[catKey]) return catalog[catKey].context;
+      return "La propuesta se elige por su relevancia turística y el encaje con tu ruta.";
+    })();
+
+    const proTip = (() => {
+      const catKey = keyFromTitle(title);
+      if (catKey && catalog[catKey]) return catalog[catKey].tip;
+      if (norm(tipRaw)) return tipRaw;
+      return "Consejo: revisa horarios y reserva online si es posible para evitar esperas.";
+    })();
+
+    const imgContainerId = "aiImg_" + Math.random().toString(36).slice(2, 10);
+
+    const html = `
+      <div class="space-y-3 pb-4">
+        <div id="${imgContainerId}" class="w-full h-44 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 relative">
+          <div class="absolute inset-0 flex items-center justify-center text-slate-400">
+            <span class="text-[10px] font-bold uppercase tracking-widest">Generando vista…</span>
+          </div>
+        </div>
+
+        ${city || type ? `<div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml([city, type].filter(Boolean).join(" · "))}</div>` : ``}
+
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+          <div class="text-xs font-extrabold text-slate-700 uppercase">Qué es</div>
+          <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(whatIs)}</div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-3">
+            <div class="text-xs font-extrabold text-slate-700 uppercase">Lo especial</div>
+            <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(special)}</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-3">
+            <div class="text-xs font-extrabold text-slate-700 uppercase">Contexto</div>
+            <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(context)}</div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-violet-100 bg-violet-50/50 p-3">
+          <div class="text-xs font-extrabold text-violet-700 uppercase">Consejo pro</div>
+          <div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(proTip)}</div>
+        </div>
+
+        ${why ? `<div class="rounded-2xl border border-slate-200 bg-white p-3"><div class="text-xs font-extrabold text-slate-700 uppercase">Por qué la IA lo recomienda</div><div class="mt-1 text-sm text-slate-700 leading-snug">${escapeHtml(why)}</div></div>` : ``}
+      </div>
+    `;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+    btn.textContent = "Volver";
+    btn.addEventListener("click", () => { try { closeModal(); } catch {} });
+
+    showModal(title, html, [btn]);
+
+    const container = document.getElementById(imgContainerId);
+    console.log("AI image container found:", !!container);
+    console.log("generateGeminiImage available:", (typeof generateGeminiImage === "function"));
+
+    if(!container) return;
+
+    // Lanza generación asíncrona (no bloquea UI)
+    (async ()=>{
+      const placeName = String([title, city].filter(Boolean).join(" ")).trim();
+      try{
+        const imgSrc = await generateGeminiImage(placeName);
+        if(imgSrc){
+          container.innerHTML = `<img src="${imgSrc}" class="w-full h-full object-cover" alt="${escapeHtml(title)}" />`;
+          console.log("Gemini image painted");
+        } else {
+          container.classList.add("hidden");
+          console.warn("Gemini image failed -> hide image block");
+        }
+      } catch(err) {
+        container.classList.add("hidden");
+        console.error("Gemini image failed", err);
+      }
+    })();
+  } catch (err) {
+    console.error("AI more info error", err);
+  }
+}
+
 </script>
 </body>
 </html>
