@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L</title>
+<title>V226C1A8W_AI_MORE_INFO_RESTORE_PREMIUM_TEXT_KEEP_COMMONS_OPTIONAL</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8W_AI_MORE_INFO_RESTORE_PREMIUM_TEXT_KEEP_COMMONS_OPTIONAL" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8W_AI_MORE_INFO_RESTORE_PREMIUM_TEXT_KEEP_COMMONS_OPTIONAL</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L
+            Build cargada: V226C1A8W_AI_MORE_INFO_RESTORE_PREMIUM_TEXT_KEEP_COMMONS_OPTIONAL
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L";
+const APP_BUILD = "V226C1A8W_AI_MORE_INFO_RESTORE_PREMIUM_TEXT_KEEP_COMMONS_OPTIONAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14998,14 +14998,100 @@ function openAiPlaceMoreInfoCard(item, city){
 
     const title = (item && (item.title || item.name)) ? (item.title || item.name) : "Lugar";
     const summary = (item && (item.summary || item.description)) ? (item.summary || item.description) : "Lugar de interés turístico.";
-    const why = (item && item.why) ? item.why : (city ? `Es un punto clave dentro de tu ruta por ${city}.` : "Encaja bien como visita en tu ruta.");
-    const proTip = (item && item.proTip) ? item.proTip : "Si puedes, ve a primera hora o al atardecer para evitar colas y ganar mejor luz.";
+    const whyRaw = (item && item.why) ? item.why : (city ? `Es un punto clave dentro de tu ruta por ${city}.` : "Encaja bien como visita en tu ruta.");
+    const proTip = (item && item.proTip) ? item.proTip : "Si puedes, ve a primera hora o al atardecer: menos colas, mejor luz y experiencia más agradable.";
+
+    function _oneSentence(t){
+      const s = String(t||"").trim();
+      if(!s) return "";
+      const cut = s.split(/(?<=[\.\!\?])\s+/)[0];
+      return (cut || s).trim();
+    }
+
+    function _norm(s){
+      return String(s||"")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9\s]/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+    }
+
+    function inferPlaceType(t, s){
+      const x = _norm(t + " " + (s||""));
+      if(/\bmuseo\b|museum/.test(x)) return "museum";
+      if(/\bcatedral\b|cathedral|\bbasilica\b|basilica|\biglesia\b|church|\bduomo\b/.test(x)) return "church";
+      if(/\bparque\b|park|\bjardin\b|garden/.test(x)) return "park";
+      if(/\bmirador\b|viewpoint|\bobservatorio\b|observation|\bskyline\b/.test(x)) return "viewpoint";
+      if(/\bcastillo\b|castle|\bfortaleza\b|fortress|\balcazar\b|\bpalacio\b|palace/.test(x)) return "palace";
+      if(/\bpuente\b|bridge/.test(x)) return "bridge";
+      if(/\bmercado\b|market/.test(x)) return "market";
+      if(/\bplaya\b|beach/.test(x)) return "beach";
+      if(/\bplaza\b|square/.test(x)) return "square";
+      if(/\bmonumento\b|monument|\bestatua\b|statue|\btorre\b|tower/.test(x)) return "landmark";
+      return "place";
+    }
+
+    const placeType = inferPlaceType(title, summary);
+
+    function defaultDurationByType(tp){
+      if(tp==="museum") return "1,5–2,5 h";
+      if(tp==="church") return "45–90 min";
+      if(tp==="park") return "45–120 min";
+      if(tp==="viewpoint") return "45–90 min";
+      if(tp==="palace") return "1,5–3 h";
+      if(tp==="market") return "45–90 min";
+      if(tp==="beach") return "2+ h";
+      if(tp==="bridge") return "20–45 min";
+      if(tp==="square") return "20–60 min";
+      if(tp==="landmark") return "30–90 min";
+      return "45–120 min";
+    }
+
+    function buildSpecial(tp){
+      const baseCity = city ? `en ${city}` : "en tu viaje";
+      if(tp==="museum") return `Una visita de “alto retorno”: salas icónicas, piezas clave y una experiencia cultural redonda ${baseCity}.`;
+      if(tp==="church") return `Arquitectura y atmósfera: un interior impresionante, detalles que merecen pausa y un punto fotográfico potente ${baseCity}.`;
+      if(tp==="park") return `Un respiro verde perfecto para bajar el ritmo: pasear, descansar y “resetear” antes o después de una visita intensa.`;
+      if(tp==="viewpoint") return `Vistas panorámicas que te orientan y te dan contexto de la ciudad. Ideal para fotos y para entender la escala del lugar.`;
+      if(tp==="palace") return `Historia y estética en un solo sitio: patios, estancias o fachadas con mucho carácter y recorrido “premium”.`;
+      if(tp==="market") return `Ambiente local concentrado: buen sitio para picar algo, ver producto típico y sentir la ciudad sin plan complicado.`;
+      if(tp==="beach") return `Plan simple que funciona: mar, paseo y descanso. Útil para equilibrar días cargados de visitas.`;
+      if(tp==="bridge") return `Paso corto pero fotogénico: buen encaje como transición entre barrios o al final del día.`;
+      if(tp==="square") return `Punto de vida urbana: terrazas, edificios alrededor y sensación real de la ciudad en pocos minutos.`;
+      if(tp==="landmark") return `Un “must” con impacto visual: suele ser el icono del lugar y encaja bien como hito central del día.`;
+      return `Un punto con personalidad que suma contexto a tu ruta ${baseCity} sin necesidad de complicar el plan.`;
+    }
+
+    function buildContext(tp){
+      if(city){
+        if(tp==="museum") return `Suele ser una de las paradas culturales más representativas de ${city}. Si te interesa el arte o la historia, es una visita que “justifica” el tiempo.`;
+        if(tp==="viewpoint") return `Desde aquí normalmente se entiende mejor la geografía de ${city} (barrios, ejes principales y referencias).`;
+        if(tp==="park") return `En una ruta por ${city}, este tipo de lugar funciona como pausa inteligente para no saturarte de interiores o desplazamientos.`;
+        return `Es uno de esos sitios que ayudan a “situarte” en ${city}: te da contexto y hace que el día tenga un centro claro.`;
+      }
+      return `Es un lugar con valor turístico real: aporta contexto, fotos y una sensación clara de “esto era importante verlo”.`;
+    }
+
+    const special = (item && (item.special || item.highlights || item.speciality)) ? (item.special || item.highlights || item.speciality) : buildSpecial(placeType);
+    const context = (item && (item.context || item.history || item.background)) ? (item.context || item.history || item.background) : buildContext(placeType);
+
+    // Motivo IA (breve, no redundante)
+    const aiFit = (function(){
+      const w = _oneSentence(whyRaw);
+      if(w) return w;
+      return city ? `Porque encaja naturalmente en tu recorrido por ${city} y es fácil de ubicar en una franja razonable.` : "Porque encaja naturalmente en tu recorrido y es fácil de ubicar en una franja razonable.";
+    })();
+
+    // Micro-resumen práctico (no dependemos de la imagen)
+    const durationHint = (item && (item.duration || item.durationHint || item.estimatedDuration)) ? (item.duration || item.durationHint || item.estimatedDuration) : defaultDurationByType(placeType);
+    const bestMoment = (item && (item.bestTime || item.whenToGo)) ? (item.bestTime || item.whenToGo) : (placeType==="viewpoint" ? "Atardecer o primera hora" : "Primera hora o entre semana");
 
     infoTitle.textContent = title;
 
     infoBody.innerHTML = `
       <div class="ai-premium-card space-y-4">
-        <div class="inline-flex items-center gap-2">
+        <div class="inline-flex items-center gap-2 min-w-0">
           <div class="ai-badge inline-block px-2 py-1 bg-violet-100 text-violet-700 text-[10px] font-extrabold rounded uppercase tracking-wider">
             Más info
           </div>
@@ -15019,19 +15105,40 @@ function openAiPlaceMoreInfoCard(item, city){
           </div>
         </div>
 
+        <div class="grid grid-cols-2 gap-2">
+          <div class="border border-slate-200 bg-white rounded-2xl px-3 py-2">
+            <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Duración típica</div>
+            <div class="text-sm font-extrabold text-slate-800 mt-0.5">${escapeHtml(durationHint)}</div>
+          </div>
+          <div class="border border-slate-200 bg-white rounded-2xl px-3 py-2">
+            <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mejor momento</div>
+            <div class="text-sm font-extrabold text-slate-800 mt-0.5">${escapeHtml(bestMoment)}</div>
+          </div>
+        </div>
+
         <section>
           <h4 class="text-xs font-black text-slate-400 uppercase mb-1">¿Qué es?</h4>
           <p class="text-slate-800 font-medium leading-relaxed">${escapeHtml(summary)}</p>
         </section>
 
         <section>
-          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">¿Por qué merece la pena?</h4>
-          <p class="text-slate-600 text-sm leading-relaxed">${escapeHtml(why)}</p>
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">Qué lo hace especial</h4>
+          <p class="text-slate-700 text-sm leading-relaxed">${escapeHtml(special)}</p>
+        </section>
+
+        <section>
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">Contexto breve</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">${escapeHtml(context)}</p>
         </section>
 
         <section class="pt-1">
           <h4 class="text-xs font-black text-slate-400 uppercase mb-1">Consejo pro</h4>
           <p class="text-slate-600 text-sm">${escapeHtml(proTip)}</p>
+        </section>
+
+        <section class="pt-1">
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">Por qué encaja (IA)</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">${escapeHtml(aiFit)}</p>
         </section>
 
         <div id="aiPlaceImgCredit" class="hidden text-[10px] text-slate-400 pt-1"></div>
@@ -15041,7 +15148,7 @@ function openAiPlaceMoreInfoCard(item, city){
     // Abrir overlay (sistema de A8L: clase hidden)
     infoOverlay.classList.remove("hidden");
 
-    // Imagen asíncrona bajo demanda
+    // Imagen asíncrona bajo demanda (secundaria)
     fetchCommonsPlaceImage(title, city).then((data)=>{
       const container = document.getElementById("aiPlaceImgContainer");
       const credit = document.getElementById("aiPlaceImgCredit");
@@ -15064,8 +15171,9 @@ function openAiPlaceMoreInfoCard(item, city){
           credit.classList.remove("hidden");
           credit.innerHTML = `Imagen: <span class="font-semibold">Wikimedia Commons</span> · ${safeTitle}`;
         }
+        console.log("[MV][MoreInfo] image ok");
       }else{
-        // Sin imagen fiable: ocultamos el bloque para no dejar hueco roto
+        // Sin imagen fiable: ocultamos el bloque (texto sigue premium)
         container.classList.add("hidden");
         if(credit) credit.classList.add("hidden");
         console.log("[MV][MoreInfo] no reliable image");
