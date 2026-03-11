@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS</title>
+<title>V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS" rel="manifest"/>
+<link href="manifest.json?v=V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS
+            Build cargada: V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A9M_AI_UNIFY_MORE_INFO_BUTTONS_IN_CITIES_AND_GAPS";
+const APP_BUILD = "V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14806,6 +14806,55 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 <script>
 (function(){
+  // ------------------------------------------------------------
+  // V226C1A9N: More Info wiring fix (cities + gaps)
+  // - Provide missing openHelp() implementation for aiActionInfoOverlay
+  // - Harden "Más info" click flow to avoid lost `this` bindings
+  // ------------------------------------------------------------
+  function __bindAiActionInfoOverlayOnce(){
+    const ov = document.getElementById("aiActionInfoOverlay");
+    if(!ov || ov.__bound) return;
+    ov.__bound = true;
+    const closeBtn = document.getElementById("aiActionInfoClose");
+    const backdrop = document.getElementById("aiActionInfoBackdrop");
+    const close = ()=>{
+      try{ ov.classList.add("hidden"); }catch{}
+    };
+    if(closeBtn) closeBtn.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+    if(backdrop) backdrop.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+    document.addEventListener("keydown", (e)=>{
+      if(e && e.key === "Escape" && !ov.classList.contains("hidden")) close();
+    });
+  }
+
+  // Global helper used by "Más info" (and can also serve (i) helpers).
+  window.openHelp = function(title, body, isHtml){
+    try{
+      __bindAiActionInfoOverlayOnce();
+      const ov = document.getElementById("aiActionInfoOverlay");
+      const t = document.getElementById("aiActionInfoTitle");
+      const b = document.getElementById("aiActionInfoBody");
+      if(!ov || !t || !b) return;
+      t.textContent = String(title || "Info");
+      if(isHtml){
+        b.classList.remove("whitespace-pre-wrap");
+        b.innerHTML = String(body || "");
+      }else{
+        b.classList.add("whitespace-pre-wrap");
+        b.textContent = String(body || "");
+      }
+      ov.classList.remove("hidden");
+    }catch(err){
+      console.error("[openHelp] failed", err);
+    }
+  };
+
+  // Helper for stable module access inside event handlers.
+  window.__getAiModuleSafe = function(fallback){
+    const m = (window.aiModule && typeof window.aiModule === "object") ? window.aiModule : null;
+    return m || fallback || null;
+  };
+
   const AI_PREFS_KEY = "miviaje.aiModulePrefs.v225f2";
   const AI_CITY_CATALOG = {
     "new_york":[
@@ -15646,7 +15695,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
               // 1) Buscar en Descubrir ciudades
               try{
-                const groups = Array.isArray(this.state.cityGroups) ? this.state.cityGroups : [];
+                const __m = window.__getAiModuleSafe(this);
+                const groups = Array.isArray((__m && __m.state && __m.state.cityGroups) ? __m.state.cityGroups : []) ? this.state.cityGroups : [];
                 for(const g of groups){
                   const list = Array.isArray(g && g.proposals) ? g.proposals : [];
                   const hit = list.find(x => String(x && x.id) === id);
@@ -15663,7 +15713,7 @@ window.addEventListener('DOMContentLoaded', () => {
               // 2) Buscar en Rellenar huecos
               if(!found){
                 try{
-                  const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
+                  const blocks = Array.isArray((__m && __m.state && __m.state.gapBlocks) ? __m.state.gapBlocks : []) ? this.state.gapBlocks : [];
                   for(const blk of blocks){
                     const list = Array.isArray(blk && blk.proposals) ? blk.proposals : [];
                     const hit = list.find(x => String(x && x.id) === id);
@@ -15679,8 +15729,8 @@ window.addEventListener('DOMContentLoaded', () => {
               }
 
               if(!found) return;
-              const htmlPayload = this.buildMoreInfoHtml(found, ctx);
-              openHelp(found.title || 'Más info', htmlPayload, true);
+              const htmlPayload = (__m && __m.buildMoreInfoHtml) ? __m.buildMoreInfoHtml(found, ctx) : '';
+              window.openHelp(found.title || 'Más info', htmlPayload, true);
             }catch(err){
               console.error('[ai moreinfo] click failed', err);
             }
@@ -16988,7 +17038,7 @@ loadTripGapsFill(opts){
     },
     commitSelectedGapActivities(){
       const selected = [];
-      const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
+      const blocks = Array.isArray((__m && __m.state && __m.state.gapBlocks) ? __m.state.gapBlocks : []) ? this.state.gapBlocks : [];
       blocks.forEach((blk)=>{
         (blk.proposals||[]).forEach((item)=>{
           if(this.state.selectedKeys[item.id]) selected.push(item);
