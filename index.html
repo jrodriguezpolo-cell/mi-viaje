@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8M_AI_GAPS_CONCRETE_POIS_FROM_A8L_SAFE</title>
+<title>V226C1A8N_AI_GAPS_MORE_INFO_RICH_FROM_A8M_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8M_AI_GAPS_CONCRETE_POIS_FROM_A8L_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8N_AI_GAPS_MORE_INFO_RICH_FROM_A8M_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8M_AI_GAPS_CONCRETE_POIS_FROM_A8L_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8N_AI_GAPS_MORE_INFO_RICH_FROM_A8M_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8M_AI_GAPS_CONCRETE_POIS_FROM_A8L_SAFE
+            Build cargada: V226C1A8N_AI_GAPS_MORE_INFO_RICH_FROM_A8M_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8M_AI_GAPS_CONCRETE_POIS_FROM_A8L_SAFE";
+const APP_BUILD = "V226C1A8N_AI_GAPS_MORE_INFO_RICH_FROM_A8M_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15980,6 +15980,74 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       return false;
     },
+    __aiDescribePoiKind(title){
+      const s = this.__aiNormLoose(title);
+      if(/museo|museum|galer/.test(s)) return "museum";
+      if(/palacio|palace|royal/.test(s)) return "palace";
+      if(/parque|park|garden|jardin/.test(s)) return "park";
+      if(/mercado|market/.test(s)) return "market";
+      if(/barrio|gothic|montmartre|trastevere|georgetown|dumbo|alfama|chiado|baixa|harajuku|akihabara/.test(s)) return "neighborhood";
+      if(/catedral|cathedral|basilica|notre dame|senso ji|templo|temple|jingu|san pedro/.test(s)) return "temple";
+      if(/torre|tower|mirador|top of|rock|observatory|eiffel/.test(s)) return "viewpoint";
+      if(/bridge|puente/.test(s)) return "bridge";
+      if(/mall|capitolio|library of congress|lincoln memorial|monument|memorial/.test(s)) return "monumental";
+      if(/foro|coliseo|colosseum|pantheon|panteon|vaticano|louvre|sagrada familia/.test(s)) return "monumental";
+      if(/sena|seine|crucero|cruise|ferry|island|citywalk|springs/.test(s)) return "experience";
+      return "landmark";
+    },
+    __aiCityCulturalAngle(city){
+      const key = this.__aiCityKey(city);
+      const map = {
+        madrid: "En Madrid suele funcionar muy bien combinar patrimonio cortesano, grandes colecciones artísticas y vida urbana muy paseable en distancias relativamente cómodas.",
+        barcelona: "En Barcelona el valor cultural suele venir de la mezcla entre modernismo, trama histórica y una relación muy directa entre arquitectura y vida de calle.",
+        'nueva york': "En Nueva York muchas visitas ganan sentido cuando se leen como capas de inmigración, skyline, barrios con identidad propia y reutilización creativa del espacio urbano.",
+        washington: "En Washington la lectura cultural suele apoyarse en símbolos institucionales, memoria cívica y museos planteados como relato público accesible.",
+        orlando: "En Orlando conviene leer las propuestas no solo como ocio, sino también como distintas intensidades de experiencia: parques, zonas de ambiente y escapes tranquilos fuera del núcleo temático.",
+        londres: "En Londres encaja muy bien alternar capas históricas, barrios con personalidad y grandes instituciones culturales muy integradas en la ciudad cotidiana.",
+        roma: "En Roma casi cualquier visita mejora si se entiende como superposición de ciudad antigua, poder religioso, vida de barrio y escenas urbanas muy caminables.",
+        paris: "En París suele aportar mucho leer cada parada como una mezcla de monumento, vida de barrio, museo y puesta en escena urbana alrededor del Sena.",
+        lisboa: "En Lisboa muchas visitas brillan por la relación entre colinas, miradores, memoria marítima, barrios históricos y una atmósfera muy viva a escala humana.",
+        tokyo: "En Tokyo funciona muy bien alternar tradición, barrios hiperespecializados y espacios de pausa para captar mejor sus contrastes culturales."
+      };
+      return map[key] || `En ${city} merece la pena entender cada parada no solo como foto o check de lista, sino como una pieza del carácter cultural de la ciudad.`;
+    },
+    __aiBuildGapPoiRichInfo(item){
+      const title = String(item && item.title || '').trim();
+      const city = String(item && item.city || '').trim();
+      const summary = String(item && item.summary || '').trim();
+      const why = String(item && item.why || '').trim();
+      const kind = this.__aiDescribePoiKind(title);
+      const kindMap = {
+        museum: `Qué es\n${title} es una visita cultural de primer nivel en ${city || 'la ciudad'}, muy adecuada para convertir un hueco libre en una experiencia con contenido real y no solo en un paseo sin foco. ${summary || 'Suele funcionar especialmente bien cuando quieres una actividad principal clara, con ritmo propio y valor cultural reconocible.'} Además, este tipo de parada permite ordenar mejor el día porque tiene identidad, narrativa y sensación de visita completa.`,
+        palace: `Qué es\n${title} es una visita patrimonial muy potente, asociada al relato institucional, ceremonial o cortesano de ${city || 'la ciudad'}. ${summary || 'Suele ser una de esas paradas que estructuran el viaje porque dan contexto histórico y visual al destino.'} Encaja muy bien cuando quieres que el hueco libre se convierta en un bloque memorable y con peso cultural.`,
+        park: `Qué es\n${title} es una propuesta ideal para bajar o modular el ritmo del viaje sin perder interés cultural. ${summary || 'No es solo un espacio verde: suele concentrar escenas urbanas, perspectiva local y un tipo de disfrute muy agradecido entre visitas más intensas.'} Sirve para respirar la ciudad con más calma y, a la vez, seguir sumando contexto.`,
+        market: `Qué es\n${title} funciona como una visita muy agradecida para entender el pulso cotidiano, gastronómico y social de ${city || 'la ciudad'}. ${summary || 'Suele ser una parada flexible, fácil de encajar y con retorno inmediato en ambiente y logística.'} Bien planteado, no es solo comer: es leer la ciudad desde sus ritmos, su producto y su mezcla de público local y viajero.`,
+        neighborhood: `Qué es\n${title} es una zona con identidad propia, útil para llenar un hueco con algo más rico que una actividad genérica. ${summary || 'Este tipo de propuesta suele mezclar paseo, atmósfera, patrimonio y vida de calle.'} Aporta una lectura más viva de ${city || 'la ciudad'} porque te deja notar cómo cambia el carácter urbano según el barrio.`,
+        temple: `Qué es\n${title} es una visita de fuerte carga simbólica y cultural en ${city || 'la ciudad'}. ${summary || 'Suele ofrecer una combinación muy buena entre arquitectura, contexto histórico y percepción del lugar.'} Es una de esas paradas que elevan el viaje porque añaden profundidad, no solo recorrido.`,
+        viewpoint: `Qué es\n${title} es una propuesta pensada para ganar perspectiva de ${city || 'la ciudad'}, tanto visual como mentalmente. ${summary || 'Este tipo de visita suele funcionar muy bien al comienzo o al cierre de una jornada.'} Ayuda a ordenar mentalmente barrios, ejes y monumentos, y por eso rinde más de lo que parece.`,
+        monumental: `Qué es\n${title} es una visita de gran peso simbólico, histórica o monumental, especialmente adecuada para dar entidad a un hueco relevante del viaje. ${summary || 'Suele ser una de las piezas que más ayudan a que el destino “se entienda” de verdad.'} Encaja bien cuando quieres una actividad clara, con relato y memoria.`,
+        experience: `Qué es\n${title} es una propuesta experiencial muy útil para convertir un tramo libre en algo reconocible, atmosférico y fácil de recordar. ${summary || 'Tiene la ventaja de combinar disfrute, contexto y una logística razonable.'} Suele rendir especialmente bien cuando el viaje necesita variedad sin perder calidad.`,
+        landmark: `Qué es\n${title} es un punto de interés claro y reconocible en ${city || 'la ciudad'}, ideal para transformar un hueco libre en una visita con sentido. ${summary || 'Aporta una pieza concreta y fácil de insertar dentro del itinerario.'} Su valor está en que no rellena por rellenar: añade identidad real al plan.`
+      };
+      const historyMap = {
+        museum: `${title} suele leerse mejor no solo por las obras o la colección, sino por el papel que desempeña dentro de la memoria cultural de ${city || 'la ciudad'}. Estos espacios suelen condensar cómo un destino se representa a sí mismo: qué conserva, qué exhibe y qué considera parte de su relato público. ${this.__aiCityCulturalAngle(city)}`,
+        palace: `La dimensión histórica de ${title} suele estar unida a poder, representación y ritual urbano. Este tipo de edificios ayuda a entender quién mandó, cómo quiso mostrarse y de qué manera la ciudad organizó su imagen pública a lo largo del tiempo. ${this.__aiCityCulturalAngle(city)}`,
+        park: `Aunque a veces se perciben como una pausa ligera, espacios como ${title} suelen tener mucho valor histórico porque muestran cómo la ciudad imaginó el ocio, la sociabilidad y la relación entre naturaleza y vida urbana. ${this.__aiCityCulturalAngle(city)}`,
+        market: `Lugares como ${title} cuentan bien la historia cotidiana de una ciudad: abastecimiento, mezcla social, cambios de gusto y adaptación del comercio tradicional al presente. Mirarlos con calma da una lectura muy rica del destino. ${this.__aiCityCulturalAngle(city)}`,
+        neighborhood: `La historia de ${title} suele apreciarse mejor cuando se observa su tejido urbano, sus usos y la manera en que conviven capas antiguas y contemporáneas. No es solo “un barrio bonito”: es una forma de entender cómo vive y se reconoce ${city || 'la ciudad'}. ${this.__aiCityCulturalAngle(city)}`,
+        temple: `${title} suele tener interés más allá de lo religioso: concentra símbolos, estilo arquitectónico, memoria colectiva y momentos decisivos del relato local. Suele ser uno de los lugares donde mejor se percibe la profundidad histórica del destino. ${this.__aiCityCulturalAngle(city)}`,
+        viewpoint: `La importancia de ${title} no está solo en la foto o la vista, sino en la capacidad de revelar la forma de la ciudad: ejes, barrios, densidad, monumentos y paisaje urbano. Muchas veces es ahí donde el destino “encaja” mentalmente. ${this.__aiCityCulturalAngle(city)}`,
+        monumental: `${title} suele condensar memoria cívica, capas históricas y una imagen muy potente del destino. Este tipo de parada no solo impresiona: ayuda a comprender qué episodios, símbolos o formas urbanas han acabado definiendo a ${city || 'la ciudad'}. ${this.__aiCityCulturalAngle(city)}`,
+        experience: `Aunque se viva como una experiencia ligera o muy disfrutable, ${title} también suele tener un trasfondo cultural claro: resume formas de ocio, maneras de usar la ciudad y determinados códigos sociales del destino. ${this.__aiCityCulturalAngle(city)}`,
+        landmark: `${title} gana mucho cuando se lee como algo más que una visita rápida. Normalmente estos puntos acaban siendo importantes porque concentran una imagen, un uso urbano o una memoria colectiva muy reconocible. ${this.__aiCityCulturalAngle(city)}`
+      };
+      const proTip = `Consejo pro\n${why ? why + ' ' : ''}Para disfrutar mejor ${title}, intenta tratarlo como bloque propio y no como simple relleno entre dos cosas grandes. Suele funcionar mejor si llegas con algo de margen, te fijas en los detalles que cuentan el carácter del lugar y dejas espacio para una salida natural hacia comida, paseo o siguiente visita. En general, en ${city || 'esta ciudad'} compensa priorizar calidad de experiencia sobre cantidad de paradas.`;
+      return {
+        whatIs: kindMap[kind] || kindMap.landmark,
+        history: historyMap[kind] || historyMap.landmark,
+        proTip
+      };
+    },
     __aiTopProposalsForCity(city, existingTitlesSet, maxN, offsetIndex){
       const cityName = String(city||"").trim();
       if(!cityName) return [];
@@ -16748,19 +16816,39 @@ loadTripGapsFill(opts){
               <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
-              ${blk.proposals.map((item)=>`
-                <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                      <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+              ${blk.proposals.map((item)=>{
+                const rich = this.__aiBuildGapPoiRichInfo(item);
+                return `
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-start gap-3">
+                    <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                        <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
+                        <button type="button" class="tap inline-flex items-center rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50" data-ai-gap-more-btn="${escapeHtml(item.id)}">Más info</button>
+                      </div>
+                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                      <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                      <div class="mt-3 hidden rounded-2xl border border-slate-200 bg-slate-50 p-3" data-ai-gap-more-panel="${escapeHtml(item.id)}">
+                        <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Más info cultural</div>
+                        <details class="group rounded-xl border border-slate-200 bg-white px-3 py-2" open>
+                          <summary class="cursor-pointer list-none font-bold text-slate-900">Qué es</summary>
+                          <div class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(rich.whatIs.replace(/^Qué es\n/,''))}</div>
+                        </details>
+                        <details class="group mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                          <summary class="cursor-pointer list-none font-bold text-slate-900">Historia</summary>
+                          <div class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(rich.history)}</div>
+                        </details>
+                        <details class="group mt-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                          <summary class="cursor-pointer list-none font-bold text-slate-900">Consejo pro</summary>
+                          <div class="mt-2 text-sm leading-6 text-slate-700">${escapeHtml(rich.proTip.replace(/^Consejo pro\n/,''))}</div>
+                        </details>
+                      </div>
                     </div>
-                    <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
-                    <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
                   </div>
-                </label>
-              `).join("")}
+                </div>
+              `;}).join("")}
             </div>
           </div>
         `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay huecos claros que rellenar ahora mismo.</div>`;
@@ -16772,6 +16860,19 @@ loadTripGapsFill(opts){
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
           });
+        });
+        results.querySelectorAll("[data-ai-gap-more-btn]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+            const key = String(btn.getAttribute("data-ai-gap-more-btn") || "");
+            if(!key) return;
+            const panel = results.querySelector(`[data-ai-gap-more-panel="${CSS.escape(key)}"]`);
+            if(!panel) return;
+            panel.classList.toggle("hidden");
+          });
+        });
+        results.querySelectorAll("[data-ai-gap-more-panel] summary").forEach((sum)=>{
+          sum.addEventListener("click", (ev)=>{ try{ ev.stopPropagation(); }catch{} });
         });
       }
 
