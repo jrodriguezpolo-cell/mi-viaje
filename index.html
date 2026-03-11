@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8R_AI_DISCOVER_CITIES_AND_COMPLETE_TRIP_UNIFIED_FROM_A8Q_SAFE</title>
+<title>V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8R_AI_DISCOVER_CITIES_AND_COMPLETE_TRIP_UNIFIED_FROM_A8Q_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8R_AI_DISCOVER_CITIES_AND_COMPLETE_TRIP_UNIFIED_FROM_A8Q_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8R_AI_DISCOVER_CITIES_AND_COMPLETE_TRIP_UNIFIED_FROM_A8Q_SAFE
+            Build cargada: V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8R_AI_DISCOVER_CITIES_AND_COMPLETE_TRIP_UNIFIED_FROM_A8Q_SAFE";
+const APP_BUILD = "V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15822,20 +15822,93 @@ window.addEventListener('DOMContentLoaded', () => {
       });
       return ranges;
     },
-    __aiCollectTripDays(trip, stayRanges){
+    __aiBuildPresenceRanges(trip, stayRanges){
+      const ranges = [];
+      const isIso = (d)=> /^\d{4}-\d{2}-\d{2}$/.test(String(d||"").trim().slice(0,10));
+      const dayOf = (obj, keys)=>{
+        for(const k of keys){
+          const s = String(obj && obj[k] || "").trim().slice(0,10);
+          if(isIso(s)) return s;
+        }
+        return "";
+      };
+      const cityOfLeg = (leg)=>{
+        return String(
+          (leg && (leg.to||leg.toCity||leg.dest||leg.destCity||leg.destination||leg.destinationCity||leg.toPlace||leg.toName)) || ""
+        ).trim();
+      };
+
+      if(Array.isArray(stayRanges) && stayRanges.length){
+        stayRanges.forEach((r)=>{
+          if(!r || !String(r.city||"").trim() || !isIso(r.inDay)) return;
+          const outDay = isIso(r.outDay) ? String(r.outDay).trim().slice(0,10) : this.__aiISOAddDays(String(r.inDay).trim().slice(0,10), Math.max(1, parseInt(r.nights||1,10)||1));
+          ranges.push({
+            city: String(r.city||"").trim(),
+            inDay: String(r.inDay).trim().slice(0,10),
+            outDay
+          });
+        });
+      }
+
+      const legs = (Array.isArray(trip && trip.legs) ? trip.legs : []).slice();
+      if(legs.length){
+        const items = legs.map((leg)=>({
+          leg,
+          city: cityOfLeg(leg),
+          arriveDay: dayOf(leg, ["arriveDate","dateIn","arrivalDate","endDate","arrDate","toDate","date","day","depDate","departDate","fromDate","startDate"]),
+          departDay: dayOf(leg, ["date","day","depDate","departDate","fromDate","startDate","departDay"])
+        })).filter(x => x.city && x.arriveDay);
+
+        items.sort((a,b)=> String(a.arriveDay).localeCompare(String(b.arriveDay)));
+
+        for(let i=0;i<items.length;i++){
+          const cur = items[i];
+          const next = items[i+1];
+          let outDay = "";
+          if(next && isIso(next.departDay) && next.departDay > cur.arriveDay){
+            outDay = next.departDay;
+          }else if(next && isIso(next.arriveDay) && next.arriveDay > cur.arriveDay){
+            outDay = next.arriveDay;
+          }else{
+            outDay = this.__aiISOAddDays(cur.arriveDay, 1);
+          }
+          ranges.push({
+            city: cur.city,
+            inDay: cur.arriveDay,
+            outDay
+          });
+        }
+      }
+
+      const uniq = [];
+      const seen = new Set();
+      ranges.forEach((r)=>{
+        const city = String(r.city||"").trim();
+        const inDay = String(r.inDay||"").trim().slice(0,10);
+        const outDayRaw = String(r.outDay||"").trim().slice(0,10);
+        const outDay = isIso(outDayRaw) && outDayRaw > inDay ? outDayRaw : this.__aiISOAddDays(inDay, 1);
+        if(!city || !isIso(inDay)) return;
+        const key = `${city}__${inDay}__${outDay}`;
+        if(seen.has(key)) return;
+        seen.add(key);
+        uniq.push({ city, inDay, outDay });
+      });
+
+      return uniq.sort((a,b)=> String(a.inDay).localeCompare(String(b.inDay)));
+    },
+    __aiCollectTripDays(trip, stayRanges, presenceRanges){
       const set = new Set();
       const add = (d)=>{ const s=String(d||"").trim().slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) set.add(s); };
 
       (Array.isArray(trip.legs)?trip.legs:[]).forEach(l=>{
         add(l && (l.date||l.day||l.depDate||l.departDate||l.fromDate||l.startDate));
-        add(l && (l.arriveDate||l.dateIn||l.arrivalDate||l.endDate));
+        add(l && (l.arriveDate||l.dateIn||l.arrivalDate||l.endDate||l.arrDate||l.toDate));
       });
       (Array.isArray(trip.activities)?trip.activities:[]).forEach(a=>{
         add(a && (a.date||a.day||a.startDate));
       });
 
       (Array.isArray(stayRanges)?stayRanges:[]).forEach(r=>{
-        // incluir todos los días de estancia (inDay .. outDay-1)
         let cur = r.inDay;
         for(let i=0;i<Math.max(1, r.nights);i++){
           add(cur);
@@ -15843,13 +15916,22 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      const days = Array.from(set).sort();
-      return days;
+      (Array.isArray(presenceRanges)?presenceRanges:[]).forEach(r=>{
+        let cur = String(r && r.inDay || "").trim().slice(0,10);
+        const outDay = String(r && r.outDay || "").trim().slice(0,10);
+        let guard = 0;
+        while(cur && /^\d{4}-\d{2}-\d{2}$/.test(cur) && (!outDay || cur < outDay) && guard < 45){
+          add(cur);
+          cur = this.__aiISOAddDays(cur, 1);
+          guard += 1;
+        }
+      });
+
+      return Array.from(set).sort();
     },
-    __aiDayContext(day, trip, stayRanges, bucket){
+    __aiDayContext(day, trip, stayRanges, bucket, presenceRanges){
       const d = String(day||"").trim();
       const b = bucket || {};
-      // 1) prefer stay city that covers the day
       let city = "";
       let reason = "";
       if(Array.isArray(stayRanges)){
@@ -15859,7 +15941,13 @@ window.addEventListener('DOMContentLoaded', () => {
           reason = (b && (b.acts||[]).length) ? "Hay margen extra dentro de la estancia." : "Día dentro de la estancia con pocas actividades.";
         }
       }
-      // 2) fallback: activity city
+      if(!city && Array.isArray(presenceRanges)){
+        const hit = presenceRanges.find(r => d >= r.inDay && d < r.outDay && String(r.city||"").trim());
+        if(hit){
+          city = String(hit.city||"").trim();
+          reason = (b && (b.legs||[]).length) ? "Día en destino con margen tras la llegada o antes de la salida." : "Día de estancia implícita en esa ciudad con margen para completar el viaje.";
+        }
+      }
       if(!city){
         const act = (b.acts||[]).find(a => String(a && a.city || "").trim());
         if(act){
@@ -15867,15 +15955,14 @@ window.addEventListener('DOMContentLoaded', () => {
           reason = "Pocas actividades para este día.";
         }
       }
-      // 3) fallback: leg destination
       if(!city){
         const leg = (b.legs||[]).find(l => String(l && (l.to||l.toCity)||"").trim());
         if(leg){
           city = String(leg.to||leg.toCity||"").trim();
-          reason = "Día con traslado donde aún queda margen razonable.";
+          const arrTime = String(leg.arriveTime||leg.arrivalTime||leg.timeIn||leg.arrTime||"").trim();
+          reason = arrTime ? `Llegada a ${city} a las ${arrTime}; todavía puede encajar una visita ligera ese mismo día.` : "Día con traslado donde aún queda margen razonable.";
         }
       }
-      // 4) last fallback: any detected city in trip
       if(!city){
         const cities = this.collectTripCities ? this.collectTripCities() : [];
         if(cities && cities.length){
@@ -16293,7 +16380,8 @@ __aiBuildDayBuckets(trip){
         const trip = this.bridge.readTrip();
         const buckets = this.__aiBuildDayBuckets(trip);
         const stayRanges = this.__aiBuildStayRanges(trip);
-        const allDays = this.__aiCollectTripDays(trip, stayRanges);
+        const presenceRanges = this.__aiBuildPresenceRanges(trip, stayRanges);
+        const allDays = this.__aiCollectTripDays(trip, stayRanges, presenceRanges);
 
         const parseHM = (s)=>{
           const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
@@ -16343,7 +16431,7 @@ __aiBuildDayBuckets(trip){
           const candidates = [];
           allDays.forEach((day)=>{
             const b = buckets[day] || {};
-            const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+            const ctx = this.__aiDayContext(day, trip, stayRanges, b, presenceRanges);
             if(!ctx || !ctx.city) return;
             if(String(ctx.city).trim().toLowerCase() !== keyCity.toLowerCase()) return;
             candidates.push(day);
@@ -16712,7 +16800,8 @@ loadTripGapsFill(opts){
 
       const buckets = this.__aiBuildDayBuckets(trip);
       const stayRanges = this.__aiBuildStayRanges(trip);
-      const allDays = this.__aiCollectTripDays(trip, stayRanges);
+      const presenceRanges = this.__aiBuildPresenceRanges(trip, stayRanges);
+      const allDays = this.__aiCollectTripDays(trip, stayRanges, presenceRanges);
 
       const existingTitles = new Set();
       const pushExistingTitle = (value, cityHint)=>{
@@ -16807,7 +16896,17 @@ loadTripGapsFill(opts){
           events.push({ s, e: s+d });
         };
         (b.legs||[]).forEach((l)=>{
-          pushEvent(l.time || l.departTime || l.startTime || l.departureTime, 180);
+          const depT = l.time || l.departTime || l.startTime || l.departureTime || l.depTime;
+          const arrT = l.arriveTime || l.arrivalTime || l.timeIn || l.arrTime;
+          if(arrT){
+            const arrMin = parseHM(arrT);
+            if(arrMin!=null){
+              const settle = Math.max(45, String(l.to||l.toCity||"").trim() ? 75 : 60);
+              events.push({ s: arrMin, e: arrMin + settle });
+            }
+          }else{
+            pushEvent(depT, 180);
+          }
         });
         (b.checkins||[]).forEach((x)=>{ pushEvent(x.time || x.checkInTime || "15:00", 30); });
         (b.checkouts||[]).forEach((x)=>{ pushEvent(x.time || x.checkOutTime || "11:00", 30); });
@@ -16850,7 +16949,7 @@ loadTripGapsFill(opts){
       };
 
       const gapBlocks = [];
-      const maxBlocks = 6;
+      const maxBlocks = 21;
 
       for(const day of allDays){
         if(gapBlocks.length >= maxBlocks) break;
@@ -16863,7 +16962,7 @@ loadTripGapsFill(opts){
 
         if(isBusyDay(day)) continue;
 
-        const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+        const ctx = this.__aiDayContext(day, trip, stayRanges, b, presenceRanges);
         const city = ctx.city || "";
         if(!city) continue;
 
