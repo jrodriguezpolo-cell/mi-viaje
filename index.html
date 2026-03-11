@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M</title>
+<title>V226C1A9P_AI_MORE_INFO_CLEAN_REBUILD_FROM_A9K</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M" rel="manifest"/>
+<link href="manifest.json?v=V226C1A9P_AI_MORE_INFO_CLEAN_REBUILD_FROM_A9K" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9P_AI_MORE_INFO_CLEAN_REBUILD_FROM_A9K</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M
+            Build cargada: V226C1A9P_AI_MORE_INFO_CLEAN_REBUILD_FROM_A9K
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A9N_AI_MORE_INFO_WIRING_FIX_ONLY_FROM_A9M";
+const APP_BUILD = "V226C1A9P_AI_MORE_INFO_CLEAN_REBUILD_FROM_A9K";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14806,55 +14806,6 @@ window.addEventListener('DOMContentLoaded', () => {
 </div>
 <script>
 (function(){
-  // ------------------------------------------------------------
-  // V226C1A9N: More Info wiring fix (cities + gaps)
-  // - Provide missing openHelp() implementation for aiActionInfoOverlay
-  // - Harden "Más info" click flow to avoid lost `this` bindings
-  // ------------------------------------------------------------
-  function __bindAiActionInfoOverlayOnce(){
-    const ov = document.getElementById("aiActionInfoOverlay");
-    if(!ov || ov.__bound) return;
-    ov.__bound = true;
-    const closeBtn = document.getElementById("aiActionInfoClose");
-    const backdrop = document.getElementById("aiActionInfoBackdrop");
-    const close = ()=>{
-      try{ ov.classList.add("hidden"); }catch{}
-    };
-    if(closeBtn) closeBtn.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
-    if(backdrop) backdrop.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
-    document.addEventListener("keydown", (e)=>{
-      if(e && e.key === "Escape" && !ov.classList.contains("hidden")) close();
-    });
-  }
-
-  // Global helper used by "Más info" (and can also serve (i) helpers).
-  window.openHelp = function(title, body, isHtml){
-    try{
-      __bindAiActionInfoOverlayOnce();
-      const ov = document.getElementById("aiActionInfoOverlay");
-      const t = document.getElementById("aiActionInfoTitle");
-      const b = document.getElementById("aiActionInfoBody");
-      if(!ov || !t || !b) return;
-      t.textContent = String(title || "Info");
-      if(isHtml){
-        b.classList.remove("whitespace-pre-wrap");
-        b.innerHTML = String(body || "");
-      }else{
-        b.classList.add("whitespace-pre-wrap");
-        b.textContent = String(body || "");
-      }
-      ov.classList.remove("hidden");
-    }catch(err){
-      console.error("[openHelp] failed", err);
-    }
-  };
-
-  // Helper for stable module access inside event handlers.
-  window.__getAiModuleSafe = function(fallback){
-    const m = (window.aiModule && typeof window.aiModule === "object") ? window.aiModule : null;
-    return m || fallback || null;
-  };
-
   const AI_PREFS_KEY = "miviaje.aiModulePrefs.v225f2";
   const AI_CITY_CATALOG = {
     "new_york":[
@@ -15583,163 +15534,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const map = this.__landmarkAliasMap();
       return map[n] || n;
     },
-    
-    __aiMoreInfoCatalog(){
-      // Catálogo inicial (pequeño y útil) para textos específicos por landmark.
-      // Claves: canonicalLandmarkKey (ya normalizado).
-      return {
-        "statue of liberty": {
-          description: "La Estatua de la Libertad es uno de los símbolos más reconocibles de Nueva York y de EE. UU. Se alza en Liberty Island, en la entrada del puerto, y la visita combina paseo en ferry, vistas de Manhattan y (si reservas) acceso al pedestal o la corona.",
-          history: "Fue un regalo de Francia a Estados Unidos e inaugurada en 1886. Su iconografía se asocia a la libertad y a la bienvenida, especialmente ligada a la historia de la inmigración que pasaba por Ellis Island.",
-          proTip: "Reserva con antelación si quieres subir (pedestal/corona) y ve temprano para evitar colas del ferry. Combina la visita con Ellis Island si te interesa el contexto migratorio."
-        },
-        "central park": {
-          description: "Central Park es el gran parque urbano de Manhattan: un pulmón verde con lagos, praderas, senderos y rincones icónicos. Es ideal para pasear, hacer picnic o equilibrar un día intenso de museo/rascacielos con un bloque al aire libre.",
-          history: "Diseñado en el siglo XIX (Olmsted y Vaux), fue uno de los primeros grandes parques paisajísticos planificados de Estados Unidos, creado como espacio público para una ciudad en rápida expansión.",
-          proTip: "Si vas con tiempo justo, elige una zona concreta (Bethesda Terrace, The Mall, Bow Bridge) en vez de intentar recorrerlo entero. Al atardecer suele ser especialmente bonito."
-        },
-        "empire state building": {
-          description: "El Empire State Building es un rascacielos art déco icónico de Midtown. Su observatorio ofrece vistas panorámicas de Manhattan y es una experiencia clásica para entender la escala de la ciudad.",
-          history: "Se completó en 1931 y durante décadas fue el edificio más alto del mundo. Su estilo art déco y su papel en la cultura popular lo convirtieron en un emblema del skyline neoyorquino.",
-          proTip: "Para mejores vistas y menos agobio, intenta ir a primera hora o a última. Revisa si te conviene más este mirador o Top of the Rock según lo que quieras fotografiar (por ejemplo, ver el propio Empire State)."
-        },
-        "top of the rock": {
-          description: "Top of the Rock es el mirador del Rockefeller Center, famoso por sus vistas abiertas hacia Central Park y el skyline de Midtown. Suele gustar mucho por la composición fotográfica de la ciudad.",
-          history: "Forma parte del complejo Rockefeller Center, desarrollado en los años 30 como un gran proyecto urbano y comercial. El mirador se ha consolidado como alternativa muy popular a otros observatorios.",
-          proTip: "El atardecer suele ser el mejor momento, pero también el más demandado. Si buscas fotos claras, elige un día con buena visibilidad y llega con margen para pasar controles."
-        },
-        "brooklyn bridge": {
-          description: "El Puente de Brooklyn conecta Manhattan y Brooklyn y es uno de los paseos más emblemáticos de la ciudad. Cruzarlo a pie te da un ángulo espectacular del skyline y del East River.",
-          history: "Inaugurado en 1883, fue una obra de ingeniería pionera de su época. Su silueta y cables lo hicieron un icono del urbanismo neoyorquino.",
-          proTip: "Cruza temprano o al final del día para evitar aglomeraciones. Si te apetece, enlaza el paseo con DUMBO y Brooklyn Bridge Park para completar la experiencia."
-        },
-        "times square": {
-          description: "Times Square es el cruce de luces y pantallas más famoso de Nueva York, en el corazón de Broadway. Es un lugar de impacto visual y ambiente constante, especialmente de noche.",
-          history: "Su evolución como centro de ocio y publicidad luminosa la convirtió en un símbolo contemporáneo de la ciudad y del distrito teatral.",
-          proTip: "Mejor como parada corta: ve de noche para ver las pantallas y luego muévete a otra zona. Si vas a un musical, encaja perfecto antes o después."
-        },
-        "rockefeller center": {
-          description: "Rockefeller Center es un complejo emblemático de Midtown con plazas, tiendas y edificios art déco. Es conocido por su ambiente, su arquitectura y por ser un buen punto base para moverte por la zona.",
-          history: "Se desarrolló durante la Gran Depresión como un proyecto urbano enorme. Su estética art déco y su papel cultural (patinaje en invierno, NBC, etc.) lo mantienen como lugar muy vivo.",
-          proTip: "Si no subes al mirador, aun así merece una visita rápida por la plaza principal. En temporadas especiales (Navidad) calcula más tiempo por afluencia."
-        },
-        "9 11 memorial": {
-          description: "El 9/11 Memorial es un espacio de memoria junto a las piscinas que marcan el perímetro de las Torres Gemelas. Es una visita sobria, muy impactante y significativa.",
-          history: "Conmemora los atentados del 11 de septiembre de 2001. El museo y el memorial contextualizan el evento y su impacto en la ciudad y el mundo.",
-          proTip: "Ve con tiempo y en un momento tranquilo del día. Si vas al museo, reserva franja y prepárate para una visita emocionalmente intensa."
-        }
-      };
-    },
-    buildMoreInfoHtml(item, ctx){
-      const title = String((item && item.title) || (item && item.name) || "").trim();
-      const city = String((ctx && ctx.city) || (item && item.city) || "").trim();
-      const canon = this.canonicalLandmarkKey(title);
-      const catalog = this.__aiMoreInfoCatalog();
-      const specific = catalog[canon] || null;
-
-      const desc = specific?.description || String(item?.summary || "Lugar de interés turístico que puede encajar bien en tu ruta.").trim();
-      const hist = specific?.history || ("Como muchos lugares emblemáticos, su valor está en el contexto cultural e histórico que lo rodea. Si te interesa, merece la pena dedicar unos minutos a entender su origen y su papel en la ciudad.");
-      const pro = specific?.proTip || ("Si puedes, evita las horas punta y revisa horarios/entradas antes de ir. Encaja bien como bloque de 1–2 horas si tu día va justo.");
-      const why = String(item?.why || ctx?.why || "").trim() || (city ? `Encaja bien para completar tu experiencia en ${city} sin cargar demasiado el día.` : "Encaja bien para completar tu viaje sin cargar demasiado el día.");
-
-      const badge = city ? `<div class="text-xs font-semibold text-slate-500">Ciudad: ${escapeHtml(city)}</div>` : ``;
-
-      return `
-        <div class="space-y-3">
-          <div class="rounded-2xl border border-slate-200 bg-white p-4">
-            <div class="text-xs font-extrabold uppercase tracking-wide text-violet-700">Más info</div>
-            <div class="mt-1 font-extrabold text-slate-900 text-lg">${escapeHtml(title || "Lugar recomendado")}</div>
-            ${badge}
-          </div>
-
-          <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-            <details open class="p-4">
-              <summary class="cursor-pointer font-extrabold text-slate-900">Descripción</summary>
-              <div class="mt-2 text-sm text-slate-700 leading-relaxed">${escapeHtml(desc)}</div>
-            </details>
-            <div class="border-t border-slate-200"></div>
-            <details class="p-4">
-              <summary class="cursor-pointer font-extrabold text-slate-900">Historia y contexto</summary>
-              <div class="mt-2 text-sm text-slate-700 leading-relaxed">${escapeHtml(hist)}</div>
-            </details>
-            <div class="border-t border-slate-200"></div>
-            <details class="p-4">
-              <summary class="cursor-pointer font-extrabold text-slate-900">Consejo pro</summary>
-              <div class="mt-2 text-sm text-slate-700 leading-relaxed">${escapeHtml(pro)}</div>
-            </details>
-            <div class="border-t border-slate-200"></div>
-            <details class="p-4">
-              <summary class="cursor-pointer font-extrabold text-slate-900">Por qué te lo recomienda la IA</summary>
-              <div class="mt-2 text-sm text-slate-700 leading-relaxed">${escapeHtml(why)}</div>
-            </details>
-          </div>
-        </div>
-      `;
-    },
-    bindMoreInfoButtons(root){
-      try{
-        if(!root) return;
-        const buttons = root.querySelectorAll('[data-ai-moreinfo]');
-        buttons.forEach((btn)=>{
-          if(btn.__aiBound) return;
-          btn.__aiBound = true;
-          btn.addEventListener('click', (ev)=>{
-            try{
-              ev.preventDefault();
-              ev.stopPropagation();
-              const id = String(btn.getAttribute('data-ai-moreinfo') || '').trim();
-              if(!id) return;
-
-              let found = null;
-              let ctx = { city:'', day:'', suggestedTime:'' };
-
-              // 1) Buscar en Descubrir ciudades
-              try{
-                const __m = window.__getAiModuleSafe(this);
-                const groups = Array.isArray((__m && __m.state && __m.state.cityGroups) ? __m.state.cityGroups : []) ? this.state.cityGroups : [];
-                for(const g of groups){
-                  const list = Array.isArray(g && g.proposals) ? g.proposals : [];
-                  const hit = list.find(x => String(x && x.id) === id);
-                  if(hit){
-                    found = hit;
-                    ctx.city = String(g.city || hit.city || '');
-                    ctx.day = String(hit.date || g.suggestedDay || '');
-                    ctx.suggestedTime = String(hit.time || g.suggestedTime || '');
-                    break;
-                  }
-                }
-              }catch(e){}
-
-              // 2) Buscar en Rellenar huecos
-              if(!found){
-                try{
-                  const blocks = Array.isArray((__m && __m.state && __m.state.gapBlocks) ? __m.state.gapBlocks : []) ? this.state.gapBlocks : [];
-                  for(const blk of blocks){
-                    const list = Array.isArray(blk && blk.proposals) ? blk.proposals : [];
-                    const hit = list.find(x => String(x && x.id) === id);
-                    if(hit){
-                      found = hit;
-                      ctx.city = String(blk.city || hit.city || '');
-                      ctx.day = String(blk.day || hit.date || '');
-                      ctx.suggestedTime = String(blk.suggestedTime || hit.time || '');
-                      break;
-                    }
-                  }
-                }catch(e){}
-              }
-
-              if(!found) return;
-              const htmlPayload = (__m && __m.buildMoreInfoHtml) ? __m.buildMoreInfoHtml(found, ctx) : '';
-              window.openHelp(found.title || 'Más info', htmlPayload, true);
-            }catch(err){
-              console.error('[ai moreinfo] click failed', err);
-            }
-          });
-        });
-      }catch(e){}
-    },
-
-buildExistingLandmarkSet(){
+    buildExistingLandmarkSet(){
       const trip = this.bridge.readTrip();
       const set = new Set();
       const push = (v)=>{
@@ -16474,13 +16269,11 @@ __aiBuildDayBuckets(trip){
               ${group.proposals.map((item)=> `
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                      <button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100 flex-shrink-0" data-ai-moreinfo="${escapeHtml(item.id)}" aria-label="Más info">Más info</button>
-                    </div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
+                  <div>
+                    <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
+                  <div class="mt-2"><button type="button" class="tap inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(group.city)}">Más info</button></div>
                   </div>
                 </label>`).join("")}
             </div>
@@ -16494,9 +16287,6 @@ __aiBuildDayBuckets(trip){
           });
         });
       }
-
-        // Más info (unificado): mismo wiring compartido para ciudades y huecos.
-        try{ this.bindMoreInfoButtons(results); }catch(e){}
       const footer = document.getElementById("aiActionFooter");
       if(footer){
         footer.innerHTML = "";
@@ -16972,15 +16762,13 @@ loadTripGapsFill(opts){
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
                   <div class="min-w-0">
-                  <div class="ml-auto flex-shrink-0">
-                    <button type="button" class="tap px-2 py-1 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" aria-label="Más info">Más info</button>
-                  </div>
                     <div class="flex flex-wrap items-center gap-2">
                       <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
                       <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
                     </div>
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué encaja: ${escapeHtml(item.why)}</div>
+                  <div class="mt-2"><button type="button" class="tap inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(blk.city)}">Más info</button></div>
                   </div>
                 </label>
               `).join("")}
@@ -16996,9 +16784,6 @@ loadTripGapsFill(opts){
             else delete this.state.selectedKeys[key];
           });
         });
-
-        // Más info (unificado): mismo wiring compartido para ciudades y huecos.
-        try{ this.bindMoreInfoButtons(results); }catch(e){}
       }
 
       const footer = document.getElementById("aiActionFooter");
@@ -17038,7 +16823,7 @@ loadTripGapsFill(opts){
     },
     commitSelectedGapActivities(){
       const selected = [];
-      const blocks = Array.isArray((__m && __m.state && __m.state.gapBlocks) ? __m.state.gapBlocks : []) ? this.state.gapBlocks : [];
+      const blocks = Array.isArray(this.state.gapBlocks) ? this.state.gapBlocks : [];
       blocks.forEach((blk)=>{
         (blk.proposals||[]).forEach((item)=>{
           if(this.state.selectedKeys[item.id]) selected.push(item);
@@ -17119,6 +16904,410 @@ commitSelectedActivities(){
   }
   window.initAISheet = initAISheet;
 
+
+  // ============================================================
+  // V226C1A9P — Más info (rebuild limpio desde A9K)
+  // - Botón visible en ciudades y huecos
+  // - Un solo listener por delegación (sin rebind frágil)
+  // - Ficha textual premium compartida (4 bloques)
+  // - Sin imágenes / sin Wikimedia / sin Gemini Imagen
+  // ============================================================
+
+  function __aiNormText(s){
+    try{
+      return String(s||"")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .replace(/['".,;:!?()[\]{}]/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+    }catch(e){
+      return String(s||"").trim().toLowerCase();
+    }
+  }
+
+  // Aliases mínimos (ES/EN) para deduplicar y resolver fichas específicas
+  const __AI_MI_ALIAS = (function(){
+    const m = Object.create(null);
+    const add = (a,b)=>{ m[__aiNormText(a)] = __aiNormText(b); };
+    add("estatua de la libertad","statue of liberty");
+    add("statue of liberty","statue of liberty");
+    add("central park","central park");
+    add("top of the rock","top of the rock");
+    add("top of the rock observation deck","top of the rock");
+    add("empire state building","empire state building");
+    add("edificio empire state","empire state building");
+    add("brooklyn bridge","brooklyn bridge");
+    add("puente de brooklyn","brooklyn bridge");
+    add("times square","times square");
+    add("rockefeller center","rockefeller center");
+    add("louvre","louvre");
+    add("museo del louvre","louvre");
+    add("torre eiffel","eiffel tower");
+    add("eiffel tower","eiffel tower");
+    add("british museum","british museum");
+    add("museo britanico","british museum");
+    add("coliseo","colosseum");
+    add("colosseum","colosseum");
+    add("sagrada familia","sagrada familia");
+    add("alhambra","alhambra");
+    add("museo del prado","museo del prado");
+    add("the metropolitan museum of art","metropolitan museum of art");
+    add("metropolitan museum","metropolitan museum of art");
+    add("met","metropolitan museum of art");
+    add("9/11 memorial","9/11 memorial");
+    add("911 memorial","9/11 memorial");
+    add("9 11 memorial","9/11 memorial");
+    add("ground zero memorial","9/11 memorial");
+    add("grand central terminal","grand central terminal");
+    add("grand central","grand central terminal");
+    add("high line","high line");
+    add("the high line","high line");
+    return m;
+  })();
+
+  function __aiCanonicalLandmark(name){
+    const n = __aiNormText(name);
+    if(__AI_MI_ALIAS[n]) return __AI_MI_ALIAS[n];
+    return n;
+  }
+
+  const __AI_MI_SPECIFIC = (function(){
+    // Contenido específico (primer catálogo útil, no exhaustivo)
+    // Nota: todo contenido es “ficha turística” general, sin claims no verificables.
+    const items = [];
+
+    const push = (key, o)=> items.push(Object.assign({ key }, o));
+
+    push("statue of liberty",{
+      titleES: "Estatua de la Libertad",
+      titleEN: "Statue of Liberty",
+      description: "Icono monumental situado en Liberty Island (Nueva York), asociado a la idea de libertad y bienvenida. La visita suele combinar paseo en ferry, vistas del skyline y un recorrido por la isla.",
+      context: "Fue un regalo de Francia a Estados Unidos en el siglo XIX y se convirtió en un símbolo cultural ligado a la inmigración y a la entrada por el puerto de Nueva York.",
+      proTip: "Reserva con antelación si quieres acceder a pedestal/corona y planifica el ferry a primera hora para evitar colas.",
+      aiWhy: "Encaja como imprescindible si buscas una ‘postal’ del viaje y un bloque bien estructurado de medio día."
+    });
+
+    push("central park",{
+      titleES: "Central Park",
+      titleEN: "Central Park",
+      description: "Gran parque urbano en el corazón de Manhattan, ideal para caminar, alquilar bici, ver lagos y praderas, y ‘respirar’ entre visitas intensas de ciudad.",
+      context: "Es uno de los parques urbanos planificados más influyentes del mundo y ha definido la vida cultural y recreativa de Nueva York durante generaciones.",
+      proTip: "Si tienes poco tiempo, recorre un eje claro (Bethesda Terrace → Bow Bridge → The Mall) y guarda el atardecer para una vuelta corta.",
+      aiWhy: "Funciona como pausa premium entre museos y miradores, especialmente si tu ritmo de viaje es alto."
+    });
+
+    push("empire state building",{
+      titleES: "Empire State Building",
+      titleEN: "Empire State Building",
+      description: "Rascacielos icónico de estilo art déco con observatorios panorámicos. La experiencia gira en torno a las vistas y a la historia del edificio como símbolo de la ciudad.",
+      context: "Inaugurado en la década de 1930, se convirtió durante años en uno de los edificios más altos del mundo y en referencia cultural del skyline neoyorquino.",
+      proTip: "Suele ser mejor a primera hora o última franja del día. Si hay niebla baja, cambia a otro mirador más alto o flexible.",
+      aiWhy: "Si te falta un mirador emblemático, esta propuesta completa muy bien el ‘pack clásico’ de la ciudad."
+    });
+
+    push("top of the rock",{
+      titleES: "Top of the Rock",
+      titleEN: "Top of the Rock",
+      description: "Observatorio del Rockefeller Center con vistas abiertas hacia Central Park y el skyline. Es muy popular por sus perspectivas ‘de postal’.",
+      context: "Forma parte del complejo Rockefeller, ligado al desarrollo urbano y cultural del Midtown en el siglo XX.",
+      proTip: "Si puedes elegir, apunta al atardecer (con margen) para ver la transición día/noche. Llega con tiempo: las colas varían mucho.",
+      aiWhy: "Aporta un mirador complementario y suele encajar bien como bloque de tarde."
+    });
+
+    push("brooklyn bridge",{
+      titleES: "Puente de Brooklyn",
+      titleEN: "Brooklyn Bridge",
+      description: "Puente histórico peatonalizable entre Manhattan y Brooklyn. El paseo ofrece vistas del skyline y una experiencia urbana muy auténtica.",
+      context: "Fue una gran obra de ingeniería del siglo XIX y se considera un hito en la historia de los puentes colgantes.",
+      proTip: "Cruza temprano o al atardecer para evitar aglomeraciones. Combínalo con Dumbo o Brooklyn Heights Promenade.",
+      aiWhy: "Encaja perfecto como actividad ‘gratuita/paseo’ que equilibra días de museos y entradas."
+    });
+
+    push("times square",{
+      titleES: "Times Square",
+      titleEN: "Times Square",
+      description: "Zona de neones y pantallas gigantes en Midtown. Es más una experiencia de ambiente y energía urbana que una visita ‘de museo’.",
+      context: "Se consolidó como símbolo del entretenimiento y de la cultura popular asociada a Broadway y al corazón comercial de Manhattan.",
+      proTip: "Ve de noche para el impacto visual. Si no te gustan las multitudes, haz una pasada rápida y sigue hacia Bryant Park o Broadway.",
+      aiWhy: "Es un ‘must’ visual para muchos viajes, pero conviene tratarlo como parada breve."
+    });
+
+    push("rockefeller center",{
+      titleES: "Rockefeller Center",
+      titleEN: "Rockefeller Center",
+      description: "Complejo urbano emblemático con plazas, tiendas y puntos de interés (y acceso a Top of the Rock). Ideal para un paseo por Midtown.",
+      context: "Nació como gran proyecto urbano del siglo XX y concentra símbolos culturales de la ciudad (arte público, arquitectura, eventos).",
+      proTip: "Combínalo con St. Patrick’s Cathedral y 5th Avenue. En temporada alta, reserva franjas y evita horas punta.",
+      aiWhy: "Suele encajar como bloque ‘comodín’ porque conecta bien varias zonas turísticas cercanas."
+    });
+
+    push("louvre",{
+      titleES: "Museo del Louvre",
+      titleEN: "Louvre Museum",
+      description: "Uno de los museos más conocidos del mundo, con colecciones enormes. Lo ideal es entrar con una ruta concreta (no intentar verlo todo).",
+      context: "El edificio fue palacio real antes de convertirse en museo y concentra siglos de historia artística y política de Francia.",
+      proTip: "Compra entrada con hora y prioriza 3–5 obras/salas. Si vas con poco tiempo, marca un recorrido corto y sal sin ‘agotarte’.",
+      aiWhy: "Aporta una visita cultural ‘top’ que suele ser la pieza central del viaje a París."
+    });
+
+    push("eiffel tower",{
+      titleES: "Torre Eiffel",
+      titleEN: "Eiffel Tower",
+      description: "Torre metálica emblemática de París. Se disfruta tanto desde abajo (Campos de Marte/Trocadéro) como subiendo para vistas panorámicas.",
+      context: "Construida para la Exposición Universal de 1889, pasó de ser polémica a convertirse en símbolo global de la ciudad.",
+      proTip: "Si no quieres subir, asegúrate de verla desde Trocadéro al atardecer. Para subir, reserva franja temprana y evita fines de semana.",
+      aiWhy: "Es un icono que ‘cierra’ el imaginario del viaje y encaja bien como bloque de tarde con paseo alrededor."
+    });
+
+    push("british museum",{
+      titleES: "British Museum",
+      titleEN: "British Museum",
+      description: "Museo de referencia mundial con colecciones amplísimas. Recomendable como visita cultural si te interesa historia y arte de distintas civilizaciones.",
+      context: "Nació como institución pública en el siglo XVIII y refleja la historia del coleccionismo y la investigación arqueológica británica.",
+      proTip: "Entra con un plan (Egipto/Grecia/Asiria) y evita la ‘maratón’. Si vas con niños, elige una sola sección potente.",
+      aiWhy: "Suele ser una propuesta segura cuando quieres una visita cultural sólida y flexible por tiempo."
+    });
+
+    push("colosseum",{
+      titleES: "Coliseo",
+      titleEN: "Colosseum",
+      description: "Anfiteatro romano icónico. La visita se disfruta más entendiendo su escala y el contexto del Foro/Palatino alrededor.",
+      context: "Fue escenario de espectáculos en la antigua Roma y es una de las grandes piezas del patrimonio histórico europeo.",
+      proTip: "Reserva hora y, si puedes, combina con Foro Romano en la misma franja para aprovechar el desplazamiento.",
+      aiWhy: "Si tu viaje pasa por Roma, es uno de los hitos más ‘inevitables’ y define el día."
+    });
+
+    push("sagrada familia",{
+      titleES: "Sagrada Familia",
+      titleEN: "Sagrada Família",
+      description: "Basílica singular en Barcelona, famosa por su arquitectura y su interior luminoso. La experiencia es muy distinta a una iglesia tradicional.",
+      context: "Obra asociada a Antoni Gaudí, sigue en construcción y se ha convertido en símbolo cultural de la ciudad.",
+      proTip: "Compra entrada con antelación y elige una franja con buena luz. Si subes a torres, revisa accesos y tiempos.",
+      aiWhy: "Aporta una visita cultural muy distintiva y suele ser la ‘foto’ arquitectónica del viaje."
+    });
+
+    push("alhambra",{
+      titleES: "Alhambra",
+      titleEN: "Alhambra",
+      description: "Conjunto palaciego y fortificado en Granada, con palacios, patios y jardines. La visita es una experiencia histórica y estética muy completa.",
+      context: "Es un referente del legado andalusí en la península y concentra arquitectura, agua y paisaje en un conjunto patrimonial excepcional.",
+      proTip: "Reserva con mucha antelación (sobre todo Palacios Nazaríes) y planifica la visita en la franja más fresca si vas en verano.",
+      aiWhy: "Si estás en Granada, es la pieza central del viaje y suele merecer un bloque amplio."
+    });
+
+    push("museo del prado",{
+      titleES: "Museo del Prado",
+      titleEN: "Museo del Prado",
+      description: "Museo clave de Madrid con pintura europea de primer nivel. Ideal si quieres un bloque cultural potente sin desplazarte lejos del centro.",
+      context: "Sus colecciones incluyen obras de grandes maestros y ayudan a entender parte de la historia artística europea.",
+      proTip: "Elige una ruta corta (Velázquez/Goya/El Bosco) y descansa: es fácil ‘pasarse’ de tiempo dentro.",
+      aiWhy: "Encaja bien como visita cultural principal y es flexible si tu día necesita un plan ‘seguro’ por clima."
+    });
+
+    push("metropolitan museum of art",{
+      titleES: "The Metropolitan Museum of Art",
+      titleEN: "The Met",
+      description: "Museo gigantesco en Manhattan con colecciones de muchas épocas. Perfecto si quieres una visita cultural larga o modular por secciones.",
+      context: "Es una de las instituciones culturales más relevantes de la ciudad y su variedad permite elegir un recorrido a medida.",
+      proTip: "Entra con un plan (2–3 áreas) y reserva tiempo para un descanso. Si vas en fin de semana, entra temprano.",
+      aiWhy: "Aporta una alternativa cultural ‘de peso’ cuando ya tienes cubiertos los miradores y paseos principales."
+    });
+
+    push("9/11 memorial",{
+      titleES: "Memorial del 11-S",
+      titleEN: "9/11 Memorial",
+      description: "Espacio conmemorativo en la zona de Ground Zero. Es una visita sobria, emocional y muy distinta a otras propuestas turísticas.",
+      context: "Recuerda los atentados del 11 de septiembre y forma parte del proceso de memoria colectiva de la ciudad.",
+      proTip: "Ve con tiempo y en una franja tranquila. Si lo combinas con otra actividad, deja margen para ‘bajar el ritmo’ después.",
+      aiWhy: "Aporta profundidad cultural y equilibra un itinerario muy ‘de postal’ con un punto de memoria."
+    });
+
+    push("grand central terminal",{
+      titleES: "Grand Central Terminal",
+      titleEN: "Grand Central Terminal",
+      description: "Estación histórica y punto de paso muy fotogénico. Buena para una parada breve, arquitectura interior y ambiente urbano.",
+      context: "Es un icono del transporte y la arquitectura neoyorquina; su vestíbulo principal ha sido escenario cultural y cinematográfico.",
+      proTip: "Entra por el hall principal y mira el techo. Si vas en hora punta, haz visita rápida y sigue.",
+      aiWhy: "Encaja como ‘mini-bloque’ cuando tienes un hueco corto entre actividades."
+    });
+
+    push("high line",{
+      titleES: "High Line",
+      titleEN: "High Line",
+      description: "Parque elevado sobre una antigua vía férrea. Paseo lineal con vistas urbanas y zonas de descanso, muy agradable en buen tiempo.",
+      context: "Es un ejemplo de reconversión urbana: infraestructura industrial transformada en espacio público contemporáneo.",
+      proTip: "Empieza en el extremo que te convenga por logística y evita mediodía en verano. Combínalo con Chelsea Market si te apetece.",
+      aiWhy: "Sirve como paseo distinto y fotogénico, ideal si ya tienes cubiertos los ‘clásicos’."
+    });
+
+    const byKey = Object.create(null);
+    items.forEach(it=>{ byKey[it.key] = it; });
+    return byKey;
+  })();
+
+  function __aiGuessTypeKey(title, summary){
+    const s = __aiNormText((title||"")+" "+(summary||""));
+    if(/museum|museo|galeria|gallery/.test(s)) return "museum";
+    if(/park|parque|jardin|garden/.test(s)) return "park";
+    if(/cathedral|catedral|basilica|iglesia|church|temple|templo/.test(s)) return "temple";
+    if(/bridge|puente/.test(s)) return "bridge";
+    if(/square|plaza/.test(s)) return "square";
+    if(/tower|torre|observatory|mirador|view/.test(s)) return "view";
+    if(/market|mercado|food|tapas|gastron/.test(s)) return "food";
+    return "generic";
+  }
+
+  function __aiFallbackContent(title, city, typeKey){
+    const place = String(title||"Lugar de interés").trim();
+    const c = String(city||"").trim();
+    const where = c ? `en ${c}` : "en tu ruta";
+    if(typeKey === "museum"){
+      return {
+        description: `${place} es una visita cultural ${where}. Lo más útil es entrar con una idea clara de qué quieres ver (colección principal, salas clave o una exposición concreta) para que la visita sea disfrutable y no se convierta en una maratón.`,
+        context: `Los museos suelen concentrar el relato cultural de la ciudad y ayudan a entender su historia artística. Con una ruta corta, el valor sube mucho aunque tengas poco tiempo.`,
+        proTip: `Si hay colas, busca entrada con hora o ve a primera hora. Elige 2–3 salas “imprescindibles” y deja el resto para otra visita.`,
+        aiWhy: `Encaja como bloque flexible: puedes hacerlo corto o largo según el hueco real del día.`
+      };
+    }
+    if(typeKey === "park"){
+      return {
+        description: `${place} es un espacio ideal ${where} para caminar, descansar y compensar un día de visitas intensas. Suele funcionar muy bien como pausa entre museos, miradores y zonas con mucha gente.`,
+        context: `Los grandes parques urbanos suelen ser piezas clave de la vida local: ayudan a entender cómo se vive la ciudad más allá de los hitos turísticos.`,
+        proTip: `Elige un recorrido simple (un eje o un mirador interno) y guárdate 60–90 min. Si hace calor, ve temprano o al atardecer.`,
+        aiWhy: `Encaja perfecto para “respirar” y dar variedad a tu itinerario.`
+      };
+    }
+    if(typeKey === "view"){
+      return {
+        description: `${place} es una propuesta típica ${where} para ver la ciudad desde otra perspectiva. Suele aportar una ‘foto’ potente y un bloque muy claro para el cronograma.`,
+        context: `Los miradores funcionan bien para entender la escala urbana y orientarte. Muchos hitos se aprecian mejor desde arriba que a pie de calle.`,
+        proTip: `Si puedes, apunta al atardecer o a primera hora. Si el día está brumoso, cambia a un mirador alternativo o a un paseo con vistas.`,
+        aiWhy: `Completa bien una ciudad cuando ya tienes cubiertos paseos y quieres un punto “icónico”.`
+      };
+    }
+    // generic final
+    return {
+      description: `${place} es una visita interesante ${where}. La experiencia suele mejorar si la tratas como un bloque con intención: qué quieres ver, cuánto tiempo quieres dedicar y cómo encaja con tu ruta.`,
+      context: `Entender un mínimo del contexto del lugar (origen, papel en la ciudad o simbolismo) suele hacer la visita mucho más disfrutable.`,
+      proTip: `Si vas con poco tiempo, define una meta clara (una foto, una zona concreta o un recorrido corto) y evita alargar por inercia.`,
+      aiWhy: `Se propone porque encaja con un itinerario equilibrado y aporta variedad al conjunto del viaje.`
+    };
+  }
+
+  function __aiMoreInfoContentFor(item, city){
+    const title = String((item && (item.title || item.name)) || "").trim();
+    const summary = String((item && (item.summary || item.description)) || "").trim();
+    const canon = __aiCanonicalLandmark(title);
+    const specific = __AI_MI_SPECIFIC[canon];
+    if(specific){
+      return {
+        displayTitle: specific.titleES || title || "Más info",
+        description: specific.description,
+        context: specific.context,
+        proTip: specific.proTip,
+        aiWhy: specific.aiWhy
+      };
+    }
+    const typeKey = __aiGuessTypeKey(title, summary);
+    const fb = __aiFallbackContent(title || "Lugar de interés", city, typeKey);
+    return {
+      displayTitle: title || "Más info",
+      description: fb.description,
+      context: fb.context,
+      proTip: fb.proTip,
+      aiWhy: fb.aiWhy
+    };
+  }
+
+  function __aiBuildMoreInfoHtml(item, city){
+    const c = __aiMoreInfoContentFor(item, city);
+    const safeCity = String(city||"").trim();
+    const headerLine = safeCity ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(safeCity)}</div>` : ``;
+
+    const sec = (label, body, open)=>{
+      const o = open ? " open" : "";
+      return `
+        <details class="rounded-2xl border border-slate-200 bg-white"${o}>
+          <summary class="tap list-none cursor-pointer px-4 py-3 flex items-center justify-between gap-3">
+            <span class="font-extrabold text-slate-900">${escapeHtml(label)}</span>
+            <span class="text-slate-400 text-xs font-black">▾</span>
+          </summary>
+          <div class="px-4 pb-4 text-sm text-slate-700 leading-relaxed">${escapeHtml(body||"")}</div>
+        </details>`;
+    };
+
+    return `
+      <div class="space-y-3">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div class="text-[10px] font-black uppercase tracking-wider text-slate-500">Ficha turística</div>
+          <div class="mt-1 text-lg font-extrabold text-slate-900">${escapeHtml(c.displayTitle || "Más info")}</div>
+          ${headerLine}
+        </div>
+        ${sec("Descripción", c.description, true)}
+        ${sec("Historia y contexto", c.context, false)}
+        ${sec("Consejo pro", c.proTip, false)}
+        ${sec("Por qué te lo recomienda la IA", c.aiWhy, false)}
+      </div>
+    `;
+  }
+
+  function __aiOpenMoreInfo(item, city){
+    const infoOverlay = document.getElementById("aiActionInfoOverlay");
+    const infoTitle = document.getElementById("aiActionInfoTitle");
+    const infoBody = document.getElementById("aiActionInfoBody");
+    if(!infoOverlay || !infoBody) return;
+
+    const t = (item && (item.title || item.name)) ? String(item.title || item.name) : "Más info";
+    if(infoTitle) infoTitle.textContent = t;
+    infoBody.innerHTML = __aiBuildMoreInfoHtml(item, city);
+    infoOverlay.classList.remove("hidden");
+  }
+
+  function __aiFindItemById(id){
+    const sid = String(id||"");
+    const groups = (window.aiModule && window.aiModule.state && Array.isArray(window.aiModule.state.cityGroups)) ? window.aiModule.state.cityGroups : [];
+    for(const g of groups){
+      const arr = Array.isArray(g && g.proposals) ? g.proposals : [];
+      for(const it of arr){
+        if(String(it && it.id) === sid) return { item: it, city: g.city || "" };
+      }
+    }
+    const blocks = (window.aiModule && window.aiModule.state && Array.isArray(window.aiModule.state.gapBlocks)) ? window.aiModule.state.gapBlocks : [];
+    for(const b of blocks){
+      const arr = Array.isArray(b && b.proposals) ? b.proposals : [];
+      for(const it of arr){
+        if(String(it && it.id) === sid) return { item: it, city: b.city || it.city || "" };
+      }
+    }
+    return null;
+  }
+
+  function __aiBindMoreInfoDelegation(){
+    const body = document.getElementById("aiSheetBody");
+    if(!body || body.__aiMoreInfoDelegationBound) return;
+    body.__aiMoreInfoDelegationBound = true;
+
+    body.addEventListener("click", (e)=>{
+      const btn = e.target && e.target.closest ? e.target.closest("[data-ai-moreinfo]") : null;
+      if(!btn) return;
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+
+      const id = btn.getAttribute("data-ai-moreinfo") || "";
+      const city = btn.getAttribute("data-ai-moreinfo-city") || "";
+      const found = __aiFindItemById(id);
+      if(found && found.item){
+        __aiOpenMoreInfo(found.item, found.city || city);
+      }else{
+        // Fallback: abrir ficha genérica con el título del botón
+        __aiOpenMoreInfo({ title: String(btn.textContent||"Más info").trim() || "Más info", summary:"" }, city);
+      }
+    }, true);
+  }
+  window.__aiBindMoreInfoDelegation = __aiBindMoreInfoDelegation;
+
   const bindAIControls = function(){
     try{
       initAISheet();
@@ -17131,6 +17320,7 @@ commitSelectedActivities(){
       });
       aiModule.bindUI();
       aiModule.render();
+      try{ if(window.__aiBindMoreInfoDelegation) window.__aiBindMoreInfoDelegation(); }catch{}
       // --- V226C1A: IA hub wiring robusto (delegación estable) ---
       (function(){
         const hub = document.getElementById("aiHubStage");
