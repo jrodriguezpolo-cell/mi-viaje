@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8U_AI_MORE_INFO_WIKIMEDIA_COMMONS_FILE_SEARCH</title>
+<title>V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8U_AI_MORE_INFO_WIKIMEDIA_COMMONS_FILE_SEARCH" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8U_AI_MORE_INFO_WIKIMEDIA_COMMONS_FILE_SEARCH</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,8 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8U_AI_MORE_INFO_WIKIMEDIA_COMMONS_FILE_SEARCH</div>
+            Build cargada: V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L
+          </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
           </button>
@@ -1609,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8U_AI_MORE_INFO_WIKIMEDIA_COMMONS_FILE_SEARCH";
+const APP_BUILD = "V226C1A8V_AI_MORE_INFO_COMMONS_SAFE_REINTRO_FROM_A8L";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14804,6 +14805,316 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 <script>
+
+/* ============================================================
+   V226C1A8V — "Más info" con imagen desde Wikimedia Commons (namespace 6)
+   REGLA: Commons SOLO se ejecuta al pulsar "Más info". No en bind/render.
+   ============================================================ */
+
+/* Normalización: minúsculas + sin acentos + sin signos + espacios colapsados */
+function __mvNormText(str){
+  try{
+    return String(str||"")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .replace(/['"“”‘’`´]/g,"")
+      .replace(/[^a-z0-9\s]/g," ")
+      .replace(/\s+/g," ")
+      .trim();
+  }catch{ return String(str||"").toLowerCase().trim(); }
+}
+
+function __mvExtractMainLandmark(placeName){
+  const raw = String(placeName||"").trim();
+  if(!raw) return "";
+  // Separadores comunes: +, &, and, y, |, /, ,
+  const parts = raw.split(/\s*(?:\+|&|\band\b|\by\b|\||\/|,)\s*/i).map(s=>s.trim()).filter(Boolean);
+  const cand = parts[0] || raw;
+  // quitar paréntesis, guiones largos, etc.
+  return cand.replace(/\s*\(.*?\)\s*/g," ").replace(/\s+/g," ").trim();
+}
+
+/* Alias mínimos para landmarks ambiguos frecuentes */
+function __mvAliasLandmark(main){
+  const k = __mvNormText(main);
+  const map = {
+    "top of the rock":"top of the rock observation deck",
+    "statue of liberty":"statue of liberty",
+    "empire state building":"empire state building",
+    "british museum":"british museum",
+    "high line":"high line",
+    "central park":"central park",
+    "mercado de san miguel":"mercado de san miguel",
+  };
+  return map[k] ? map[k] : main;
+}
+
+function __mvStripHtml(s){
+  return String(s||"").replace(/<\/?[^>]+(>|$)/g,"").replace(/\s+/g," ").trim();
+}
+
+/**
+ * fetchCommonsPlaceImage(placeName, city)
+ * - Busca SOLO archivos en Commons (srnamespace=6)
+ * - Evalúa pocos candidatos (<=5) y elige 1
+ * - Devuelve thumb razonable (iiurlwidth)
+ */
+async function fetchCommonsPlaceImage(placeName, city){
+  const origTitle = String(placeName||"").trim();
+  const main0 = __mvExtractMainLandmark(origTitle);
+  const main = __mvAliasLandmark(main0);
+  const city0 = String(city||"").trim();
+
+  const mainN = __mvNormText(main);
+  if(!mainN) return null;
+
+  // City solo como apoyo (no dominante)
+  const cityN = __mvNormText(city0);
+  const query = (cityN && cityN.length>=3) ? `${main} ${city0}` : `${main}`;
+
+  try{
+    console.log("[MV][MoreInfo] open", { title: origTitle, mainLandmark: main0, mainAlias: main, query });
+
+    const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srnamespace=6&format=json&origin=*&srlimit=5`;
+    const searchRes = await fetch(searchUrl);
+    const searchData = await searchRes.json();
+    const list = searchData && searchData.query && Array.isArray(searchData.query.search) ? searchData.query.search : [];
+    if(!list.length){
+      console.log("[MV][MoreInfo] commons: no results");
+      return null;
+    }
+
+    const bad = [
+      "map","plan","logo","icon","diagram","flag","coat of arms","emblem","seal",
+      "svg","pdf","drawing","illustration","schematic","route","metro","subway"
+    ];
+
+    const mainTokens = mainN.split(" ").filter(t=>t.length>=3).slice(0,8);
+    const cityTokens = cityN ? cityN.split(" ").filter(t=>t.length>=3).slice(0,6) : [];
+
+    const scoreTitle = (fileTitle)=>{
+      const tRaw = String(fileTitle||"");
+      const t = __mvNormText(tRaw.replace(/^file:/i,"").replace(/\.[a-z0-9]{2,5}$/i,""));
+      if(!t) return -999;
+
+      let s = 0;
+
+      // penalizar genéricos/ruido
+      if(/img[_\-\s]?\d{3,}/i.test(tRaw) || /dsc[_\-\s]?\d{3,}/i.test(tRaw)) s -= 25;
+      if(t.length < 10) s -= 10;
+
+      // penalizaciones por tipo/keywords
+      const tLowRaw = tRaw.toLowerCase();
+      bad.forEach((kw)=>{
+        if(tLowRaw.includes(kw)) s -= 60;
+      });
+      if(tLowRaw.endsWith(".svg") || tLowRaw.endsWith(".pdf")) s -= 80;
+      if(tLowRaw.endsWith(".jpg") || tLowRaw.endsWith(".jpeg")) s += 12;
+      if(tLowRaw.endsWith(".png")) s += 6;
+
+      // coincidencia fuerte por tokens de landmark
+      let hit = 0;
+      mainTokens.forEach(tok=>{
+        if(t.includes(tok)) hit++;
+      });
+
+      if(hit === mainTokens.length && mainTokens.length>=2) s += 55;
+      else if(hit >= Math.max(2, Math.ceil(mainTokens.length*0.6))) s += 40;
+      else if(hit >= 1) s += 18;
+      else s -= 40;
+
+      // city como apoyo
+      if(cityTokens.length){
+        let cityHit = 0;
+        cityTokens.forEach(tok=>{ if(t.includes(tok)) cityHit++; });
+        if(cityHit>=1) s += 6;
+      }
+
+      // bonus si el título arranca por el landmark
+      if(t.startsWith(mainTokens[0] || "")) s += 6;
+
+      return s;
+    };
+
+    let best = null;
+    let bestScore = -9999;
+    const inspected = [];
+
+    for(const cand of list){
+      const title = cand && cand.title ? cand.title : "";
+      const s = scoreTitle(title);
+      inspected.push({ title, score: s });
+      if(s > bestScore){
+        bestScore = s;
+        best = title;
+      }
+    }
+
+    console.log("[MV][MoreInfo] commons candidates", inspected);
+    if(!best || bestScore < 8){
+      console.log("[MV][MoreInfo] commons: reject (score too low)", { best, bestScore });
+      return null;
+    }
+
+    console.log("[MV][MoreInfo] commons: chosen", { best, bestScore });
+
+    const iiurlw = 1100; // imagen superior, tamaño razonable
+    const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(best)}&prop=imageinfo&iiprop=url|extmetadata|user&iiurlwidth=${iiurlw}&format=json&origin=*`;
+    const infoRes = await fetch(infoUrl);
+    const infoData = await infoRes.json();
+    const page = infoData && infoData.query && infoData.query.pages ? Object.values(infoData.query.pages)[0] : null;
+    const info = page && page.imageinfo && page.imageinfo[0] ? page.imageinfo[0] : null;
+    if(!info) return null;
+
+    const ext = info.extmetadata || {};
+    const artist = __mvStripHtml((ext.Artist && ext.Artist.value) || info.user || "Wikimedia Commons");
+    const licenseShort = __mvStripHtml((ext.LicenseShortName && ext.LicenseShortName.value) || "");
+    const titleClean = String(best).replace(/^File:/i,"").replace(/\.[^/.]+$/,"");
+
+    return {
+      imageUrl: info.thumburl || info.url,
+      sourceTitle: titleClean,
+      sourceLink: `https://commons.wikimedia.org/wiki/${encodeURIComponent(best)}`,
+      author: artist,
+      license: licenseShort
+    };
+  }catch(e){
+    console.log("[MV][MoreInfo] commons error", e);
+    return null;
+  }
+}
+
+/**
+ * openAiPlaceMoreInfoCard(item, city)
+ * - Abre la ficha textual inmediatamente
+ * - Carga imagen asíncrona y la coloca arriba si es fiable
+ */
+function openAiPlaceMoreInfoCard(item, city){
+  try{
+    const infoTitle = document.getElementById("aiActionInfoTitle");
+    const infoBody = document.getElementById("aiActionInfoBody");
+    const infoOverlay = document.getElementById("aiActionInfoOverlay");
+    if(!infoTitle || !infoBody || !infoOverlay) return;
+
+    const title = (item && (item.title || item.name)) ? (item.title || item.name) : "Lugar";
+    const summary = (item && (item.summary || item.description)) ? (item.summary || item.description) : "Lugar de interés turístico.";
+    const why = (item && item.why) ? item.why : (city ? `Es un punto clave dentro de tu ruta por ${city}.` : "Encaja bien como visita en tu ruta.");
+    const proTip = (item && item.proTip) ? item.proTip : "Si puedes, ve a primera hora o al atardecer para evitar colas y ganar mejor luz.";
+
+    infoTitle.textContent = title;
+
+    infoBody.innerHTML = `
+      <div class="ai-premium-card space-y-4">
+        <div class="inline-flex items-center gap-2">
+          <div class="ai-badge inline-block px-2 py-1 bg-violet-100 text-violet-700 text-[10px] font-extrabold rounded uppercase tracking-wider">
+            Más info
+          </div>
+          ${city ? `<div class="text-[11px] font-semibold text-slate-500 truncate">· ${escapeHtml(city)}</div>` : ``}
+        </div>
+
+        <div id="aiPlaceImgContainer" class="relative bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden min-h-[150px] flex items-center justify-center">
+          <div class="flex flex-col items-center gap-2 py-6">
+            <div class="w-5 h-5 border-2 border-slate-200 border-t-violet-500 rounded-full animate-spin"></div>
+            <span class="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest">Buscando imagen…</span>
+          </div>
+        </div>
+
+        <section>
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">¿Qué es?</h4>
+          <p class="text-slate-800 font-medium leading-relaxed">${escapeHtml(summary)}</p>
+        </section>
+
+        <section>
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">¿Por qué merece la pena?</h4>
+          <p class="text-slate-600 text-sm leading-relaxed">${escapeHtml(why)}</p>
+        </section>
+
+        <section class="pt-1">
+          <h4 class="text-xs font-black text-slate-400 uppercase mb-1">Consejo pro</h4>
+          <p class="text-slate-600 text-sm">${escapeHtml(proTip)}</p>
+        </section>
+
+        <div id="aiPlaceImgCredit" class="hidden text-[10px] text-slate-400 pt-1"></div>
+      </div>
+    `;
+
+    // Abrir overlay (sistema de A8L: clase hidden)
+    infoOverlay.classList.remove("hidden");
+
+    // Imagen asíncrona bajo demanda
+    fetchCommonsPlaceImage(title, city).then((data)=>{
+      const container = document.getElementById("aiPlaceImgContainer");
+      const credit = document.getElementById("aiPlaceImgCredit");
+      if(!container) return;
+
+      if(data && data.imageUrl){
+        const safeAuthor = escapeHtml(data.author || "Wikimedia Commons");
+        const safeTitle = escapeHtml(data.sourceTitle || "Wikimedia");
+        const safeLink = data.sourceLink ? String(data.sourceLink) : "";
+        const safeLicense = data.license ? escapeHtml(data.license) : "";
+
+        container.innerHTML = `
+          <img src="${escapeHtml(data.imageUrl)}" class="w-full h-auto max-h-[340px] object-cover block" alt="${safeTitle}">
+          <div class="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent text-[9px] text-white flex items-end justify-between gap-2 min-h-[44px]">
+            <span class="truncate opacity-85">Foto: ${safeAuthor}${safeLicense ? ` · ${safeLicense}` : ``}</span>
+            ${safeLink ? `<a href="${escapeHtml(safeLink)}" target="_blank" rel="noopener" class="bg-white/20 hover:bg-white/35 px-2 py-0.5 rounded-lg backdrop-blur-sm font-extrabold">Wikimedia</a>` : ``}
+          </div>
+        `;
+        if(credit){
+          credit.classList.remove("hidden");
+          credit.innerHTML = `Imagen: <span class="font-semibold">Wikimedia Commons</span> · ${safeTitle}`;
+        }
+      }else{
+        // Sin imagen fiable: ocultamos el bloque para no dejar hueco roto
+        container.classList.add("hidden");
+        if(credit) credit.classList.add("hidden");
+        console.log("[MV][MoreInfo] no reliable image");
+      }
+    }).catch((e)=>{
+      console.log("[MV][MoreInfo] image load error", e);
+      const container = document.getElementById("aiPlaceImgContainer");
+      if(container) container.classList.add("hidden");
+    });
+  }catch(e){
+    console.log("[MV][MoreInfo] open card error", e);
+  }
+}
+
+/**
+ * bindAiMoreInfoListeners(resultsView)
+ * - listeners únicos (btn.__aiBound)
+ * - NO toca bindAIControls / bindUI / render: solo engancha DOM ya pintado
+ */
+function bindAiMoreInfoListeners(resultsView){
+  if(!resultsView) return;
+  const btns = resultsView.querySelectorAll("[data-ai-moreinfo]");
+  btns.forEach((btn)=>{
+    if(btn.__aiBound) return;
+    btn.__aiBound = true;
+    btn.addEventListener("click", (e)=>{
+      try{
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute("data-ai-moreinfo");
+        const city = btn.getAttribute("data-ai-moreinfo-city") || "";
+        const groups = window.aiModule && window.aiModule.state ? (window.aiModule.state.cityGroups || []) : [];
+        let found = null;
+        for(const g of groups){
+          const arr = g && g.proposals ? g.proposals : [];
+          const hit = arr.find(p => String(p && p.id) === String(id));
+          if(hit){ found = hit; break; }
+        }
+        if(found){
+          console.log("[MV][MoreInfo] click", { id, city });
+          openAiPlaceMoreInfoCard(found, city);
+        }
+      }catch(err){
+        console.log("[MV][MoreInfo] wiring error", err);
+      }
+    });
+  });
+}
+
 (function(){
   const AI_PREFS_KEY = "miviaje.aiModulePrefs.v225f2";
   const AI_CITY_CATALOG = {
@@ -14879,365 +15190,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ]
   };
 
-  
-  /* ================== IA · "Más info" (ficha lugar) + Wikimedia Commons (V226C1A8U) ================== */
-
-  function __aiNormStr(s){
-    try{
-      return String(s||"")
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-        .replace(/[^a-z0-9\s]/g," ")
-        .replace(/\s+/g," ")
-        .trim();
-    }catch{
-      return String(s||"").toLowerCase().replace(/\s+/g," ").trim();
-    }
-  }
-
-  const __AI_COMMONS_ALIASES = {
-    "top of the rock": "Top of the Rock Observation Deck",
-    "statue of liberty": "Statue of Liberty",
-    "empire state building": "Empire State Building",
-    "british museum": "British Museum",
-    "high line": "High Line",
-    "central park": "Central Park",
-    "mercado de san miguel": "Mercado de San Miguel"
-  };
-
-  function __aiPickMainLandmark(title){
-    const raw = String(title || "").trim();
-    if(!raw) return "";
-    const norm = __aiNormStr(raw);
-    if(__AI_COMMONS_ALIASES[norm]) return __AI_COMMONS_ALIASES[norm];
-
-    // corta separadores típicos y quédate con el primer segmento con más "sustancia"
-    const parts = raw.split(/(\+|&| and |\/|,|\||;|·|–|-)/i).map(x=>String(x||"").trim()).filter(Boolean);
-    // heurística simple: elige el segmento más largo con letras
-    let best = raw, bestScore = 0;
-    parts.forEach(p=>{
-      const n = __aiNormStr(p);
-      const letters = (n.match(/[a-z]/g)||[]).length;
-      const score = letters + Math.min(20, n.split(" ").length*2);
-      if(score > bestScore){
-        bestScore = score;
-        best = p;
-      }
-    });
-    return String(best||raw).trim();
-  }
-
-  function __aiCommonsBadTitle(n){
-    // n viene normalizado
-    if(!n) return true;
-    // penaliza cosas genéricas/incorrectas como mapas, banderas, logos
-    const bad = [
-      "map", "location map", "flag", "coat of arms", "logo", "seal",
-      "svg", "icon", "diagram", "route", "metro map", "subway map",
-      "panorama", "collage", "postcard", "drawing", "illustration",
-      "black and white", "night view", "aerial", "satellite", "street map"
-    ];
-    return bad.some(k => n.includes(__aiNormStr(k)));
-  }
-
-  function __aiCommonsFileExt(title){
-    const t = String(title||"").trim().toLowerCase();
-    const m = /\.(jpg|jpeg|png|webp|gif|tif|tiff|svg)$/.exec(t);
-    return m ? m[1] : "";
-  }
-
-  function __aiScoreCommonsCandidate(opts){
-    const landmark = __aiNormStr(opts.landmark || "");
-    const city = __aiNormStr(opts.city || "");
-    const fileTitle = String(opts.fileTitle || "");
-    const fileNorm = __aiNormStr(fileTitle.replace(/^file:\s*/i,""));
-
-    if(!fileNorm || __aiCommonsBadTitle(fileNorm)) return -999;
-
-    const ext = __aiCommonsFileExt(fileTitle);
-    if(ext === "svg") return -50; // suele ser logo/escudo
-    if(ext && !["jpg","jpeg","png","webp"].includes(ext)) return -15;
-
-    const tokens = landmark.split(" ").filter(w => w && w.length >= 3 && !["the","and","del","de","la","el","los","las","of","for","por"].includes(w));
-    if(!tokens.length) return -999;
-
-    let score = 0;
-
-    // match fuerte: landmark completo
-    if(fileNorm.includes(landmark)) score += 60;
-
-    // match por tokens
-    tokens.forEach(tok=>{
-      if(fileNorm.includes(tok)) score += 10;
-    });
-
-    // bonus si también menciona ciudad (pero no dominante)
-    if(city){
-      const cityTok = city.split(" ").filter(Boolean)[0];
-      if(cityTok && fileNorm.includes(cityTok)) score += 8;
-    }
-
-    // penaliza genéricos
-    if(/^(new york|madrid|paris|london|rome|tokyo|barcelona)\b/.test(fileNorm) && !fileNorm.includes(landmark)) score -= 10;
-    if(fileNorm.includes("view") && !fileNorm.includes(landmark)) score -= 8;
-    if(fileNorm.includes("museum") && !landmark.includes("museum")) score -= 6;
-
-    return score;
-  }
-
-  async function fetchCommonsPlaceImage(placeName, city){
-    const originalTitle = String(placeName || "").trim();
-    const originalCity = String(city || "").trim();
-    const landmark = __aiPickMainLandmark(originalTitle);
-    const landmarkNorm = __aiNormStr(landmark);
-
-    // Logs mínimos (diagnóstico)
-    try{
-      console.log("[ai][commons] title:", originalTitle, "| landmark:", landmark, "| city:", originalCity);
-    }catch{}
-
-    if(!landmarkNorm) return null;
-
-    // Query: landmark + ciudad como apoyo (no dominante)
-    const q = [landmark, originalCity].filter(Boolean).join(" ").trim();
-
-    const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&srnamespace=6&format=json&origin=*&srlimit=6`;
-
-    let searchData = null;
-    try{
-      const r = await fetch(searchUrl);
-      searchData = await r.json();
-    }catch(e){
-      try{ console.log("[ai][commons] search fail"); }catch{}
-      return null;
-    }
-
-    const hits = (searchData && searchData.query && Array.isArray(searchData.query.search)) ? searchData.query.search : [];
-    if(!hits.length){
-      try{ console.log("[ai][commons] no results"); }catch{}
-      return null;
-    }
-
-    // Inspecciona pocos candidatos para limitar requests
-    const candidates = hits.slice(0,4).map(x => String(x && x.title || "").trim()).filter(Boolean);
-
-    let best = null;
-    let bestScore = -999;
-
-    for(const fileTitle of candidates){
-      const score = __aiScoreCommonsCandidate({ fileTitle, landmark, city: originalCity });
-      if(score < 25) { continue; } // filtro suave: evita basura
-      try{
-        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileTitle)}&prop=imageinfo&iiprop=url|extmetadata|user&iiurlwidth=1200&format=json&origin=*`;
-        const infoRes = await fetch(infoUrl);
-        const infoData = await infoRes.json();
-        const pages = infoData && infoData.query && infoData.query.pages ? infoData.query.pages : {};
-        const pageId = Object.keys(pages)[0];
-        const info = pageId && pages[pageId] && pages[pageId].imageinfo && pages[pageId].imageinfo[0] ? pages[pageId].imageinfo[0] : null;
-        if(!info) continue;
-
-        // valida URL
-        const imageUrl = String(info.thumburl || info.url || "").trim();
-        if(!imageUrl) continue;
-
-        if(score > bestScore){
-          bestScore = score;
-          const meta = info.extmetadata || {};
-          const safeText = (v)=>{
-            const s = String((v && (v.value || v)) || "").trim();
-            if(!s) return "";
-            // extmetadata a veces viene con HTML: lo limpiamos
-            return s.replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
-          };
-          const author = safeText(meta.Artist) || safeText(meta.Author) || safeText(info.user) || "";
-          const license = safeText(meta.LicenseShortName) || safeText(meta.License) || safeText(meta.UsageTerms) || "";
-          best = {
-            imageUrl,
-            sourceTitle: fileTitle,
-            sourceLink: "https://commons.wikimedia.org/wiki/" + encodeURIComponent(fileTitle.replace(/ /g,"_")),
-            author: author,
-            license: license,
-            score: bestScore
-          };
-        }
-      }catch(e){
-        // si falla un candidato, continúa
-      }
-    }
-
-    if(!best){
-      try{ console.log("[ai][commons] rejected / no good match"); }catch{}
-      return null;
-    }
-
-    try{
-      console.log("[ai][commons] pick:", best.sourceTitle, "| score:", best.score);
-    }catch{}
-    return best;
-  }
-
-  function openAiPlaceMoreInfoCard(item, city){
-    const title = String(item && item.title || "").trim() || "Más info";
-    const summary = String(item && item.summary || "").trim();
-    const why = String(item && item.why || "").trim();
-    const type = ""; // mantenemos simple en esta versión
-
-    // Texto premium (corto, útil, no redundante)
-    const aboutRaw = summary;
-
-    const norm = (s)=>__aiNormStr(s);
-
-    const inferredType = ()=>{
-      const t = norm(title + " " + aboutRaw);
-      if(t.includes("museum") || t.includes("museo")) return "museo";
-      if(t.includes("park") || t.includes("parque") || t.includes("garden") || t.includes("jardin")) return "parque";
-      if(t.includes("viewpoint") || t.includes("mirador") || t.includes("observ") || t.includes("skydeck")) return "mirador";
-      if(t.includes("neighborhood") || t.includes("barrio") || t.includes("district")) return "barrio";
-      if(t.includes("bridge") || t.includes("puente")) return "puente";
-      if(t.includes("church") || t.includes("iglesia") || t.includes("temple") || t.includes("catedral")) return "templo";
-      if(t.includes("market") || t.includes("mercado")) return "mercado";
-      if(t.includes("monument") || t.includes("monumento") || t.includes("statue") || t.includes("estatua")) return "monumento";
-      return "";
-    };
-
-    const buildWhat = ()=>{
-      const t = inferredType();
-      if(norm(aboutRaw)) return aboutRaw;
-      if(t==="museo") return "Un museo ideal para ver colecciones destacadas y entender mejor la cultura local.";
-      if(t==="parque") return "Un parque o zona verde para pasear, descansar y ver otra cara de la ciudad.";
-      if(t==="mirador") return "Un mirador/observatorio con vistas amplias, pensado para fotos y orientación de la ciudad.";
-      if(t==="barrio") return "Un barrio con personalidad propia para pasear, descubrir ambiente y sitios con encanto.";
-      if(t==="puente") return "Un puente emblemático (o paseo asociado) con buenas vistas y fotos clásicas.";
-      if(t==="templo") return "Un templo/iglesia con interés arquitectónico y ambiente interior tranquilo.";
-      if(t==="mercado") return "Un mercado popular para picar algo y ver la vida local de cerca.";
-      if(t==="monumento") return "Un monumento destacado y muy representativo de la ciudad.";
-      return "Información ampliada no disponible para esta propuesta.";
-    };
-
-    const buildSpecial = ()=>{
-      if(summary && summary.length <= 120) return summary;
-      const t = inferredType();
-      if(t==="museo") return "Suele merecer la pena si te interesa el tema o buscas una visita de interior (perfecto con lluvia).";
-      if(t==="parque") return "Buen plan para bajar ritmo y alternar con visitas intensas de monumentos.";
-      if(t==="mirador") return "Ideal si buscas una vista “wow” y fotos claras del skyline.";
-      if(t==="barrio") return "Te da contexto real de la ciudad: cafés, tiendas, arquitectura y ambiente.";
-      return "Es una propuesta muy representativa y fácil de encajar en una ruta turística.";
-    };
-
-    const buildContext = ()=>{
-      const t = inferredType();
-      if(t==="museo") return "Suele concentrar piezas clave o exposiciones temporales que ayudan a entender la historia local o el arte del lugar.";
-      if(t==="parque") return "Los parques urbanos suelen tener historia de diseño y uso ciudadano, y funcionan como “pulmón” de la ciudad.";
-      if(t==="barrio") return "Muchos barrios tienen capas históricas: migraciones, estilos arquitectónicos y escenas culturales propias.";
-      if(t==="mirador") return "Los miradores ayudan a orientarte: verás cómo se estructura la ciudad, ríos, ejes principales y zonas clave.";
-      if(t==="mercado") return "Los mercados suelen ser un buen termómetro de la vida local: horarios, productos y ambiente del barrio.";
-      if(t==="templo") return "Además del valor religioso, suelen tener capas históricas y artísticas (fachadas, vidrieras, interiores).";
-      return "Una referencia muy reconocible que aporta contexto visual e histórico a la ciudad.";
-    };
-
-    const buildProTip = ()=>{
-      const t = inferredType();
-      if(t==="museo") return "Si hay colas, intenta primera hora o última franja. Mira si existe entrada combinada o gratuita en algún horario.";
-      if(t==="parque") return "Ideal para un descanso entre visitas. Lleva agua y aprovecha sombras/zonas tranquilas.";
-      if(t==="mirador") return "Mejor con buena visibilidad: mira el tiempo y evita las horas de sol duro si no hay sombra.";
-      if(t==="barrio") return "Recórrelo sin prisa: el valor está en calles laterales, cafés y pequeñas tiendas, no solo en la arteria principal.";
-      if(t==="mercado") return "Ve a media mañana para mejor ambiente. Si vas a comer allí, evita la hora punta.";
-      if(t==="templo") return "Revisa horarios de acceso y de celebraciones. En interior, respeta silencio y normas de fotografía.";
-      return "Si encaja, combínalo con un punto cercano para optimizar desplazamientos y energía.";
-    };
-
-    const what = buildWhat();
-    const special = buildSpecial();
-    const context = buildContext();
-    const proTip = buildProTip();
-
-    const html = `
-      <div class="space-y-3">
-        <div id="aiMoreInfoImgBox" class="rounded-3xl border border-slate-200 bg-slate-50 overflow-hidden">
-          <div class="p-4">
-            <div id="aiMoreInfoImgStatus" class="text-sm text-slate-600 flex items-center gap-2">
-              <span class="inline-flex w-2 h-2 rounded-full bg-slate-400"></span>
-              <span>Buscando imagen en Wikimedia Commons…</span>
-            </div>
-          </div>
-          <img id="aiMoreInfoImgEl" class="hidden w-full h-[180px] object-cover" alt="">
-          <div id="aiMoreInfoImgCredit" class="hidden px-4 py-3 border-t border-slate-200 bg-white">
-            <div class="text-xs text-slate-500" id="aiMoreInfoImgCreditText"></div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-white p-4">
-          <div class="text-xs font-extrabold text-slate-500">Qué es</div>
-          <div class="mt-1 text-sm text-slate-700">${escapeHtml(what)}</div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="rounded-3xl border border-slate-200 bg-white p-4">
-            <div class="text-xs font-extrabold text-slate-500">Qué lo hace especial</div>
-            <div class="mt-1 text-sm text-slate-700">${escapeHtml(special)}</div>
-          </div>
-          <div class="rounded-3xl border border-slate-200 bg-white p-4">
-            <div class="text-xs font-extrabold text-slate-500">Contexto</div>
-            <div class="mt-1 text-sm text-slate-700">${escapeHtml(context)}</div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-white p-4">
-          <div class="text-xs font-extrabold text-slate-500">Consejo pro</div>
-          <div class="mt-1 text-sm text-slate-700">${escapeHtml(proTip)}</div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <div class="text-xs font-extrabold text-slate-600">Por qué la IA lo recomienda</div>
-          <div class="mt-1 text-sm text-slate-700">${escapeHtml(why || "Encaje estimado por contexto del viaje y huecos disponibles.")}</div>
-        </div>
-      </div>
-    `;
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
-    btn.textContent = "Volver";
-    btn.addEventListener("click", ()=> { try{ closeModal(); }catch{} });
-
-    showModal(title, html, [btn]);
-
-    // Carga de imagen bajo demanda (no bloquea)
-    (async function(){
-      const status = document.getElementById("aiMoreInfoImgStatus");
-      const imgEl = document.getElementById("aiMoreInfoImgEl");
-      const creditBox = document.getElementById("aiMoreInfoImgCredit");
-      const creditText = document.getElementById("aiMoreInfoImgCreditText");
-
-      try{
-        const res = await fetchCommonsPlaceImage(title, city);
-        if(!res || !res.imageUrl){
-          if(status) status.innerHTML = `<span class="inline-flex w-2 h-2 rounded-full bg-slate-400"></span><span>Sin imagen fiable para este lugar (se muestra solo texto).</span>`;
-          return;
-        }
-        if(imgEl){
-          imgEl.src = res.imageUrl;
-          imgEl.alt = title;
-          imgEl.classList.remove("hidden");
-        }
-        if(status) status.classList.add("hidden");
-
-        const bits = [];
-        bits.push(`Imagen: Wikimedia Commons`);
-        if(res.sourceTitle) bits.push(`Archivo: ${res.sourceTitle.replace(/^File:/i,"")}`);
-        if(res.author) bits.push(`Autor: ${res.author}`);
-        if(res.license) bits.push(`Licencia: ${res.license}`);
-        const line = bits.join(" · ");
-        if(creditText) creditText.textContent = line;
-        if(creditBox) creditBox.classList.remove("hidden");
-      }catch(e){
-        if(status) status.innerHTML = `<span class="inline-flex w-2 h-2 rounded-full bg-slate-400"></span><span>Sin imagen (error de red). Texto disponible.</span>`;
-      }
-    })();
-  }
-
-  /* ================== /IA · Más info + Wikimedia Commons ================== */
-const aiModule = {
+  const aiModule = {
     state: null,
     init(){
       if(this.state) return this.state;
@@ -16522,42 +16475,21 @@ __aiBuildDayBuckets(trip){
               ${group.proposals.map((item)=> `
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-start justify-between gap-2">
-                      <div class="min-w-0">
-                        <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
-                        ${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
-                      </div>
-                      <button type="button" class="tap shrink-0 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-extrabold text-slate-700" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(group.city)}">Más info</button>
-                    </div>
+                  <div>
+                    <div class="flex items-start justify-between gap-2"><div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div><button type="button" class="tap px-2 py-1 rounded-xl border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(group.city)}">Más info</button></div>${(item.date || item.time || item.suggestedBand) ? `<div class="mt-1 text-xs font-semibold text-slate-600">${escapeHtml(item.date || "")}${item.time ? ` — ${escapeHtml(item.time)}` : (item.suggestedBand ? ` — ${escapeHtml(item.suggestedBand)}` : "")}</div>` : ``}
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
                   </div>
-                </label>``).join("")}
+                </label>`).join("")}
             </div>
           </div>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas todavía. Cuando el viaje tenga ciudades identificables, aparecerán aquí.</div>`;
+        bindAiMoreInfoListeners(results);
         results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
           el.addEventListener("change", (ev)=>{
             const key = String(ev.target.getAttribute("data-ai-proposal") || "");
             if(!key) return;
             if(ev.target.checked) this.state.selectedKeys[key] = true;
             else delete this.state.selectedKeys[key];
-          });
-        });
-        // Más info por propuesta (ficha ligera)
-        results.querySelectorAll("[data-ai-moreinfo]").forEach((btn)=>{
-          if(btn.__aiMoreInfoBound) return;
-          btn.__aiMoreInfoBound = true;
-          btn.addEventListener("click", (ev)=>{
-            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
-            const id = String(btn.getAttribute("data-ai-moreinfo") || "").trim();
-            const city = String(btn.getAttribute("data-ai-moreinfo-city") || "").trim();
-            if(!id) return;
-            try{
-              const group = (this.state.cityGroups || []).find(g => (g && g.proposals || []).some(p => String(p.id) === id));
-              const item = group ? (group.proposals || []).find(p => String(p.id) === id) : null;
-              if(item) openAiPlaceMoreInfoCard(item, city || (group && group.city) || "");
-            }catch(e){}
           });
         });
       }
@@ -17037,7 +16969,7 @@ loadTripGapsFill(opts){
                   <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
                   <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                      <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                      <div class="flex items-start justify-between gap-2"><div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div><button type="button" class="tap px-2 py-1 rounded-xl border border-slate-200 bg-slate-50 text-[11px] font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(group.city)}">Más info</button></div>
                       <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">${escapeHtml(item.time)} · ${escapeHtml(item.duration)}</span>
                     </div>
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
