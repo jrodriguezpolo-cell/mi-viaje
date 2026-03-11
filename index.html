@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8P_AI_MORE_INFO_TEXT_PREMIUM_PLUS_WIKIMEDIA_REAL_IMAGE</title>
+<title>V226C1A8Q_AI_MORE_INFO_WIKIMEDIA_IMAGE_RELEVANCE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V226C1A8P_AI_MORE_INFO_TEXT_PREMIUM_PLUS_WIKIMEDIA_REAL_IMAGE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8P_AI_MORE_INFO_TEXT_PREMIUM_PLUS_WIKIMEDIA_REAL_IMAGE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Q_AI_MORE_INFO_WIKIMEDIA_IMAGE_RELEVANCE_FIX</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -14881,51 +14881,159 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 
 
-  // === A8P: Wikipedia/Wikimedia image fetch (single thumbnail, no API key) ===
-  async function fetchWikipediaPlaceImage(placeName){
-    const q = String(placeName||"").trim();
-    if(!q) return null;
+  // === A8Q: Wikipedia/Wikimedia image fetch (ranked + page title, no API key) ===
+  // Devuelve: { url, pageTitle, lang, score } o null si no hay match fiable.
+  async function fetchWikipediaPlaceImage(placeTitle, placeCity){
+    const rawTitle = String(placeTitle||"").trim();
+    const rawCity  = String(placeCity||"").trim();
+    if(!rawTitle) return null;
 
     const endpoints = [
-      "https://es.wikipedia.org/w/api.php",
-      "https://en.wikipedia.org/w/api.php"
+      { lang:"es", base:"https://es.wikipedia.org/w/api.php" },
+      { lang:"en", base:"https://en.wikipedia.org/w/api.php" }
     ];
 
-    const buildUrl = (base, query)=> {
+    const norm = (s)=>{
+      try{
+        return String(s||"")
+          .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+          .toLowerCase()
+          .replace(/[\(\)\[\]\{\}]/g," ")
+          .replace(/[^a-z0-9\s]/g," ")
+          .replace(/\s+/g," ")
+          .trim();
+      }catch{
+        return String(s||"").toLowerCase().trim();
+      }
+    };
+
+    const stop = new Set(["the","a","an","of","de","del","la","el","los","las","y","and","&","en","in","at","to"]);
+    const tokens = (s)=> norm(s).split(" ").filter(Boolean).filter(t=>!stop.has(t) && t.length>1);
+
+    const titleN = norm(rawTitle);
+    const cityN  = norm(rawCity);
+
+    const titleT = tokens(rawTitle);
+    const cityT  = tokens(rawCity);
+
+    const isTooGenericTitle = (tN)=>{
+      const genericHints = [
+        "city","ciudad","skyline","manhattan","downtown","midtown","uptown",
+        "neighborhood","district","borough","avenue","street","nyc",
+        "new york","madrid","barcelona","tokyo","london","paris"
+      ];
+      return genericHints.some(h => tN.includes(h));
+    };
+
+    const scoreCandidate = (pageTitle)=>{
+      const pN = norm(pageTitle);
+      const pT = tokens(pageTitle);
+
+      const setP = new Set(pT);
+      const overlap = titleT.filter(t => setP.has(t));
+      const overlapRatio = titleT.length ? (overlap.length / titleT.length) : 0;
+
+      let score = 0;
+
+      if(titleN && pN === titleN) score += 14;
+      if(titleN && pN.includes(titleN)) score += 10;
+      if(titleN && titleN.includes(pN) && pN.length >= 6) score += 6;
+
+      score += overlapRatio * 10;
+
+      if(cityN && pN.includes(cityN)) score += 1.5;
+      else if(cityT.length){
+        const cityHit = cityT.some(t => setP.has(t));
+        if(cityHit) score += 0.8;
+      }
+
+      if(cityN && (pN === cityN)) score -= 10;
+      if(cityN && pN.includes(cityN) && overlap.length === 0) score -= 7;
+
+      if(isTooGenericTitle(pN) && overlapRatio < 0.45) score -= 5;
+
+      if(pN.length < 5) score -= 6;
+
+      return score;
+    };
+
+    const buildUrl = (base, query)=>{
       const params = new URLSearchParams({
         action:"query",
         format:"json",
         origin:"*",
         generator:"search",
         gsrsearch: query,
-        gsrlimit:"5",
+        gsrlimit:"8",
         prop:"pageimages|pageprops",
         piprop:"thumbnail",
-        pithumbsize:"900"
+        pithumbsize:"1000"
       });
       return base + "?" + params.toString();
     };
 
-    for(const base of endpoints){
-      try{
-        const url = buildUrl(base, q);
-        const res = await fetch(url, { method:"GET" });
-        if(!res || !res.ok) continue;
-        const data = await res.json().catch(()=>null);
-        const pagesObj = data && data.query && data.query.pages ? data.query.pages : null;
-        if(!pagesObj) continue;
-        const pages = Object.values(pagesObj);
-        // Prefer pages with thumbnail and most relevant: keep original order from API (usually relevance)
-        for(const p of pages){
-          const src = p && p.thumbnail && p.thumbnail.source ? String(p.thumbnail.source) : "";
-          if(src && /^https?:\/\//i.test(src)) return src;
+    const buildQueries = ()=>{
+      const qs = [];
+      const add = (q)=>{ const s = String(q||"").trim(); if(!s) return; if(!qs.includes(s)) qs.push(s); };
+
+      add(rawCity ? `${rawTitle} ${rawCity}` : rawTitle);
+      add(rawTitle);
+
+      const parts = String(rawTitle).split(/\s*\+\s*|\s*&\s*|\s+y\s+/i).map(x=>x.trim()).filter(Boolean);
+      if(parts.length >= 2){
+        add(rawCity ? `${parts[0]} ${rawCity}` : parts[0]);
+        if(parts[1] && parts[1].length >= 6) add(rawCity ? `${parts[1]} ${rawCity}` : parts[1]);
+      }
+      return qs;
+    };
+
+    const queries = buildQueries();
+
+    const MIN_SCORE = 8.0;
+
+    for(const ep of endpoints){
+      for(const q of queries){
+        try{
+          console.log("[AI MoreInfo] Wikimedia query", { lang: ep.lang, q });
+          const url = buildUrl(ep.base, q);
+          const res = await fetch(url, { method:"GET" });
+          if(!res || !res.ok){
+            console.warn("[AI MoreInfo] Wikimedia HTTP not ok", { lang: ep.lang, status: res && res.status });
+            continue;
+          }
+          const data = await res.json().catch(()=>null);
+          const pagesObj = data && data.query && data.query.pages ? data.query.pages : null;
+          if(!pagesObj) continue;
+
+          const pages = Object.values(pagesObj);
+
+          const candidates = pages
+            .map(p=>{
+              const pageTitle = p && p.title ? String(p.title) : "";
+              const src = p && p.thumbnail && p.thumbnail.source ? String(p.thumbnail.source) : "";
+              if(!src || !/^https?:\/\//i.test(src) || !pageTitle) return null;
+              const sc = scoreCandidate(pageTitle);
+              return { url: src, pageTitle, lang: ep.lang, score: sc };
+            })
+            .filter(Boolean)
+            .sort((a,b)=> (b.score - a.score));
+
+          if(candidates.length){
+            const best = candidates[0];
+            console.log("[AI MoreInfo] Wikimedia best candidate", { lang: best.lang, pageTitle: best.pageTitle, score: best.score });
+            if(best.score >= MIN_SCORE){
+              return best;
+            }
+            console.warn("[AI MoreInfo] Wikimedia rejected (low score)", { bestTitle: best.pageTitle, score: best.score, min: MIN_SCORE });
+          }
+        }catch(err){
+          console.warn("[AI MoreInfo] Wikimedia fetch error", err);
         }
-      }catch(err){
-        // try next endpoint
       }
     }
     return null;
   }
+
   const aiModule = {
     state: null,
     init(){
@@ -16150,6 +16258,7 @@ __aiBuildDayBuckets(trip){
         const proTip = (catKey && catalog[catKey]) ? catalog[catKey].tip : "Consejo: revisa horarios y reserva online si es posible para evitar esperas.";
 
         const imgId = "aiWikiImg_" + Math.random().toString(36).slice(2, 10);
+        const imgCapId = imgId + "_cap";
 
         const ctxLine = [city, type].filter(Boolean).join(" · ");
         const html = `
@@ -16159,6 +16268,7 @@ __aiBuildDayBuckets(trip){
                 <span class="text-[10px] font-bold uppercase tracking-widest">Cargando imagen…</span>
               </div>
             </div>
+            <div id="${imgCapId}" class="hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest">Imagen: Wikipedia</div>
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
                 ${ctxLine ? `<div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${escapeHtml(ctxLine)}</div>` : ``}
@@ -16205,30 +16315,39 @@ __aiBuildDayBuckets(trip){
 
         // Fire image lookup after opening (do NOT block)
         const q = (city ? `${title} ${city}` : title).trim();
-        const container = document.getElementById(imgId);
-        console.log("[AI MoreInfo] Wikimedia image search start", { q, hasContainer: !!container });
-        if(container && q){
-          fetchWikipediaPlaceImage(q).then((url)=>{
+        const contaifetchWikipediaPlaceImage(title, city).then((img)=>{
             const c = document.getElementById(imgId);
+            const cap = document.getElementById(imgCapId);
             if(!c) return;
-            if(url){
-              console.log("[AI MoreInfo] Wikimedia image OK", url);
+            if(img && img.url){
+              console.log("[AI MoreInfo] Wikimedia image OK", { pageTitle: img.pageTitle, score: img.score, url: img.url });
               c.classList.remove("animate-pulse");
-              c.innerHTML = `<img src="${url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold&quot;>Imagen no disponible</div>'; this.parentElement.classList.remove('animate-pulse');">`;
+              c.innerHTML = `<img src="${img.url}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div class=&quot;w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold&quot;>Imagen no disponible</div>'; this.parentElement.classList.remove('animate-pulse');">`;
+              if(cap){
+                cap.textContent = `Imagen: Wikipedia · ${img.pageTitle}`;
+                cap.classList.remove("hidden");
+              }
             }else{
-              console.warn("[AI MoreInfo] Wikimedia image not found");
+              console.warn("[AI MoreInfo] Wikimedia image not found / rejected");
               c.classList.remove("animate-pulse");
               c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
+              if(cap){ cap.textContent = ""; cap.classList.add("hidden"); }
+            }
+          }            c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
             }
           }).catch((err)=>{
             const c = document.getElementById(imgId);
+            const cap = document.getElementById(imgCapId);
             if(!c) return;
             console.warn("[AI MoreInfo] Wikimedia image failed", err);
             c.classList.remove("animate-pulse");
             c.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
+            if(cap){ cap.textContent=""; cap.classList.add("hidden"); }
           });
         }else{
           if(container){
+            const cap = document.getElementById(imgCapId);
+            if(cap){ cap.textContent=""; cap.classList.add("hidden"); }
             container.classList.remove("animate-pulse");
             container.innerHTML = `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs font-semibold">Imagen no disponible</div>`;
           }
