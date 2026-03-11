@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8Y_AI_MORE_INFO_BUTTON_WIRING_FIX_ONLY</title>
+<title>V226C1A8Z_AI_MORE_INFO_SPECIFIC_CONTENT_ENGINE_FROM_A8Y</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8Y_AI_MORE_INFO_BUTTON_WIRING_FIX_ONLY" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8Z_AI_MORE_INFO_SPECIFIC_CONTENT_ENGINE_FROM_A8Y" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Y_AI_MORE_INFO_BUTTON_WIRING_FIX_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Z_AI_MORE_INFO_SPECIFIC_CONTENT_ENGINE_FROM_A8Y</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8Y_AI_MORE_INFO_BUTTON_WIRING_FIX_ONLY
+            Build cargada: V226C1A8Z_AI_MORE_INFO_SPECIFIC_CONTENT_ENGINE_FROM_A8Y
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8Y_AI_MORE_INFO_BUTTON_WIRING_FIX_ONLY";
+const APP_BUILD = "V226C1A8Z_AI_MORE_INFO_SPECIFIC_CONTENT_ENGINE_FROM_A8Y";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16896,7 +16896,261 @@ commitSelectedActivities(){
           if(has("temple")||has("templo")||has("shrine")||has("jingu")) return { kind:"temple", label:"Templo/Santuario", focus:"ritual y calma", vibe:"cultural", tip:["respeta zonas de silencio y flujo","madruga para más calma","si hay jardín, recórrelo con tiempo"] };
           return { kind:"place", label:"Lugar", focus:"visita y entorno", vibe:"turístico", tip:["ve con un objetivo (qué quieres ver/experimentar)","deja margen para improvisar alrededor","mira horarios y cierres antes de ir"] };
         };
-        const __richText = (item, city)=>{
+        
+        // --- Más info: motor específico por landmark (por capas) ---
+        const __aliasMap = {
+          "statue of liberty": "statue of liberty",
+          "estatua de la libertad": "statue of liberty",
+          "liberty island": "statue of liberty",
+          "central park": "central park",
+          "empire state building": "empire state building",
+          "top of the rock": "top of the rock",
+          "rockefeller center": "top of the rock",
+          "brooklyn bridge": "brooklyn bridge",
+          "puente de brooklyn": "brooklyn bridge",
+          "times square": "times square",
+          "eiffel tower": "eiffel tower",
+          "torre eiffel": "eiffel tower",
+          "louvre": "louvre",
+          "museo del louvre": "louvre",
+          "british museum": "british museum",
+          "museo britanico": "british museum",
+          "colosseum": "colosseum",
+          "coliseo": "colosseum",
+          "sagrada familia": "sagrada familia",
+          "basílica de la sagrada familia": "sagrada familia",
+          "basilica de la sagrada familia": "sagrada familia",
+          "alhambra": "alhambra",
+          "museo del prado": "museo del prado",
+          "prado museum": "museo del prado"
+        };
+
+        const __specificCatalog = {
+          "statue of liberty": {
+            desc: [
+              "La Estatua de la Libertad es el gran símbolo de bienvenida de Nueva York: una colosal figura neoclásica situada en Liberty Island, frente a Manhattan.",
+              "Más que “una estatua”, es una experiencia completa: ferry por la bahía, vistas del skyline y un recorrido que te pone en contexto sobre inmigración y el imaginario de la ciudad."
+            ],
+            ctx: [
+              "Fue un regalo de Francia a Estados Unidos e inaugurada en 1886. Representa la libertad y la esperanza asociadas a la llegada al país.",
+              "Con el tiempo se convirtió en un icono cultural global y en un punto clave para entender la historia de la inmigración en EE. UU. (muy conectable con una visita a Ellis Island si te interesa)."
+            ],
+            tips: [
+              "Reserva el ferry con antelación (y si quieres pedestal/corona, más aún).",
+              "Si quieres fotos limpias del skyline, elige primeras horas o última franja.",
+              "Planifica 2–3 h si incluyes museo y paseo; más si haces Ellis Island."
+            ],
+            ai: "Encaja muy bien como hito ‘icónico’ y por logística: te da una experiencia distinta (bahía + skyline) sin “robar” todo el día."
+          },
+          "central park": {
+            desc: [
+              "Central Park es el gran parque urbano de Manhattan, un oasis planificado que corta la ciudad en dos y cambia totalmente el ritmo del viaje.",
+              "Lo mejor no es “verlo entero”, sino elegir una zona: lagos y puentes, praderas, miradores y pequeños rincones muy cinematográficos."
+            ],
+            ctx: [
+              "Se inauguró en el siglo XIX como proyecto de parque público y fue una obra pionera de planificación paisajística en una gran metrópoli.",
+              "Hoy es un espacio cultural y social: conciertos, deporte, paseos, y un punto perfecto para entender cómo respira Manhattan."
+            ],
+            tips: [
+              "Elige un tramo y entra con objetivo (Bethesda Terrace / Bow Bridge / The Mall / Reservoir).",
+              "A primera hora está más tranquilo; al atardecer es precioso (si el tiempo acompaña).",
+              "Combínalo con un museo cercano (Met / Guggenheim / AMNH) para un día redondo."
+            ],
+            ai: "Suele ser un ‘amortiguador’ perfecto entre visitas intensas: aporta aire, paseo y fotos sin logística complicada."
+          },
+          "empire state building": {
+            desc: [
+              "El Empire State Building es el rascacielos art déco por excelencia de Nueva York, con uno de los miradores más famosos del mundo.",
+              "La visita combina arquitectura icónica, exposición interior y vistas 360º que ayudan a situar Manhattan de un vistazo."
+            ],
+            ctx: [
+              "Se completó en 1931 y durante décadas fue el edificio más alto del mundo, convirtiéndose en símbolo del optimismo industrial y urbano de la época.",
+              "Su estética art déco y su presencia en cine y cultura popular lo han consolidado como uno de los hitos más reconocibles de la ciudad."
+            ],
+            tips: [
+              "Compra ticket online y evita picos (media tarde suele ser duro).",
+              "Si quieres skyline con buena luz, apunta a última hora o franja ‘golden hour’.",
+              "Para fotos “de postal” del edificio, una alternativa es verlo desde miradores cercanos (por ejemplo, Top of the Rock) en otro momento."
+            ],
+            ai: "Te da un punto de orientación brutal del viaje: después de subir, todo Manhattan se entiende mejor."
+          },
+          "top of the rock": {
+            desc: [
+              "Top of the Rock es el mirador del Rockefeller Center, famoso por una vista muy equilibrada de Manhattan: Central Park por un lado y el skyline por el otro.",
+              "Suele gustar mucho porque te permite ver el Empire State en la foto (algo que no pasa si estás dentro del Empire State)."
+            ],
+            ctx: [
+              "El Rockefeller Center es un complejo emblemático del siglo XX asociado al auge empresarial y cultural de la ciudad, con una identidad propia en Midtown.",
+              "El mirador se convirtió en clásico por su ubicación y por el diseño en varias terrazas, cómodo para fotos y sin sensación de “embudo”."
+            ],
+            tips: [
+              "Reserva franja; al atardecer se llena rápido, pero la luz es espectacular.",
+              "Si vas en invierno, abrígate: arriba hace más viento de lo que parece.",
+              "Combina con St. Patrick’s / 5th Ave / Bryant Park si te cuadra por zona."
+            ],
+            ai: "Suele ser el mirador ‘más agradecido’ para fotos y para cerrar un día por Midtown con buen sabor de boca."
+          },
+          "brooklyn bridge": {
+            desc: [
+              "El Puente de Brooklyn es uno de los paseos urbanos más míticos de Nueva York: cruzarlo a pie te regala vistas constantes del skyline y del East River.",
+              "La experiencia es muy ‘de película’: estructura histórica, madera bajo los pies y una transición clara entre Manhattan y Brooklyn."
+            ],
+            ctx: [
+              "Inaugurado en 1883, fue un logro de ingeniería de su época y ayudó a conectar y consolidar el crecimiento entre ambos lados del río.",
+              "Además de su valor técnico, es un icono cultural: aparece en incontables fotos, películas y relatos sobre la ciudad."
+            ],
+            tips: [
+              "Ve temprano o cerca del atardecer para evitar agobio; de día se llena mucho.",
+              "Camina en dirección Manhattan → Brooklyn si quieres el skyline de frente; al revés si prefieres ver Brooklyn acercándose.",
+              "Al llegar, remata con DUMBO o Brooklyn Bridge Park si te apetece paseo/fotos."
+            ],
+            ai: "Es un ‘plan perfecto’ para encadenar con barrios: paseo + fotos + cero logística de entradas."
+          },
+          "times square": {
+            desc: [
+              "Times Square es el gran cruce luminoso de Midtown: pantallas gigantes, energía constante y una sensación de ‘centro del espectáculo’ muy neoyorquina.",
+              "No es tanto un sitio para “ver cosas”, como para vivir el ambiente y entender esa versión intensa de la ciudad."
+            ],
+            ctx: [
+              "Su transformación en distrito de ocio y teatro se asocia a Broadway y al papel mediático de la zona, con una evolución histórica marcada por cambios urbanos y comerciales.",
+              "Hoy es uno de los lugares más fotografiados del mundo y un símbolo del ritmo publicitario y cultural de Nueva York."
+            ],
+            tips: [
+              "Pásate de noche para el efecto completo de luces, pero entra y sal rápido si no te gustan las multitudes.",
+              "Si vas a un musical, encaja antes/después: así tiene sentido y no es solo ‘un punto en el mapa’.",
+              "Para una foto sin empujones, la franja muy temprana funciona sorprendentemente bien."
+            ],
+            ai: "Es el ‘icono de energía’ del viaje: perfecto como parada corta si estás por Midtown o vas a Broadway."
+          },
+          "eiffel tower": {
+            desc: [
+              "La Torre Eiffel es el gran icono de París: una estructura de hierro que domina la ciudad y funciona como referencia visual desde muchos puntos.",
+              "Subir (o verla desde miradores y puentes cercanos) es una experiencia muy ‘París’: vistas, río Sena y una postal casi garantizada."
+            ],
+            ctx: [
+              "Se construyó para la Exposición Universal de 1889 y, aunque fue polémica al principio, acabó convirtiéndose en símbolo indiscutible de la ciudad.",
+              "Su ingeniería y su papel en la identidad parisina la han hecho una de las obras más reconocibles del mundo."
+            ],
+            tips: [
+              "Reserva con antelación si quieres subir; para fotos, prueba Trocadéro o Champ de Mars.",
+              "La hora dorada y el anochecer son mágicos (y hay destellos nocturnos).",
+              "Si solo quieres ‘la foto’, muchas veces compensa no subir y dedicar ese tiempo a un paseo por el Sena."
+            ],
+            ai: "Aporta el hito clásico de París y te ordena la ciudad visualmente; además encaja fácil con paseos cercanos."
+          },
+          "louvre": {
+            desc: [
+              "El Louvre es uno de los museos más importantes del mundo y una visita clave si te interesa arte y patrimonio en París.",
+              "Es enorme: lo ideal es entrar con un plan corto (2–3 objetivos) para evitar la sensación de ‘maratón’ sin foco."
+            ],
+            ctx: [
+              "Fue palacio real antes de ser museo y su evolución refleja buena parte de la historia política y cultural francesa.",
+              "La mezcla de arquitectura histórica con la pirámide de vidrio crea un contraste muy característico del París moderno."
+            ],
+            tips: [
+              "Compra entrada por franja horaria y define 2–3 obras/salas prioritarias.",
+              "Evita horas centrales si puedes; primera franja suele ser la más amable.",
+              "Si vas por la Gioconda, asume agobio: compénsalo con alas menos saturadas."
+            ],
+            ai: "Es una apuesta segura si buscas ‘contenido cultural potente’; con un plan corto, encaja sin devorarte el día."
+          },
+          "british museum": {
+            desc: [
+              "El British Museum es una de las grandes paradas culturales de Londres, famoso por colecciones históricas de alcance global.",
+              "La visita suele sorprender por la amplitud: puedes elegir un ‘tema’ (Egipto, Grecia, Mesopotamia) y disfrutarlo sin prisa."
+            ],
+            ctx: [
+              "Su colección y su historia están ligadas al papel histórico del Reino Unido y a debates actuales sobre origen y restitución de piezas.",
+              "El Great Court y la arquitectura interior hacen que incluso una visita corta se sienta especial."
+            ],
+            tips: [
+              "Entra con foco: Egipto (momias), Grecia (mármoles) o Mesopotamia funcionan genial.",
+              "Ve a primera hora o última franja para más calma.",
+              "Si te saturas, corta a tiempo: es mejor una visita buena que una eterna."
+            ],
+            ai: "Encaja como visita ‘alto retorno’ cuando el tiempo es limitado: siempre puedes hacer una versión corta muy satisfactoria."
+          },
+          "colosseum": {
+            desc: [
+              "El Coliseo es el anfiteatro romano más famoso y uno de los símbolos claros de Roma: monumental, directo y muy impactante en vivo.",
+              "La experiencia mejora mucho si lo conectas con el Foro Romano y el Palatino como conjunto histórico."
+            ],
+            ctx: [
+              "Inaugurado en el siglo I, fue escenario de espectáculos públicos en la antigua Roma y representa el poder y la ingeniería de la época.",
+              "Su historia posterior incluye usos variados y restauraciones; hoy es una pieza central del patrimonio mundial."
+            ],
+            tips: [
+              "Reserva entrada con hora (y, si te interesa, visita guiada: da contexto real).",
+              "Evita calor fuerte; lleva agua y calzado cómodo.",
+              "Si puedes, empieza temprano y enlaza Foro/Palatino antes de que se llene."
+            ],
+            ai: "Es el hito ‘imprescindible’ si estás en Roma: aporta contexto histórico y una experiencia visual muy potente."
+          },
+          "sagrada familia": {
+            desc: [
+              "La Sagrada Familia es la basílica inacabada de Gaudí y probablemente la obra más singular de Barcelona: interior luminoso, geometría y simbolismo por todas partes.",
+              "Es una visita muy sensorial: incluso sin ser ‘de iglesias’, suele impresionar por la experiencia de luz y espacio."
+            ],
+            ctx: [
+              "La construcción comenzó en 1882 y Gaudí la transformó en un proyecto total, lleno de referencias naturales y religiosas.",
+              "Su continuidad hasta hoy la convierte en una obra viva: se entiende mejor si sabes que es un proyecto que atraviesa generaciones."
+            ],
+            tips: [
+              "Reserva entrada con antelación; las torres requieren ticket específico.",
+              "Elige una franja con buena luz (mañana/mediodía) para el efecto de vitrales.",
+              "Si haces torres, evita prisas: la salida y el recorrido suman tiempo."
+            ],
+            ai: "Aporta una experiencia única y muy ‘Barcelona’; además te deja un recuerdo fuerte aunque el viaje esté lleno de planes."
+          },
+          "alhambra": {
+            desc: [
+              "La Alhambra es el gran conjunto palaciego y defensivo de Granada, famoso por sus palacios nazaríes, patios, detalles y vistas sobre la ciudad.",
+              "La experiencia es de recorrido: arquitectura, jardines y miradores; merece la pena hacerlo con calma."
+            ],
+            ctx: [
+              "Es una de las cumbres del arte andalusí y refleja siglos de historia en la península, con capas posteriores cristianas y restauraciones.",
+              "Su valor está tanto en la belleza del detalle como en el diálogo con el paisaje y con el barrio del Albaicín."
+            ],
+            tips: [
+              "Compra entradas con mucha antelación (Palacios Nazaríes tienen hora).",
+              "Llega con tiempo: el conjunto es grande y caminarás bastante.",
+              "Si puedes, remata con mirador de San Nicolás al atardecer (postal garantizada)."
+            ],
+            ai: "Es una visita de ‘alto valor patrimonial’: si estás en Granada, suele ser el plan estrella del viaje."
+          },
+          "museo del prado": {
+            desc: [
+              "El Museo del Prado es el museo de referencia de Madrid para pintura europea, especialmente fuerte en maestros españoles como Velázquez y Goya.",
+              "Es ideal para una visita ‘con foco’: puedes hacer un recorrido corto y salir con sensación de haber visto piezas fundamentales."
+            ],
+            ctx: [
+              "Nació como institución en el siglo XIX y se consolidó como núcleo de la colección real y de la historia artística española.",
+              "Entender el contexto de Goya, Velázquez o El Bosco cambia mucho la experiencia: con una mini guía o audioguía breve se disfruta más."
+            ],
+            tips: [
+              "Marca 6–10 obras clave y no te disperses (Prado es para volver).",
+              "Si hay cola, prueba horarios menos demandados; y ojo a expos temporales.",
+              "Combina con el Paseo del Prado/Retiro para un día cultural muy redondo."
+            ],
+            ai: "Encaja genial como ‘visita premium’ cuando quieres cultura potente sin depender del clima."
+          }
+        };
+
+        const __pickSpecific = (title, city)=>{
+          const main = __extractMain(title);
+          const n = __norm(main);
+          const key = __aliasMap[n] || n;
+          if(__specificCatalog[key]) return { key, data: __specificCatalog[key] };
+
+          // Capa 2: landmark + ciudad (desambiguación ligera)
+          const nc = __norm(city);
+          if(nc){
+            const k2 = key + "@" + nc;
+            if(__specificCatalog[k2]) return { key: k2, data: __specificCatalog[k2] };
+          }
+          return null;
+        };
+const __richText = (item, city)=>{
           const title = String(item?.title || item?.name || "Lugar").trim();
           const main = __extractMain(title);
           const cls = __classify(main);
@@ -16904,28 +17158,58 @@ commitSelectedActivities(){
           const why = String(item?.why || "").trim();
           const proTip = String(item?.proTip || "").trim();
 
-          const descP1 = summary ? summary : `${main} es un ${cls.label.toLowerCase()} interesante para una visita con buen retorno en poco tiempo.`;
-          const descP2 = why ? why : `Suele funcionar muy bien dentro de una ruta por ${city || "la ciudad"}, porque aporta ${cls.vibe} sin complicarte la logística.`;
-          const descP3 = `La experiencia se disfruta especialmente si lo enfocas con ${cls.focus}: elige un recorrido corto y “redondo” y deja un margen para el entorno inmediato.`;
+          const __ctx2Fallback = ()=>{
+            return (cls.kind==="museum")
+              ? `En museos, el contexto suele estar en las colecciones y en la curaduría: fíjate en qué temas se priorizan, en la época de las obras y en cómo se conectan entre sí.`
+              : (cls.kind==="church"||cls.kind==="temple")
+              ? `En templos y espacios patrimoniales, el contexto suele estar en la arquitectura, los símbolos y los espacios: nave, capillas, patios o jardines dicen mucho sobre su papel histórico y social.`
+              : (cls.kind==="fort")
+              ? `En fortificaciones, el contexto suele estar en la relación con el paisaje: murallas, accesos y puntos altos cuentan cómo se defendía y cómo se controlaba el entorno.`
+              : (cls.kind==="market")
+              ? `En mercados, el contexto suele ser la vida cotidiana: qué se vende, a qué horas se anima y qué puestos tienen cola suele revelar hábitos gastronómicos y ritmos locales.`
+              : `En lugares emblemáticos, el contexto suele estar en el barrio y en el uso actual: miradores, plazas y ejes peatonales suelen ser “puntos de lectura” perfectos de la ciudad.`;
+          };
 
-          const ctxP1 = `Para sacarle más partido, piensa en este lugar como una pieza del “relato” de la ciudad: su ubicación, su función y cómo se usa hoy suelen explicar mucho del carácter local.`;
-          const ctxP2 = (cls.kind==="museum")
-            ? `En museos, el contexto suele estar en las colecciones y en la curaduría: fíjate en qué temas se priorizan, en la época de las obras y en cómo se conectan entre sí.`
-            : (cls.kind==="church"||cls.kind==="temple")
-            ? `En templos y espacios patrimoniales, el contexto suele estar en la arquitectura, los símbolos y los espacios: nave, capillas, patios o jardines dicen mucho sobre su papel histórico y social.`
-            : (cls.kind==="fort")
-            ? `En fortificaciones, el contexto suele estar en la relación con el paisaje: murallas, accesos y puntos altos cuentan cómo se defendía y cómo se controlaba el entorno.`
-            : (cls.kind==="market")
-            ? `En mercados, el contexto suele ser la vida cotidiana: qué se vende, a qué horas se anima y qué puestos tienen cola suele revelar hábitos gastronómicos y ritmos locales.`
-            : `En lugares emblemáticos, el contexto suele estar en el barrio y en el uso actual: miradores, plazas y ejes peatonales suelen ser “puntos de lectura” perfectos de la ciudad.`;
-          const ctxP3 = `Si ves paneles, placas o audioguía corta, úsalo como “mini introducción” antes de empezar: mejora mucho la visita sin alargarla demasiado.`;
-
+          let descP1="", descP2="", descP3="";
+          let ctxP1="", ctxP2="", ctxP3="";
           const tips = [];
-          if(proTip) tips.push(proTip);
-          cls.tip.forEach(t=>tips.push(t));
-          const tipsHtml = tips.slice(0,4).map((t)=> `<li class="leading-relaxed">${escapeHtml(t)}</li>`).join("");
+          let aiReason = "";
 
-          const aiReason = why ? `La IA lo sugiere porque encaja bien con tu ruta: ${why}` : `La IA lo sugiere porque suele encajar bien en una visita turística equilibrada: aporta un hito claro sin complicar el día.`;
+          const sp = __pickSpecific(main, city);
+          if(sp && sp.data){
+            const d = sp.data;
+
+            // Descripción (específica)
+            descP1 = (d.desc && d.desc[0]) ? d.desc[0] : (summary || `${main} es un ${cls.label.toLowerCase()} interesante para una visita con buen retorno en poco tiempo.`);
+            descP2 = (d.desc && d.desc[1]) ? d.desc[1] : (why || `Suele funcionar muy bien dentro de una ruta por ${city || "la ciudad"}, porque aporta ${cls.vibe} sin complicarte la logística.`);
+            descP3 = (d.desc && d.desc[2]) ? d.desc[2] : `La experiencia se disfruta especialmente si lo enfocas con ${cls.focus}: elige un recorrido corto y “redondo” y deja un margen para el entorno inmediato.`;
+
+            // Historia y contexto (específico)
+            ctxP1 = (d.ctx && d.ctx[0]) ? d.ctx[0] : `Para sacarle más partido, piensa en este lugar como una pieza del “relato” de la ciudad: su ubicación, su función y cómo se usa hoy suelen explicar mucho del carácter local.`;
+            ctxP2 = (d.ctx && d.ctx[1]) ? d.ctx[1] : __ctx2Fallback();
+            ctxP3 = (d.ctx && d.ctx[2]) ? d.ctx[2] : `Si ves paneles, placas o audioguía corta, úsalo como “mini introducción” antes de empezar: mejora mucho la visita sin alargarla demasiado.`;
+
+            // Consejo pro (específico)
+            if(proTip) tips.push(proTip);
+            (d.tips || []).forEach(x=>{ if(x) tips.push(String(x)); });
+            if(tips.length < 2){ cls.tip.forEach(t=>tips.push(t)); }
+
+            // Motivo IA (secundario)
+            aiReason = why ? `La IA lo sugiere porque encaja bien con tu ruta: ${why}` : (d.ai || `La IA lo sugiere porque suele encajar bien en una visita turística equilibrada: aporta un hito claro sin complicar el día.`);
+          }else{
+            // Fallback: semi-específico por tipo
+            descP1 = summary ? summary : `${main} es un ${cls.label.toLowerCase()} interesante para una visita con buen retorno en poco tiempo.`;
+            descP2 = why ? why : `Suele funcionar muy bien dentro de una ruta por ${city || "la ciudad"}, porque aporta ${cls.vibe} sin complicarte la logística.`;
+            descP3 = `La experiencia se disfruta especialmente si lo enfocas con ${cls.focus}: elige un recorrido corto y “redondo” y deja un margen para el entorno inmediato.`;
+
+            ctxP1 = `Para sacarle más partido, piensa en este lugar como una pieza del “relato” de la ciudad: su ubicación, su función y cómo se usa hoy suelen explicar mucho del carácter local.`;
+            ctxP2 = __ctx2Fallback();
+            ctxP3 = `Si ves paneles, placas o audioguía corta, úsalo como “mini introducción” antes de empezar: mejora mucho la visita sin alargarla demasiado.`;
+
+            if(proTip) tips.push(proTip);
+            cls.tip.forEach(t=>tips.push(t));
+            aiReason = why ? `La IA lo sugiere porque encaja bien con tu ruta: ${why}` : `La IA lo sugiere porque suele encajar bien en una visita turística equilibrada: aporta un hito claro sin complicar el día.`;
+          }
 
           return `
             <div class="ai-premium-card space-y-3">
