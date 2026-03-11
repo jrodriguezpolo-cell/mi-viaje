@@ -15794,7 +15794,7 @@ window.addEventListener('DOMContentLoaded', () => {
         .replace(/^-+|-+$/g,"") || "city";
     },
     __aiISOAddDays(iso, delta){
-      const s = String(iso||"").trim();
+      const s = this.__aiNormalizeDayValue ? this.__aiNormalizeDayValue(iso) : String(iso||"").trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
       const d = new Date(s + "T00:00:00");
       if(Number.isNaN(d.getTime())) return "";
@@ -15803,6 +15803,21 @@ window.addEventListener('DOMContentLoaded', () => {
       const m = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
       return `${y}-${m}-${dd}`;
+    },
+    __aiNormalizeDayValue(value){
+      const raw = String(value||"").trim();
+      if(!raw) return "";
+      let m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+      if(m) return m[1];
+      m = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+      m = raw.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+      if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+      m = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+      m = raw.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+      if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+      return "";
     },
     __aiHumanDay(day){
       const d = String(day||"").trim();
@@ -15854,10 +15869,18 @@ window.addEventListener('DOMContentLoaded', () => {
       const ranges = [];
       (Array.isArray(trip.stays)?trip.stays:[]).forEach((s)=>{
         const fallbackCities = (this.collectTripCities ? this.collectTripCities().map(x=>x.city) : []);
-        const city = this.__aiResolveCityFromText((s && (s.city || s.place || s.name)) || "", fallbackCities);
-        const inDay = String(s && (s.checkinDate||s.checkInDate||s.inDate||s.startDate||s.date) || "").trim().slice(0,10);
+        const city = this.__aiResolveCityFromText((s && (s.city || s.place || s.name || s.title)) || "", fallbackCities);
+        const inDay = this.__aiNormalizeDayValue(s && (s.checkinDate||s.checkInDate||s.inDate||s.startDate||s.date));
         if(!/^\d{4}-\d{2}-\d{2}$/.test(inDay)) return;
         let nights = parseInt(s && s.nights, 10);
+        if(!Number.isFinite(nights) || nights <= 0){
+          const outExplicit = this.__aiNormalizeDayValue(s && (s.checkoutDate||s.checkOutDate||s.outDate||s.endDate));
+          if(outExplicit && outExplicit > inDay){
+            const a = new Date(inDay + "T00:00:00");
+            const b = new Date(outExplicit + "T00:00:00");
+            nights = Math.max(1, Math.round((b.getTime()-a.getTime())/86400000));
+          }
+        }
         if(!Number.isFinite(nights) || nights <= 0) nights = 1;
         const outDay = this.__aiISOAddDays(inDay, nights);
         ranges.push({ city, inDay, outDay, nights });
@@ -15866,27 +15889,43 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     __aiBuildPresenceRanges(trip, stayRanges){
       const ranges = [];
-      const isIso = (d)=> /^\d{4}-\d{2}-\d{2}$/.test(String(d||"").trim().slice(0,10));
+      const isIso = (d)=> /^\d{4}-\d{2}-\d{2}$/.test(this.__aiNormalizeDayValue ? this.__aiNormalizeDayValue(d) : String(d||"").trim().slice(0,10));
       const dayOf = (obj, keys)=>{
         for(const k of keys){
-          const s = String(obj && obj[k] || "").trim().slice(0,10);
+          const s = this.__aiNormalizeDayValue(obj && obj[k]);
           if(isIso(s)) return s;
         }
         return "";
       };
       const cityOfLeg = (leg)=>{
         const fallbackCities = (this.collectTripCities ? this.collectTripCities().map(x=>x.city) : []);
-        const raw = (leg && (leg.to||leg.toCity||leg.dest||leg.destCity||leg.destination||leg.destinationCity||leg.toPlace||leg.toName||leg.arrivePlace||leg.arrivalPlace)) || "";
-        return this.__aiResolveCityFromText(raw, fallbackCities);
+        const primary = [leg && leg.to, leg && leg.toCity, leg && leg.dest, leg && leg.destCity, leg && leg.destination, leg && leg.destinationCity, leg && leg.toPlace, leg && leg.toName, leg && leg.arrivePlace, leg && leg.arrivalPlace, leg && leg.city, leg && leg.place];
+        for(const raw of primary){
+          const hit = this.__aiResolveCityFromText(raw || "", fallbackCities);
+          if(hit) return hit;
+        }
+        const textBits = [leg && leg.title, leg && leg.name, leg && leg.label, leg && leg.summary, leg && leg.route, leg && leg.notes, leg && leg.description].map(v=>String(v||"").trim()).filter(Boolean);
+        for(const raw of textBits){
+          const arrow = raw.split(/→|->|–|—|-/).map(s=>String(s||"").trim()).filter(Boolean);
+          if(arrow.length >= 2){
+            const hit = this.__aiResolveCityFromText(arrow[arrow.length-1], fallbackCities);
+            if(hit) return hit;
+          }
+          const hit = this.__aiResolveCityFromText(raw, fallbackCities);
+          if(hit) return hit;
+        }
+        return "";
       };
 
       if(Array.isArray(stayRanges) && stayRanges.length){
         stayRanges.forEach((r)=>{
           if(!r || !String(r.city||"").trim() || !isIso(r.inDay)) return;
-          const outDay = isIso(r.outDay) ? String(r.outDay).trim().slice(0,10) : this.__aiISOAddDays(String(r.inDay).trim().slice(0,10), Math.max(1, parseInt(r.nights||1,10)||1));
+          const outDayNorm = this.__aiNormalizeDayValue(r.outDay);
+          const inDayNorm = this.__aiNormalizeDayValue(r.inDay);
+          const outDay = isIso(outDayNorm) ? outDayNorm : this.__aiISOAddDays(inDayNorm, Math.max(1, parseInt(r.nights||1,10)||1));
           ranges.push({
             city: String(r.city||"").trim(),
-            inDay: String(r.inDay).trim().slice(0,10),
+            inDay: this.__aiNormalizeDayValue(r.inDay),
             outDay
           });
         });
@@ -15926,8 +15965,8 @@ window.addEventListener('DOMContentLoaded', () => {
       const seen = new Set();
       ranges.forEach((r)=>{
         const city = String(r.city||"").trim();
-        const inDay = String(r.inDay||"").trim().slice(0,10);
-        const outDayRaw = String(r.outDay||"").trim().slice(0,10);
+        const inDay = this.__aiNormalizeDayValue(r.inDay);
+        const outDayRaw = this.__aiNormalizeDayValue(r.outDay);
         const outDay = isIso(outDayRaw) && outDayRaw > inDay ? outDayRaw : this.__aiISOAddDays(inDay, 1);
         if(!city || !isIso(inDay)) return;
         const key = `${city}__${inDay}__${outDay}`;
@@ -15940,7 +15979,7 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     __aiCollectTripDays(trip, stayRanges, presenceRanges){
       const set = new Set();
-      const add = (d)=>{ const s=String(d||"").trim().slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) set.add(s); };
+      const add = (d)=>{ const s=this.__aiNormalizeDayValue ? this.__aiNormalizeDayValue(d) : String(d||"").trim().slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(s)) set.add(s); };
 
       (Array.isArray(trip.legs)?trip.legs:[]).forEach(l=>{
         add(l && (l.date||l.day||l.depDate||l.departDate||l.fromDate||l.startDate));
@@ -16390,12 +16429,7 @@ __aiBuildDayBuckets(trip){
         if(!buckets[key]) buckets[key] = { legs:[], checkins:[], checkouts:[], acts:[] };
         return buckets[key];
       };
-      const normDay = (d)=>{
-        const s = String(d||"").trim();
-        if(!s) return "";
-        const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
-        return m ? m[1] : "";
-      };
+      const normDay = (d)=> this.__aiNormalizeDayValue ? this.__aiNormalizeDayValue(d) : "";
       const pullDayFrom = (obj, keys)=>{
         for(const k of keys){
           const v = obj && obj[k];
