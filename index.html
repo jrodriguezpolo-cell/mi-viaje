@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A9Q_AI_MORE_INFO_OVERLAY_CLOSE_RESTORE_ONLY</title>
+<title>V226C1A9R_AI_GAPS_FORCE_CONCRETE_MISSING_POIS_FROM_A9Q</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A9Q_AI_MORE_INFO_OVERLAY_CLOSE_RESTORE_ONLY" rel="manifest"/>
+<link href="manifest.json?v=V226C1A9R_AI_GAPS_FORCE_CONCRETE_MISSING_POIS_FROM_A9Q" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1334,7 +1334,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9Q_AI_MORE_INFO_OVERLAY_CLOSE_RESTORE_ONLY</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9R_AI_GAPS_FORCE_CONCRETE_MISSING_POIS_FROM_A9Q</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -16048,6 +16048,35 @@ collectTripCities(){
 
       return picked.map(({score, ...rest})=> rest);
     },
+__aiTopMissingPoisForCity(city, existingTitlesSet, maxN, offsetIndex){
+      const cityName = String(city||"").trim();
+      if(!cityName) return [];
+      const key = this.__aiCityKey(cityName);
+      const base = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && Array.isArray(AI_CITY_CATALOG[key])) ? AI_CITY_CATALOG[key] : null;
+      if(!Array.isArray(base) || !base.length) return [];
+      const existing = (existingTitlesSet instanceof Set) ? existingTitlesSet : new Set();
+      const tmp = [];
+      for(const it of base){
+        const title = String((it && it.title) || "").trim();
+        if(!title) continue;
+        const canon = (typeof __aiCanonicalLandmark === "function") ? __aiCanonicalLandmark(title) : title.toLowerCase();
+        if(existing.has(canon)) continue;
+        tmp.push(Object.assign({}, it, { __canon: canon }));
+      }
+      const seen = new Set();
+      const dedup = [];
+      for(const it of tmp){
+        if(seen.has(it.__canon)) continue;
+        seen.add(it.__canon);
+        const cp = Object.assign({}, it);
+        try{ delete cp.__canon; }catch{}
+        dedup.push(cp);
+      }
+      const n = Math.max(1, parseInt(maxN||5,10) || 5);
+      const off = Math.max(0, parseInt(offsetIndex||0,10) || 0);
+      const start = off * n;
+      return dedup.slice(start, start + n);
+    },
 __aiBuildDayBuckets(trip){
       const buckets = {};
       const ensure = (d)=>{
@@ -16279,6 +16308,12 @@ __aiBuildDayBuckets(trip){
                   <div class="mt-2"><button type="button" class="tap inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-extrabold text-slate-700 hover:bg-slate-100" data-ai-moreinfo="${escapeHtml(item.id)}" data-ai-moreinfo-city="${escapeHtml(group.city)}">Más info</button></div>
                   </div>
                 </label>`).join("")}
+            </div>
+              ` : `
+                <div class="rounded-2xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                  Los principales lugares emblemáticos de <span class="font-extrabold">${escapeHtml(blk.city)}</span> ya están cubiertos en tu viaje. A partir de aquí podemos sugerir opciones más abiertas o complementarias.
+                </div>
+              `}
             </div>
           </div>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas todavía. Cuando el viaje tenga ciudades identificables, aparecerán aquí.</div>`;
         results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
@@ -16573,7 +16608,20 @@ loadTripGapsFill(opts){
       const stayRanges = this.__aiBuildStayRanges(trip);
       const allDays = this.__aiCollectTripDays(trip, stayRanges);
 
-      const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> String(a && (a.title||a.name)||"").trim().toLowerCase()).filter(Boolean));
+      const existingTitles = new Set();
+
+      const __pushExistingTitle = (t)=>{
+        const s = String(t||"").trim();
+        if(!s) return;
+        try{
+          const canon = (typeof __aiCanonicalLandmark === "function") ? __aiCanonicalLandmark(s) : s.toLowerCase();
+          if(canon) existingTitles.add(canon);
+        }catch{ existingTitles.add(s.toLowerCase()); }
+      };
+      (Array.isArray(trip.activities)?trip.activities:[]).forEach(a=> __pushExistingTitle(a && (a.title||a.name)));
+      (Array.isArray(trip.stays)?trip.stays:[]).forEach(s=> __pushExistingTitle(s && (s.name||s.title||s.place)));
+      (Array.isArray(trip.legs)?trip.legs:[]).forEach(l=> __pushExistingTitle(l && (l.title||l.name)));
+
 
       const parseHM = (s)=>{
         const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
@@ -16714,7 +16762,21 @@ loadTripGapsFill(opts){
         const suggestedTime = suggestTimeForDay(day, b);
 
         // Propuestas por ciudad (máx 5), filtrando duplicados ya existentes
-        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, this.state.gapRecoOffset);
+        let proposals = [];
+
+        const __cityKey = this.__aiCityKey(city);
+        const __hasConcreteCatalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && Array.isArray(AI_CITY_CATALOG[__cityKey]) && AI_CITY_CATALOG[__cityKey].length);
+        if(__hasConcreteCatalog){
+          proposals = this.__aiTopMissingPoisForCity(city, existingTitles, 5, this.state.gapRecoOffset);
+          if(!proposals.length){
+            gapBlocks.push({ day, city, reason: ctx.reason, suggestedTime, proposals: [], noMore:true });
+            continue;
+          }
+        }else{
+          // Fallback genérico (solo si no existe catálogo concreto para la ciudad)
+          proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, this.state.gapRecoOffset);
+          if(!proposals.length) continue;
+        }
         if(!proposals.length) continue;
 
         gapBlocks.push({
@@ -16760,7 +16822,9 @@ loadTripGapsFill(opts){
               </div>
               <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
             </div>
-            <div class="mt-3 grid grid-cols-1 gap-2">
+            <div class="mt-3">
+              ${blk.proposals && blk.proposals.length ? `
+            <div class="grid grid-cols-1 gap-2">
               ${blk.proposals.map((item)=>`
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
