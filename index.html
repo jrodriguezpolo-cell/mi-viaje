@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8X_AI_UNIFIED_GAPS_9_22_MIN3H_FROM_A8R_SAFE</title>
+<title>V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8X_AI_UNIFIED_GAPS_9_22_MIN3H_FROM_A8R_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8X_AI_UNIFIED_GAPS_9_22_MIN3H_FROM_A8R_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8X_AI_UNIFIED_GAPS_9_22_MIN3H_FROM_A8R_SAFE
+            Build cargada: V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8X_AI_UNIFIED_GAPS_9_22_MIN3H_FROM_A8R_SAFE";
+const APP_BUILD = "V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15462,11 +15462,70 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     cityKey(value){
       return this.normalizeCity(value).toLowerCase()
-        .normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/\b(aeropuerto|airport|estacion|station|hotel|apartamento|apartment|hostel|puerto|port)\b/g, "")
         .replace(/[()]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+    },
+    __aiResolveCityCandidate(){
+      const vals = Array.from(arguments).flat(Infinity).filter(v => v !== undefined && v !== null).map(v => String(v).trim()).filter(Boolean);
+      if(!vals.length) return "";
+      const aliasMap = {
+        "new york":"nueva york",
+        "nyc":"nueva york",
+        "nueva york city":"nueva york",
+        "washington dc":"washington",
+        "washington d c":"washington",
+        "washington, dc":"washington",
+        "washington d.c":"washington",
+        "london":"londres",
+        "rome":"roma",
+        "lisbon":"lisboa",
+        "tokio":"tokyo"
+      };
+      const catalogKeys = Object.keys((typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG) ? AI_CITY_CATALOG : {});
+      const candidates = [];
+      const norm = (s)=> this.cityKey(String(s||"").replace(/[,_|;]+/g, " ").replace(/[\/]/g, " "));
+      vals.forEach((raw)=>{
+        const upper = raw.toUpperCase();
+        const iatas = upper.match(/\b[A-Z]{3}\b/g) || [];
+        iatas.forEach((code)=>{
+          const ap = (typeof __AIRPORT_DB !== "undefined" && Array.isArray(__AIRPORT_DB)) ? __AIRPORT_DB.find(a => String(a.iata||"").toUpperCase() === code) : null;
+          if(ap && ap.city) candidates.push(this.cityKey(ap.city));
+        });
+        const pieces = String(raw).split(/[|>→:,;\-]+/).map(s=>s.trim()).filter(Boolean);
+        pieces.concat([raw]).forEach((piece)=>{
+          const key0 = norm(piece);
+          if(!key0) return;
+          const key = aliasMap[key0] || key0;
+          if(catalogKeys.includes(key)) candidates.push(key);
+          catalogKeys.forEach((ck)=>{
+            if(key === ck || key.includes(ck) || ck.includes(key)) candidates.push(ck);
+          });
+        });
+      });
+      if(!candidates.length) return "";
+      const counts = new Map();
+      candidates.forEach((k)=> counts.set(k, (counts.get(k)||0)+1));
+      return Array.from(counts.entries()).sort((a,b)=> (b[1]-a[1]) || (b[0].length-a[0].length))[0][0] || "";
+    },
+    __aiResolveCityDisplay(cityKey){
+      const key = this.cityKey(cityKey);
+      if(!key) return "";
+      const preferred = {
+        "nueva york":"Nueva York",
+        "madrid":"Madrid",
+        "barcelona":"Barcelona",
+        "washington":"Washington",
+        "orlando":"Orlando",
+        "londres":"Londres",
+        "roma":"Roma",
+        "paris":"París",
+        "lisboa":"Lisboa",
+        "tokyo":"Tokyo"
+      };
+      return preferred[key] || String(cityKey||"").trim();
     },
     collectTripCities(){
       const trip = this.bridge.readTrip();
@@ -15474,17 +15533,18 @@ window.addEventListener('DOMContentLoaded', () => {
       const take = (city, source)=>{
         const raw = this.normalizeCity(city);
         if(!raw) return;
-        const key = this.cityKey(raw);
+        const key = this.__aiResolveCityCandidate(raw) || this.cityKey(raw);
         if(!key) return;
-        if(!buckets.has(key)) buckets.set(key, { city: raw, count:0, sources:new Set() });
+        const display = this.__aiResolveCityDisplay(key) || raw;
+        if(!buckets.has(key)) buckets.set(key, { city: display, count:0, sources:new Set() });
         const row = buckets.get(key);
         row.count += 1;
         row.sources.add(source);
-        if(raw.length < row.city.length) row.city = raw;
+        if(display.length < row.city.length) row.city = display;
       };
-      trip.legs.forEach((leg)=>{ take(leg.from, "leg"); take(leg.to, "leg"); });
-      trip.stays.forEach((stay)=>{ take(stay.city || stay.place || stay.name, "stay"); });
-      trip.activities.forEach((act)=>{ take(act.city || act.place || act.title, "activity"); });
+      trip.legs.forEach((leg)=>{ take([leg.from, leg.fromCity, leg.placeOut, leg.origin, leg.title], "leg"); take([leg.to, leg.toCity, leg.placeIn, leg.destination, leg.title], "leg"); });
+      trip.stays.forEach((stay)=>{ take([stay.city, stay.place, stay.name, stay.title, stay.address], "stay"); });
+      trip.activities.forEach((act)=>{ take([act.city, act.place, act.location, act.title], "activity"); });
       return Array.from(buckets.values())
         .sort((a,b)=> (b.count - a.count) || a.city.localeCompare(b.city, "es"))
         .map((row)=>({ city: row.city, key: this.cityKey(row.city), count: row.count, sources: Array.from(row.sources) }));
@@ -15812,22 +15872,32 @@ window.addEventListener('DOMContentLoaded', () => {
     __aiBuildStayRanges(trip){
       const ranges = [];
       (Array.isArray(trip.stays)?trip.stays:[]).forEach((s)=>{
-        const city = String(s && s.city || "").trim();
+        const cityKey = this.__aiResolveCityCandidate(
+          s && s.city, s && s.place, s && s.name, s && s.title, s && s.hotelName,
+          s && s.address, s && s.location, s && s.where
+        );
+        const city = this.__aiResolveCityDisplay(cityKey || String(s && (s.city||s.place||s.name)||"").trim());
         const inDay = String(s && (s.checkinDate||s.checkInDate||s.inDate||s.startDate||s.date) || "").trim().slice(0,10);
         if(!/^\d{4}-\d{2}-\d{2}$/.test(inDay)) return;
         let nights = parseInt(s && s.nights, 10);
         if(!Number.isFinite(nights) || nights <= 0) nights = 1;
         const outDay = this.__aiISOAddDays(inDay, nights);
+        if(!this.cityKey(city)) return;
         ranges.push({ city, inDay, outDay, nights, inferred:false });
       });
       if(!ranges.length){
         const legs = (Array.isArray(trip.legs)?trip.legs:[])
           .map((l)=>{
             const day = String(l && (l.arriveDate||l.date||l.day||l.depDate||l.departDate||l.startDate) || '').trim().slice(0,10);
-            const city = String(l && (l.to||l.toCity) || '').trim();
+            const cityKey = this.__aiResolveCityCandidate(
+              l && l.to, l && l.toCity, l && l.arrivePlace, l && l.placeIn, l && l.destination,
+              l && l.destinationCity, l && l.arriveAirport, l && l.toText, l && l.route,
+              l && l.title, l && l.summary, l && l.notes
+            );
+            const city = this.__aiResolveCityDisplay(cityKey);
             return { day, city };
           })
-          .filter((x)=> /^\d{4}-\d{2}-\d{2}$/.test(x.day) && x.city)
+          .filter((x)=> /^\d{4}-\d{2}-\d{2}$/.test(x.day) && this.cityKey(x.city))
           .sort((a,b)=> a.day.localeCompare(b.day));
         for(let i=0;i<legs.length;i++){
           const cur = legs[i];
@@ -15877,33 +15947,37 @@ window.addEventListener('DOMContentLoaded', () => {
     __aiDayContext(day, trip, stayRanges, bucket){
       const d = String(day||"").trim();
       const b = bucket || {};
-      // 1) prefer stay city that covers the day
       let city = "";
       let reason = "";
       if(Array.isArray(stayRanges)){
-        const hit = stayRanges.find(r => d >= r.inDay && d < r.outDay && String(r.city||"").trim());
+        const hit = stayRanges.find(r => d >= r.inDay && d < r.outDay && this.cityKey(r.city));
         if(hit){
           city = String(hit.city||"").trim();
           reason = (b && (b.acts||[]).length) ? "Hay margen extra dentro de la estancia." : "Día dentro de la estancia con pocas actividades.";
         }
       }
-      // 2) fallback: activity city
       if(!city){
-        const act = (b.acts||[]).find(a => String(a && a.city || "").trim());
+        const act = (b.acts||[]).find(a => this.__aiResolveCityCandidate(a && a.city, a && a.place, a && a.location, a && a.title, a && a.notes));
         if(act){
-          city = String(act.city||"").trim();
+          city = this.__aiResolveCityDisplay(this.__aiResolveCityCandidate(act.city, act.place, act.location, act.title, act.notes));
           reason = "Pocas actividades para este día.";
         }
       }
-      // 3) fallback: leg destination
       if(!city){
-        const leg = (b.legs||[]).find(l => String(l && (l.to||l.toCity)||"").trim());
+        const leg = (b.legs||[]).find(l => this.__aiResolveCityCandidate(
+          l && l.to, l && l.toCity, l && l.arrivePlace, l && l.placeIn, l && l.destination,
+          l && l.destinationCity, l && l.arriveAirport, l && l.toText, l && l.route,
+          l && l.title, l && l.summary, l && l.notes
+        ));
         if(leg){
-          city = String(leg.to||leg.toCity||"").trim();
+          city = this.__aiResolveCityDisplay(this.__aiResolveCityCandidate(
+            leg.to, leg.toCity, leg.arrivePlace, leg.placeIn, leg.destination,
+            leg.destinationCity, leg.arriveAirport, leg.toText, leg.route,
+            leg.title, leg.summary, leg.notes
+          ));
           reason = "Día con traslado donde aún queda margen razonable.";
         }
       }
-      // 4) last fallback: any detected city in trip
       if(!city){
         const cities = this.collectTripCities ? this.collectTripCities() : [];
         if(cities && cities.length){
