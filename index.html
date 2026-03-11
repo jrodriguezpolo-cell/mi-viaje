@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE</title>
+<title>V226C1A8T_AI_DISCOVER_COMPLETE_CITY_KEYS_FIX_FROM_A8S_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8T_AI_DISCOVER_COMPLETE_CITY_KEYS_FIX_FROM_A8S_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8T_AI_DISCOVER_COMPLETE_CITY_KEYS_FIX_FROM_A8S_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE
+            Build cargada: V226C1A8T_AI_DISCOVER_COMPLETE_CITY_KEYS_FIX_FROM_A8S_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8S_AI_DISCOVER_COMPLETE_CITY_STAY_FIX_FROM_A8R_SAFE";
+const APP_BUILD = "V226C1A8T_AI_DISCOVER_COMPLETE_CITY_KEYS_FIX_FROM_A8S_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16236,13 +16236,62 @@ ${why ? why + ' ' : ''}${specific.proTip}`
         </div>
       `;
     },
+    __aiCatalogKeysForCity(city){
+      const raw = String(city||"").trim();
+      if(!raw) return [];
+      const norm = this.__aiNormLoose(raw);
+      const keys = [];
+      const push = (v)=>{
+        const k = this.__aiCityKey(v);
+        if(k && !keys.includes(k)) keys.push(k);
+      };
+      push(raw);
+      push(norm);
+      const aliasMap = {
+        "new york": ["nueva york", "new york", "new york city", "nyc"],
+        "new york city": ["nueva york", "new york", "new york city", "nyc"],
+        "nyc": ["nueva york", "new york", "new york city", "nyc"],
+        "nueva york": ["nueva york", "new york", "new york city", "nyc"],
+        "washington dc": ["washington", "washington dc", "washington d c"],
+        "washington d c": ["washington", "washington dc", "washington d c"],
+        "washington": ["washington", "washington dc", "washington d c"],
+        "orlando florida": ["orlando"],
+        "paris": ["paris", "parís"],
+        "paris france": ["paris", "parís"],
+        "paris city center": ["paris", "parís"],
+        "paris centro": ["paris", "parís"],
+        "london": ["londres", "london"],
+        "londres": ["londres", "london"],
+        "rome": ["roma", "rome"],
+        "roma": ["roma", "rome"],
+        "barcelona": ["barcelona"],
+        "madrid": ["madrid"]
+      };
+      (aliasMap[norm] || []).forEach(push);
+      if(/\bnew\s+york\b/.test(norm) || /\bnyc\b/.test(norm)){
+        ["nueva york", "new york", "new york city", "nyc"].forEach(push);
+      }
+      if(/\bwashington\b/.test(norm)){
+        ["washington", "washington dc", "washington d c"].forEach(push);
+      }
+      if(/\bparis\b/.test(norm)){
+        ["paris", "parís"].forEach(push);
+      }
+      return keys;
+    },
     __aiTopProposalsForCity(city, existingTitlesSet, maxN, offsetIndex){
       const cityName = String(city||"").trim();
       if(!cityName) return [];
-      const key = this.__aiCityKey(cityName);
-      const baseCatalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && Array.isArray(AI_CITY_CATALOG[key]))
-        ? AI_CITY_CATALOG[key]
-        : [];
+      const candidateKeys = this.__aiCatalogKeysForCity(cityName);
+      let baseCatalog = [];
+      if(typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG){
+        for(const key of candidateKeys){
+          if(Array.isArray(AI_CITY_CATALOG[key]) && AI_CITY_CATALOG[key].length){
+            baseCatalog = AI_CITY_CATALOG[key];
+            break;
+          }
+        }
+      }
       if(!baseCatalog.length) return [];
 
       const existing = (existingTitlesSet instanceof Set) ? existingTitlesSet : new Set();
