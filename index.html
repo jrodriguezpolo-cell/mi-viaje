@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE</title>
+<title>V226C1A8Z_AI_UNIFIED_GAPS_DIAGNOSTIC_FROM_A8Y_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE" rel="manifest"/>
+<link href="manifest.json?v=V226C1A8Z_AI_UNIFIED_GAPS_DIAGNOSTIC_FROM_A8Y_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A8Z_AI_UNIFIED_GAPS_DIAGNOSTIC_FROM_A8Y_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE
+            Build cargada: V226C1A8Z_AI_UNIFIED_GAPS_DIAGNOSTIC_FROM_A8Y_SAFE
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1A8Y_AI_UNIFIED_CITY_RECOGNITION_FIX_FROM_A8X_SAFE";
+const APP_BUILD = "V226C1A8Z_AI_UNIFIED_GAPS_DIAGNOSTIC_FROM_A8Y_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15949,10 +15949,14 @@ window.addEventListener('DOMContentLoaded', () => {
       const b = bucket || {};
       let city = "";
       let reason = "";
+      let source = "none";
+      let sourceDetail = "";
       if(Array.isArray(stayRanges)){
         const hit = stayRanges.find(r => d >= r.inDay && d < r.outDay && this.cityKey(r.city));
         if(hit){
           city = String(hit.city||"").trim();
+          source = "stayRange";
+          sourceDetail = `${hit.inDay}→${hit.outDay}${hit.inferred ? ' · inferred' : ''}`;
           reason = (b && (b.acts||[]).length) ? "Hay margen extra dentro de la estancia." : "Día dentro de la estancia con pocas actividades.";
         }
       }
@@ -15960,6 +15964,8 @@ window.addEventListener('DOMContentLoaded', () => {
         const act = (b.acts||[]).find(a => this.__aiResolveCityCandidate(a && a.city, a && a.place, a && a.location, a && a.title, a && a.notes));
         if(act){
           city = this.__aiResolveCityDisplay(this.__aiResolveCityCandidate(act.city, act.place, act.location, act.title, act.notes));
+          source = "activity";
+          sourceDetail = String(act.title||act.name||act.city||act.place||act.location||"").trim();
           reason = "Pocas actividades para este día.";
         }
       }
@@ -15975,6 +15981,8 @@ window.addEventListener('DOMContentLoaded', () => {
             leg.destinationCity, leg.arriveAirport, leg.toText, leg.route,
             leg.title, leg.summary, leg.notes
           ));
+          source = "leg";
+          sourceDetail = String(leg.route||leg.title||leg.summary||leg.to||leg.toCity||leg.destination||leg.destinationCity||leg.arriveAirport||"").trim();
           reason = "Día con traslado donde aún queda margen razonable.";
         }
       }
@@ -15982,10 +15990,12 @@ window.addEventListener('DOMContentLoaded', () => {
         const cities = this.collectTripCities ? this.collectTripCities() : [];
         if(cities && cities.length){
           city = String(cities[0].city||"").trim();
+          source = "tripFallback";
+          sourceDetail = String(cities[0].city||"").trim();
           reason = "Hueco detectado con ciudad aproximada del viaje.";
         }
       }
-      return { city, reason };
+      return { city, reason, source, sourceDetail };
     },
     __aiNormLoose(text){
       return String(text||"").trim().toLowerCase()
@@ -16882,6 +16892,7 @@ loadTripGapsFill(opts){
       const GAP_MIN_FREE = 3*60;
       const buildQualifiedGapsForDay = (day, b)=>{
         const events = [];
+        const rawItems = [];
         const pushInterval = (s, e)=>{
           if(s==null || e==null) return;
           let start = Math.max(0, Math.floor(s));
@@ -16899,6 +16910,7 @@ loadTripGapsFill(opts){
         (b.legs||[]).forEach((l)=>{
           const dep = parseHM(l.time || l.departTime || l.startTime || l.departureTime);
           const arr = parseHM(l.arriveTime || l.arrivalTime || l.endTime);
+          rawItems.push({ type:'leg', title:String(l.title||l.route||l.to||l.toCity||l.destination||'Trayecto').trim(), dep, arr });
           if(dep!=null && arr!=null){
             const s = Math.min(dep, arr);
             const e = Math.max(dep, arr) + 60;
@@ -16909,12 +16921,12 @@ loadTripGapsFill(opts){
             pushInterval(dep, dep+180);
           }
         });
-        (b.checkins||[]).forEach((x)=>{ pushEvent(x.time || x.checkInTime || '15:00', 30); });
-        (b.checkouts||[]).forEach((x)=>{ pushEvent(x.time || x.checkOutTime || '11:00', 30); });
-        (b.acts||[]).forEach((a)=>{ pushEvent(a.time, durMinFromObj(a, 90) || 90); });
+        (b.checkins||[]).forEach((x)=>{ rawItems.push({ type:'checkin', title:String(x.name||x.title||x.place||'Check-in').trim(), t:parseHM(x.time || x.checkInTime || '15:00') }); pushEvent(x.time || x.checkInTime || '15:00', 30); });
+        (b.checkouts||[]).forEach((x)=>{ rawItems.push({ type:'checkout', title:String(x.name||x.title||x.place||'Check-out').trim(), t:parseHM(x.time || x.checkOutTime || '11:00') }); pushEvent(x.time || x.checkOutTime || '11:00', 30); });
+        (b.acts||[]).forEach((a)=>{ rawItems.push({ type:'activity', title:String(a.title||a.name||'Actividad').trim(), t:parseHM(a.time), dur:durMinFromObj(a, 90) || 90 }); pushEvent(a.time, durMinFromObj(a, 90) || 90); });
 
         if(!events.length){
-          return [{ s:GAP_DAY_START, e:GAP_DAY_END, label:'Día libre' }];
+          return { gaps:[{ s:GAP_DAY_START, e:GAP_DAY_END, label:'Día libre' }], merged:[], rawItems };
         }
         events.sort((a,b)=> a.s-b.s);
         const merged = [];
@@ -16930,16 +16942,21 @@ loadTripGapsFill(opts){
           cursor = Math.max(cursor, ev.e);
         });
         if(GAP_DAY_END - cursor >= GAP_MIN_FREE) gaps.push({ s:cursor, e:GAP_DAY_END });
-        return gaps.map((g)=>{
-          let label = 'Hueco libre';
-          if(g.s <= 12*60 && g.e <= 15*60+30) label = 'Mañana libre';
-          else if(g.s >= 15*60) label = 'Tarde libre';
-          else if((g.e-g.s) >= 8*60) label = 'Día bastante libre';
-          return Object.assign({ label }, g);
-        });
+        return {
+          merged,
+          rawItems,
+          gaps: gaps.map((g)=>{
+            let label = 'Hueco libre';
+            if(g.s <= 12*60 && g.e <= 15*60+30) label = 'Mañana libre';
+            else if(g.s >= 15*60) label = 'Tarde libre';
+            else if((g.e-g.s) >= 8*60) label = 'Día bastante libre';
+            return Object.assign({ label }, g);
+          })
+        };
       };
 
       const gapBlocks = [];
+      const gapDiagnostics = [];
       const maxBlocks = 20;
 
       for(const day of allDays){
@@ -16949,7 +16966,26 @@ loadTripGapsFill(opts){
         const ctx = this.__aiDayContext(day, trip, stayRanges, b);
         const city = ctx.city || '';
         if(!city) continue;
-        const dayGaps = buildQualifiedGapsForDay(day, b);
+        const gapEval = buildQualifiedGapsForDay(day, b);
+        const dayGaps = (gapEval && Array.isArray(gapEval.gaps)) ? gapEval.gaps : [];
+        gapDiagnostics.push({
+          day,
+          city: ctx.city || "",
+          source: ctx.source || "none",
+          sourceDetail: ctx.sourceDetail || "",
+          reason: ctx.reason || "",
+          legs: (b.legs||[]).length,
+          checkins: (b.checkins||[]).length,
+          checkouts: (b.checkouts||[]).length,
+          acts: (b.acts||[]).length,
+          gaps: dayGaps.map((g)=> `${g.label} ${fmtHM(g.s)}-${fmtHM(g.e)}`),
+          occupied: (gapEval && Array.isArray(gapEval.merged)) ? gapEval.merged.map((m)=> `${fmtHM(m.s)}-${fmtHM(m.e)}`) : [],
+          rawItems: (gapEval && Array.isArray(gapEval.rawItems)) ? gapEval.rawItems.map((it)=> {
+            if(it.type === 'leg') return `leg · ${it.title} · dep:${it.dep==null?'—':fmtHM(it.dep)} arr:${it.arr==null?'—':fmtHM(it.arr)}`;
+            if(it.type === 'activity') return `activity · ${it.title} · ${it.t==null?'—':fmtHM(it.t)} · ${fmtDur(it.dur||0)}`;
+            return `${it.type} · ${it.title} · ${it.t==null?'—':fmtHM(it.t)}`;
+          }) : []
+        });
         if(!dayGaps.length) continue;
 
         for(let gapIdx=0; gapIdx<dayGaps.length; gapIdx++){
@@ -16980,6 +17016,7 @@ loadTripGapsFill(opts){
       }
 
       this.state.gapBlocks = gapBlocks;
+      this.state.gapDiagnostics = gapDiagnostics;
 
       if(status){
         this.state.actionInfoStatus = String(gapBlocks.length
@@ -17025,6 +17062,43 @@ loadTripGapsFill(opts){
             </div>
           </div>
         `).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas claras para completar el viaje ahora mismo.</div>`;
+
+        const diagWrap = document.createElement("details");
+        diagWrap.className = "mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3";
+        diagWrap.open = true;
+        const diagRows = (Array.isArray(this.state.gapDiagnostics) ? this.state.gapDiagnostics : []).map((row)=>{
+          const gapsHtml = row.gaps && row.gaps.length ? row.gaps.map(x=>`<div>• ${escapeHtml(x)}</div>`).join("") : "<div>• Sin hueco ≥ 3h dentro de 09:00–22:00</div>";
+          const occHtml = row.occupied && row.occupied.length ? row.occupied.map(x=>`<div>• ${escapeHtml(x)}</div>`).join("") : "<div>• Sin ocupación detectada</div>";
+          const rawHtml = row.rawItems && row.rawItems.length ? row.rawItems.map(x=>`<div>• ${escapeHtml(x)}</div>`).join("") : "<div>• Sin eventos detectados</div>";
+          return `
+            <div class="rounded-2xl border border-amber-200 bg-white p-3">
+              <div class="flex flex-wrap items-center gap-2 text-sm">
+                <div class="font-extrabold text-slate-900">${escapeHtml(row.day)}</div>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">Ciudad: ${escapeHtml(row.city || '—')}</span>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">Fuente: ${escapeHtml(row.source || 'none')}</span>
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">legs ${row.legs} · stays ${row.checkins+row.checkouts} · acts ${row.acts}</span>
+              </div>
+              <div class="mt-2 text-xs text-slate-600">Detalle fuente: ${escapeHtml(row.sourceDetail || '—')}</div>
+              <div class="mt-1 text-xs text-slate-600">Motivo: ${escapeHtml(row.reason || '—')}</div>
+              <div class="mt-3 grid grid-cols-1 gap-2 text-xs text-slate-700">
+                <details class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <summary class="cursor-pointer font-semibold">Huecos calculados</summary>
+                  <div class="mt-2">${gapsHtml}</div>
+                </details>
+                <details class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <summary class="cursor-pointer font-semibold">Bloques ocupados detectados</summary>
+                  <div class="mt-2">${occHtml}</div>
+                </details>
+                <details class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <summary class="cursor-pointer font-semibold">Eventos leídos ese día</summary>
+                  <div class="mt-2">${rawHtml}</div>
+                </details>
+              </div>
+            </div>
+          `;
+        }).join("");
+        diagWrap.innerHTML = `<summary class="cursor-pointer font-extrabold text-amber-900">Diagnóstico interno día por día</summary><div class="mt-3 grid grid-cols-1 gap-3">${diagRows || '<div class="text-sm text-slate-600">Sin días analizados.</div>'}</div>`;
+        results.appendChild(diagWrap);
 
         results.querySelectorAll("[data-ai-gap-proposal]").forEach((el)=>{
           el.addEventListener("change", (ev)=>{
