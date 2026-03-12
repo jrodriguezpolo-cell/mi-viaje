@@ -1650,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE";
+const APP_BUILD = "V226C1B0AP_AK_RECO_CACHE_PER_CITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15157,12 +15157,50 @@ window.addEventListener('DOMContentLoaded', () => {
     const key = cityKey(rawCity);
     const list = POIS[key] || [];
     const need = BIG_CITIES.has(key) ? 10 : 5;
-    return list.slice(0, Math.max(0, Math.min(list.length, need)));
-  };
+
+    // Persistencia (caché) por ciudad: mantiene estable el set de recomendaciones
+    // aunque el catálogo crezca o se reordene en el futuro.
+    try{
+      const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
+      const raw = localStorage.getItem(cacheKey);
+      if(raw){
+        const data = JSON.parse(raw);
+        const ids = data && Array.isArray(data.ids) ? data.ids : null;
+        if(ids && ids.length){
+          const byId = new Map(list.map(it=>[String(it.id||""), it]));
+          const out = [];
+          for(const id of ids){
+            const it = byId.get(String(id));
+            if(it) out.push(it);
+            if(out.length>=need) break;
+          }
+          if(out.length){
+            return out.slice(0, Math.max(0, Math.min(out.length, need)));
+          }
+        }
+      }
+    }catch(e){}
+
+    const out = list.slice(0, Math.max(0, Math.min(list.length, need)));
+    // Guardar solo los ids (ligero)
+    try{
+      const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
+      const ids = out.map(it=> String(it.id||"" )).filter(Boolean);
+      if(ids.length) localStorage.setItem(cacheKey, JSON.stringify({ v:1, ids, ts: Date.now() }));
+    }catch(e){}
+
+    return out;
+  }};
 
   // Exponer helpers para el módulo IA
   window.__MV_POI = { CITY_ALIAS, BIG_CITIES, POIS, cityKey, getPOIsForCity };
 })();
+
+
+  // Persistencia/caché de recomendaciones por ciudad (preparado para futuro Gemini).
+  // Se guarda un pool ordenado por ciudad para que no cambie “a lo loco” entre sesiones.
+  const AI_RECO_CACHE_V = 1;
+  const AI_RECO_CACHE_PREFIX = "MV_AI_RECO_POOL_V1:";
 
   const aiModule = {
     state: null,
@@ -16236,6 +16274,18 @@ window.addEventListener('DOMContentLoaded', () => {
       const cityName = String(city||"").trim();
       if(!cityName) return [];
       const key = this.__aiCityKey(cityName);
+      // Caché estable por ciudad (pool ordenado).
+      // Si existe, reutilizamos ese pool para mantener consistencia entre sesiones.
+      let __cachedPool = null;
+      try{
+        const raw = localStorage.getItem(AI_RECO_CACHE_PREFIX + key);
+        if(raw){
+          const data = JSON.parse(raw);
+          if(data && data.v === AI_RECO_CACHE_V && Array.isArray(data.pool) && data.pool.length){
+            __cachedPool = data.pool;
+          }
+        }
+      }catch(e){}
       // Base catalog: city-specific if available, otherwise generic.
       // If the city catalog is shorter than requested, complete it with genericSuggestions(city) (dedup by title).
       let catalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && AI_CITY_CATALOG[key])
@@ -16268,16 +16318,37 @@ window.addEventListener('DOMContentLoaded', () => {
       const idx = Math.max(0, parseInt(offsetIndex,10)||0);
       const startAt = idx * n;
 
-      const ranked = (Array.isArray(catalog)?catalog:[])
-        .map((item)=>{
-          const adapted = this.adaptProposal(item);
-          return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
-        })
+      let pool = [];
+
+      if(__cachedPool){
+        pool = Array.isArray(__cachedPool) ? __cachedPool.slice() : [];
+      }else{
+        const ranked = (Array.isArray(catalog)?catalog:[])
+          .map((item)=>{
+            const adapted = this.adaptProposal(item);
+            return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
+          })
+          .filter((it)=>{
+            const t = this.__aiNormTitle(it.title||"");
+            return t;
+          })
+          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
+
+        // Guardamos el pool sin score (ligero) para estabilidad futura.
+        pool = ranked.map(({score, ...rest})=> rest);
+        try{
+          if(pool && pool.length){
+            localStorage.setItem(AI_RECO_CACHE_PREFIX + key, JSON.stringify({ v: AI_RECO_CACHE_V, ts: Date.now(), pool }));
+          }
+        }catch(e){}
+      }
+
+      // Filtrar duplicados existentes (cronograma) en cada render
+      const ranked = (Array.isArray(pool)?pool:[])
         .filter((it)=>{
           const t = this.__aiNormTitle(it.title||"");
           return t && !existing.has(t);
-        })
-        .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
+        });
 
       // Slice with gentle wrap-around so “otras recomendaciones” cambia la tanda sin quedarse vacío.
       const picked = [];
@@ -16287,7 +16358,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if(it) picked.push(it);
       }
 
-      return picked.map(({score, ...rest})=> rest);
+      return picked;
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
