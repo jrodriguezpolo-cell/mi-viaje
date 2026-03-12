@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AV_AK_RESET_CITY_RECO_CACHE_PER_CITY";
+const APP_BUILD = "V226C1B0AW_AK_RESET_CITY_RECO_CACHE_PER_CITY_VISIBLE_UNIFIED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17548,6 +17548,7 @@ loadTripGapsFill(opts){
         gapBlocks.push({
           day,
           city,
+          cityKey: this.__aiCityKey(city),
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -17586,7 +17587,10 @@ loadTripGapsFill(opts){
                   <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5">Tanda: ${this.state.gapRecoOffset+1}</span>
                 </div>
               </div>
-              <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
+              <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
+                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(blk.city||"")}" data-ai-reset-city="${escapeHtml(blk.cityKey)}">↻</button>` : ``}
+                <div>${blk.proposals.length} propuestas</div>
+              </div>
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
               ${blk.proposals.map((item)=>`
@@ -17615,6 +17619,24 @@ loadTripGapsFill(opts){
           });
         });
       }
+
+      // Bind reset buttons (per city) — ultra-quirúrgico
+      try{
+        const self = this;
+        results.querySelectorAll("[data-ai-reset-city]").forEach((btn)=>{
+          if(btn.__mvBound) return;
+          btn.__mvBound = true;
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault(); ev.stopPropagation();
+            const key = String(btn.getAttribute("data-ai-reset-city")||"").trim();
+            if(!key) return;
+            try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+key); }catch{}
+            try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+key); }catch{}
+            try{ toast("Recomendaciones reiniciadas para esta ciudad."); }catch{}
+            try{ self.refreshCurrentAction({ force:true }); }catch{}
+          }, { passive:false });
+        });
+      }catch{}
 
       const footer = document.getElementById("aiActionFooter");
       if(footer){
