@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0P_AI_ROLLBACK_A8L_FIX_BERLIN_DAYS_AND_CLEAR_FOOTER</title>
+<title>V226C1B0T_AI_ADD_SELECTED_FIX_POINTERS_AND_MOREINFO</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0P_AI_ROLLBACK_A8L_FIX_BERLIN_DAYS_AND_CLEAR_FOOTER" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0T_AI_ADD_SELECTED_FIX_POINTERS_AND_MOREINFO" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0S_AI_ADD_SELECTED_WORKS_BUILD_LABEL_FIXED</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0T_AI_ADD_SELECTED_FIX_POINTERS_AND_MOREINFO</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -12538,11 +12538,13 @@ function renderAIResults(sections) {
       const raw = String(c.getAttribute("data-ai-spot") || "");
       if(!raw) continue;
       const parts = raw.split(":");
-      const sidx = parseInt(parts[0],10);
-      const i = parseInt(parts[1],10);
-      const sec = (window.__aiSections && window.__aiSections[sidx]) ? window.__aiSections[sidx] : null;
-      if(!sec || !sec.spots || !sec.spots[i]) continue;
-      const sp = sec.spots[i];
+              const sidx = parseInt(parts[0],10);
+              const gidx = parseInt(parts[1],10);
+              const i = parseInt(parts[2],10);
+              const sec = (window.__aiSections && window.__aiSections[sidx]) ? window.__aiSections[sidx] : null;
+              const gap = (sec && Array.isArray(sec.gaps)) ? sec.gaps[gidx] : null;
+              if(!gap || !gap.spots || !gap.spots[i]) continue;
+              const sp = gap.spots[i];
       const date = String(sec.date || sec.day || sec.dateISO || sec.dateKey || "").trim();
       items.push({
         title: sp.title || sp.name || "",
@@ -15218,9 +15220,11 @@ window.addEventListener('DOMContentLoaded', () => {
               const raw = String(more.getAttribute("data-ai-more")||"");
               const parts = raw.split(":");
               const sidx = parseInt(parts[0],10);
-              const i = parseInt(parts[1],10);
+              const gidx = parseInt(parts[1],10);
+              const i = parseInt(parts[2],10);
               const sec = (window.__aiSections||[])[sidx];
-              const spot = sec && sec.gaps && sec.gaps[0] && sec.gaps[0].spots ? sec.gaps[0].spots[i] : null;
+              const gap = sec && Array.isArray(sec.gaps) ? sec.gaps[gidx] : null;
+              const spot = gap && gap.spots ? gap.spots[i] : null;
               if(spot){
                 const bodyHtml = `
                   <div class="grid gap-2">
@@ -16450,12 +16454,12 @@ __aiBuildDayBuckets(trip){
         const gapsHtml = sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
-                      <input class="mt-1" type="checkbox" data-ai-spot="${sidx}:${pi}">
+                      <input class="mt-1" type="checkbox" data-ai-spot="${sidx}:${gi}:${pi}">
                       <div class="min-w-0">
                         <div class="font-semibold text-slate-900">${p.title}</div>
                         <div class="text-sm text-slate-600">${p.tagline}</div>
                         <div class="mt-2">
-                          <button type="button" class="tap text-xs px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200" data-ai-more="${sidx}:${pi}">Más info</button>
+                          <button type="button" class="tap text-xs px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200" data-ai-more="${sidx}:${gi}:${pi}">Más info</button>
                         </div>
                       </div>
                     </label>`;
@@ -16571,11 +16575,13 @@ __aiBuildDayBuckets(trip){
                 const raw = String(c.getAttribute("data-ai-spot")||"");
                 const parts = raw.split(":");
                 const sidx = parseInt(parts[0],10);
-                const i = parseInt(parts[1],10);
+                const gidx = parseInt(parts[1],10);
+                const i = parseInt(parts[2],10);
                 const sec = (window.__aiSections||[])[sidx];
-                if(!sec || !sec.gaps || !sec.gaps.length) continue;
+                const gap = (sec && Array.isArray(sec.gaps)) ? sec.gaps[gidx] : null;
+                if(!sec || !gap || !gap.spots || !gap.spots[i]) continue;
                 // usamos el primer gap de ese día como referencia de ciudad/fecha
-                const spot = sec.gaps[0].spots[i];
+                const spot = gap.spots[i];
                 if(!spot) continue;
                 items.push({ day: sec.day, city: sec.city, spot });
               }
