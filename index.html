@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AI_AI_FIX_ACTIONS_CITIES_GAPS_WIRING</title>
+<title>V226C1B0AF_HOME_CITY_EXCLUDE_STABLE_FROM_B0AC</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AI_AI_FIX_ACTIONS_CITIES_GAPS_WIRING" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AF_HOME_CITY_EXCLUDE_STABLE_FROM_B0AC" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -64,6 +64,7 @@ function toast(msg, ms){
     try{ console.log("toast:", msg); }catch{}
   }
 }
+catch{} }
 function deleteItemById(kind, id) {
   const sc = getActiveScenario();
   if (!sc) return false;
@@ -1370,7 +1371,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AI_AI_FIX_ACTIONS_CITIES_GAPS_WIRING</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AF_HOME_CITY_EXCLUDE_STABLE_FROM_B0AC</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1649,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AI_AI_FIX_ACTIONS_CITIES_GAPS_WIRING";
+const APP_BUILD = "V226C1B0AF_HOME_CITY_EXCLUDE_STABLE_FROM_B0AC";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15457,14 +15458,7 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     selectAction(action){
       this.init();
-      const a = String(action||"summary");
-      this.state.currentAction =
-        (a === "unified") ? "unified" :
-        (a === "cities") ? "cities" :
-        (a === "gaps") ? "gaps" :
-        (a === "sensitive") ? "sensitive" :
-        (a === "transport") ? "transport" :
-        "summary";
+      this.state.currentAction = (action === "unified") ? "unified" : (action === "sensitive") ? "sensitive" : (action === "transport") ? "transport" : "summary";
       this.savePrefs();
       this.refreshCurrentAction({ force:true });
     },
@@ -15476,8 +15470,6 @@ window.addEventListener('DOMContentLoaded', () => {
       // FIX B0P: limpiar footer entre acciones (evita "Ir a Transporte" pegado)
       try{ const f=document.getElementById("aiActionFooter"); if(f) f.innerHTML=""; }catch{}
       if(this.state.currentAction === "unified") this.loadTripUnifiedDiscoverAndFill(o);
-      else if(this.state.currentAction === "cities") this.loadTripCities(o);
-      else if(this.state.currentAction === "gaps") this.loadTripGapsFill(o);
       else if(this.state.currentAction === "sensitive") this.loadSensitivePointsReview(o);
       else if(this.state.currentAction === "transport") this.loadTransportReview(o);
       else this.loadContextualSummary(o);
@@ -15706,28 +15698,29 @@ window.addEventListener('DOMContentLoaded', () => {
     },
     buildCityGroups(cities){
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
-        const rawCity = row && row.city ? row.city : "";
-        const list = (typeof getPOIsForCity === "function") ? (getPOIsForCity(rawCity) || []) : [];
-        const proposals = (Array.isArray(list) ? list : []).map((item, idx)=>{
-          const title = String((item && item.title) || "").trim();
-          const summary = String((item && (item.tagline || item.summary)) || "").trim();
-          const why = String((item && (item.pro || item.why)) || "").trim();
-          return {
-            id: `${row.key}:${String((item && item.id) || idx)}`,
-            city: rawCity,
-            title,
-            summary,
-            why
-          };
-        });
+        const catalog = AI_CITY_CATALOG[row.key] || this.genericSuggestions(row.city);
+        const proposals = catalog
+          .map((item, idx)=>{
+            const adapted = this.adaptProposal(item);
+            return {
+              id: `${row.key}:${idx}`,
+              city: row.city,
+              title: adapted.title,
+              summary: adapted.summary,
+              why: adapted.why,
+              score: this.scoreProposal(adapted)
+            };
+          })
+          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"))
+          .slice(0,5)
+          .map(({score, ...rest})=> rest);
         return {
-          city: rawCity,
+          city: row.city,
           key: row.key,
           count: row.count,
           proposals
         };
       });
-    }
     },
     /* --------------------- Sensitive points review --------------------- */
     loadSensitivePointsReview(opts){
@@ -16048,37 +16041,59 @@ window.addEventListener('DOMContentLoaded', () => {
     __aiTopProposalsForCity(city, existingTitlesSet, maxN, offsetIndex){
       const cityName = String(city||"").trim();
       if(!cityName) return [];
-      const base = (typeof getPOIsForCity === "function") ? (getPOIsForCity(cityName) || []) : [];
-      const catalog = Array.isArray(base) ? base : [];
+      const key = this.__aiCityKey(cityName);
+      // Base catalog: city-specific if available, otherwise generic.
+      // If the city catalog is shorter than requested, complete it with genericSuggestions(city) (dedup by title).
+      let catalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && AI_CITY_CATALOG[key])
+        ? AI_CITY_CATALOG[key]
+        : null;
+
+      if(Array.isArray(catalog)){
+        // Always supplement with generic suggestions to ensure enough distinct items
+        // after filtering existing activities/titles (kept under control by later dedup).
+        const extra = this.genericSuggestions(cityName) || [];
+        if(extra && extra.length) catalog = catalog.concat(extra);
+      }else{
+        catalog = this.genericSuggestions(cityName);
+      }
+
+      // Deduplicate by normalized title (keeps first occurrence).
+      if(Array.isArray(catalog)){
+        const seen = new Set();
+        catalog = catalog.filter((it)=>{
+          const t = String((it && it.title) || "").trim().toLowerCase();
+          if(!t) return false;
+          if(seen.has(t)) return false;
+          seen.add(t);
+          return true;
+        });
+      }
+
       const existing = existingTitlesSet || new Set();
       const n = Math.max(1, parseInt(maxN,10)||5);
       const idx = Math.max(0, parseInt(offsetIndex,10)||0);
-
-      // Offset por bloques (para que distintos huecos puedan rotar) pero sin inventar genéricos.
       const startAt = idx * n;
+
+      const ranked = (Array.isArray(catalog)?catalog:[])
+        .map((item)=>{
+          const adapted = this.adaptProposal(item);
+          return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
+        })
+        .filter((it)=>{
+          const t = String(it.title||"").trim().toLowerCase();
+          return t && !existing.has(t);
+        })
+        .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
+
+      // Slice with gentle wrap-around so “otras recomendaciones” cambia la tanda sin quedarse vacío.
       const picked = [];
-      const seenTitle = new Set();
-      for(let i=0; i<catalog.length && picked.length < n; i++){
-        const it = catalog[(startAt + i) % catalog.length];
-        if(!it) continue;
-        const t0 = String(it.title||"").trim();
-        if(!t0) continue;
-        const t = t0.toLowerCase();
-        if(seenTitle.has(t)) continue;
-        if(existing.has(t)) continue;
-        seenTitle.add(t);
-        picked.push(it);
+      for(let i=0; i<ranked.length && picked.length<n; i++){
+        const j = (startAt + i) % ranked.length;
+        const it = ranked[j];
+        if(it) picked.push(it);
       }
 
-      return picked.map((item)=>{
-        const adapted = this.adaptProposal({
-          title: item.title,
-          summary: item.tagline || item.summary || "",
-          why: item.pro || item.why || ""
-        });
-        return Object.assign({}, adapted, { city: cityName });
-      });
-    }
+      return picked.map(({score, ...rest})=> rest);
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
@@ -16253,24 +16268,8 @@ __aiBuildDayBuckets(trip){
         "seville": "sevilla",
         "berlin": "berlin",
         "berlín": "berlin",
-        "london": "london",
-        "londres": "london",
-        "paris": "paris",
-        "parís": "paris",
-        "rome": "rome",
-        "roma": "rome",
-        "barcelona": "barcelona",
-        "tokyo": "tokyo",
-        "tokio": "tokyo",
-        "lisbon": "lisbon",
-        "lisboa": "lisbon",
-        "amsterdam": "amsterdam",
-        "prague": "prague",
-        "praga": "prague",
-        "vienna": "vienna",
-        "viena": "vienna",
       };
-      const BIG_CITIES = new Set(["new york", "london", "paris", "rome", "barcelona", "tokyo", "berlin", "madrid"]);
+      const BIG_CITIES = new Set(["new york","madrid","berlin","paris","rome","london","barcelona","tokyo","singapore","dubai"]);
       const POIS = {
         "new york": [
           { id:"ny_statue", title:"Estatua de la Libertad + Ellis Island", tagline:"El símbolo más icónico de la ciudad con ferry y vistas al skyline.", what:"Monumento colosal en Liberty Island al que se accede en ferry; incluye la visita a Ellis Island y su museo de inmigración.", history:"Fue un regalo de Francia a Estados Unidos y se inauguró en 1886; durante décadas fue una imagen de bienvenida para millones de inmigrantes.", pro:"Reserva el ferry con antelación (y si quieres pedestal/corona, aún más). Ve temprano para evitar colas y lleva abrigo si hace viento en el agua."},
@@ -16296,19 +16295,6 @@ __aiBuildDayBuckets(trip){
           { id:"md_malasana", title:"Malasaña + Chueca (tarde)", tagline:"Barrios con ambiente, tiendas y bares para una tarde-noche fácil.", what:"Zonas céntricas con calles animadas, cafeterías y vida nocturna.", history:"Malasaña se asocia a la Movida Madrileña en los 80.", pro:"Ideal al final del día. Si vas a cenar, reserva en sitios populares."},
           { id:"md_rastro", title:"El Rastro (domingo)", tagline:"Mercadillo legendario para pasear y curiosear.", what:"Gran mercadillo al aire libre con puestos y ambiente.", history:"Tradición de siglos en el barrio de La Latina.", pro:"Ve temprano (se llena). Ojo con bolsos y cartera."},
         ],
-        "berlin": [
-          { id:"be_brand", title:"Puerta de Brandeburgo", tagline:"El gran símbolo de Berlín, imprescindible para una primera visita.", what:"Monumento neoclásico en Pariser Platz, epicentro histórico de la ciudad.", history:"Fue escenario clave durante la Guerra Fría y símbolo de reunificación tras 1989.", pro:"Ve temprano para fotos sin multitudes. Por la noche está muy bien iluminada."},
-          { id:"be_reich", title:"Reichstag (cúpula)", tagline:"Arquitectura moderna con vistas: reserva gratuita pero imprescindible.", what:"Parlamento alemán con cúpula visitable y panorámica de la ciudad.", history:"Edificio histórico de 1894; la cúpula actual se añadió tras la reunificación como símbolo de transparencia.", pro:"Reserva online con antelación (se agota). Lleva DNI/pasaporte para acceso."},
-          { id:"be_wall", title:"East Side Gallery (Muro)", tagline:"Tramo del Muro pintado: historia al aire libre y fotos icónicas.", what:"Galería al aire libre con murales sobre un tramo conservado del Muro.", history:"Tras la caída del Muro, artistas transformaron este tramo en símbolo cultural y político.", pro:"Mejor por la mañana. Lleva calzado cómodo, es un paseo largo."},
-          { id:"be_museum", title:"Isla de los Museos", tagline:"Varios museos top en un solo lugar (Pergamon, Neues…)", what:"Conjunto museístico Patrimonio UNESCO con colecciones de arqueología y arte.", history:"Se desarrolló en los siglos XIX–XX como gran proyecto cultural prusiano.", pro:"Elige 1–2 museos; si no, es demasiado. Compra tickets con hora en temporada alta."},
-          { id:"be_checkpoint", title:"Checkpoint Charlie", tagline:"Punto emblemático de la Guerra Fría y la historia del Muro.", what:"Antiguo paso fronterizo entre sectores con paneles y museo cercano.", history:"Fue uno de los puntos más tensos entre bloques durante la Guerra Fría.", pro:"Muy turístico: ve con expectativas realistas. Combínalo con Topografía del Terror."},
-        ,
-          { id:"be_tv", title:"Torre de Televisión (Fernsehturm)", tagline:"Mirador clásico en Alexanderplatz para ver Berlín en 360°.", what:"Torre de 368 m con plataforma de observación y restaurante giratorio.", history:"Construida en la RDA (1969) como símbolo de modernidad; hoy es un icono del skyline.", pro:"Reserva hora para evitar colas. Ideal al atardecer si quieres ver la ciudad encenderse."},
-          { id:"be_museumisland", title:"Isla de los Museos", tagline:"Concentración brutal de museos: elige 1–2 y disfruta sin prisa.", what:"Conjunto de museos (Pergamon, Neues, Alte Nationalgalerie…) en una isla del Spree.", history:"Patrimonio UNESCO; refleja el auge cultural prusiano y la reconstrucción tras la guerra.", pro:"Compra entradas con antelación (especialmente Pergamon/Neues). Ve temprano para evitar saturación."},
-          { id:"be_checkpoint", title:"Checkpoint Charlie + Museo del Muro", tagline:"Un punto clave de la Guerra Fría con contexto para entender la ciudad.", what:"Antiguo paso fronterizo entre sectores; alrededor hay exposiciones y el museo.", history:"Fue el cruce más famoso entre EE. UU. y la URSS; símbolo del Berlín dividido.", pro:"Mejor como visita corta + paseo por Friedrichstraße. Evita horas punta para fotos."},
-          { id:"be_charlottenburg", title:"Palacio de Charlottenburg", tagline:"Palacio barroco con jardines, perfecto si quieres algo más ‘real’ y tranquilo.", what:"Residencia palaciega con estancias y jardines amplios al oeste del centro.", history:"Fue la gran residencia prusiana de verano; sobrevivió y se restauró tras la II Guerra Mundial.", pro:"Combínalo con paseo por los jardines. En temporada alta, entra a primera hora."},
-          { id:"be_teufelsberg", title:"Teufelsberg (estación espía)", tagline:"Plan diferente: ruinas, graffiti y vistas desde una colina artificial.", what:"Antigua estación de escucha de la Guerra Fría sobre una colina creada con escombros.", history:"Durante décadas fue un punto estratégico de inteligencia; hoy es un lugar alternativo y fotogénico.", pro:"Revisa horarios y compra entrada si aplica. Lleva calzado cómodo; puede hacer viento."}
-        ],
         "sevilla": [
           { id:"sv_catedral", title:"Catedral de Sevilla + Giralda", tagline:"La catedral gótica más grande y su torre con vistas de postal.", what:"Conjunto monumental con la Giralda y el Patio de los Naranjos.", history:"Se construyó sobre la antigua mezquita; la Giralda es herencia almohade y símbolo de la ciudad.", pro:"Compra entradas online y ve temprano. Calzado cómodo: hay muchas escaleras/rampas."},
           { id:"sv_alcazar", title:"Real Alcázar", tagline:"Palacio de cuento con patios mudéjares y jardines espectaculares.", what:"Complejo palaciego con arquitectura mudéjar y jardines amplios.", history:"Residencia real en uso desde la Edad Media; mezcla influencias islámicas y cristianas.", pro:"Reserva con antelación: se agota. Mejor primera franja para menos colas."},
@@ -16316,93 +16302,12 @@ __aiBuildDayBuckets(trip){
           { id:"sv_triana", title:"Triana + Puente de Isabel II", tagline:"Barrio con alma, cerámica y tapas junto al río.", what:"Paseo por Triana, mercado y vistas desde el puente.", history:"Triana fue barrio marinero y alfarero; muy ligado al flamenco y la tradición sevillana.", pro:"Buen plan de tarde-noche. Reserva si quieres cenar en sitios famosos."},
           { id:"sv_setas", title:"Las Setas (Metropol Parasol)", tagline:"Arquitectura moderna y mirador con vistas al casco histórico.", what:"Estructura de madera con pasarelas y mirador.", history:"Inaugurada en 2011 como renovación urbana del espacio.", pro:"Sube al atardecer. Ideal si buscas vistas sin mucha caminata."},
         ],
-        "london": [
-          { id:"ld_tower", title:"Tower of London", tagline:"Historia intensa: joyas de la Corona y fortaleza medieval junto al Támesis.", what:"Castillo histórico donde verás las Crown Jewels, murallas, cuervos y mucha historia británica.", history:"Fundado por Guillermo el Conquistador (s. XI); fue palacio, prisión y símbolo del poder real.", pro:"Reserva entrada online y llega temprano. Si vas con niños, el recorrido de los Yeoman Warders engancha."},
-          { id:"ld_westminster", title:"Westminster Abbey", tagline:"El lugar de coronaciones y bodas reales: imprescindible cultural.", what:"Abadía gótica con tumbas de monarcas y figuras históricas; visita muy completa.", history:"Escenario de coronaciones desde 1066; pieza central de la historia del Reino Unido.", pro:"Mejor a primera hora. Audioguía recomendada para no perderte."},
-          { id:"ld_british", title:"British Museum", tagline:"Colección enorme: elige 2–3 zonas y disfruta sin saturarte.", what:"Museo gratuito con piezas icónicas como la Piedra Rosetta o los Mármoles del Partenón.", history:"Fundado en 1753; uno de los museos más influyentes del mundo.", pro:"Planifica por temas y ve temprano. Entre semana suele estar más tranquilo."},
-          { id:"ld_tate", title:"Tate Modern", tagline:"Arte moderno en una antigua central eléctrica con vistas desde la terraza.", what:"Museo de arte moderno contemporáneo en la ribera del Támesis (entrada general gratuita).", history:"Abrió en 2000 en la antigua Bankside Power Station; transformó la zona culturalmente.", pro:"Combina con paseo por el Millennium Bridge. Reserva expos temporales si te interesan."},
-          { id:"ld_londoneye", title:"London Eye", tagline:"Vistas fáciles del centro sin complicarte la logística.", what:"Noria gigante junto al río con cabinas cerradas y panorámica amplia.", history:"Se inauguró en 2000 como atracción del milenio y se volvió icono inmediato.", pro:"Reserva hora. Atardecer = mejor luz, pero más demanda."},
-          { id:"ld_towerbridge", title:"Tower Bridge", tagline:"Puente más fotogénico: sube si quieres pasarelas y vistas.", what:"Puente basculante victoriano con pasarelas de cristal en la parte alta (opcional).", history:"Inaugurado en 1894; símbolo de la ingeniería y estética londinense.", pro:"Ideal combinar con Tower of London. Buenas fotos desde el South Bank."},
-          { id:"ld_covent", title:"Covent Garden", tagline:"Ambiente, tiendas y street performers para un hueco flexible.", what:"Zona peatonal con mercado cubierto, artistas callejeros y buena oferta de comida.", history:"Pasó de mercado histórico a distrito cultural y comercial muy vivo.", pro:"Perfecto para tarde-noche. Si llueve, sigue siendo cómodo por los soportales."},
-          { id:"ld_camden", title:"Camden Market", tagline:"Plan alternativo: comida callejera y ambiente distinto.", what:"Mercados y calles con estética punk/alternativa y mucha comida internacional.", history:"Creció como epicentro contracultural desde los 70–80s.", pro:"Ve entre semana si puedes. Combina con paseo por Regent’s Canal."},
-          { id:"ld_greenwich", title:"Greenwich + Meridiano", tagline:"Excursión urbana con barco/parque y el meridiano cero.", what:"Barrio ribereño con el Royal Observatory, Cutty Sark y vistas desde el parque.", history:"Centro de la navegación británica; el meridiano base de la hora mundial.", pro:"Ve en barco por el Támesis si encaja. Buen plan de media jornada."},
-          { id:"ld_hyde", title:"Hyde Park + Kensington Gardens", tagline:"Pausa verde en el centro para bajar ritmo sin salirte del plan.", what:"Parques amplios para caminar, picnic o simplemente descansar del turismo.", history:"Parques reales históricos ligados a la vida social londinense.", pro:"Ideal si llevas el día cargado. Combina con Kensington Palace si te apetece."}
-        ],
-        "paris": [
-          { id:"pa_eiffel", title:"Torre Eiffel", tagline:"El icono número uno: sube si quieres vistas, o disfrútala desde el Champ de Mars.", what:"Torre metálica con miradores y vistas del Sena; alrededor hay grandes paseos.", history:"Construida para la Exposición Universal de 1889; pasó de polémica a símbolo global.", pro:"Reserva entrada con antelación. Atardecer + luces = momento perfecto."},
-          { id:"pa_louvre", title:"Museo del Louvre", tagline:"Colección inmensa: marca 3 obras clave y disfruta sin agotarte.", what:"Museo en el antiguo palacio real; de la Mona Lisa a arte egipcio y clásico.", history:"Fue palacio durante siglos; se convirtió en museo tras la Revolución Francesa.", pro:"Compra entrada online. Entra temprano o en horario nocturno si hay."},
-          { id:"pa_notredame", title:"Notre-Dame (exterior) + Île de la Cité", tagline:"El corazón histórico: paseo corto pero muy potente.", what:"Catedral gótica (visita interior según reaperturas) y entorno histórico del Sena.", history:"Construida entre los s. XII–XIV; sufrió el incendio de 2019 y está en restauración.", pro:"Aunque no entres, merece el paseo por la isla y los puentes."},
-          { id:"pa_montmartre", title:"Montmartre + Sacré-Cœur", tagline:"Barrio con encanto y vistas: perfecto para tarde-noche.", what:"Colina bohemia con calles estrechas, artistas y la basílica en lo alto.", history:"Fue epicentro artístico (Picasso, Toulouse-Lautrec) y conserva ese ambiente.", pro:"Sube al atardecer. Evita restaurantes ‘trampa’ en la plaza principal."},
-          { id:"pa_orsay", title:"Musée d'Orsay", tagline:"Impresionismo top en una estación preciosa.", what:"Museo en antigua estación con Monet, Renoir, Degas y más.", history:"Se inauguró como museo en 1986; la arquitectura del edificio es parte del plan.", pro:"Ve a primera hora. Si vas también al Louvre, reparte días para no saturarte."},
-          { id:"pa_seine", title:"Crucero por el Sena", tagline:"La forma más fácil de ver París bonito sin caminar tanto.", what:"Paseo en barco con vistas a monumentos desde el río.", history:"El Sena estructura la ciudad; el crucero se volvió un clásico turístico moderno.", pro:"Elige horario de última luz. Abrigo si refresca, incluso en primavera."},
-          { id:"pa_champs", title:"Campos Elíseos + Arco del Triunfo", tagline:"Eje clásico para sentir París monumental.", what:"Avenida emblemática que termina en el Arco; puedes subir para vistas.", history:"El Arco celebra victorias napoleónicas; la avenida es símbolo de la ciudad moderna.", pro:"Mejor de noche para ver iluminaciones. Reserva subida si quieres evitar colas."},
-          { id:"pa_marais", title:"Le Marais", tagline:"Calles con tiendas, cafés y palacetes: plan flexible y muy caminable.", what:"Barrio histórico con plazas bonitas, boutiques y buen ambiente.", history:"Zona noble y judía histórica; hoy mezcla cultura, diseño y vida local.", pro:"Ideal para comer y pasear sin un ‘objetivo’ único. Perfecto para huecos."},
-          { id:"pa_lux", title:"Jardines de Luxemburgo", tagline:"Pausa elegante en un parque precioso, muy fácil de encajar.", what:"Jardines con fuentes y sillas para descansar cerca del Barrio Latino.", history:"Creado en el s. XVII; espacio clásico de vida parisina.", pro:"Buen sitio para descanso/merienda. Si hay sol, se disfruta muchísimo."},
-          { id:"pa_versailles", title:"Versalles (excursión)", tagline:"El gran palacio: si tienes medio día/largo, merece el esfuerzo.", what:"Palacio y jardines monumentales a las afueras de París.", history:"Residencia de Luis XIV y símbolo del absolutismo; clave en la historia francesa.", pro:"Reserva entrada y tren. Llega temprano y planifica jardines según temporada."}
-        ],
-        "rome": [
-          { id:"ro_colosseo", title:"Coliseo + Foro Romano", tagline:"El combo imprescindible: historia concentrada en pocas horas.", what:"Anfiteatro y ruinas del centro político de la Roma antigua.", history:"El Coliseo (s. I) y el Foro fueron el corazón de la vida romana durante siglos.", pro:"Compra entrada combinada y entra temprano. Lleva agua si hace calor."},
-          { id:"ro_vatican", title:"Museos Vaticanos + Capilla Sixtina", tagline:"Arte brutal: reserva y ve con plan para no colapsar.", what:"Museos con colecciones enormes y la Capilla Sixtina como gran final.", history:"Acumulan arte y poder de siglos; uno de los recorridos culturales más intensos.", pro:"Reserva franja horaria. Ve a primera hora o última para menos gente."},
-          { id:"ro_sanpietro", title:"Basílica de San Pedro", tagline:"Arquitectura colosal y subida opcional a la cúpula con vistas.", what:"Basílica monumental en el Vaticano; entrada gratis (controles de seguridad).", history:"Construida sobre siglos; una de las grandes obras del Renacimiento y Barroco.", pro:"Ve temprano. Ropa adecuada (hombros/rodillas). La cúpula se agradece si hace buen día."},
-          { id:"ro_trevi", title:"Fontana di Trevi", tagline:"Parada corta pero icónica, fácil de encajar entre paseos.", what:"Fuente barroca muy famosa; zona siempre animada.", history:"Obra del s. XVIII; tradición de lanzar moneda para volver a Roma.", pro:"Mejor muy temprano o de noche para evitar multitudes."},
-          { id:"ro_pantheon", title:"Panteón", tagline:"Un interior impresionante y sorprendentemente rápido de visitar.", what:"Templo romano con cúpula perfecta; uno de los edificios antiguos mejor conservados.", history:"Reconstruido por Adriano (s. II); influyó en la arquitectura occidental.", pro:"Entra cuando haya poca cola. Mira el óculo: si llueve, verás el efecto."},
-          { id:"ro_trastevere", title:"Trastevere", tagline:"Barrio con calles bonitas y cena fácil: perfecto para tarde-noche.", what:"Zona histórica de callejuelas, plazas y trattorias.", history:"Conserva un aire popular y bohemio; gran plan para ‘sentir’ Roma.", pro:"Cena aquí, pero evita sitios demasiado turísticos en calles principales."},
-          { id:"ro_piazzanavona", title:"Piazza Navona", tagline:"Plaza barroca para un paseo bonito y muy céntrico.", what:"Plaza con fuentes (Bernini) y terrazas; ideal para pausa.", history:"Se construyó sobre un estadio romano; hoy es símbolo del barroco romano.", pro:"Mejor al atardecer. Combina con Panteón y Campo de' Fiori."},
-          { id:"ro_villaborghese", title:"Villa Borghese + mirador Pincio", tagline:"Parque grande con mirador top sobre la ciudad.", what:"Zona verde con paseos y el mirador sobre Piazza del Popolo.", history:"Fue villa aristocrática; hoy es pulmón urbano y zona de ocio.", pro:"Muy buena para descansar. Atardecer en Pincio es un acierto."},
-          { id:"ro_borghese", title:"Galería Borghese", tagline:"Museo pequeño pero brutal (Bernini/Caravaggio). Reserva obligatoria.", what:"Galería con obras maestras en un entorno elegante.", history:"Colección privada convertida en museo; aforo limitado para preservar calidad.", pro:"Compra entradas con antelación. Ideal si te gusta arte sin ‘macro-museo’."},
-          { id:"ro_appia", title:"Vía Apia + Catacumbas", tagline:"Plan diferente: historia antigua fuera del circuito más masificado.", what:"Camino romano histórico y visitas subterráneas (catacumbas) cercanas.", history:"La Vía Apia fue una de las calzadas más importantes de Roma.", pro:"Mejor con bici/tour si no quieres logística. Lleva algo de abrigo para catacumbas."}
-        ],
-        "barcelona": [
-          { id:"bc_sagrada", title:"Sagrada Familia", tagline:"El imprescindible absoluto: interior impresionante y muy singular.", what:"Basílica de Gaudí con vitrales espectaculares y visita muy completa.", history:"Proyecto iniciado en 1882; símbolo de Barcelona y de la obra de Gaudí.", pro:"Reserva entrada con hora. Mejor por la mañana para luz en vitrales."},
-          { id:"bc_gothic", title:"Barrio Gótico", tagline:"Calles medievales y plazas: perfecto para perderse un rato.", what:"Centro histórico caminable con ambiente, tiendas y rincones fotogénicos.", history:"Núcleo romano-medieval; hoy combina historia y vida urbana.", pro:"Ideal para tarde-noche. Ojo con carteristas en zonas muy turísticas."},
-          { id:"bc_batllo", title:"Casa Batlló (Passeig de Gràcia)", tagline:"Modernismo puro en un paseo cómodo por la avenida más elegante.", what:"Casa modernista de Gaudí con interior muy creativo y experiencia inmersiva.", history:"Reforma de 1904–1906; icono del modernismo catalán.", pro:"Compra entrada online. Combínala con paseo por Passeig de Gràcia."},
-          { id:"bc_pedrera", title:"La Pedrera (Casa Milà)", tagline:"Techo y chimeneas míticas: visita breve pero muy representativa.", what:"Edificio modernista de Gaudí con azotea icónica y exposiciones.", history:"Construida 1906–1912; rompió normas arquitectónicas de su época.", pro:"Mejor al atardecer para la azotea. Reserva si hay mucha demanda."},
-          { id:"bc_parkguell", title:"Park Güell", tagline:"Parque con arquitectura y vistas: reserva si quieres entrar a la zona monumental.", what:"Zona verde con elementos modernistas y miradores sobre la ciudad.", history:"Diseñado por Gaudí; pasó de proyecto residencial a parque público.", pro:"Ve temprano. Subidas: calzado cómodo."},
-          { id:"bc_montjuic", title:"Montjuïc (miradores + paseo)", tagline:"Zona amplia para combinar vistas, jardines y algún museo.", what:"Colina con castillo, miradores y espacios culturales.", history:"Área histórica de exposiciones y fortificación; hoy gran parque urbano.", pro:"Sube en teleférico/funicular si te apetece. Atardecer muy recomendado."},
-          { id:"bc_barceloneta", title:"Barceloneta + paseo marítimo", tagline:"Plan ligero para playa y paseo si te apetece bajar ritmo.", what:"Barrio y playa urbana con paseo largo y ambiente.", history:"Nació como barrio de pescadores; hoy es zona de ocio costero.", pro:"Mejor entre semana. Si hace viento, lleva algo de abrigo."},
-          { id:"bc_born", title:"El Born + Santa Maria del Mar", tagline:"Barrio con encanto y una iglesia preciosa, muy caminable.", what:"Calles estrechas con tiendas y la basílica gótica de Santa Maria del Mar.", history:"Zona medieval ligada al comercio; hoy mezcla cultura y vida local.", pro:"Perfecto para comer/cenar. Combina con Parque de la Ciutadella."},
-          { id:"bc_campnou", title:"Spotify Camp Nou (museo/experiencia)", tagline:"Plan fan del fútbol: visita al museo/experiencia del Barça.", what:"Recorrido por historia del club y espacios del estadio (según obras).", history:"Uno de los estadios más emblemáticos del fútbol europeo.", pro:"Revisa horarios por reformas. Compra online para asegurar."},
-          { id:"bc_picasso", title:"Museo Picasso", tagline:"Colección clave para entender la etapa inicial de Picasso en Barcelona.", what:"Museo en palacetes del Born con obras y exposiciones.", history:"Barcelona fue esencial en la formación de Picasso; el museo lo refleja muy bien.", pro:"Reserva entrada. Es un museo ‘manejable’ y encaja bien en un hueco cultural."}
-        ],
-        "tokyo": [
-          { id:"tk_sensoji", title:"Asakusa + Templo Sensō-ji", tagline:"El Tokio tradicional más fotogénico, perfecto para empezar.", what:"Templo budista famoso con calle comercial (Nakamise) y mucho ambiente.", history:"Sensō-ji data del s. VII; sobrevivió reconstrucciones y es símbolo cultural.", pro:"Ve temprano para menos gente. Prueba snacks en Nakamise si te apetece."},
-          { id:"tk_shibuya", title:"Cruce de Shibuya + Hachikō", tagline:"El icono urbano: 10 minutos y ya sientes Tokio moderno.", what:"Cruce peatonal masivo, estatua de Hachikō y calles comerciales.", history:"Se volvió símbolo de la vida urbana japonesa contemporánea.", pro:"Sube a un mirador cercano para verlo desde arriba (si encaja)."},
-          { id:"tk_meiji", title:"Santuario Meiji + Yoyogi", tagline:"Bosque urbano y calma total al lado de Harajuku.", what:"Santuario sintoísta rodeado de árboles; paseo muy agradable.", history:"Dedicado al emperador Meiji; punto clave del sintoísmo en Tokio.", pro:"Ideal por la mañana. Combina con Takeshita Street si te apetece contraste."},
-          { id:"tk_tsukiji", title:"Mercado exterior de Tsukiji", tagline:"Comida y ambiente: gran parada para desayuno/almuerzo.", what:"Zona de puestos y restaurantes de marisco y cocina japonesa.", history:"Tras el traslado del mercado mayorista, el exterior sigue siendo un clásico gastronómico.", pro:"Ve temprano. Si quieres sushi top, ve con cola asumida o reserva."},
-          { id:"tk_teamlab", title:"teamLab Planets", tagline:"Experiencia inmersiva moderna y muy ‘Tokio’.", what:"Instalaciones de arte digital inmersivo (agua, luz, espejos).", history:"teamLab redefinió el arte digital japonés contemporáneo y se volvió fenómeno global.", pro:"Compra entrada con hora. Ve con tiempo y ropa cómoda."},
-          { id:"tk_skytree", title:"Tokyo Skytree", tagline:"Mirador altísimo con panorámica brutal si hace buen día.", what:"Torre de 634 m con plataformas de observación y centro comercial.", history:"Inaugurada en 2012; símbolo de la nueva era urbana de Tokio.", pro:"Reserva franja. Mejor con cielo despejado."},
-          { id:"tk_shinjuku_gyoen", title:"Shinjuku Gyoen", tagline:"Parque precioso para bajar ritmo (especialmente en sakura/otoño).", what:"Jardín amplio con zonas japonesas e invernadero.", history:"Antigua residencia imperial; hoy es un jardín público muy querido.", pro:"Compra entrada y ve entre semana si puedes. Ideal para picnic ligero."},
-          { id:"tk_akihabara", title:"Akihabara", tagline:"Electrónica, anime y arcades: plan muy específico y divertido.", what:"Barrio de tiendas tech, manga/anime y recreativas.", history:"Creció tras la posguerra como distrito de electrónica y luego cultura otaku.", pro:"Ve por la tarde. Si no te interesa lo otaku, con 1–2 horas te vale."},
-          { id:"tk_ginza", title:"Ginza", tagline:"Paseo elegante de compras y arquitectura moderna, fácil de encajar.", what:"Distrito de tiendas, grandes almacenes y cafés.", history:"Históricamente asociado a modernidad y consumo en Tokio.", pro:"Buen plan de tarde-noche. Combínalo con teatro Kabuki si te interesa."},
-          { id:"tk_odaiba", title:"Odaiba", tagline:"Bahía, vistas y plan futurista con paseo marítimo.", what:"Isla artificial con centros comerciales, paseos y vistas del Rainbow Bridge.", history:"Desarrollo moderno sobre terreno ganado al mar; muy popular para tarde-noche.", pro:"Ve al atardecer. Revisa transporte (Yurikamome) para la experiencia."}
-        ],
-        "lisbon": [
-          { id:"li_jeronimos", title:"Monasterio de los Jerónimos", tagline:"Gótico manuelino espectacular en Belém, muy representativo.", what:"Monasterio monumental con claustro impresionante.", history:"Símbolo de la era de los descubrimientos portugueses (s. XVI).", pro:"Ve temprano y compra entrada si hay cola. Combínalo con pastéis en Belém."},
-          { id:"li_belem", title:"Torre de Belém", tagline:"Icono junto al río: visita corta y muy fotogénica.", what:"Torre defensiva junto al Tajo, patrimonio UNESCO.", history:"Construida en el s. XVI para proteger la entrada al puerto de Lisboa.", pro:"Mejor para fotos al atardecer. Si no entras, el exterior ya compensa."},
-          { id:"li_alfama", title:"Alfama", tagline:"Barrio más auténtico: callejear y miradores sin prisa.", what:"Laberinto de calles, azulejos y pequeñas plazas históricas.", history:"Sobrevivió al terremoto de 1755; conserva el alma medieval de Lisboa.", pro:"Subidas: calzado cómodo. Cena con fado si te apetece, pero elige sitio con cuidado."},
-          { id:"li_tram28", title:"Tranvía 28 (tramo corto)", tagline:"El clásico para ver la ciudad, pero úsalo con estrategia.", what:"Tranvía histórico que cruza barrios clave.", history:"Se volvió símbolo turístico por su recorrido y vagones antiguos.", pro:"Mejor temprano y en tramo corto para evitar agobio. Alternativa: caminar ruta parecida."},
-          { id:"li_miradouros", title:"Miradouros (Santa Luzia / Senhora do Monte)", tagline:"Vistas rápidas y perfectas para un hueco corto.", what:"Miradores con panorámica sobre tejados y el río.", history:"Los miradouros forman parte de la identidad de Lisboa por su topografía.", pro:"Atardecer = mejor. Llega con tiempo si quieres sitio para fotos."}
-        ],
-        "amsterdam": [
-          { id:"am_canals", title:"Paseo por canales + Jordaan", tagline:"Lo más ‘Ámsterdam’: canales y calles bonitas, sin complicarte.", what:"Ruta caminable por canales y el barrio Jordaan.", history:"Los canales del s. XVII son patrimonio UNESCO y definen la ciudad.", pro:"Ideal para primera toma de contacto. Perfecto para huecos flexibles."},
-          { id:"am_anne", title:"Casa de Ana Frank", tagline:"Visita muy potente: reserva con mucha antelación.", what:"Museo en la casa donde se escondió Ana Frank.", history:"Testimonio clave del Holocausto y la ocupación nazi.", pro:"Entradas se agotan rápido. Si no hay, al menos pasea por la zona."},
-          { id:"am_rijks", title:"Rijksmuseum", tagline:"Gran museo para Rembrandt y la ‘edad de oro’ neerlandesa.", what:"Museo nacional con obras maestras y colección histórica.", history:"Reabierto tras gran reforma; pieza central cultural de la ciudad.", pro:"Ve temprano. Combina con paseo por Museumplein."},
-          { id:"am_vangogh", title:"Museo Van Gogh", tagline:"Muy enfocado y fácil de disfrutar si te interesa el pintor.", what:"Museo dedicado a Van Gogh con obras y cartas.", history:"Institución clave para entender su evolución artística.", pro:"Reserva franja. Mejor entre semana para menos gente."},
-          { id:"am_heineken", title:"Heineken Experience", tagline:"Plan ligero y divertido si quieres algo más ‘pop’.", what:"Experiencia en antigua fábrica con historia y cata.", history:"Marca muy ligada a la ciudad y su industria moderna.", pro:"Compra entrada. Buen plan de tarde si llueve."}
-        ],
-        "prague": [
-          { id:"pr_castle", title:"Castillo de Praga", tagline:"Complejo enorme: elige catedral + un par de puntos y listo.", what:"Castillo y catedral de San Vito con vistas y patios.", history:"Uno de los complejos palaciegos más grandes del mundo; clave en la historia checa.", pro:"Ve temprano. Planifica 2–3 hitos para no agotarte."},
-          { id:"pr_charles", title:"Puente de Carlos", tagline:"El paseo más icónico: ve al amanecer si quieres magia sin gente.", what:"Puente medieval con estatuas y vistas del río.", history:"Conecta la Ciudad Vieja con Malá Strana desde el s. XIV.", pro:"Amanecer = top. De noche también es muy bonito."},
-          { id:"pr_oldtown", title:"Plaza de la Ciudad Vieja + Reloj Astronómico", tagline:"Parada corta y obligada en el centro histórico.", what:"Plaza medieval y reloj astronómico famoso.", history:"Centro cívico histórico de Praga; el reloj data del s. XV.", pro:"Ve a horas menos punta. Luego callejea por calles cercanas."},
-          { id:"pr_jewish", title:"Barrio Judío (Josefov)", tagline:"Visita cultural muy potente y distinta al resto del casco histórico.", what:"Sinagogas y cementerio judío histórico.", history:"Refleja siglos de historia judía en Praga, con momentos muy duros.", pro:"Compra entrada combinada si te interesa. Dedica 2–3 horas."},
-          { id:"pr_petrin", title:"Colina Petřín + mirador", tagline:"Pausa verde con vistas panorámicas, fácil de encajar.", what:"Parque y torre mirador; acceso en funicular (según servicio).", history:"Zona recreativa histórica de la ciudad.", pro:"Atardecer recomendado. Lleva algo de abrigo si hace viento."}
-        ],
-        "vienna": [
-          { id:"vi_schonbrunn", title:"Palacio de Schönbrunn", tagline:"El gran palacio imperial: si tienes medio día, merece mucho.", what:"Palacio y jardines monumentales a las afueras.", history:"Residencia de verano de los Habsburgo; símbolo del Viena imperial.", pro:"Reserva entrada. Llega temprano y planifica jardines según temporada."},
-          { id:"vi_hofburg", title:"Hofburg + centro imperial", tagline:"Corazón histórico: museos, plazas y arquitectura en bloque fácil.", what:"Complejo palaciego en el centro con múltiples museos y patios.", history:"Residencia principal de los Habsburgo durante siglos.", pro:"Elige 1 museo o solo paseo exterior si vas justo de tiempo."},
-          { id:"vi_ststephen", title:"Catedral de San Esteban", tagline:"Imprescindible en el centro: rápida y muy representativa.", what:"Catedral gótica con torre y tejado colorido.", history:"Símbolo de Viena desde la Edad Media.", pro:"Sube a la torre si quieres vistas. Mejor temprano."},
-          { id:"vi_belvedere", title:"Belvedere (Klimt)", tagline:"Museo perfecto para ver ‘El Beso’ y un palacio precioso.", what:"Palacio barroco con museo y jardines.", history:"Residencia del príncipe Eugenio; hoy alberga arte austriaco clave.", pro:"Reserva entrada. Combina con paseo por los jardines."},
-          { id:"vi_prater", title:"Prater + noria", tagline:"Plan ligero y clásico con parque y la noria histórica.", what:"Parque de ocio con la Riesenrad (noria) y paseos amplios.", history:"La noria se inauguró en 1897; icono de la ciudad.", pro:"Atardecer para ambiente. Si llueve, el paseo se complica."}
+        "berlin": [
+          { id:"be_brand", title:"Puerta de Brandeburgo", tagline:"El gran símbolo de Berlín, imprescindible para una primera visita.", what:"Monumento neoclásico en Pariser Platz, epicentro histórico de la ciudad.", history:"Fue escenario clave durante la Guerra Fría y símbolo de reunificación tras 1989.", pro:"Ve temprano para fotos sin multitudes. Por la noche está muy bien iluminada."},
+          { id:"be_reich", title:"Reichstag (cúpula)", tagline:"Arquitectura moderna con vistas: reserva gratuita pero imprescindible.", what:"Parlamento alemán con cúpula visitable y panorámica de la ciudad.", history:"Edificio histórico de 1894; la cúpula actual se añadió tras la reunificación como símbolo de transparencia.", pro:"Reserva online con antelación (se agota). Lleva DNI/pasaporte para acceso."},
+          { id:"be_wall", title:"East Side Gallery (Muro)", tagline:"Tramo del Muro pintado: historia al aire libre y fotos icónicas.", what:"Galería al aire libre con murales sobre un tramo conservado del Muro.", history:"Tras la caída del Muro, artistas transformaron este tramo en símbolo cultural y político.", pro:"Mejor por la mañana. Lleva calzado cómodo, es un paseo largo."},
+          { id:"be_museum", title:"Isla de los Museos", tagline:"Varios museos top en un solo lugar (Pergamon, Neues…)", what:"Conjunto museístico Patrimonio UNESCO con colecciones de arqueología y arte.", history:"Se desarrolló en los siglos XIX–XX como gran proyecto cultural prusiano.", pro:"Elige 1–2 museos; si no, es demasiado. Compra tickets con hora en temporada alta."},
+          { id:"be_checkpoint", title:"Checkpoint Charlie", tagline:"Punto emblemático de la Guerra Fría y la historia del Muro.", what:"Antiguo paso fronterizo entre sectores con paneles y museo cercano.", history:"Fue uno de los puntos más tensos entre bloques durante la Guerra Fría.", pro:"Muy turístico: ve con expectativas realistas. Combínalo con Topografía del Terror."},
         ]
       };
 
@@ -16971,7 +16876,7 @@ loadTripCities(opts){
               <div class="text-xs text-slate-500">${group.proposals.length} propuestas</div>
             </div>
             <div class="mt-3 grid grid-cols-1 gap-2">
-              ${(group.proposals && group.proposals.length) ? group.proposals.map((item)=> `
+              ${group.proposals.map((item)=> `
                 <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <input class="mt-1 w-4 h-4" data-ai-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
                   <div>
@@ -16979,7 +16884,7 @@ loadTripCities(opts){
                     <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
                     <div class="mt-1 text-xs text-slate-500">Por qué merece la pena: ${escapeHtml(item.why)}</div>
                   </div>
-                </label>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Aún no tengo catálogo concreto para ${escapeHtml(group.city)} (por ahora).</div>`}
+                </label>`).join("")}
             </div>
           </div>`).join("") : `<div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No hay propuestas todavía. Cuando el viaje tenga ciudades identificables, aparecerán aquí.</div>`;
         results.querySelectorAll("[data-ai-proposal]").forEach((el)=>{
