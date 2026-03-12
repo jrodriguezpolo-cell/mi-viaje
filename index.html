@@ -1370,7 +1370,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0BB_AK_RESET_CITY_CACHE_SHUFFLE_POIS_AND_POOL</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AV_AK_RESET_CITY_RECO_CACHE_PER_CITY</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BB_AK_RESET_CITY_CACHE_SHUFFLE_POIS_AND_POOL";
+const APP_BUILD = "V226C1B0AZ_AK_RESET_CITY_BUTTON_VISIBLE_FINAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13205,8 +13205,18 @@ function __aiOpenPendingReviewModal(){
               try{
                 const key = String(resetBtn.getAttribute("data-ai-reset-city")||"").trim();
                 if(key){
-                  try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+key); }catch{}
-                  try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+key); }catch{}
+                  // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
+                  // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
+                  const keys = new Set([key]);
+                  try{ keys.add(key.replace(/-/g," ")); }catch{}
+                  try{ keys.add(key.replace(/\s+/g,"-")); }catch{}
+                  try{
+                    keys.forEach((k)=>{
+                      if(!k) return;
+                      try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
+                      try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+                    });
+                  }catch{}
                   toast("Recomendaciones reiniciadas para esta ciudad.");
                 }
               }catch{}
@@ -15193,13 +15203,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }catch(e){}
 
-    // Primera generación (sin caché): barajar el catálogo para que un "Reset" cambie realmente el orden.
-    const shuffled = list.slice();
-    for(let i=shuffled.length-1; i>0; i--){
-      const j = Math.floor(Math.random()*(i+1));
-      const tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
-    }
-    const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
+    const out = list.slice(0, Math.max(0, Math.min(list.length, need)));
 
     // Guardar solo ids (ligero)
     try{
@@ -16786,7 +16790,7 @@ __aiBuildDayBuckets(trip){
         return {
           title: `${day} · ${first.city || "—"}`,
           city: first.city || "",
-          cityKey: this.__aiCityKey(first.city || ""),
+          cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(first.city || "") : this.__aiCityKey(first.city || "")),
           day,
           gaps: idxs.map(i=>sections[i])
         };
@@ -17555,7 +17559,7 @@ loadTripGapsFill(opts){
         gapBlocks.push({
           day,
           city,
-          cityKey: this.__aiCityKey(city),
+          cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city)),
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -17637,8 +17641,18 @@ loadTripGapsFill(opts){
             ev.preventDefault(); ev.stopPropagation();
             const key = String(btn.getAttribute("data-ai-reset-city")||"").trim();
             if(!key) return;
-            try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+key); }catch{}
-            try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+key); }catch{}
+            // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
+            // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
+            const keys = new Set([key]);
+            try{ keys.add(key.replace(/-/g," ")); }catch{}
+            try{ keys.add(key.replace(/\s+/g,"-")); }catch{}
+            try{
+              keys.forEach((k)=>{
+                if(!k) return;
+                try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
+                try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+              });
+            }catch{}
             try{ toast("Recomendaciones reiniciadas para esta ciudad."); }catch{}
             try{ self.refreshCurrentAction({ force:true }); }catch{}
           }, { passive:false });
