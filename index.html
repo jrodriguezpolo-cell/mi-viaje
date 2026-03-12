@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0E_UNIFIED_POIS_MOREINFO_3SECTIONS_SEVILLA_BERLIN</title>
+<title>V226C1B0F_UNIFIED_POIS_BIGCITIES_10_MOREINFO_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0E_UNIFIED_POIS_MOREINFO_3SECTIONS_SEVILLA_BERLIN" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0F_UNIFIED_POIS_BIGCITIES_10_MOREINFO_FIX" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1565,7 +1565,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
             Actualizar app
           </button>
 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm text-slate-600" id="toolsBuildRefreshMeta">
-            Build cargada: V226C1B0E_UNIFIED_POIS_MOREINFO_3SECTIONS_SEVILLA_BERLIN
+            Build cargada: V226C1B0F_UNIFIED_POIS_BIGCITIES_10_MOREINFO_FIX
           </div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold" id="btnHardRefreshApp">
             Recarga limpia total
@@ -1610,7 +1610,125 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0E_UNIFIED_POIS_MOREINFO_3SECTIONS_SEVILLA_BERLIN";
+
+
+/* -----------------------------
+ * Modal ligero “Más info” (3 apartados plegables)
+ * - Qué es
+ * - Historia
+ * - Consejo pro
+ * (y opcional: Por qué encaja)
+ * ----------------------------- */
+function __mvOpenMoreInfoModal({ title, what, history, proTip, why }){
+  // Limpia cualquier modal previo
+  try{
+    const prev = document.getElementById("mvAiMoreOverlay");
+    if(prev) prev.remove();
+  }catch(e){}
+
+  const overlay = document.createElement("div");
+  overlay.id = "mvAiMoreOverlay";
+  overlay.className = "fixed inset-0 z-[9999] bg-black/50 flex items-end md:items-center justify-center p-3";
+  overlay.innerHTML = `
+    <div class="w-full md:max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+        <div class="text-base font-extrabold text-slate-900">${escapeHtml(title || "Más info")}</div>
+        <button type="button" class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-extrabold" data-mv-close>✕</button>
+      </div>
+      <div class="px-5 py-4 space-y-3 max-h-[75vh] overflow-auto">
+        ${__mvMoreSection("Qué es", what)}
+        ${__mvMoreSection("Historia", history)}
+        ${__mvMoreSection("Consejo pro", proTip)}
+        ${why ? __mvMoreSection("Por qué encaja", why) : ""}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Close handlers
+  overlay.addEventListener("click", (e)=>{
+    const t = e.target;
+    if(t && (t.matches("[data-mv-close]") || t.closest("[data-mv-close]"))){
+      overlay.remove(); return;
+    }
+    if(t === overlay){ overlay.remove(); return; }
+    const secBtn = t && t.closest ? t.closest("[data-mv-acc-btn]") : null;
+    if(secBtn){
+      const id = secBtn.getAttribute("data-mv-acc-btn");
+      const panel = overlay.querySelector(`[data-mv-acc-panel="${CSS.escape(id)}"]`);
+      const icon = secBtn.querySelector("[data-mv-acc-ico]");
+      if(panel){
+        const isHidden = panel.classList.contains("hidden");
+        panel.classList.toggle("hidden");
+        if(icon) icon.textContent = isHidden ? "▴" : "▾";
+      }
+    }
+  });
+}
+
+function __mvMoreSection(title, body){
+  const b = String(body || "").trim();
+  if(!b) return "";
+  const id = "sec_" + Math.random().toString(36).slice(2,9);
+  return `
+    <div class="rounded-2xl border border-slate-200 bg-slate-50/40">
+      <button type="button" class="tap w-full flex items-center justify-between px-4 py-3 text-left" data-mv-acc-btn="${id}">
+        <div class="font-extrabold text-slate-900">${escapeHtml(title)}</div>
+        <div class="opacity-70 font-extrabold" data-mv-acc-ico>▾</div>
+      </button>
+      <div class="hidden px-4 pb-4 text-sm text-slate-800" data-mv-acc-panel="${id}">
+        ${escapeHtml(b).replace(/\n/g,"<br>")}
+      </div>
+    </div>
+  `;
+}
+
+/* -----------------------------
+ * Selección reproducible desde un pool (evita repetición y mantiene 5 por hueco)
+ * ----------------------------- */
+function __mvHashSeed(str){
+  let h = 2166136261;
+  const s = String(str||"");
+  for(let i=0;i<s.length;i++){
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function __mvSeededShuffle(arr, seedStr){
+  const a = arr.slice();
+  let seed = __mvHashSeed(seedStr);
+  // xorshift32
+  const rnd = ()=>{ seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed>>>0) / 4294967296; };
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(rnd()*(i+1));
+    const tmp=a[i]; a[i]=a[j]; a[j]=tmp;
+  }
+  return a;
+}
+function __mvPickNFromPool(pool, n, seedStr, usedTitles){
+  const used = usedTitles instanceof Set ? usedTitles : new Set();
+  const shuffled = __mvSeededShuffle(Array.isArray(pool)?pool:[], seedStr);
+  const out=[];
+  for(const it of shuffled){
+    const t = String(it?.title||"").trim().toLowerCase();
+    if(!t) continue;
+    if(used.has(t)) continue;
+    out.push(it);
+    used.add(t);
+    if(out.length>=n) break;
+  }
+  // si no hay suficientes (pool muy pequeño), rellenar permitiendo repetición
+  if(out.length<n){
+    for(const it of shuffled){
+      if(out.length>=n) break;
+      out.push(it);
+    }
+  }
+  return out.slice(0,n);
+}
+
+const APP_BUILD = "V226C1B0F_UNIFIED_POIS_BIGCITIES_10_MOREINFO_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -3713,7 +3831,19 @@ function __airportsForCityLabel(cityLabel){
 // Premium helper: airports for a given city (used for plane mode hints and filtering)
 // City aliases for airport matching (small, premium)
 const __CITY_AIRPORT_ALIASES = {
-  "nueva york": ["new york","nyc"],
+  "nueva york": [
+
+      { title:"Estatua de la Libertad + Ellis Island", summary:"El símbolo de la ciudad y la llegada de millones de inmigrantes.", why:"Encaja perfecto como bloque largo (ferry + visita) y suele ser ‘must’.", what:"Monumento icónico de cobre y hierro (unos 93 m hasta la antorcha, con pedestal) situado en Liberty Island. Se accede en ferry (normalmente desde Battery Park) y suele combinarse con Ellis Island.", history:"Fue un regalo de Francia a EE. UU. e inaugurada en 1886. Representa la libertad y se convirtió en símbolo de bienvenida para quienes llegaban por el Atlántico. Ellis Island fue el principal centro de inmigración del país durante décadas.", proTip:"Compra billetes con antelación (los accesos a pedestal/corona vuelan). Ve temprano para evitar colas y revisa el control de seguridad tipo aeropuerto. Lleva chaqueta cortaviento: en el ferry suele hacer más frío." },
+      { title:"Central Park", summary:"El gran pulmón verde para un paseo fácil entre visitas urbanas.", why:"Ideal para rellenar huecos de tarde sin logística complicada.", what:"Parque urbano gigantesco en Manhattan (más de 3 km de largo) con lagos, praderas y miradores como Bethesda Terrace o Bow Bridge.", history:"Diseñado en el siglo XIX (Olmsted y Vaux) como gran parque público para la ciudad. Se convirtió en modelo para parques urbanos modernos.", proTip:"Si vas en fin de semana, empieza por zonas menos masificadas (North Woods / Harlem Meer). Para fotos, Golden Hour en Bow Bridge o Bethesda Terrace. Calzado cómodo: se camina mucho." },
+      { title:"The Met (Metropolitan Museum of Art)", summary:"Museo enorme: arte clásico, egipcio, europeo y mucho más.", why:"Si solo eliges un gran museo, es una apuesta segura.", what:"Uno de los museos más importantes del mundo, en la ‘Museum Mile’. Colecciones muy variadas: Egipto, Grecia/Roma, pintura europea, arte americano y expos temporales.", history:"Fundado en 1870; su colección creció con donaciones y adquisiciones hasta convertirse en institución clave del arte global.", proTip:"Planifica 2–3 áreas (si no, abruma). Reserva entrada online si hay colas. La azotea (Rooftop Garden) es top en temporada: mira horario y clima." },
+      { title:"MoMA (Museum of Modern Art)", summary:"El museo clave para modernismo y vanguardias.", why:"Perfecto si te interesa arte moderno y diseño.", what:"Museo de referencia de arte moderno: Picasso, Van Gogh, Warhol, fotografía y diseño. Está en Midtown, fácil de combinar con otros hitos.", history:"Abrió en 1929 y fue pionero en legitimar el arte moderno en EE. UU., influyendo en museos de todo el mundo.", proTip:"Ve a primera hora o a última para menos gente. Prioriza plantas concretas. Si viajas en temporada alta, compra online y usa la entrada por franjas." },
+      { title:"High Line + Chelsea Market", summary:"Paseo elevado + parada gastronómica muy ‘NY’.", why:"Encaja genial como bloque de tarde y se hace sin prisas.", what:"La High Line es un parque lineal elevado construido sobre una antigua vía férrea. Chelsea Market es un mercado interior con puestos de comida y tiendas.", history:"La vía fue parte del sistema industrial del West Side. La reconversión a parque (abierto en fases desde 2009) es ejemplo de regeneración urbana.", proTip:"Empieza temprano o al atardecer para mejor luz. Evita mediodía del sábado si odias multitudes. En Chelsea Market, ve con hambre pero con plan: se llena." },
+      { title:"Puente de Brooklyn + DUMBO", summary:"Caminata clásica con vistas y fotos de postal.", why:"Es un imprescindible y además funciona como ‘traslado bonito’.", what:"Puente histórico que conecta Manhattan y Brooklyn. DUMBO (Down Under the Manhattan Bridge Overpass) es un barrio con miradores y calles fotogénicas.", history:"Inaugurado en 1883, fue un hito de ingeniería con cables de acero. Brooklyn pasó de área industrial a zona creativa y residencial muy demandada.", proTip:"Cruza al amanecer si quieres el puente casi vacío. Para la foto típica, busca Washington Street con el Manhattan Bridge de fondo. Lleva capas: en el puente corre aire." },
+      { title:"Times Square de noche", summary:"Caos luminoso, pero una experiencia única al menos una vez.", why:"Si tienes un hueco nocturno, es fácil de encajar.", what:"Intersección icónica en Midtown con pantallas gigantes, teatros y ambiente continuo. Más ‘experiencia’ que visita cultural.", history:"Fue centro de prensa y entretenimiento; con los años se transformó en símbolo global del espectáculo urbano neoyorquino.", proTip:"Ve con mentalidad ‘ver y salir’. Cuida pertenencias. Si quieres fotos sin tanta gente, prueba muy tarde o muy temprano." },
+      { title:"Top of the Rock (Rockefeller Center)", summary:"Mirador con vistas directas al Empire State y Central Park.", why:"Mirador muy eficiente si quieres panorámica sin perder medio día.", what:"Plataformas de observación en el Rockefeller Center, en el corazón de Midtown, con varias alturas y zonas abiertas.", history:"El complejo Rockefeller se desarrolló en los años 30 como proyecto emblemático; el mirador se consolidó como alternativa muy popular a otros observatorios.", proTip:"Reserva franja de atardecer con antelación. Si hay niebla, cambia a otra hora. En Navidad, combina con el árbol/pista de hielo (pero habrá gente)." },
+      { title:"9/11 Memorial + One World Observatory", summary:"Memorial sobrecogedor y mirador en el Downtown.", why:"Bloque potente si quieres entender la historia reciente de la ciudad.", what:"El memorial son dos grandes estanques en las huellas de las Torres Gemelas; el observatorio ofrece vistas desde One World Trade Center.", history:"Conmemora los atentados del 11-S. El área se reconstruyó con nuevo complejo y espacios de memoria.", proTip:"Para el memorial, ve temprano por respeto y tranquilidad. El museo puede ser emocionalmente intenso: planifica tiempo. Entradas online recomendadas." },
+      { title:"Museo de Historia Natural", summary:"Perfecto si viajas con familia o te apetece algo diferente a arte.", why:"Es muy ‘seguro’ para rellenar un hueco largo, llueva o haga frío.", what:"Gran museo junto a Central Park con dinosaurios, biodiversidad, planetario y exposiciones muy visuales.", history:"Fundado en el siglo XIX, se convirtió en institución científica y educativa clave en EE. UU., con colecciones enormes.", proTip:"Compra entrada online si vas en festivos. Prioriza salas (dinos + planetario suelen ser top). Lleva una capa extra: suele hacer fresco dentro." }
+    ],
   "new york": ["new york","nyc"],
   "nyc": ["new york","nyc"],
   "londres": ["london"],
@@ -14818,12 +14948,18 @@ window.addEventListener('DOMContentLoaded', () => {
       { title:"Montjuïc (vistas + paseo)", summary:"Zona amplia para combinar miradores, paseo y algún museo.", why:"Funciona bien para variar del centro y ajustar intensidad." }
     ],
     "nueva york":[
-      { title:"Top of the Rock", summary:"Mirador muy práctico para ubicar la ciudad desde el principio.", why:"Ayuda a situarte rápido y encaja muy bien en un primer día." },
-      { title:"Central Park + Museum Mile", summary:"Combinación equilibrada entre paseo y visita cultural.", why:"Permite ajustar la intensidad según el tiempo disponible." },
-      { title:"DUMBO y Brooklyn Bridge", summary:"Ruta clara con vistas potentes y recorrido muy reconocible.", why:"Aporta una experiencia muy completa sin necesidad de mucha logística." },
-      { title:"Statue of Liberty & Ellis Island", summary:"Icono clásico con visita bien estructurada por ferry.", why:"Da una lectura muy completa de la ciudad y su historia." },
-      { title:"High Line + Chelsea Market", summary:"Paseo lineal cómodo con parada gastronómica integrada.", why:"Encaja perfecto en huecos de media jornada sin dispersarte." }
+      { title:"Statue of Liberty & Ellis Island", summary:"Icono clásico con visita en ferry bien estructurada.", why:"Da una lectura muy completa de la ciudad y su historia.", what:"Monumento de hierro de 93 m (con pedestal) en Liberty Island. Se accede en ferry (Battery Park / Liberty State Park) y suele combinarse con Ellis Island.", history:"Inaugurada en 1886, fue un regalo de Francia a EE. UU. y se convirtió en símbolo de libertad y bienvenida a los inmigrantes; Ellis Island fue el principal centro de entrada de inmigración (1892–1954).", proTip:"Compra billetes con antelación (especialmente pedestal/corona). Ve temprano (primer ferry) para evitar colas y lleva chaqueta/cortavientos: en el ferry hace frío incluso con buen tiempo." },
+      { title:"Central Park", summary:"Paseo flexible y muy agradecido a cualquier hora.", why:"Encaja perfecto en huecos largos sin logística.", what:"El gran parque urbano de Manhattan, ideal para pasear por lagos, puentes y praderas; puedes entrar por múltiples accesos (59th–110th St).", history:"Diseñado por Olmsted y Vaux, abrió en 1858 y marcó el modelo de parque urbano moderno.", proTip:"Para una visita eficiente: Bethesda Terrace → Bow Bridge → The Mall. Si vas en fin de semana, ve temprano para evitar multitudes y alquileres caros." },
+      { title:"The Metropolitan Museum of Art (The Met)", summary:"Museo imprescindible con colecciones enormes.", why:"Asegura una visita ‘top’ incluso con poco tiempo.", what:"Uno de los museos más importantes del mundo (arte egipcio, europeo, americano…). Está junto a Central Park (5th Ave).", history:"Fundado en 1870; sus colecciones abarcan 5.000 años de arte.", proTip:"Entra con ticket programado si hay. Prioriza 2–3 alas (Egipto, Pintura europea, Rooftop en temporada) para no agotarte." },
+      { title:"MoMA (Museum of Modern Art)", summary:"Moderno y potente, muy bien curado.", why:"Perfecto para una mañana/tarde sin desplazamientos.", what:"Museo de arte moderno (Van Gogh, Warhol, Picasso, diseño). Cerca de Rockefeller Center (53rd St).", history:"Abrió en 1929 y ayudó a consolidar el arte moderno como ‘canon’ del siglo XX.", proTip:"Ve entre semana a primera hora. Si solo tienes 1–2 h, apunta a 5ª planta (pintura/escultura) y baja por lo que te interese." },
+      { title:"9/11 Memorial & One World Observatory", summary:"Visita emotiva + mirador opcional.", why:"Da contexto histórico reciente y vistas muy buenas.", what:"Memorial con las fuentes en las huellas de las Torres Gemelas y, si quieres, mirador en One World Trade Center.", history:"Conmemora los atentados del 11 de septiembre de 2001; el complejo actual simboliza reconstrucción y memoria.", proTip:"Reserva hora para el museo si lo visitas (puede ser intenso). Mejor al atardecer si subes al observatorio." },
+      { title:"Brooklyn Bridge + DUMBO", summary:"Ruta clara con vistas muy reconocibles.", why:"Experiencia completa sin logística compleja.", what:"Cruza el puente de Brooklyn a pie (o bici) y termina en DUMBO para fotos del skyline y la zona del puente de Manhattan.", history:"Inaugurado en 1883, fue una obra de ingeniería icónica del siglo XIX.", proTip:"Cruza al amanecer o por la tarde para evitar masas. Termina en Washington St (foto clásica) y remata con café/helado en la zona." },
+      { title:"High Line + Chelsea Market", summary:"Paseo urbano fácil con parada gastronómica.", why:"Encaja perfecto en huecos de media jornada.", what:"Parque elevado lineal construido sobre vías antiguas; enlaza muy bien con Chelsea Market para comer.", history:"La High Line se abrió por fases desde 2009 como proyecto de regeneración urbana.", proTip:"Empieza por Hudson Yards y baja hacia Meatpacking (o al revés). Ideal en mañana de diario. Lleva calzado cómodo: se camina bastante." },
+      { title:"Times Square (noche) + Broadway (opcional)", summary:"Experiencia icónica (mejor corta y nocturna).", why:"Te da el ‘NY’ clásico sin planificación.", what:"El cruce más famoso de Manhattan, espectacular de noche por pantallas y ambiente; combina con musical si te apetece.", history:"Se consolidó como centro del ‘theater district’ a principios del siglo XX.", proTip:"Ve de noche pero no te quedes demasiado: es muy masivo. Para Broadway, compra con antelación o mira ‘rush/lottery’ si quieres ahorrar." },
+      { title:"Grand Central Terminal + Chrysler Building (exterior)", summary:"Visita rápida con arquitectura top.", why:"Perfecto para encajar en huecos de 1–2 horas.", what:"Estación monumental con hall principal y detalles art déco; cerca tienes el Chrysler para verlo desde fuera.", history:"Grand Central abrió en 1913 y es símbolo del auge ferroviario y del art déco neoyorquino.", proTip:"Ve en hora valle para disfrutar el hall. Busca el ‘whispering gallery’ y el techo estrellado. Ideal como visita ‘rápida’ entre planes." },
+      { title:"American Museum of Natural History", summary:"Museo enorme y muy entretenido.", why:"Relleno perfecto para un día de clima regular.", what:"Museo de historia natural (dinosaurios, mamíferos, planetario). Al lado de Central Park (Upper West Side).", history:"Fundado en 1869; referente en divulgación científica y colecciones naturales.", proTip:"Si vas con niños o te gusta ciencia, reserva 3–4 h. Prioriza salas de dinosaurios y el planetario (entrada aparte)." }
     ],
+
     "washington":[
       { title:"National Mall", summary:"Eje principal para agrupar monumentos y museos clave.", why:"Es la manera más limpia de ordenar una primera toma de contacto." },
       { title:"Capitolio y Library of Congress", summary:"Bloque institucional muy sólido para una mañana.", why:"Concentra visitas con identidad propia y poco desplazamiento." },
@@ -15312,7 +15448,17 @@ window.addEventListener('DOMContentLoaded', () => {
           const btn = e.target.closest("[data-ai-more]");
           if(!btn) return;
           e.preventDefault();
-          this.openAIMoreInfo(btn.dataset);
+          try{
+            this.openAIMoreInfo(btn.dataset);
+          }catch(err){
+            try{
+              // feedback visible (sin romper el módulo)
+              const box = document.createElement("div");
+              box.className = "mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800";
+              box.innerHTML = "<div class='font-extrabold'>Error en “Más info”</div><div class='text-xs mt-1 opacity-80'>"+ escapeHtml(String(err && err.message ? err.message : err)) +"</div>";
+              results.prepend(box);
+            }catch{}
+          }
         });
       }
 
@@ -17247,6 +17393,7 @@ loadTripGapsFill(opts){
 
       // 3) Construir huecos por día
       const blocks = [];
+      const usedTitles = new Set();
 
       const mergeIntervals = (ivs)=>{
         const arr = (ivs||[]).filter(x=>x && x.s!=null && x.e!=null && x.e>x.s)
@@ -17275,8 +17422,10 @@ loadTripGapsFill(opts){
           ? AI_CITY_CATALOG[key]
           : this.genericSuggestions(city);
 
-        const proposals = (Array.isArray(catalog) ? catalog : [])
-          .slice(0,5)
+        const pool = (Array.isArray(catalog) ? catalog : []);
+        const seed = `${day}|${gapReason}|${gapStartMin}|${city}`;
+        const pickedItems = __mvPickNFromPool(pool, 5, seed, usedTitles);
+        const proposals = pickedItems
           .map((item, idx)=>{
             const adapted = this.adaptProposal(item);
             const dMin = Number(adapted?.durationMin || adapted?.durationMinutes || 0) || 120;
@@ -17486,17 +17635,12 @@ loadTripGapsFill(opts){
               if(moreBtn){
                 ev.preventDefault(); ev.stopPropagation();
                 const title = moreBtn.getAttribute("data-ai-title") || "Más info";
-                const sum = moreBtn.getAttribute("data-ai-summary") || "";
+                const summary = moreBtn.getAttribute("data-ai-summary") || "";
+                const what = moreBtn.getAttribute("data-ai-what") || summary || "";
+                const history = moreBtn.getAttribute("data-ai-history") || "";
+                const pro = moreBtn.getAttribute("data-ai-pro") || "";
                 const why = moreBtn.getAttribute("data-ai-why") || "";
-                const htmlPayload = `
-                  <div class="text-sm text-slate-700">
-                    ${sum ? `<div class="font-semibold">Qué es</div><div class="mt-1">${escapeHtml(sum)}</div>` : ""}
-                    ${why ? `<div class="mt-3 font-semibold">Por qué encaja</div><div class="mt-1">${escapeHtml(why)}</div>` : ""}
-                  </div>
-                `;
-                try{
-                  if(typeof openHelp === "function") openHelp(title, htmlPayload, true);
-                }catch(err){ console.error(err); }
+                __mvOpenMoreInfoModal({ title, what, history, proTip: pro, why });
                 return;
               }
             }, true);
