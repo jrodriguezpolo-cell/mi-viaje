@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AW_AK_RESET_CITY_RECO_CACHE_PER_CITY_VISIBLE_UNIFIED";
+const APP_BUILD = "V226C1B0AX_AK_RESET_CITY_BUTTON_VISIBLE_FIX_NESTED_BUTTON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16809,7 +16809,7 @@ __aiBuildDayBuckets(trip){
         }).join("");
 
         return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
-                  <button type="button" class="tap w-full flex items-center justify-between px-4 py-3 bg-white" data-ai-day-toggle="${bodyId}" id="${headId}">
+                  <div class="tap w-full flex items-center justify-between px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
                     <div class="min-w-0 text-left">
                       <div class="font-semibold text-slate-900">${sec.title}</div>
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
@@ -16818,7 +16818,7 @@ __aiBuildDayBuckets(trip){
                       ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-9 h-9 rounded-full border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(sec.city||"")}" data-ai-reset-city="${escapeHtml(sec.cityKey)}">↻</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
-                  </button>
+                  </div>
                   <div id="${bodyId}" class="hidden px-4 py-3">
                     ${gapsHtml}
                   </div>
