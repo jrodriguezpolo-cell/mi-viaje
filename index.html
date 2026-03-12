@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE</title>
+<title>V226C1B0AQ_AK_RECO_CACHE_PER_CITY_SAFE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AQ_AK_RECO_CACHE_PER_CITY_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1371,7 +1371,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AQ_AK_RECO_CACHE_PER_CITY_SAFE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1650,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AP_AK_RECO_CACHE_PER_CITY";
+const APP_BUILD = "V226C1B0AQ_AK_RECO_CACHE_PER_CITY_SAFE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15158,14 +15158,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const list = POIS[key] || [];
     const need = BIG_CITIES.has(key) ? 10 : 5;
 
-    // Persistencia (caché) por ciudad: mantiene estable el set de recomendaciones
-    // aunque el catálogo crezca o se reordene en el futuro.
+    // Caché por ciudad: mantiene estable el conjunto y el orden de recomendaciones entre sesiones.
+    // Nunca introduce genéricos: solo reordena/recorta dentro del catálogo concreto existente.
     try{
       const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
       const raw = localStorage.getItem(cacheKey);
       if(raw){
         const data = JSON.parse(raw);
-        const ids = data && Array.isArray(data.ids) ? data.ids : null;
+        const ids = (data && Array.isArray(data.ids)) ? data.ids : null;
         if(ids && ids.length){
           const byId = new Map(list.map(it=>[String(it.id||""), it]));
           const out = [];
@@ -15182,25 +15182,22 @@ window.addEventListener('DOMContentLoaded', () => {
     }catch(e){}
 
     const out = list.slice(0, Math.max(0, Math.min(list.length, need)));
-    // Guardar solo los ids (ligero)
+
+    // Guardar solo ids (ligero)
     try{
       const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
-      const ids = out.map(it=> String(it.id||"" )).filter(Boolean);
-      if(ids.length) localStorage.setItem(cacheKey, JSON.stringify({ v:1, ids, ts: Date.now() }));
+      const ids = out.map(it=> String(it.id||"") ).filter(Boolean);
+      if(ids.length){
+        localStorage.setItem(cacheKey, JSON.stringify({ v:1, ids, ts: Date.now() }));
+      }
     }catch(e){}
 
     return out;
-  }};
+  };
 
   // Exponer helpers para el módulo IA
   window.__MV_POI = { CITY_ALIAS, BIG_CITIES, POIS, cityKey, getPOIsForCity };
 })();
-
-
-  // Persistencia/caché de recomendaciones por ciudad (preparado para futuro Gemini).
-  // Se guarda un pool ordenado por ciudad para que no cambie “a lo loco” entre sesiones.
-  const AI_RECO_CACHE_V = 1;
-  const AI_RECO_CACHE_PREFIX = "MV_AI_RECO_POOL_V1:";
 
   const aiModule = {
     state: null,
@@ -16274,18 +16271,20 @@ window.addEventListener('DOMContentLoaded', () => {
       const cityName = String(city||"").trim();
       if(!cityName) return [];
       const key = this.__aiCityKey(cityName);
-      // Caché estable por ciudad (pool ordenado).
-      // Si existe, reutilizamos ese pool para mantener consistencia entre sesiones.
+      // Caché estable por ciudad (pool ordenado de propuestas) para evitar cambios "a lo loco" entre sesiones.
+      const __recoCachePrefix = "MV_AI_RECO_POOL_V1:";
+      const __recoCacheV = 1;
       let __cachedPool = null;
       try{
-        const raw = localStorage.getItem(AI_RECO_CACHE_PREFIX + key);
+        const raw = localStorage.getItem(__recoCachePrefix + key);
         if(raw){
           const data = JSON.parse(raw);
-          if(data && data.v === AI_RECO_CACHE_V && Array.isArray(data.pool) && data.pool.length){
+          if(data && data.v === __recoCacheV && Array.isArray(data.pool) && data.pool.length){
             __cachedPool = data.pool;
           }
         }
       }catch(e){}
+
       // Base catalog: city-specific if available, otherwise generic.
       // If the city catalog is shorter than requested, complete it with genericSuggestions(city) (dedup by title).
       let catalog = (typeof AI_CITY_CATALOG !== "undefined" && AI_CITY_CATALOG && AI_CITY_CATALOG[key])
@@ -16334,11 +16333,11 @@ window.addEventListener('DOMContentLoaded', () => {
           })
           .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
 
-        // Guardamos el pool sin score (ligero) para estabilidad futura.
+        // Guardar el pool ya ordenado (sin score) para estabilidad.
         pool = ranked.map(({score, ...rest})=> rest);
         try{
           if(pool && pool.length){
-            localStorage.setItem(AI_RECO_CACHE_PREFIX + key, JSON.stringify({ v: AI_RECO_CACHE_V, ts: Date.now(), pool }));
+            localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
           }
         }catch(e){}
       }
@@ -16350,7 +16349,7 @@ window.addEventListener('DOMContentLoaded', () => {
           return t && !existing.has(t);
         });
 
-      // Slice with gentle wrap-around so “otras recomendaciones” cambia la tanda sin quedarse vacío.
+      // Slice con wrap-around suave para "otras recomendaciones"
       const picked = [];
       for(let i=0; i<ranked.length && picked.length<n; i++){
         const j = (startAt + i) % ranked.length;
