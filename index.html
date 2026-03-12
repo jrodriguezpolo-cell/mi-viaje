@@ -71,7 +71,7 @@ function deleteItemById(kind, id) {
 
   // Accept common synonyms used across the app (timeline, cards, sheets)
   let k = String(kind || "").trim().toLowerCase();
-  if (k === "activity" || k === "activities" || k === "act" || k === "a") k = "act";
+  if (k === "activity" || k === "activities" || k === "actividad" || k === "actividades" || k === "act" || k === "a") k = "act";
   if (k === "transport" || k === "transporte" || k === "leg" || k === "l") k = "leg";
   if (k === "stay" || k === "alojamiento" || k === "lodging" || k === "s") k = "stay";
 
@@ -13180,6 +13180,7 @@ function __aiOpenPendingReviewModal(){
                 <div class="shrink-0 flex flex-col items-stretch gap-2">
                   <button type="button" class="tap px-3 py-2 rounded-2xl text-sm font-extrabold aiPendingReviewPrimaryBtn" data-ai-pend-view="${escapeHtml(String(a.id))}">Revisar</button>
                   <button type="button" class="tap px-3 py-2 rounded-2xl text-xs font-extrabold aiPendingReviewGhostBtn" data-ai-pend-confirm="${escapeHtml(String(a.id))}">Confirmar</button>
+                  <button type="button" class="tap px-3 py-2 rounded-2xl text-xs font-extrabold aiPendingReviewRejectBtn" data-ai-pend-reject="${escapeHtml(String(a.id))}">Rechazar</button>
                 </div>
               </div>
             </div>`;
@@ -13199,6 +13200,22 @@ function __aiOpenPendingReviewModal(){
         const cid = String(confirmBtn.getAttribute("data-ai-pend-confirm")||"").trim();
         if(!cid) return;
         try{ __aiConfirmActivityPendingReview(cid); }catch{}
+        try{ __aiUpdatePendingBadge(); }catch{}
+        setTimeout(()=>{ try{ __aiOpenPendingReviewModal(); }catch{} }, 60);
+        return;
+      }
+
+      const rejectBtn = t.closest("[data-ai-pend-reject]");
+      if(rejectBtn){
+        const rid = String(rejectBtn.getAttribute("data-ai-pend-reject")||"").trim();
+        if(!rid) return;
+        try{
+          // Rechazar = eliminar la actividad (sale de cronograma y de Pendientes)
+          deleteItemById("act", rid);
+          if (typeof saveState === "function") saveState();
+        }catch(e){
+          try{ console.error("reject pending failed", e); }catch{}
+        }
         try{ __aiUpdatePendingBadge(); }catch{}
         setTimeout(()=>{ try{ __aiOpenPendingReviewModal(); }catch{} }, 60);
         return;
