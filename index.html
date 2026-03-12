@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT</title>
+<title>V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -68,13 +68,21 @@ catch{} }
 function deleteItemById(kind, id) {
   const sc = getActiveScenario();
   if (!sc) return false;
-  const k = String(kind || "").trim();
+
+  // Accept common synonyms used across the app (timeline, cards, sheets)
+  let k = String(kind || "").trim().toLowerCase();
+  if (k === "activity" || k === "activities" || k === "act" || k === "a") k = "act";
+  if (k === "transport" || k === "transporte" || k === "leg" || k === "l") k = "leg";
+  if (k === "stay" || k === "alojamiento" || k === "lodging" || k === "s") k = "stay";
+
   const targetId = String(id);
-  const arr = (k==="leg") ? sc.legs : (k==="stay") ? sc.stays : (k==="act") ? sc.activities : null;
-  if(!arr) return false;
+  const arr = (k === "leg") ? sc.legs : (k === "stay") ? sc.stays : (k === "act") ? sc.activities : null;
+  if (!Array.isArray(arr)) return false;
+
   const idx = arr.findIndex(x => String(x && x.id) === targetId);
-  if(idx < 0) return false;
-  arr.splice(idx,1);
+  if (idx < 0) return false;
+
+  arr.splice(idx, 1);
   return true;
 }
 </script>
@@ -1642,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT";
+const APP_BUILD = "V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
