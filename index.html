@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0Y_AI_ADD_SELECTED_STAY_ON_DISCOVER_NO_ALERT</title>
+<title>V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0Y_AI_ADD_SELECTED_STAY_ON_DISCOVER_NO_ALERT" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1642,7 +1642,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0Y_AI_ADD_SELECTED_STAY_ON_DISCOVER_NO_ALERT";
+const APP_BUILD = "V226C1B0Z_HOME_CITY_EXCLUDE_AND_REVIEW_REJECT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -6579,6 +6579,7 @@ function openTimelineMicroSummaryMenu(){
                   <div class="shrink-0 flex flex-col items-end gap-2">
                     <button type="button" class="tap px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-ai-review-jump="${escapeHtml(String(a.id))}">Ir</button>
                     <button type="button" class="tap px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-sm font-extrabold" data-ai-review-confirm="${escapeHtml(String(a.id))}">Confirmar</button>
+                    <button type="button" class="tap px-3 py-1.5 rounded-xl bg-rose-600 text-white text-sm font-extrabold" data-ai-review-reject="${escapeHtml(String(a.id))}">Rechazar</button>
                   </div>
                 </div>`;
             }).join("\n");
@@ -6603,6 +6604,27 @@ function openTimelineMicroSummaryMenu(){
                 try{ renderList(); }catch{}
               };
             });
+
+            // Rechazar (elimina la actividad añadida por IA y la quita de pendientes)
+            list.querySelectorAll("[data-ai-review-reject]").forEach(btn=>{
+              btn.onclick = (e)=>{
+                try{ e.preventDefault(); e.stopPropagation(); }catch{};
+                const id = String(btn.getAttribute("data-ai-review-reject")||"").trim();
+                if(!id) return;
+                try{
+                  const sc = (typeof curScenario==="function") ? curScenario() : null;
+                  if(sc && Array.isArray(sc.activities)){
+                    sc.activities = sc.activities.filter(a=> String(a && a.id) !== id);
+                  }
+                }catch{}
+                try{ if(typeof saveState==="function") saveState(); }catch{}
+                try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+                try{ if(typeof renderActivities==="function") renderActivities(); }catch{}
+                try{ renderList(); }catch{}
+                try{ toast("Actividad rechazada y eliminada.", 1800); }catch{}
+              };
+            });
+
           }catch{
             list.innerHTML = `<div class="text-sm text-slate-500">No hay incorporaciones IA pendientes.</div>`;
           }
@@ -16388,6 +16410,31 @@ __aiBuildDayBuckets(trip){
       }
 
       const sections = [];
+      // --- Ciudad base (residencia) para excluir recomendaciones ---
+      const homeCity = (()=>{
+        try{
+          // 1) override (futuro): preferences.homeCity o localStorage mv_home_city
+          const pref = (typeof state!=="undefined" && state && state.preferences && state.preferences.homeCity) ? String(state.preferences.homeCity) : "";
+          const ls = (typeof localStorage!=="undefined") ? String(localStorage.getItem("mv_home_city")||"") : "";
+          const override = (pref||ls).trim();
+          if(override) return override;
+
+          // 2) inferir desde el primer trayecto (origen del primer leg por fecha)
+          const legs = Array.isArray(trip.legs) ? trip.legs.slice() : [];
+          legs.sort((a,b)=>{
+            const da = parseYMD(a && a.date) || new Date(8640000000000000);
+            const db = parseYMD(b && b.date) || new Date(8640000000000000);
+            return da - db;
+          });
+          for(const leg of legs){
+            const fc = (leg && (leg.fromCity || leg.from || leg.originCity || leg.origin)) ? String(leg.fromCity || leg.from || leg.originCity || leg.origin) : "";
+            if(fc.trim()) return fc.trim();
+          }
+        }catch{}
+        return "";
+      })();
+      const homeCityKey = homeCity ? __normalizeCityKey(homeCity) : "";
+
       const scheduledTitles = new Set((trip.activities||[]).map(a=>String(a.title||a.name||"").trim().toLowerCase()).filter(Boolean));
 
       for(const day of allDays){
@@ -16395,6 +16442,9 @@ __aiBuildDayBuckets(trip){
         if(!gaps.length) continue;
 
         const city = dayCity(day);
+        // Excluir ciudad base/residencia (si está definida/inferida)
+        if(homeCityKey && __normalizeCityKey(city) === homeCityKey) continue;
+
         const pois = getPOIsForCity(city);
         if(!pois.length){
           // si no hay catálogo concreto para esa ciudad, no inventamos genéricos: saltamos
