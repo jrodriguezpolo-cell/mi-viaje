@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AV_AK_RESET_CITY_RECO_CACHE_PER_CITY</title>
+<title>V226C1B0BA_AK_RESET_CITY_CACHE_SHUFFLE_ON_RESET</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AV_AK_RESET_CITY_RECO_CACHE_PER_CITY" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BA_AK_RESET_CITY_CACHE_SHUFFLE_ON_RESET" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AZ_AK_RESET_CITY_BUTTON_VISIBLE_FINAL";
+const APP_BUILD = "V226C1B0BA_AK_RESET_CITY_CACHE_SHUFFLE_ON_RESET";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16346,7 +16346,14 @@ window.addEventListener('DOMContentLoaded', () => {
           .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
 
         // Guardar el pool ya ordenado (sin score) para estabilidad.
-        pool = ranked.map(({score, ...rest})=> rest);
+        // Barajar el pool en la primera generación para que "Reset" realmente cambie propuestas,
+// manteniendo estabilidad una vez cacheado.
+const __shuffled = ranked.slice();
+for(let i=__shuffled.length-1; i>0; i--){
+  const j = Math.floor(Math.random()*(i+1));
+  const tmp = __shuffled[i]; __shuffled[i] = __shuffled[j]; __shuffled[j] = tmp;
+}
+pool = __shuffled.map(({score, ...rest})=> rest);
         try{
           if(pool && pool.length){
             localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
