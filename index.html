@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED</title>
+<title>V226C1B0AD_DELETE_FROM_EDITOR_REMOVES_FROM_PENDING</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AD_DELETE_FROM_EDITOR_REMOVES_FROM_PENDING" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -83,6 +83,19 @@ function deleteItemById(kind, id) {
   if (idx < 0) return false;
 
   arr.splice(idx, 1);
+
+  // Keep IA pending badge / queues consistent when deleting an activity anywhere (editor, cronograma, etc.)
+  if (k === "act") {
+    try{
+      const rid = String(targetId||"").trim();
+      // purge from optional queue
+      if (Array.isArray(window.__aiPendingReviewQueue)) {
+        window.__aiPendingReviewQueue = window.__aiPendingReviewQueue.map(String).filter(x => String(x) !== rid);
+      }
+    }catch{}
+    try{ if (typeof __aiUpdatePendingBadge === "function") __aiUpdatePendingBadge(); }catch{}
+  }
+
   return true;
 }
 </script>
@@ -1650,7 +1663,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED";
+const APP_BUILD = "V226C1B0AD_DELETE_FROM_EDITOR_REMOVES_FROM_PENDING";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -14698,6 +14711,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
       const ok = deleteItemById(kind, id);
       if (!ok) { toast("No se pudo borrar (id no encontrado)"); return; }
+
+      // If it was an IA pending activity, refresh badge/list
+      try{ if(String(kind||"").toLowerCase().includes("act") || String(kind||"").toLowerCase().includes("activity")){ if(typeof __aiUpdatePendingBadge==="function") __aiUpdatePendingBadge(); } }catch{}
 
       try { if (typeof saveState === "function") saveState(); } catch {}
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
