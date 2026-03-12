@@ -17725,6 +17725,50 @@ loadTripGapsFill(opts){
               }catch(err){ console.error(err); }
               return;
             }
+
+        // Fallback extra (hardening): delegación global en el sheet para que NINGÚN botón del hub “muera”
+        // aunque se clonen nodos o falte un listener específico.
+        const sheetBody = document.getElementById("aiSheetBody");
+        if(sheetBody && !sheetBody.__aiGlobalDelegationBound){
+          sheetBody.__aiGlobalDelegationBound = true;
+          sheetBody.addEventListener("click",(ev)=>{
+            try{
+              const t = ev.target;
+              if(!(t instanceof HTMLElement)) return;
+
+              // Pending review
+              const pend = t.closest ? t.closest("#aiReviewPendingBtn") : null;
+              if(pend){
+                ev.preventDefault(); ev.stopPropagation();
+                try{ __aiOpenPendingReviewModal(); }catch{}
+                return;
+              }
+
+              const btn = t.closest ? t.closest("button[id^='aiAction']") : null;
+              if(!btn) return;
+
+              const id = String(btn.id||"");
+              const meta = mapById(id); // reutiliza el mapById del hub
+              if(!meta) return;
+
+              ev.preventDefault(); ev.stopPropagation();
+              if(titleEl) titleEl.textContent = meta.title;
+              setStage("detail");
+              try{
+                const st = document.getElementById("aiStatus");
+                if(st) st.classList.add("hidden");
+              }catch{}
+
+              try{
+                if(window.aiModule && typeof window.aiModule.selectAction === "function"){
+                  window.aiModule.selectAction(meta.key);
+                }
+              }catch{}
+            }catch(err){
+              console.error(err);
+            }
+          }, true);
+        }
           }, true);
         }
 
