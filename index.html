@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AK_ROLLBACK_B0AF_RULE_10_5_FIX_IA_BUTTONS</title>
+<title>V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AK_ROLLBACK_B0AF_RULE_10_5_FIX_IA_BUTTONS" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1371,7 +1371,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AK_ROLLBACK_B0AF_RULE_10_5_FIX_IA_BUTTONS</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1650,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AN_AK_RICHER_POI_INFO_ONLY";
+const APP_BUILD = "V226C1B0AO_AK_DEDUP_RECO_AGAINST_TIMELINE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15878,9 +15878,20 @@ window.addEventListener('DOMContentLoaded', () => {
       return { title: item.title, summary: summary.trim(), why: why.trim() };
     },
     buildCityGroups(cities){
+      const trip = this.bridge.readTrip();
+      const existing = new Set((Array.isArray(trip.activities)?trip.activities:[])
+        .map(a=> this.__aiNormTitle(a && (a.title||a.name)))
+        .filter(Boolean));
+      const used = new Set();
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
         const poi = (window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function") ? window.__MV_POI.getPOIsForCity(row.city) : [];
-        const proposals = (poi||[]).map((item, idx)=>({
+        const proposals = (poi||[]).filter((item)=>{
+          const t = this.__aiNormTitle(item && item.title);
+          if(!t) return false;
+          if(existing.has(t) || used.has(t)) return false;
+          used.add(t);
+          return true;
+        }).map((item, idx)=>({
           id: `poi:${row.key}:${item.id || idx}`,
           city: row.city,
           title: String(item.title||"").trim(),
@@ -16120,6 +16131,15 @@ window.addEventListener('DOMContentLoaded', () => {
         .replace(/[^a-z0-9]+/g,"-")
         .replace(/^-+|-+$/g,"") || "city";
     },
+    __aiNormTitle(raw){
+      const s = String(raw||"").trim().toLowerCase();
+      if(!s) return "";
+      try{
+        return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+      }catch(e){
+        return s.replace(/\s+/g," ").trim();
+      }
+    },
     __aiISOAddDays(iso, delta){
       const s = String(iso||"").trim();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
@@ -16235,7 +16255,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if(Array.isArray(catalog)){
         const seen = new Set();
         catalog = catalog.filter((it)=>{
-          const t = String((it && it.title) || "").trim().toLowerCase();
+          const t = this.__aiNormTitle((it && it.title) || "");
           if(!t) return false;
           if(seen.has(t)) return false;
           seen.add(t);
@@ -16254,7 +16274,7 @@ window.addEventListener('DOMContentLoaded', () => {
           return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
         })
         .filter((it)=>{
-          const t = String(it.title||"").trim().toLowerCase();
+          const t = this.__aiNormTitle(it.title||"");
           return t && !existing.has(t);
         })
         .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
@@ -17295,7 +17315,7 @@ loadTripGapsFill(opts){
       const stayRanges = this.__aiBuildStayRanges(trip);
       const allDays = this.__aiCollectTripDays(trip, stayRanges);
 
-      const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> String(a && (a.title||a.name)||"").trim().toLowerCase()).filter(Boolean));
+      const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> this.__aiNormTitle(a && (a.title||a.name))).filter(Boolean));
 
       const parseHM = (s)=>{
         const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
