@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE</title>
+<title>V226C1B0A_UNIFIED_GAPS_ALL_DAYS_FIXED_09_22_5_PER_GAP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V226C1A8Q_AI_GAPS_MORE_INFO_BUTTON_FIX_FROM_A8P_SAFE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1A9Z_UNIFIED_HUB_DELEGATION_ACTION_KEY_FIX</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0A_UNIFIED_GAPS_ALL_DAYS_FIXED_09_22_5_PER_GAP</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -16994,15 +16994,281 @@ loadTripGapsFill(opts){
       }
     },
     loadTripUnifiedDiscoverAndFill(opts){
-      // Unificación segura (Stage 1): por ahora reutiliza la lógica de huecos (A8Q) sin romper el módulo.
-      // En siguientes iteraciones se mejora para recorrer TODOS los días/ciudades y renderizar bloques por día.
+      // Unificación segura: huecos reales por día + render de TODOS los bloques (sin sobrescribir el último).
       this.state.actionInfoHtml = "";
       this.state.actionInfoStatus = "";
-      try{
-        this.state.bridgeNote = "";
-      }catch{}
-      // Reusar gaps fill como “completar viaje”
-      return this.loadTripGapsFill(opts || {});
+      this.renderShell();
+
+      const trip = this.bridge.readTrip();
+
+      // Recommendation cycling: 0 = base, 1 = “otras”, 2 = …
+      if(typeof this.state.gapRecoOffset !== "number") this.state.gapRecoOffset = 0;
+      const mode = opts && opts.mode ? String(opts.mode) : "";
+      if(mode === "more") this.state.gapRecoOffset += 1;
+      if(mode === "recover") this.state.gapRecoOffset = Math.max(0, this.state.gapRecoOffset - 1);
+
+      // Regla fija (producto)
+      const DAY_START = 9*60;   // 09:00
+      const DAY_END   = 22*60;  // 22:00
+      const MIN_GAP   = 3*60;   // 3h
+      const PER_GAP   = 5;      // 5 propuestas por hueco
+
+      const status = document.getElementById("aiStatus");
+      if(status){
+        this.state.actionInfoStatus = "Analizando huecos 09:00–22:00 (mín. 3h) y proponiendo 5 ideas por hueco…";
+        status.classList.add("hidden");
+      }
+
+      this.setBridgeNote("Selecciona propuestas con ✓ y confirma al final. La IA NO añade nada hasta que pulses “Añadir seleccionadas a Actividades”.");
+
+      const body = document.getElementById("aiActionBody");
+      if(body){
+        const intro = `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-extrabold text-slate-900">Descubrir ciudades y completar viaje</div>
+              <div class="mt-1 text-sm text-slate-600">Detecta huecos ≥ 3h entre 09:00–22:00 en cada día del viaje y propone lugares concretos para completarlos.</div>
+            </div>
+            <div class="inline-flex items-center rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-extrabold text-fuchsia-700">Regla fija</div>
+          </div>
+        </div>`;
+        this.state.actionInfoHtml = intro;
+        body.innerHTML = "";
+      }
+
+      const buckets = this.__aiBuildDayBuckets(trip);
+      const stayRanges = this.__aiBuildStayRanges(trip);
+      const allDays = this.__aiCollectTripDays(trip, stayRanges);
+
+      const existingTitles = new Set();
+      (trip.activities||[]).forEach((a)=>{
+        const t = (a && a.title) ? String(a.title).trim().toLowerCase() : "";
+        if(t) existingTitles.add(t);
+      });
+
+      const parseHM = (s)=>{
+        const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
+        if(!m) return null;
+        const hh = Math.max(0, Math.min(23, parseInt(m[1],10)||0));
+        const mm = Math.max(0, Math.min(59, parseInt(m[2],10)||0));
+        return hh*60 + mm;
+      };
+      const fmtHM = (min)=>{
+        const mm = Math.max(0, Math.min(24*60-1, Math.floor(min||0)));
+        const h = Math.floor(mm/60), m = mm%60;
+        return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+      };
+
+      const buildDayEvents = (b)=>{
+        const events = [];
+        const pushEvent = (t, dur)=>{
+          const s = parseHM(t);
+          if(s==null) return;
+          const d = Math.max(15, Math.floor(dur||60));
+          events.push({ s, e: s+d });
+        };
+        (b.legs||[]).forEach((l)=>{
+          pushEvent(l.time || l.departTime || l.startTime || l.departureTime, 180);
+        });
+        (b.checkins||[]).forEach((x)=>{
+          pushEvent(x.time || x.startTime || x.checkinTime, 45);
+        });
+        (b.checkouts||[]).forEach((x)=>{
+          pushEvent(x.time || x.endTime || x.checkoutTime, 45);
+        });
+        (b.acts||[]).forEach((a)=>{
+          const dur = parseInt(a.durationMin || a.duration || 90, 10) || 90;
+          pushEvent(a.time || a.startTime, dur);
+        });
+        return events;
+      };
+
+      const mergeIntervals = (events)=>{
+        const xs = (events||[]).slice().filter(Boolean).map(ev=>({s:ev.s, e:ev.e})).filter(ev=>Number.isFinite(ev.s)&&Number.isFinite(ev.e));
+        xs.sort((a,b)=>a.s-b.s);
+        const merged = [];
+        xs.forEach((ev)=>{
+          const last = merged[merged.length-1];
+          if(!last || ev.s > last.e) merged.push({s:ev.s,e:ev.e});
+          else last.e = Math.max(last.e, ev.e);
+        });
+        return merged;
+      };
+
+      const computeGaps = (merged)=>{
+        const gaps = [];
+        if(!merged.length){
+          gaps.push({s:DAY_START, e:DAY_END});
+          return gaps;
+        }
+        const clamped = merged.map(x=>({s:Math.max(DAY_START, x.s), e:Math.min(DAY_END, x.e)})).filter(x=>x.e>x.s);
+        if(!clamped.length){
+          gaps.push({s:DAY_START, e:DAY_END});
+          return gaps;
+        }
+        if(clamped[0].s - DAY_START >= MIN_GAP) gaps.push({s:DAY_START, e:clamped[0].s});
+        for(let i=0;i<clamped.length-1;i++){
+          const s = clamped[i].e, e = clamped[i+1].s;
+          if(e - s >= MIN_GAP) gaps.push({s,e});
+        }
+        const last = clamped[clamped.length-1];
+        if(DAY_END - last.e >= MIN_GAP) gaps.push({s:last.e, e:DAY_END});
+        return gaps;
+      };
+
+      const gapBlocks = [];
+      const maxBlocks = 18;
+      let blockIdx = 0;
+
+      for(const day of allDays){
+        if(gapBlocks.length >= maxBlocks) break;
+
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+        const city = ctx.city || "";
+        if(!city) continue;
+
+        const events = buildDayEvents(b);
+        const merged = mergeIntervals(events);
+        const gaps = computeGaps(merged);
+        if(!gaps.length) continue;
+
+        gaps.sort((a,b)=> (b.e-b.s) - (a.e-a.s));
+        const pickGaps = gaps.slice(0,2); // máx 2 huecos por día
+
+        for(const g of pickGaps){
+          if(gapBlocks.length >= maxBlocks) break;
+
+          const suggestedTime = fmtHM(Math.max(g.s, Math.min(g.e-60, g.s + 15)));
+          const gapLabel = fmtHM(g.s) + "–" + fmtHM(g.e) + " (" + Math.round((g.e-g.s)/60) + "h)";
+          const reason = ctx.reason ? (ctx.reason + " · Hueco: " + gapLabel) : ("Hueco: " + gapLabel);
+
+          const proposals = this.__aiTopProposalsForCity(city, existingTitles, PER_GAP, this.state.gapRecoOffset + blockIdx);
+          if(!proposals.length) continue;
+
+          gapBlocks.push({
+            day,
+            city,
+            reason,
+            suggestedTime,
+            proposals: proposals.map((pr, idx)=>{
+              const dMin = suggestDurationMin(pr.title, pr.summary);
+              return Object.assign({}, pr, {
+                id: `gap:${day}:${this.__aiCityKey(city)}:${this.state.gapRecoOffset}:${blockIdx}:${idx}`,
+                city,
+                date: day,
+                time: suggestedTime,
+                durationMin: dMin,
+                duration: fmtDur(dMin)
+              });
+            })
+          });
+
+          blockIdx += 1;
+        }
+      }
+
+      this.state.gapBlocks = gapBlocks;
+
+      if(status){
+        this.state.actionInfoStatus = String(gapBlocks.length
+          ? `Huecos encontrados: ${gapBlocks.length}. Selecciona propuestas y añade solo las que quieras.`
+          : "No he encontrado huecos ≥ 3h entre 09:00 y 22:00. (Si faltan horas/fechas en eventos, completa algunos datos y reintenta.)");
+        status.classList.add("hidden");
+      }
+
+      const results = document.getElementById("aiResults");
+      if(results){
+        results.innerHTML = gapBlocks.length ? gapBlocks.map((blk)=>`
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-extrabold text-slate-900">${escapeHtml(blk.city)} · ${escapeHtml(this.__aiHumanDay(blk.day))}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(blk.reason || "Este día tiene margen razonable para añadir algo.")}</div>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-600">
+                  <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5">Hora sugerida: ${escapeHtml(blk.suggestedTime || "—")}</span>
+                  <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5">Tanda: ${this.state.gapRecoOffset+1}</span>
+                </div>
+              </div>
+              <div class="text-xs text-slate-500 whitespace-nowrap">${blk.proposals.length} propuestas</div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 gap-2">
+              ${blk.proposals.map((item)=>{
+                return `
+                <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                  <div class="flex items-start gap-3">
+                    <input class="mt-1 w-4 h-4" data-ai-gap-proposal="${escapeHtml(item.id)}" type="checkbox" ${this.state.selectedKeys[item.id] ? "checked" : ""} />
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <div class="font-extrabold text-slate-900">${escapeHtml(item.title)}</div>
+                          <div class="mt-1 text-xs text-slate-500">${escapeHtml(item.duration || "")}</div>
+                        </div>
+                        <button type="button" class="tap rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50" data-ai-gap-more-btn="${escapeHtml(item.id)}">Más info</button>
+                      </div>
+                      <div class="mt-1 text-sm text-slate-600">${escapeHtml(item.summary)}</div>
+                    </div>
+                  </div>
+                </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `).join("") : `<div class="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">No hay huecos claros para completar con la regla actual.</div>`;
+
+        results.querySelectorAll("[data-ai-gap-proposal]").forEach((el)=>{
+          el.addEventListener("change", (ev)=>{
+            const key = String(ev.target.getAttribute("data-ai-gap-proposal") || "");
+            if(!key) return;
+            if(ev.target.checked) this.state.selectedKeys[key] = true;
+            else delete this.state.selectedKeys[key];
+          });
+        });
+        results.querySelectorAll("[data-ai-gap-more-btn]").forEach((btn)=>{
+          btn.addEventListener("click", (ev)=>{
+            try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+            const key = String(btn.getAttribute("data-ai-gap-more-btn") || "");
+            if(!key) return;
+            this.openMoreInfoById(key);
+          });
+        });
+      }
+
+      const footer = document.getElementById("aiFooterActions");
+      if(footer){
+        footer.innerHTML = "";
+
+        const other = document.createElement("button");
+        other.type = "button";
+        other.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        other.textContent = "Otras propuestas";
+        other.addEventListener("click", ()=> this.loadTripUnifiedDiscoverAndFill({ mode:"more" }));
+
+        const recover = document.createElement("button");
+        recover.type = "button";
+        recover.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        recover.textContent = "Recuperar anteriores";
+        recover.disabled = (this.state.gapRecoOffset <= 0);
+        if(recover.disabled) recover.classList.add("opacity-50");
+        recover.addEventListener("click", ()=> this.loadTripUnifiedDiscoverAndFill({ mode:"recover" }));
+
+        const recalc = document.createElement("button");
+        recalc.type = "button";
+        recalc.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+        recalc.textContent = "Recalcular huecos";
+        recalc.addEventListener("click", ()=> this.loadTripUnifiedDiscoverAndFill({ force:true }));
+
+        const add = document.createElement("button");
+        add.type = "button";
+        add.className = "tap px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-sm font-semibold";
+        add.textContent = "Añadir seleccionadas a Actividades";
+        add.addEventListener("click", ()=> this.commitSelectedGapActivities());
+
+        footer.appendChild(other);
+        footer.appendChild(recover);
+        footer.appendChild(recalc);
+        footer.appendChild(add);
+      }
     },
 
     commitSelectedGapActivities(){
