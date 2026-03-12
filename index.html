@@ -1331,7 +1331,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0P_AI_ROLLBACK_A8L_FIX_BERLIN_DAYS_AND_CLEAR_FOOTER</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold opacity-40 cursor-not-allowed" disabled="disabled" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0S_AI_ADD_SELECTED_WORKS_BUILD_LABEL_FIXED</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1610,7 +1610,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0P_AI_ROLLBACK_A8L_FIX_BERLIN_DAYS_AND_CLEAR_FOOTER";
+const APP_BUILD = "V226C1B0S_AI_ADD_SELECTED_WORKS_BUILD_LABEL_FIXED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15049,7 +15049,9 @@ window.addEventListener('DOMContentLoaded', () => {
       },
       addActivities(items, opts){
         const sc = (typeof curScenario === "function") ? curScenario() : null;
-        if(!sc || !Array.isArray(sc.activities)) return { added:0, error:true };
+        if(!sc) return { added:0, error:true };
+        if(!Array.isArray(sc.activities)) sc.activities = [];
+
         const cfg = (opts && typeof opts === 'object') ? opts : {};
         const durMinFromItem = (it)=>{
           if(it && Number.isFinite(it.durationMin)) return Math.max(0, Math.floor(it.durationMin));
@@ -16535,11 +16537,12 @@ __aiBuildDayBuckets(trip){
                 date,
                 time: "",
                 durationMin: 120,
-                note: noteParts.join("\n")
+                summary: noteParts.join(" · ")
               });
             }
             const res = this.bridge.addActivities(items, { source:"ai-discover", notePrefix:"IA" });
-            try{ alert(`Añadidas ${res.added||0} actividades a Actividades (pendientes IA).`); }catch{}
+            try{ alert(`Añadidas ${res && typeof res.added==="number" ? res.added : 0} actividades a Actividades (pendientes IA).` + (res && res.error ? `
+(Nota: activities array inicializada / revisa escenario)` : ``)); }catch{}
             // limpiar checks
             try{ checks.forEach(c=>{ c.checked=false; }); }catch{}
             update();
