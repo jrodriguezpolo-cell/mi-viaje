@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC</title>
+<title>V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1650,7 +1650,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0AA_HOME_CITY_EXCLUDE_REJECT_AND_DELETE_SYNC";
+const APP_BUILD = "V226C1B0AC_REJECT_DELETE_SYNC_DIAG_FIXED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -10773,8 +10773,15 @@ function renderActivities() {
   // Keep existing bindings for editor node (hidden in DOM; moved to sheet)
   box.querySelectorAll("[data-act-del]").forEach(b => b.addEventListener("click", (e) => {
     try { e.preventDefault(); e.stopPropagation(); } catch {}
-    const id = b.getAttribute("data-act-del");
-    sc.activities = sc.activities.filter(x => x.id !== id);
+    const id = String(b.getAttribute("data-act-del")||"").trim();
+    const beforeN = Array.isArray(sc.activities) ? sc.activities.length : 0;
+    sc.activities = (sc.activities||[]).filter(x => String(x && x.id) !== id);
+    const afterN = Array.isArray(sc.activities) ? sc.activities.length : 0;
+    // If removed an AI pending, badge/list must update
+    try { if(typeof __aiUpdatePendingBadge==="function") __aiUpdatePendingBadge(); } catch {}
+    try { if(typeof saveState==="function") saveState(); } catch {}
+    try { if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); } catch {}
+    try { toast((beforeN!==afterN) ? "Actividad eliminada." : "No se pudo eliminar (id no encontrado)."); } catch {}
     try { __sectionExpanded?.activities?.delete(id); } catch {}
     saveState(); renderAll();
   }));
@@ -13211,15 +13218,23 @@ function __aiOpenPendingReviewModal(){
         if(!rid) return;
         try{
           // Rechazar = eliminar la actividad (sale de cronograma y de Pendientes)
-          deleteItemById("act", rid);
-          if (typeof saveState === "function") saveState();
+          const sc = (typeof curScenario==="function") ? curScenario() : null;
+          const beforeN = (sc && Array.isArray(sc.activities)) ? sc.activities.length : 0;
+          if(sc && Array.isArray(sc.activities)){
+            sc.activities = sc.activities.filter(x => String(x && x.id) !== rid);
+          }
+          try{ if(typeof saveState === "function") saveState(); }catch{}
+          try{ if(typeof renderAll === "function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+          try{ toast((beforeN && sc && Array.isArray(sc.activities) && sc.activities.length < beforeN) ? "Propuesta rechazada." : "No se pudo rechazar (no encontrada)."); }catch{}
         }catch(e){
           try{ console.error("reject pending failed", e); }catch{}
         }
         try{ __aiUpdatePendingBadge(); }catch{}
-        setTimeout(()=>{ try{ __aiOpenPendingReviewModal(); }catch{} }, 60);
+        // refrescar modal (sin depender de estado anterior)
+        setTimeout(()=>{ try{ __aiOpenPendingReviewModal(); }catch{} }, 80);
         return;
       }
+
       const openBtn = t.closest("[data-ai-pend-view]") || t.closest("[data-ai-pend-open-card]");
       if(openBtn){
         const vid = String(openBtn.getAttribute("data-ai-pend-view") || openBtn.getAttribute("data-ai-pend-open-card") || "").trim();
