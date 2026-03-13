@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C0_AK_ACTS_JUMP_DISABLE_TOPSTACK_FIRSTRESET";
+const APP_BUILD = "V226C1B0C1_AK_ACTS_JUMP_REUSE_MICROMENU_SEARCH_ANCHOR";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11051,77 +11051,44 @@ function __mvShowActivitiesCityDetailModal(cityKey){
       el.addEventListener("click",(e)=>{
         try{ e.preventDefault(); e.stopPropagation(); }catch{}
         const actId = String(el.getAttribute("data-acts-jump-act")||"").trim();
-        const iso = String(el.getAttribute("data-acts-jump-date")||"").trim();
+        /* date not needed: we jump by timeline key act:<id> */
         try{ closeModal(); }catch{}
-        try{ __mvJumpToTimelineAct(actId, iso); }catch{}
+        try{ __mvJumpToTimelineAct(actId); }catch{}
       });
     });
   }catch{}
 }
 
 
-function __mvJumpToTimelineAct(actId, iso){
+function __mvJumpToTimelineAct(actId){
   actId = String(actId||"").trim();
-  iso = String(iso||"").trim();
   if(!actId) return;
 
   const key = `act:${actId}`;
 
-  // Switch to Cronograma (timeline) without changing user-visible mode beyond what setView already does.
-  try{ if(typeof setView === "function") setView("timeline"); }catch{}
-  // Prevent top-stack first-reset from snapping scroll back to top during this jump
-  try{ if(typeof __syncTopStackDidFirstReset!=="undefined") __syncTopStackDidFirstReset = true; }catch{}
-  try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-
-  const attemptScroll = ()=>{
+  // Reuse EXACT same anchor path as the timeline micro-menu (🔍): __msEnsureTimelineVisible + __msScrollToKey
+  const attempt = ()=>{
+    try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
+    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     try{
-      // Ensure timeline is open + rendered (some devices need an extra render after accordion open)
-      try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
-      try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
-    }catch{}
-
-    // Use the SAME search/anchor routine (micro-summary) uses.
-    try{
-      if(typeof __msScrollToKey === "function"){
-        const ok = __msScrollToKey(key);
-        if(ok){
-          try{ __mvBindClearTimelineHighlightOnce(); }catch{}
-          return true;
-        }
+      if(typeof __msScrollToKey==="function"){
+        return !!__msScrollToKey(key);
       }
-    }catch{}
-
-    // Fallback: direct query + anchor
-    try{
-      const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
-      if(!el) return false;
-      try{ if(typeof __scrollTimelineFoundItemToTopAnchor==="function") __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
-      try{ if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key); }catch{}
-      try{ __mvBindClearTimelineHighlightOnce(); }catch{}
-      return true;
     }catch{}
     return false;
   };
 
-  // Allow view/layout to settle before attempting to scroll.
-  const runWithRetries = ()=>{
-    if(attemptScroll()) return;
-    // Long, defensive retries for iPhone Safari + heavy DOM
-    setTimeout(()=>{ attemptScroll(); }, 60);
-    setTimeout(()=>{ attemptScroll(); }, 160);
-    setTimeout(()=>{ attemptScroll(); }, 320);
-    setTimeout(()=>{ attemptScroll(); }, 520);
-    setTimeout(()=>{ attemptScroll(); }, 820);
-    setTimeout(()=>{ attemptScroll(); }, 1200);
-  };
+  // Let view switch + layout settle (Safari/iPhone), then retry a few times (same idea as micro-menu).
+  setTimeout(()=>{
+    let ok = attempt();
+    if(ok) return;
 
-  try{
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ runWithRetries(); }); });
-  }catch{
-    setTimeout(runWithRetries, 0);
-  }
+    requestAnimationFrame(()=>{ try{ attempt(); }catch{} });
+    setTimeout(()=>{ try{ attempt(); }catch{} }, 160);
+    setTimeout(()=>{ try{ attempt(); }catch{} }, 360);
+    setTimeout(()=>{ try{ attempt(); }catch{} }, 700);
+  }, 0);
 }
-
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
 function __mvBindClearTimelineHighlightOnce(){
@@ -11132,23 +11099,24 @@ function __mvBindClearTimelineHighlightOnce(){
     const clear = ()=>{
       window.__mvTlClearOnceArmed = false;
       try{
-        if(typeof __clearTimelinePersistentFoundHighlight === "function") __clearTimelinePersistentFoundHighlight();
+        if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight();
       }catch{}
       try{
         document.removeEventListener("pointerdown", onPtr, true);
         document.removeEventListener("keydown", onKey, true);
-        document.removeEventListener("touchstart", onTouch, true);
+        const ms = document.getElementById("mainScroll");
+        if(ms) ms.removeEventListener("scroll", onScroll, true);
       }catch{}
     };
 
-    const onPtr = ()=>{ clear(); };
-    const onTouch = ()=>{ clear(); };
-    const onKey = ()=>{ clear(); };
+    const onPtr = (e)=>{ clear(); };
+    const onKey = (e)=>{ clear(); };
+    const onScroll = (e)=>{ clear(); };
 
-    // IMPORTANT: Do NOT clear on scroll — the jump itself scrolls programmatically.
     document.addEventListener("pointerdown", onPtr, true);
-    document.addEventListener("touchstart", onTouch, true);
     document.addEventListener("keydown", onKey, true);
+    const ms = document.getElementById("mainScroll");
+    if(ms) ms.addEventListener("scroll", onScroll, true);
   }catch{ try{ window.__mvTlClearOnceArmed = false; }catch{} }
 }
 
