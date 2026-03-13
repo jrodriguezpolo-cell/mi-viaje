@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BP_AK_AVAILABLE_COUNT_FIX_CITYKEY_MATCH</title>
+<title>V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BP_AK_AVAILABLE_COUNT_FIX_CITYKEY_MATCH" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BP_AK_AVAILABLE_COUNT_FIX_CITYKEY_MATCH";
+const APP_BUILD = "V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16421,13 +16421,8 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           return t && !existing.has(t);
         });
 
-      // Slice con wrap-around suave para "otras recomendaciones"
-      const picked = [];
-      for(let i=0; i<ranked.length && picked.length<n; i++){
-        const j = (startAt + i) % ranked.length;
-        const it = ranked[j];
-        if(it) picked.push(it);
-      }
+      // Slice simple (sin wrap-around): si la "segunda página" tiene menos de 5, se muestran menos.
+      const picked = ranked.slice(startAt, startAt + n);
 
       return picked;
     },
