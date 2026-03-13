@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BY_AK_ACTS_JUMP_USE_MS_SCROLLTOKEY";
+const APP_BUILD = "V226C1B0BZ_AK_ACTS_JUMP_SCROLL_RETRY_USING_SEARCH_ANCHOR";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11067,41 +11067,59 @@ function __mvJumpToTimelineAct(actId, iso){
 
   const key = `act:${actId}`;
 
-  // Switch to Cronograma (timeline) and keep GLOBAL mode (do not hide other days)
+  // Switch to Cronograma (timeline) without changing user-visible mode beyond what setView already does.
   try{ if(typeof setView === "function") setView("timeline"); }catch{}
   try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-  try{
-    if(typeof timelineViewMode !== "undefined") timelineViewMode = "global";
-    if(typeof activeDayISO !== "undefined") activeDayISO = "";
-  }catch{}
 
-  // Ensure timeline is rendered, then use the SAME scroll/highlight routine used by the 🔍 search.
-  try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
+  const attemptScroll = ()=>{
+    try{
+      // Ensure timeline is open + rendered (some devices need an extra render after accordion open)
+      try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
+      try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
+    }catch{}
 
-  const tryGo = ()=>{
+    // Use the SAME search/anchor routine (micro-summary) uses.
     try{
       if(typeof __msScrollToKey === "function"){
-        return !!__msScrollToKey(key);
+        const ok = __msScrollToKey(key);
+        if(ok){
+          try{ __mvBindClearTimelineHighlightOnce(); }catch{}
+          return true;
+        }
       }
     }catch{}
-    // Fallback: basic query + anchor if needed
+
+    // Fallback: direct query + anchor
     try{
       const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
       if(!el) return false;
       try{ if(typeof __scrollTimelineFoundItemToTopAnchor==="function") __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
       try{ if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key); }catch{}
+      try{ __mvBindClearTimelineHighlightOnce(); }catch{}
       return true;
     }catch{}
     return false;
   };
 
-  // Multiple attempts to survive render/DOM settling and long lists
-  if(tryGo()) return;
-  requestAnimationFrame(()=>{ if(tryGo()) return; requestAnimationFrame(()=>{ tryGo(); }); });
-  setTimeout(()=>{ tryGo(); }, 60);
-  setTimeout(()=>{ tryGo(); }, 180);
-  setTimeout(()=>{ tryGo(); }, 360);
+  // Allow view/layout to settle before attempting to scroll.
+  const runWithRetries = ()=>{
+    if(attemptScroll()) return;
+    // Long, defensive retries for iPhone Safari + heavy DOM
+    setTimeout(()=>{ attemptScroll(); }, 60);
+    setTimeout(()=>{ attemptScroll(); }, 160);
+    setTimeout(()=>{ attemptScroll(); }, 320);
+    setTimeout(()=>{ attemptScroll(); }, 520);
+    setTimeout(()=>{ attemptScroll(); }, 820);
+    setTimeout(()=>{ attemptScroll(); }, 1200);
+  };
+
+  try{
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ runWithRetries(); }); });
+  }catch{
+    setTimeout(runWithRetries, 0);
+  }
 }
+
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
 function __mvBindClearTimelineHighlightOnce(){
