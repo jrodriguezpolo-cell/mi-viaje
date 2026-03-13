@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG</title>
+<title>V226C1B0BH_AK_CITY_MORE_OPTIONS_TOGGLE_PAGES</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BE_AK_RESET_CITY_CACHE_SHUFFLE_WORKING" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BH_AK_CITY_MORE_OPTIONS_TOGGLE_PAGES" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG";
+const APP_BUILD = "V226C1B0BH_AK_CITY_MORE_OPTIONS_TOGGLE_PAGES";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15552,7 +15552,10 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
             if(resetBtn){
               try{
                 const keyRaw = String(resetBtn.getAttribute("data-ai-reset-city")||"").trim();
-                if(keyRaw){
+                
+                try{ window.__aiKeepOpenCityKey = keyRaw; }catch{}
+                try{ localStorage.setItem("MV_AI_CITY_PAGE_V1:" + keyRaw, "0"); }catch{}
+if(keyRaw){
                   const keys = new Set([keyRaw]);
                   try{ keys.add(keyRaw.replace(/-/g," ")); }catch{}
                   try{ keys.add(keyRaw.replace(/\s+/g,"-")); }catch{}
@@ -15567,6 +15570,25 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
                 }
               }catch{}
               try{ aiModule.refreshCurrentAction({ force:true }); }catch{}
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
+
+            // Más opciones por ciudad (toggle 0..1) — DEBE ir antes del toggle del acordeón
+            const moreCityBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
+            if(moreCityBtn){
+              try{
+                const key = String(moreCityBtn.getAttribute("data-ai-more-city")||"").trim();
+                if(key){
+                  // guardar ciudad a mantener abierta tras refresh
+                  window.__aiKeepOpenCityKey = key;
+                  const pageKey = "MV_AI_CITY_PAGE_V1:" + key;
+                  const cur = parseInt(localStorage.getItem(pageKey)||"0", 10) || 0;
+                  const next = (cur + 1) % 2;
+                  localStorage.setItem(pageKey, String(next));
+                  // Forzar refresh de la acción actual
+                  try{ aiModule.refreshCurrentAction({ force:true }); }catch{}
+                }
+              }catch{}
               ev.preventDefault(); ev.stopPropagation(); return;
             }
 
@@ -16816,7 +16838,7 @@ __aiBuildDayBuckets(trip){
         return {
           title: `${day} · ${first.city || "—"}`,
           city: first.city || "",
-          cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(first.city || "") : this.__aiCityKey(first.city || "")),
+          cityKey: cityKey,
           day,
           gaps: idxs.map(i=>sections[i])
         };
@@ -16852,11 +16874,12 @@ __aiBuildDayBuckets(trip){
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
+                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver otras propuestas de ${escapeHtml(sec.city||"")}" data-ai-more-city="${escapeHtml(sec.cityKey)}">Más opciones</button>` : ``}
                       ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(sec.city||"")}" data-ai-reset-city="${escapeHtml(sec.cityKey)}">↻<span class="ml-1 text-xs font-bold">Reset</span></button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
-                  <div id="${bodyId}" class="hidden px-4 py-3">
+                  <div id="${bodyId}" class="${(window.__aiKeepOpenCityKey && sec.cityKey && String(window.__aiKeepOpenCityKey)===String(sec.cityKey)) ? "" : "hidden"} px-4 py-3">
                     ${gapsHtml}
                   </div>
                 </div>`;
@@ -17579,7 +17602,10 @@ loadTripGapsFill(opts){
         const suggestedTime = suggestTimeForDay(day, b);
 
         // Propuestas por ciudad (máx 5), filtrando duplicados ya existentes
-        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, this.state.gapRecoOffset);
+        const cityKey = (window.__MV_POI && typeof window.__MV_POI.cityKey === "function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city);
+        let pageIdx = 0;
+        try{ pageIdx = parseInt(localStorage.getItem("MV_AI_CITY_PAGE_V1:" + cityKey) || "0", 10) || 0; }catch(e){}
+        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, pageIdx);
         if(!proposals.length) continue;
 
         gapBlocks.push({
