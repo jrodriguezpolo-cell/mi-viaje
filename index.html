@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY";
+const APP_BUILD = "V226C1B0C8_AK_AI_EXHAUSTED_CITIES_MUTED_KEEP_CLOSED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17323,6 +17323,8 @@ __aiBuildDayBuckets(trip){
         const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
         const __disableMore = !(__availN > 5);
 
+        const __isExhausted = (__availN === 0);
+
         // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
         const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
         const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
@@ -17345,18 +17347,18 @@ __aiBuildDayBuckets(trip){
                   </div>`;
         }).join("");
 
-        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
+        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden${__isExhausted ? ' opacity-80' : ''}">
                   <div class="tap w-full flex items-center justify-between px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
                     <div class="min-w-0 text-left">
-                      <div class="font-semibold text-slate-900">${sec.title}</div>
+                      <div class="font-semibold text-slate-900${__isExhausted ? ' opacity-70' : ''}">${sec.title}</div>
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
+                      ${sec.cityKey ? `${__isExhausted ? `<span class=\"text-[11px] font-extrabold text-slate-400 border border-slate-200 bg-white rounded-full px-2 py-0.5\">Agotado</span>` : ``}<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
-                  <div id="${bodyId}" class="hidden px-4 py-3">
+                  <div id="${bodyId}" data-ai-avail="${__availN}" class="hidden px-4 py-3">
                     ${gapsHtml}
                   </div>
                 </div>`;
@@ -17384,7 +17386,10 @@ __aiBuildDayBuckets(trip){
           Object.keys(openMap).forEach((id)=>{
             if(!openMap[id]) return;
             const el = document.getElementById(id);
-            if(el) el.classList.remove("hidden");
+            if(el){
+              try{ if(String(el.getAttribute('data-ai-avail')||'')==='0') return; }catch{}
+              el.classList.remove(\"hidden\");
+            }
           });
         }
       }catch{}
