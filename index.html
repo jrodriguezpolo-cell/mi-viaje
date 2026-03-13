@@ -1668,36 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-// Ensure there is enough bottom space in Timeline to anchor last items under the fixed bars (iOS/Safari)
-function __ensureTimelineBottomSpacer(){
-  try{
-    const list = document.getElementById("timelineList");
-    if(!list) return;
-    let sp = document.getElementById("timelineBottomSpacer");
-    if(!sp){
-      sp = document.createElement("div");
-      sp.id = "timelineBottomSpacer";
-      sp.setAttribute("aria-hidden","true");
-      sp.style.width = "100%";
-      sp.style.pointerEvents = "none";
-      sp.style.background = "transparent";
-      list.appendChild(sp);
-    }
-    let off = 0;
-    try{ if(typeof getStickyOffset==="function") off = Number(getStickyOffset())||0; }catch{}
-    if(!off){
-      try{
-        const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
-        const n = parseFloat(css);
-        if(!isNaN(n) && n > 0) off = n;
-      }catch{}
-    }
-    const h = Math.max(0, (off||0) + 24);
-    sp.style.height = h + "px";
-  }catch{}
-}
-
-const APP_BUILD = "V226C1B0C5_AK_ACTS_JUMP_BOUNCE_REDUCTION_SAFE_BOTTOM_SPACER";
+const APP_BUILD = "V226C1B0C6_AK_ACTS_JUMP_ANCHOR_FINAL_PASS_NO_REBOUNCE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -6496,10 +6467,11 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
-function __scrollTimelineFoundItemToTopAnchor(el){
-  // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
+function __scrollTimelineFoundItemToTopAnchor(el, opts){
+  // V212+: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
   try{
     if(!el) return;
+    opts = opts || {};
     const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
 
     // Anchor is the bottom edge of the timeline fixed bar (subSectionHeader) in viewport coords
@@ -6531,11 +6503,46 @@ function __scrollTimelineFoundItemToTopAnchor(el){
     const margin = 10; // comfortable gap below the bar
     const targetTop = anchorBottom + margin;
 
+    // When jumping from Actividades, we may need extra scroll room near the end of the list.
+    const wantPad = !!(opts.forceInstant || (window.__mvActJumpNeedsPad===true));
+    if(wantPad){
+      try{
+        const need = Math.max(0, Math.ceil(anchorBottom + margin + 40));
+        const prev = scroller.getAttribute("data-mv-prev-pad");
+        if(prev==null) scroller.setAttribute("data-mv-prev-pad", String(scroller.style.paddingBottom||""));
+        const cur = parseFloat(String(scroller.style.paddingBottom||"").replace("px","")) || 0;
+        if(need > cur) scroller.style.paddingBottom = `${need}px`;
+
+        // Restore padding on next user interaction
+        if(!window.__mvActPadRestoreBound){
+          window.__mvActPadRestoreBound = true;
+          const restore = ()=>{
+            try{
+              const p = scroller.getAttribute("data-mv-prev-pad");
+              scroller.style.paddingBottom = (p==null ? "" : p);
+              scroller.removeAttribute("data-mv-prev-pad");
+            }catch{}
+            try{ window.__mvActPadRestoreBound = false; }catch{}
+            try{
+              window.removeEventListener("pointerdown", restore, true);
+              window.removeEventListener("touchstart", restore, true);
+              window.removeEventListener("keydown", restore, true);
+            }catch{}
+          };
+          try{
+            window.addEventListener("pointerdown", restore, true);
+            window.addEventListener("touchstart", restore, true);
+            window.addEventListener("keydown", restore, true);
+          }catch{}
+        }
+      }catch{}
+    }
+
     // Current element top in viewport
     const rEl = el.getBoundingClientRect();
     const delta = (rEl.top - targetTop);
 
-    // Compute absolute target scrollTop and clamp (prevents landing low due to scroll limits)
+    // Compute absolute target scrollTop and clamp
     let maxScroll = 0;
     try{ maxScroll = Math.max(0, (scroller.scrollHeight || 0) - (scroller.clientHeight || window.innerHeight)); }catch{}
     let targetScrollTop = 0;
@@ -6543,30 +6550,31 @@ function __scrollTimelineFoundItemToTopAnchor(el){
     if(targetScrollTop < 0) targetScrollTop = 0;
     if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
 
-    // Smooth scroll to anchored position
-    try{ scroller.scrollTo({ top: targetScrollTop, behavior: (window.__MV_ACTJUMP_INSTANT===1 ? "auto" : "smooth") }); }
+    const noSmooth = !!(opts.forceInstant || (window.__mvActJumpNoSmooth===true));
+    const behavior = noSmooth ? "auto" : "smooth";
+
+    try{ scroller.scrollTo({ top: targetScrollTop, behavior }); }
     catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
 
-    // Second pass: if after layout it drifted, re-anchor once
-    requestAnimationFrame(()=>{
-      try{
-        const r2 = el.getBoundingClientRect();
-        const d2 = (r2.top - targetTop);
-        if(Math.abs(d2) > 6){
-          let st = 0;
-          try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
-          if(st < 0) st = 0;
-          let max2 = 0;
-          try{ max2 = Math.max(0, (scroller.scrollHeight || 0) - (scroller.clientHeight || window.innerHeight)); }catch{}
-          if(max2 && st > max2) st = max2;
-          try{ scroller.scrollTo({ top: st, behavior: (window.__MV_ACTJUMP_INSTANT===1 ? "auto" : "smooth") }); }catch{ try{ scroller.scrollTop = st; }catch{} }
-        }
-      }catch{}
-    });
+    // Second pass: if after layout it drifted, re-anchor once (skip for instant jumps unless explicitly requested)
+    const doSecond = !noSmooth || opts.finalPass;
+    if(doSecond){
+      requestAnimationFrame(()=>{
+        try{
+          const r2 = el.getBoundingClientRect();
+          const d2 = (r2.top - targetTop);
+          if(Math.abs(d2) > 4){
+            let st = 0;
+            try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
+            if(st < 0) st = 0;
+            if(maxScroll && st > maxScroll) st = maxScroll;
+            try{ scroller.scrollTo({ top: st, behavior: (noSmooth ? "auto" : "smooth") }); }catch{ try{ scroller.scrollTop = st; }catch{} }
+          }
+        }catch{}
+      });
+    }
   }catch{}
 }
-
-
 
 function __msScrollToKey(key){
   if(!key) return false;
@@ -6575,7 +6583,6 @@ function __msScrollToKey(key){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
-        try{ __ensureTimelineBottomSpacer(); }catch{}
         try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{}
         __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
@@ -11098,9 +11105,6 @@ function __mvJumpToTimelineAct(actId){
 
   const key = `act:${actId}`;
 
-  // V226C1B0C5: make the anchor jump "instant" to avoid iOS bounce (only for this jump)
-  try{ window.__MV_ACTJUMP_INSTANT = 1; }catch{}
-
   // We must wait until the Timeline accordion body is actually visible; otherwise iOS/Safari reports
   // getBoundingClientRect().top as 0 and scrollToElWithOffset lands at the top (day 1).
   const waitTimelineVisible = (cb, tries=0)=>{
@@ -11125,32 +11129,50 @@ function __mvJumpToTimelineAct(actId){
     setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
-  const attemptScroll = ()=>{
+  // One-shot anchored scroll using the same path as the timeline search, but:
+  // - no "smooth" (avoids bounce in iOS)
+  // - one final correction pass after layout settles
+  const doJump = ()=>{
+    // Ensure layout numbers are up to date for the anchor computation
+    try{ if(typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch{}
+    try{ if(typeof syncMainScrollLayout==="function") syncMainScrollLayout(); }catch{}
+
+    // Enable jump mode for the anchor helper (instant + temporary bottom padding)
+    try{ window.__mvActJumpNoSmooth = true; }catch{}
+    try{ window.__mvActJumpNeedsPad = true; }catch{}
+
     try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     let ok = false;
     try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
-    if(ok){
-      // One light correction after layout settles (no extra retries => less lag/bounce)
-      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} }); });
-      // Clear instant flag shortly after the jump so normal smooth scrolling remains elsewhere
-      setTimeout(()=>{ try{ delete window.__MV_ACTJUMP_INSTANT; }catch{} }, 400);
-      return true;
+    // If the item didn't exist yet, retry next frame
+    if(!ok){
+      requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
     }
-    return false;
+
+    // Final correction pass after the browser finishes any layout adjustments
+    setTimeout(()=>{
+      try{
+        const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+        if(el && typeof __scrollTimelineFoundItemToTopAnchor==="function"){
+          __scrollTimelineFoundItemToTopAnchor(el, { forceInstant:true, finalPass:true });
+        }
+      }catch{}
+      try{ window.__mvActJumpNoSmooth = false; }catch{}
+      try{ window.__mvActJumpNeedsPad = false; }catch{}
+    }, 220);
   };
 
-  // Close modal already happened; now switch & scroll after layout settles.
   setTimeout(()=>{
     waitTimelineVisible(()=>{
-      // Give layout two frames to settle (fixed header/totals offsets)
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
-          const ok = attemptScroll();
-          if(!ok){ setTimeout(attemptScroll, 160); }
+          doJump();
         });
       });
     });
   }, 0);
+}
+
 }
 
 
@@ -19107,9 +19129,6 @@ function __aiCheckOverlapAroundActivity(act){
     const msg = __aiBuildOverlapMessageForActivityInterval(cur, prev, next);
     return msg || "";
   }catch{ return ""; }
-  // V226C1B0C5: ensure bottom spacer so last items can anchor under fixed bars
-  try{ __ensureTimelineBottomSpacer(); }catch{}
-
 }
 /* ================= /Overlap alerts (V226C1A7B) ================= */
 
