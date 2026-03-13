@@ -1121,7 +1121,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* V222B3: Transport right-rail cleanup (stable lanes) */
 .mvLegRightRail{
   display:grid;
-  grid-template-rows:1.25rem 1.25rem auto auto;
+  grid-template-rows:1.25rem auto auto auto;
   justify-items:end;
   align-items:start;
   row-gap:0.25rem;
@@ -1185,9 +1185,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvLegRightDur{line-height:1.1;}
 .mvLegRightBottom{align-self:end;}
 
-/* V226C1B0D4: Move bottom badge up one row (no layout changes elsewhere) */
-.mvLegRightBottom{ grid-row:4; align-self:start; }
-.mvLegRightSpacer{ grid-row:5; }
 
 
 /* V222B4: Make intermediate stay (timeline compact) truly compact: remove extra vertical space from right rail grid */
@@ -1688,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0D4_AK_BADGE_BADGES_UP_ONE_ROW_ONLY";
+const APP_BUILD = "V226C1B0D5_AK_BADGE_ALIGN_WITHOUT_EMPTY_ROW";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9409,10 +9406,7 @@ function legCard(leg, idx) {
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
-        <div class="mvLegRightMid">
-          ${__sp.durText ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div>` : ""}
-        </div>
-        <div class="mvLegRightSpacer"></div>
+        ${__sp.durText ? `<div class="mvLegRightMid"><div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div></div>` : ""}
         ${__rtBadge ? `<div class="mvLegRightBottom">${__rtBadge}</div>` : ""}
       </div>
     </button>
@@ -12339,10 +12333,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
               ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}
             </div>
             <div class="mvAiRightSlot">${__aiIconHTML}</div>
-            <div class="mvLegRightMid">
-              ${__rightDurHTML || ""}
-            </div>
-            <div class="mvLegRightSpacer"></div>
+            ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
           </div>
         </div>
