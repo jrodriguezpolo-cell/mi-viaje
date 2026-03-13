@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT</title>
+<title>V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BR_AK_MORE_OPTIONS_PAGE2_SHORT_NO_REPEATS";
+const APP_BUILD = "V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16494,6 +16494,19 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
     __aiGetCityPage(cityKey){
       const k = String(cityKey||"").trim();
       if(!k) return 0;
+      // V226C1B0BS: al arrancar la app, empezar SIEMPRE por la página 1/2 (page=0).
+      // Reseteo "one-shot" por carga para evitar que se abra directamente en 2/2 por estado persistido.
+      try{
+        if(!window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1){
+          window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1 = true;
+          for(let i=0;i<localStorage.length;i++){
+            const kk = localStorage.key(i);
+            if(kk && kk.indexOf("MV_AI_CITY_PAGE_V1:")===0){
+              try{ localStorage.setItem(kk, "0"); }catch(e){}
+            }
+          }
+        }
+      }catch(e){}
       try{
         const v = parseInt(localStorage.getItem(this.__aiMoreOptionsLSKey(k)) || "0", 10);
         return (v === 1) ? 1 : 0;
