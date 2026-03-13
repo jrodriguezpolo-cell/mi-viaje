@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN</title>
+<title>V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C6_AK_ACTS_JUMP_ANCHOR_FINAL_PASS_NO_REBOUNCE";
+const APP_BUILD = "V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -6467,11 +6467,10 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
-function __scrollTimelineFoundItemToTopAnchor(el, opts){
-  // V212+: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
+function __scrollTimelineFoundItemToTopAnchor(el){
+  // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
   try{
     if(!el) return;
-    opts = opts || {};
     const scroller = document.getElementById("mainScroll") || document.scrollingElement || document.documentElement;
 
     // Anchor is the bottom edge of the timeline fixed bar (subSectionHeader) in viewport coords
@@ -6503,46 +6502,11 @@ function __scrollTimelineFoundItemToTopAnchor(el, opts){
     const margin = 10; // comfortable gap below the bar
     const targetTop = anchorBottom + margin;
 
-    // When jumping from Actividades, we may need extra scroll room near the end of the list.
-    const wantPad = !!(opts.forceInstant || (window.__mvActJumpNeedsPad===true));
-    if(wantPad){
-      try{
-        const need = Math.max(0, Math.ceil(anchorBottom + margin + 40));
-        const prev = scroller.getAttribute("data-mv-prev-pad");
-        if(prev==null) scroller.setAttribute("data-mv-prev-pad", String(scroller.style.paddingBottom||""));
-        const cur = parseFloat(String(scroller.style.paddingBottom||"").replace("px","")) || 0;
-        if(need > cur) scroller.style.paddingBottom = `${need}px`;
-
-        // Restore padding on next user interaction
-        if(!window.__mvActPadRestoreBound){
-          window.__mvActPadRestoreBound = true;
-          const restore = ()=>{
-            try{
-              const p = scroller.getAttribute("data-mv-prev-pad");
-              scroller.style.paddingBottom = (p==null ? "" : p);
-              scroller.removeAttribute("data-mv-prev-pad");
-            }catch{}
-            try{ window.__mvActPadRestoreBound = false; }catch{}
-            try{
-              window.removeEventListener("pointerdown", restore, true);
-              window.removeEventListener("touchstart", restore, true);
-              window.removeEventListener("keydown", restore, true);
-            }catch{}
-          };
-          try{
-            window.addEventListener("pointerdown", restore, true);
-            window.addEventListener("touchstart", restore, true);
-            window.addEventListener("keydown", restore, true);
-          }catch{}
-        }
-      }catch{}
-    }
-
     // Current element top in viewport
     const rEl = el.getBoundingClientRect();
     const delta = (rEl.top - targetTop);
 
-    // Compute absolute target scrollTop and clamp
+    // Compute absolute target scrollTop and clamp (prevents landing low due to scroll limits)
     let maxScroll = 0;
     try{ maxScroll = Math.max(0, (scroller.scrollHeight || 0) - (scroller.clientHeight || window.innerHeight)); }catch{}
     let targetScrollTop = 0;
@@ -6550,31 +6514,28 @@ function __scrollTimelineFoundItemToTopAnchor(el, opts){
     if(targetScrollTop < 0) targetScrollTop = 0;
     if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
 
-    const noSmooth = !!(opts.forceInstant || (window.__mvActJumpNoSmooth===true));
-    const behavior = noSmooth ? "auto" : "smooth";
-
-    try{ scroller.scrollTo({ top: targetScrollTop, behavior }); }
+    // Smooth scroll to anchored position
+    try{ scroller.scrollTo({ top: targetScrollTop, behavior: "smooth" }); }
     catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
 
-    // Second pass: if after layout it drifted, re-anchor once (skip for instant jumps unless explicitly requested)
-    const doSecond = !noSmooth || opts.finalPass;
-    if(doSecond){
-      requestAnimationFrame(()=>{
-        try{
-          const r2 = el.getBoundingClientRect();
-          const d2 = (r2.top - targetTop);
-          if(Math.abs(d2) > 4){
-            let st = 0;
-            try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
-            if(st < 0) st = 0;
-            if(maxScroll && st > maxScroll) st = maxScroll;
-            try{ scroller.scrollTo({ top: st, behavior: (noSmooth ? "auto" : "smooth") }); }catch{ try{ scroller.scrollTop = st; }catch{} }
-          }
-        }catch{}
-      });
-    }
+    // Second pass: if after layout it drifted, re-anchor once
+    requestAnimationFrame(()=>{
+      try{
+        const r2 = el.getBoundingClientRect();
+        const d2 = (r2.top - targetTop);
+        if(Math.abs(d2) > 6){
+          let st = 0;
+          try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
+          if(st < 0) st = 0;
+          if(maxScroll && st > maxScroll) st = maxScroll;
+          try{ scroller.scrollTo({ top: st, behavior: "smooth" }); }catch{ try{ scroller.scrollTop = st; }catch{} }
+        }
+      }catch{}
+    });
   }catch{}
 }
+
+
 
 function __msScrollToKey(key){
   if(!key) return false;
@@ -11129,50 +11090,31 @@ function __mvJumpToTimelineAct(actId){
     setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
-  // One-shot anchored scroll using the same path as the timeline search, but:
-  // - no "smooth" (avoids bounce in iOS)
-  // - one final correction pass after layout settles
-  const doJump = ()=>{
-    // Ensure layout numbers are up to date for the anchor computation
-    try{ if(typeof syncTopStackHeights==="function") syncTopStackHeights(); }catch{}
-    try{ if(typeof syncMainScrollLayout==="function") syncMainScrollLayout(); }catch{}
-
-    // Enable jump mode for the anchor helper (instant + temporary bottom padding)
-    try{ window.__mvActJumpNoSmooth = true; }catch{}
-    try{ window.__mvActJumpNeedsPad = true; }catch{}
-
+  const attemptScroll = ()=>{
     try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     let ok = false;
     try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
-    // If the item didn't exist yet, retry next frame
     if(!ok){
+      // One more try next frame after DOM paint
       requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
     }
-
-    // Final correction pass after the browser finishes any layout adjustments
-    setTimeout(()=>{
-      try{
-        const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
-        if(el && typeof __scrollTimelineFoundItemToTopAnchor==="function"){
-          __scrollTimelineFoundItemToTopAnchor(el, { forceInstant:true, finalPass:true });
-        }
-      }catch{}
-      try{ window.__mvActJumpNoSmooth = false; }catch{}
-      try{ window.__mvActJumpNeedsPad = false; }catch{}
-    }, 220);
   };
 
+  // Close modal already happened; now switch & scroll after layout settles.
   setTimeout(()=>{
     waitTimelineVisible(()=>{
+      // Give layout two frames to settle (fixed header/totals offsets)
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
-          doJump();
+          attemptScroll();
+          // defensive retries in case of slow render
+          setTimeout(attemptScroll, 160);
+          setTimeout(attemptScroll, 360);
+          setTimeout(attemptScroll, 700);
         });
       });
     });
   }, 0);
-}
-
 }
 
 
@@ -17371,11 +17313,19 @@ __aiBuildDayBuckets(trip){
         const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
         const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
         const __pagesN = (__availN > 5) ? 2 : 1;
-        const __pageN = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
+
+        // Si ya no hay 2 páginas (por dedupe o cambios), forzar página 0 para evitar arrancar en 2/2 con listas cortas
+        const __storedPage = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
+        const __pageN = (__pagesN > 1) ? (__storedPage % 2) : 0;
+        if(sec && sec.cityKey && __pagesN === 1 && __storedPage !== 0 && typeof this.__aiSetCityPage === "function"){ try{ this.__aiSetCityPage(sec.cityKey,0); }catch{} }
+
         const __pageLabel = (__pagesN > 1) ? ` · Viendo ${__pageN+1}/${__pagesN}` : ``;
         const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
         const __disableMore = !(__availN > 5);
-        const gapsHtml = sec.gaps.map((g,gi)=>{
+
+        // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
+        const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
+        const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
                       <input class="mt-1" type="checkbox" data-ai-spot="${sidx}:${gi}:${pi}">
