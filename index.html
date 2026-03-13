@@ -104,6 +104,23 @@ function deleteItemById(kind, id) {
   .timelineItem.past { opacity: 0.45; }
   .timelineItem.today { background-color: #ecfdf5; border-color: #10b981; }
 
+  /* V226C1B0BV: Actividades title as an obvious button in subSectionHeader */
+  .mvActsTitleBtn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid rgba(148,163,184,0.45);
+    background:rgba(255,255,255,0.92);
+    box-shadow:0 1px 2px rgba(15,23,42,0.06);
+    cursor:pointer;
+    user-select:none;
+  }
+  .mvActsTitleBtn:active{ transform: scale(0.985); }
+  .mvActsTitleBtn:focus{ outline:none; box-shadow:0 0 0 3px rgba(59,130,246,.22), 0 1px 2px rgba(15,23,42,0.06); }
+
 
 .ios-scroll{ -webkit-overflow-scrolling: touch; }
 
@@ -1651,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BU_AK_ACTS_COUNT_BUTTON_IN_HEADERBAR";
+const APP_BUILD = "V226C1B0BV_AK_ACTS_BUTTON_STYLING_AND_JUMP_TO_TIMELINE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -1927,6 +1944,9 @@ function updateSubSectionHeader(viewName){
       const sum = __mvGetActivitiesSummary ? __mvGetActivitiesSummary() : { total: 0 };
       const n = Number(sum && sum.total) || 0;
       title.textContent = `Actividades ${n}`;
+      title.classList.add("mvActsTitleBtn");
+      title.setAttribute("role","button");
+      try{ title.tabIndex = 0; }catch{}
       title.setAttribute("title", "Ver resumen por ciudad");
       // Bind once
       if(!(title.dataset && title.dataset.actsBound==="1")){
@@ -1938,10 +1958,20 @@ function updateSubSectionHeader(viewName){
           __mvShowActivitiesByCityModal();
         });
         title.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
+        title.addEventListener("keydown", (e)=>{
+          const k = e.key || e.code || "";
+          if(k !== "Enter" && k !== " " && k !== "Spacebar") return;
+          try{ e.preventDefault(); e.stopPropagation(); }catch{}
+          try{ if(String(activeView||"")!=="acts") return; }catch{}
+          __mvShowActivitiesByCityModal();
+        });
       }
-    }catch{ title.textContent = txt; }
+    }catch{ title.textContent = txt; try{ title.classList.add("mvActsTitleBtn"); }catch{} try{ title.setAttribute("role","button"); }catch{} try{ title.tabIndex = 0; }catch{} }
   } else {
     title.textContent = txt;
+    try{ title.classList.remove("mvActsTitleBtn"); }catch{}
+    try{ title.removeAttribute("role"); }catch{}
+    try{ title.removeAttribute("tabindex"); }catch{}
     try{ title.removeAttribute("title"); }catch{}
   }
   bar.classList.remove("hidden");
@@ -10990,10 +11020,14 @@ function __mvShowActivitiesCityDetailModal(cityKey){
     const t = it.time ? escapeHtml(it.time) : "";
     const when = t ? `${escapeHtml(d)} · ${t}` : escapeHtml(d);
     return `
-      <div class="px-3 py-2 rounded-2xl border border-slate-200 bg-white">
+      <button type="button"
+        class="tap w-full text-left px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
+        data-acts-jump-act="${escapeHtml(it.id)}"
+        data-acts-jump-date="${escapeHtml(it.date||"")}"
+        title="Ir al cronograma">
         <div class="font-semibold text-slate-900">${escapeHtml(it.title)}</div>
         <div class="text-xs text-slate-500 mt-0.5">${when}</div>
-      </div>
+      </button>
     `;
   }).join("");
 
@@ -11008,7 +11042,104 @@ function __mvShowActivitiesCityDetailModal(cityKey){
   btnClose.onclick = closeModal;
 
   showModal(`${city.cityName} · ${city.count}`, `<div class="space-y-2">${lines || `<div class="text-sm text-slate-500">No hay actividades en esta ciudad.</div>`}</div>`, [btnBack, btnClose]);
+
+  // V226C1B0BV: Tap on an activity => jump to Cronograma on that item and keep it highlighted until next user interaction
+  try{
+    document.querySelectorAll("[data-acts-jump-act]").forEach(el=>{
+      if(el && el.dataset && el.dataset.boundJump==="1") return;
+      if(el && el.dataset) el.dataset.boundJump="1";
+      el.addEventListener("click",(e)=>{
+        try{ e.preventDefault(); e.stopPropagation(); }catch{}
+        const actId = String(el.getAttribute("data-acts-jump-act")||"").trim();
+        const iso = String(el.getAttribute("data-acts-jump-date")||"").trim();
+        try{ closeModal(); }catch{}
+        try{ __mvJumpToTimelineAct(actId, iso); }catch{}
+      });
+    });
+  }catch{}
 }
+
+
+function __mvJumpToTimelineAct(actId, iso){
+  actId = String(actId||"").trim();
+  iso = String(iso||"").trim();
+  if(!actId) return;
+
+  // Switch to cronograma
+  try{ if(typeof setView === "function") setView("timeline"); }catch{}
+  try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
+
+  // After render settles, find the timeline card and anchor it just below the fixed bars
+  const tryFindAndGo = ()=>{
+    let target = null;
+    try{
+      const escId = (CSS && CSS.escape) ? CSS.escape(actId) : actId.replace(/"/g,'\\"');
+      target = document.querySelector('#timelineList .timelineItem[data-tl-jump-type="act"][data-tl-jump-id="'+escId+'"]')
+            || document.getElementById("tl-act-"+actId)
+            || document.getElementById("tl-act-"+escId);
+    }catch{}
+    if(!target) return false;
+
+    // Persistent highlight (removed on next user interaction)
+    try{
+      const key = `act:${actId}`;
+      if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key);
+      else target.classList.add("tlPersistentFound");
+    }catch{}
+
+    try{
+      if(typeof __scrollTimelineFoundItemToTopAnchor==="function") __scrollTimelineFoundItemToTopAnchor(target);
+      else target.scrollIntoView({behavior:"smooth", block:"start"});
+    }catch{ try{ target.scrollIntoView(true); }catch{} }
+
+    try{
+      target.classList.add("rtFlash");
+      setTimeout(()=>{ try{ target.classList.remove("rtFlash"); }catch{} }, 900);
+    }catch{}
+
+    // Clear highlight after first meaningful user interaction
+    try{ __mvBindClearTimelineHighlightOnce(); }catch{}
+    return true;
+  };
+
+  // Two RAFs to let view/layout settle (iOS)
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(tryFindAndGo()) return;
+    // Last retry shortly after in case timeline rendering is async
+    setTimeout(()=>{ tryFindAndGo(); }, 120);
+  }));
+}
+
+// Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
+function __mvBindClearTimelineHighlightOnce(){
+  try{
+    if(window.__mvTlClearOnceArmed) return;
+    window.__mvTlClearOnceArmed = true;
+
+    const clear = ()=>{
+      window.__mvTlClearOnceArmed = false;
+      try{
+        if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight();
+      }catch{}
+      try{
+        document.removeEventListener("pointerdown", onPtr, true);
+        document.removeEventListener("keydown", onKey, true);
+        const ms = document.getElementById("mainScroll");
+        if(ms) ms.removeEventListener("scroll", onScroll, true);
+      }catch{}
+    };
+
+    const onPtr = (e)=>{ clear(); };
+    const onKey = (e)=>{ clear(); };
+    const onScroll = (e)=>{ clear(); };
+
+    document.addEventListener("pointerdown", onPtr, true);
+    document.addEventListener("keydown", onKey, true);
+    const ms = document.getElementById("mainScroll");
+    if(ms) ms.addEventListener("scroll", onScroll, true);
+  }catch{ try{ window.__mvTlClearOnceArmed = false; }catch{} }
+}
+
 
 function __mvUpdateActivitiesCountUI(){
   // Update the subsection header button when we are in Actividades view
