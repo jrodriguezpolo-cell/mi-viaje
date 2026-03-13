@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0D4_AK_BADGE_BADGES_UP_ONE_ROW_ONLY</title>
+<title>V227_B1_ACT_JUMP_SMOOTH</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0D4_AK_BADGE_BADGES_UP_ONE_ROW_ONLY" rel="manifest"/>
+<link href="manifest.json?v=V227_B1_ACT_JUMP_SMOOTH" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0D5_AK_BADGE_ALIGN_WITHOUT_EMPTY_ROW";
+const APP_BUILD = "V227_B1_ACT_JUMP_SMOOTH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11124,8 +11124,46 @@ function __mvJumpToTimelineAct(actId){
     setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
+  // Check whether the target is already anchored under the fixed bar (avoid "trompicones")
+  const isAnchored = ()=>{
+    try{
+      const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
+      if(!el) return false;
+
+      // Same anchor logic as __scrollTimelineFoundItemToTopAnchor (keep consistent)
+      let anchorBottom = 0;
+      try{
+        const sh = document.getElementById("subSectionHeader");
+        if(sh && !sh.classList.contains("hidden")){
+          const r = sh.getBoundingClientRect();
+          anchorBottom = r.bottom || 0;
+        }
+      }catch{}
+      if(!anchorBottom){
+        try{
+          const css = getComputedStyle(document.documentElement).getPropertyValue("--top-stack-h").trim();
+          const n = parseFloat(css);
+          if(!isNaN(n) && n > 0) anchorBottom = n;
+        }catch{}
+      }
+      if(!anchorBottom){
+        const h1 = document.getElementById("appHeader");
+        const h2 = document.getElementById("stickyTotalBar");
+        const h3 = document.getElementById("subSectionHeader");
+        anchorBottom = (h1 ? h1.getBoundingClientRect().height : 0)
+                   + (h2 ? h2.getBoundingClientRect().height : 0)
+                   + ((h3 && !h3.classList.contains("hidden")) ? h3.getBoundingClientRect().height : 0);
+      }
+
+      const margin = 10;
+      const targetTop = anchorBottom + margin;
+      const rEl = el.getBoundingClientRect();
+      return Math.abs((rEl.top || 0) - targetTop) <= 8;
+    }catch{}
+    return false;
+  };
+
   const attemptScroll = ()=>{
-    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     let ok = false;
     try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
     if(!ok){
@@ -11140,16 +11178,25 @@ function __mvJumpToTimelineAct(actId){
       // Give layout two frames to settle (fixed header/totals offsets)
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
+          // Render once (can change heights); then scroll once
+          try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
           attemptScroll();
-          // defensive retries in case of slow render
-          setTimeout(attemptScroll, 160);
-          setTimeout(attemptScroll, 360);
-          setTimeout(attemptScroll, 700);
+
+          // Single conditional retry (only if not anchored yet). Avoid multiple visible jumps.
+          setTimeout(()=>{
+            try{
+              if(!isAnchored()){
+                // One last try after late layout/image/font settles
+                attemptScroll();
+              }
+            }catch{}
+          }, 260);
         });
       });
     });
   }, 0);
 }
+
 
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
