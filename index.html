@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI</title>
+<title>V226C1B0BN_AK_MORE_OPTIONS_PAGINATION_PER_CITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BN_AK_MORE_OPTIONS_PAGINATION_PER_CITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI";
+const APP_BUILD = "V226C1B0BN_AK_MORE_OPTIONS_PAGINATION_PER_CITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15570,6 +15570,30 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
               ev.preventDefault(); ev.stopPropagation(); return;
             }
 
+            // V226C1B0BN: "Más opciones" por ciudad (paginación 5/5 con persistencia)
+            const moreOpt = t && t.closest ? t.closest("[data-ai-more-options]") : null;
+            if(moreOpt){
+              try{
+                const keyRaw = String(moreOpt.getAttribute("data-ai-more-options")||"").trim();
+                if(keyRaw){
+                  // snapshot UI state
+                  const openMap = {};
+                  document.querySelectorAll("[id^='aiDayBody-']").forEach((el)=>{
+                    if(!el || !el.id) return;
+                    openMap[el.id] = !el.classList.contains("hidden");
+                  });
+                  const ms = document.getElementById("mainScroll");
+                  const scrollTop = ms ? (ms.scrollTop||0) : 0;
+
+                  try{ aiModule.__aiToggleCityPage(keyRaw); }catch{}
+
+                  // refrescar SOLO la acción actual, preservando UI
+                  try{ aiModule.refreshCurrentAction({ force:true, preserveOpenMap: openMap, preserveScrollTop: scrollTop }); }catch{}
+                }
+              }catch{}
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
+
             const toggle = t && t.closest ? t.closest("[data-ai-day-toggle]") : null;
             if(toggle){
               const bodyId = String(toggle.getAttribute("data-ai-day-toggle")||"");
@@ -16407,6 +16431,30 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
 
       return picked;
     },
+    // V226C1B0BN: paginación por ciudad para botón "Más opciones" (5/5)
+    __aiMoreOptionsLSKey(cityKey){
+      return "MV_AI_CITY_PAGE_V1:" + String(cityKey||"").trim();
+    },
+    __aiGetCityPage(cityKey){
+      const k = String(cityKey||"").trim();
+      if(!k) return 0;
+      try{
+        const v = parseInt(localStorage.getItem(this.__aiMoreOptionsLSKey(k)) || "0", 10);
+        return (v === 1) ? 1 : 0;
+      }catch(e){ return 0; }
+    },
+    __aiSetCityPage(cityKey, page){
+      const k = String(cityKey||"").trim();
+      if(!k) return;
+      const v = (parseInt(page,10) === 1) ? 1 : 0;
+      try{ localStorage.setItem(this.__aiMoreOptionsLSKey(k), String(v)); }catch(e){}
+    },
+    __aiToggleCityPage(cityKey){
+      const cur = this.__aiGetCityPage(cityKey);
+      const next = (cur === 1) ? 0 : 1;
+      this.__aiSetCityPage(cityKey, next);
+      return next;
+    },
 __aiBuildDayBuckets(trip){
       const buckets = {};
       const ensure = (d)=>{
@@ -16735,6 +16783,9 @@ __aiBuildDayBuckets(trip){
         // Excluir ciudad base/residencia (si está definida/inferida)
         if(homeCityKey && __normalizeCityKey(city) === homeCityKey) continue;
 
+        const cityKey = __normalizeCityKey(city);
+        const __mvCityPage = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
+
         const pois = getPOIsForCity(city);
         if(!pois.length){
           // si no hay catálogo concreto para esa ciudad, no inventamos genéricos: saltamos
@@ -16742,14 +16793,19 @@ __aiBuildDayBuckets(trip){
         }
 
         const gapBlocks = gaps.map((g,gi)=>{
-          // elegir 5 sin repetir dentro del día (rotación por hueco)
-          const startIdx = (gi*5) % pois.length;
-          const pool = [];
-          for(let k=0;k<pois.length;k++){
-            pool.push(pois[(startIdx+k)%pois.length]);
+          // elegir 5 por ciudad (paginación 5/5) + dedupe contra cronograma + wrap-around
+          const startAt = ((Number(__mvCityPage)||0) * 5) % pois.length;
+          const pick = [];
+          const seen = new Set();
+          for(let k=0;k<pois.length && pick.length<5;k++){
+            const p = pois[(startAt + k) % pois.length];
+            const tt = String(p && p.title || "").trim().toLowerCase();
+            if(!tt || seen.has(tt)) continue;
+            seen.add(tt);
+            if(scheduledTitles.has(tt)) continue;
+            pick.push(p);
           }
-          const chosen = pool.filter(p=>!scheduledTitles.has(p.title.toLowerCase())).slice(0,5);
-          const show = chosen.length ? chosen : pool.slice(0,5);
+          const show = pick;
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const gapTitle = `${hhmm(g.start)}–${hhmm(g.end)}`;
@@ -16852,7 +16908,7 @@ __aiBuildDayBuckets(trip){
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones"")}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
+                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
@@ -16876,6 +16932,29 @@ __aiBuildDayBuckets(trip){
       `;
 
       if(results) results.innerHTML = htmlOut;
+
+      // V226C1B0BN: preservar acordeones abiertos + scroll al alternar "Más opciones"
+      try{
+        const openMap = (opts && opts.preserveOpenMap) ? opts.preserveOpenMap : null;
+        if(openMap && typeof openMap === "object"){
+          Object.keys(openMap).forEach((id)=>{
+            if(!openMap[id]) return;
+            const el = document.getElementById(id);
+            if(el) el.classList.remove("hidden");
+          });
+        }
+      }catch{}
+      try{
+        if(opts && typeof opts.preserveScrollTop === "number"){
+          const top = Math.max(0, Math.floor(opts.preserveScrollTop));
+          requestAnimationFrame(()=>{
+            requestAnimationFrame(()=>{
+              const ms = document.getElementById("mainScroll");
+              if(ms) ms.scrollTop = top;
+            });
+          });
+        }
+      }catch{}
 
       // --- Acciones: Añadir seleccionadas ---
       try{
@@ -17625,7 +17704,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones"")}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
+                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
                 <div>${blk.proposals.length} propuestas</div>
               </div>
             </div>
