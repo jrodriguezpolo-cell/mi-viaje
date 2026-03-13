@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG</title>
+<title>V226C1B0BJ_AK_MORE_OPTIONS_ONLY_WORKING</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BE_AK_RESET_CITY_CACHE_SHUFFLE_WORKING" rel="manifest"/>
+<link href="manifest.json" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1629,7 +1629,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnCopyBtoA">
             Copiar B → A
           </button>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsMás opciones">
             Reiniciar viaje
           </button>
 <!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BI_AK_CITY_MORE_OPTIONS_SINGLE_BUTTON";
+const APP_BUILD = "V226C1B0BJ_AK_MORE_OPTIONS_ONLY_WORKING";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4926,7 +4926,7 @@ document.addEventListener("focusin", (e)=>{
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
 let __initialScrollFixDone = false;
 let __syncTopStackPending = false;
-let __syncTopStackDidFirstReset = false;
+let __syncTopStackDidFirstMás opciones = false;
 function scheduleSyncTopStackHeights(){
   if (__syncTopStackPending) return;
   __syncTopStackPending = true;
@@ -4935,8 +4935,8 @@ function scheduleSyncTopStackHeights(){
     syncTopStackHeights();
     // One-time safety: if mainScroll is born scrolled, reset once.
     const ms = $("mainScroll");
-    if (ms && !__syncTopStackDidFirstReset && ms.scrollTop > 4){
-      __syncTopStackDidFirstReset = true;
+    if (ms && !__syncTopStackDidFirstMás opciones && ms.scrollTop > 4){
+      __syncTopStackDidFirstMás opciones = true;
       ms.scrollTop = 0;
     }
   }));
@@ -8149,7 +8149,7 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   } catch {}
 
 
-  // Reset any previous sheet-only UI fragments
+  // Más opciones any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
 
   // Close any previous instance safely
@@ -13200,6 +13200,29 @@ function __aiOpenPendingReviewModal(){
     box.__aiPendBound = true;
     box.addEventListener("click", (ev)=>{
       const t = ev.target;
+            const resetBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
+            if(resetBtn){
+              try{
+                const key = String(resetBtn.getAttribute("data-ai-more-city")||"").trim();
+                if(key){
+                  // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
+                  // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
+                  const keys = new Set([key]);
+                  try{ keys.add(key.replace(/-/g," ")); }catch{}
+                  try{ keys.add(key.replace(/\s+/g,"-")); }catch{}
+                  try{
+                    keys.forEach((k)=>{
+                      if(!k) return;
+                      try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
+                      try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+                    });
+                  }catch{}
+                  toast("Recomendaciones reiniciadas para esta ciudad.");
+                }
+              }catch{}
+              try{ this.refreshCurrentAction({ force:true }); }catch{}
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
       if(!(t instanceof HTMLElement)) return;
       const confirmBtn = t.closest("[data-ai-pend-confirm]");
       if(confirmBtn){
@@ -14350,55 +14373,1230 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   const saveBtn = $("toolsSave");
   const loadBtn = $("toolsLoad");
+  const resetBtn = $("toolsMás opciones");
+  const copyAtoBBtn = $("btnCopyAtoB");
+  const copyBtoABtn = $("btnCopyBtoA");
+  const geminiKeyBtn = $("btnGeminiKey");
+
+  function __mvGetGeminiKey(){
+    try{
+      const candidates = ["miViaje.geminiApiKey","mv.geminiApiKey","GEMINI_API_KEY"];
+      for (const k of candidates){
+        const v = localStorage.getItem(k);
+        if (v && String(v).trim()) return { key: String(v).trim(), source: k };
+      }
+    }catch(e){}
+    return { key: "", source: "" };
+  }
+
+  function __mvSetGeminiKey(newKey){
+    const v = String(newKey || "").trim();
+    try{
+      if (!v) return false;
+      localStorage.setItem("miViaje.geminiApiKey", v);
+      // Compat (no rompe nada si no se usa aún)
+      localStorage.setItem("mv.geminiApiKey", v);
+      localStorage.setItem("GEMINI_API_KEY", v);
+      console.log("[GeminiKey] guardada en localStorage (miViaje.geminiApiKey)");
+      return true;
+    }catch(e){
+      console.error("[GeminiKey] error guardando", e);
+      return false;
+    }
+  }
+
+  function __mvClearGeminiKey(){
+    try{
+      localStorage.removeItem("miViaje.geminiApiKey");
+      localStorage.removeItem("mv.geminiApiKey");
+      localStorage.removeItem("GEMINI_API_KEY");
+      console.log("[GeminiKey] borrada de localStorage");
+      return true;
+    }catch(e){
+      console.error("[GeminiKey] error borrando", e);
+      return false;
+    }
+  }
+
+  function openGeminiKeyModal(){
+    try{
+      closeTools();
+      const cur = __mvGetGeminiKey();
+      const masked = cur.key ? ("•".repeat(Math.min(10, cur.key.length)) + (cur.key.length>10 ? "…" : "")) : "—";
+      const body = `
+        <div class="space-y-3">
+          <div class="text-sm text-slate-700">
+            Configura tu <b>Gemini API key</b> para futuras funciones de imagen IA.
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+            Estado actual: <span class="font-extrabold text-slate-900">${masked}</span>
+            ${cur.source ? `<span class="ml-2 opacity-75">(desde ${escapeHtml(cur.source)})</span>` : ``}
+          </div>
+          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Nueva API key</label>
+          <input id="geminiKeyInput" type="password" placeholder="Pega aquí tu API key…" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-semibold text-sm" autocomplete="off" />
+          <div id="geminiKeyStatus" class="text-xs text-slate-500"></div>
+          <div class="text-[11px] text-slate-500">
+            La clave se guarda localmente en este dispositivo (localStorage). No se sube a ningún servidor desde esta app.
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.addEventListener("click", ()=>{ try{ closeModal(); }catch{} });
+
+      const btnSave = document.createElement("button");
+      btnSave.type = "button";
+      btnSave.className = "tap px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold";
+      btnSave.textContent = "Guardar";
+      btnSave.addEventListener("click", ()=>{
+        const inp = document.getElementById("geminiKeyInput");
+        const status = document.getElementById("geminiKeyStatus");
+        const v = inp ? String(inp.value||"").trim() : "";
+        if (!v){
+          if(status) status.textContent = "No se ha introducido ninguna clave.";
+          console.warn("[GeminiKey] guardar: clave vacía");
+          return;
+        }
+        const ok = __mvSetGeminiKey(v);
+        if(status) status.textContent = ok ? "Clave guardada." : "No se pudo guardar la clave.";
+        if(ok){
+          setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
+        }
+      });
+
+      const btnClear = document.createElement("button");
+      btnClear.type = "button";
+      btnClear.className = "tap px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-extrabold";
+      btnClear.textContent = "Borrar";
+      btnClear.addEventListener("click", ()=>{
+        const status = document.getElementById("geminiKeyStatus");
+        const ok = __mvClearGeminiKey();
+        if(status) status.textContent = ok ? "Clave borrada." : "No se pudo borrar la clave.";
+        setTimeout(()=>{ try{ closeModal(); }catch{} }, 350);
+      });
+
+      const footer = cur.key ? [btnCancel, btnClear, btnSave] : [btnCancel, btnSave];
+      showModal("Gemini API key", body, footer);
+    }catch(e){
+      console.error("[GeminiKey] open modal error", e);
+    }
+  }
 
 
-            // Más opciones por ciudad (toggle por páginas de 5) — debe ir antes del toggle del acordeón
-            const moreCityBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
-            if(moreCityBtn){
+  function openTripsAndFocus(targetId){
+    closeTools();
+    openTripsModal();
+    // focus target inside modal once mounted
+    setTimeout(() => {
+      const el = $(targetId);
+      if (el) {
+        try { el.scrollIntoView({ block: "center", behavior: "smooth" }); } catch { el.scrollIntoView(); }
+        try { el.focus({ preventScroll: true }); } catch {}
+      }
+    }, 30);
+  }
+
+  if (saveBtn) saveBtn.addEventListener("click", () => openTripsAndFocus("doExport"));
+  if (loadBtn) loadBtn.addEventListener("click", () => openTripsAndFocus("doImport"));
+  if (geminiKeyBtn) geminiKeyBtn.addEventListener("click", openGeminiKeyModal);
+
+
+  const __deepClone = (obj) => {
+    try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
+  };
+
+  if (copyAtoBBtn) copyAtoBBtn.addEventListener("click", () => {
+    closeTools();
+    const ok = confirm("Esto sobrescribirá el viaje destino. ¿Continuar?");
+    if (!ok) return;
+    const src = state?.scenarios?.A || emptyScenario();
+    const cloned = __deepClone(src);
+    if (!cloned) { alert("No se pudo copiar (error interno)."); return; }
+    state.scenarios.B = cloned;
+    saveState();
+    renderAll();
+    try { syncStickyTotalsHeightVar(); } catch {}
+  });
+
+  if (copyBtoABtn) copyBtoABtn.addEventListener("click", () => {
+    closeTools();
+    const ok = confirm("Esto sobrescribirá el viaje destino. ¿Continuar?");
+    if (!ok) return;
+    const src = state?.scenarios?.B || emptyScenario();
+    const cloned = __deepClone(src);
+    if (!cloned) { alert("No se pudo copiar (error interno)."); return; }
+    state.scenarios.A = cloned;
+    saveState();
+    renderAll();
+    try { syncStickyTotalsHeightVar(); } catch {}
+  });
+
+
+  if (resetBtn) resetBtn.addEventListener("click", () => {
+    closeTools();
+    if (!confirm("¿Reiniciar viaje? Esto borrará los datos guardados en este dispositivo para este viaje.")) return;
+    try { localStorage.removeItem(LS_KEY); } catch {}
+    // No tocar claves/ajustes; solo el estado principal
+    location.reload();
+  });
+
+  // Escape to close
+  document.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape" && backdrop && !backdrop.classList.contains("hidden")) closeTools();
+  });
+
+  const btnForceRefreshApp = $("btnForceRefreshApp");
+  const btnHardRefreshApp = $("btnHardRefreshApp");
+  if (btnForceRefreshApp) btnForceRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __forceRefreshApp(); });
+  if (btnHardRefreshApp) btnHardRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __hardRefreshApp(); });
+  if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
+  if (btnNotifications) btnNotifications.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openNotificationsModal(); });
+  __setVisibleBuildLabel();
+  __setVersionedManifestHref();
+  __renderToolsDiagnostics();
+})();
+
+const __tn = $("timelineNext");
+if (__tn) __tn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToNextAfterCurrent(); });
+
+const __tt = $("timelineToday");
+if (__tt) __tt.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); scrollToCurrentTimelineItem(); });
+
+
+const __ro = $("btnReadOnly");
+if (__ro) __ro.addEventListener("click", () => { setReadOnly(!isReadOnly()); });
+$("btnCompare").addEventListener("click", ()=>{
+  const a = state.scenarios.A;
+  const b = state.scenarios.B;
+  const tot = (sc) => sc.legs.reduce((x,y)=>x+parseMoney(y.cost),0)
+    + sc.stays.reduce((x,y)=>x+parseMoney(y.cost),0)
+    + sc.activities.reduce((x,y)=>x+parseMoney(y.cost),0)
+    + parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10));
+  const ta = tot(a), tb = tot(b);
+  $("compareBox").classList.remove("hidden");
+  $("compareBox").innerHTML = `
+    <div class="font-extrabold">Comparativa (simple)</div>
+    <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${ta.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
+    <div class="flex justify-between"><span>B</span><span class="font-semibold">${tb.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
+    <div class="mt-2 text-sm ${ta<=tb ? "text-emerald-700" : "text-emerald-700"}">
+      Mejor: <b>${ta<=tb ? "A" : "B"}</b> (${Math.abs(ta-tb).toFixed(2)} de diferencia)
+    </div>
+  `;
+});
+
+/* Bottom nav: switch views (v89a) */
+document.querySelectorAll('[data-jump]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-jump');
+    if (!key) return;
+    try { setView(key); } catch {}
+  });
+});
+
+
+function syncHeaderHeightVar(){
+  const hdr = document.querySelector("header");
+  if (!hdr) return;
+  document.documentElement.style.setProperty("--app-header-h", hdr.offsetHeight + "px");
+}
+
+/* ----------------------------- Init ----------------------------- */
+
+
+function syncStickyTotalsHeightVar(){
+  // v78: keep legacy callers working
+  syncTopStackHeights();
+}
+
+function __tlGetTopOffsetPx(){
+  const cs = getComputedStyle(document.documentElement);
+  const h1 = parseFloat(cs.getPropertyValue("--app-header-h")) || 56;
+  const h2 = parseFloat(cs.getPropertyValue("--sticky-totals-h")) || 0;
+  return h1 + h2;
+}
+
+function rebuildTimelineControlsFixed(){ /* removed */ }
+
+
+/* removed anyTimelineAccordionOpen */
+
+
+function showHideTimelineControlsFixed(){ /* removed */ }
+
+
+function initTimelineControlsFixedObserver(){ /* removed */ }
+
+
+function __initTimelineNavBindings(){
+  const g = document.getElementById("tlViewGlobal");
+  const d = document.getElementById("tlViewDay");
+  const today = document.getElementById("timelineToday");
+  const next = document.getElementById("timelineNext");
+  const prevDay = document.getElementById("tlDayPrev");
+  const nextDay = document.getElementById("tlDayNext");
+
+  if (g && !g.__bound){
+    g.__bound = 1;
+    g.addEventListener("click", () => { timelineViewMode = "global"; renderTimeline(); });
+  }
+  if (d && !d.__bound){
+    d.__bound = 1;
+    d.addEventListener("click", () => { timelineViewMode = "day"; activeDayISO = ""; renderTimeline(); });
+  }
+  if (today && !today.__bound){
+    today.__bound = 1;
+    today.addEventListener("click", () => { try { scrollToCurrentTimelineItem(); } catch {} });
+  }
+  if (next && !next.__bound){
+    next.__bound = 1;
+    next.addEventListener("click", () => { try { scrollToNextTimelineItem(); } catch {} });
+  }
+  if (prevDay && !prevDay.__bound){
+    prevDay.__bound = 1;
+    prevDay.addEventListener("click", () => { try { moveActiveDay(-1); } catch {} });
+  }
+  if (nextDay && !nextDay.__bound){
+    nextDay.__bound = 1;
+    nextDay.addEventListener("click", () => { try { moveActiveDay(1); } catch {} });
+  }
+}
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  try { __restoreHardRefreshSnapshotIfNeeded(); } catch {}
+  loadState();
+  try { __renderToolsDiagnostics(); } catch {}
+  setupAccordion();
+  try { __initTimelineNavBindings(); } catch {}
+
+  syncHeaderHeightVar();
+  window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
+  
+    // Timeline view controls (Global / Day)
+    const _tlG = document.getElementById("tlViewGlobal");
+    const _tlD = document.getElementById("tlViewDay");
+    if (_tlG) _tlG.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("global"); };
+    if (_tlD) _tlD.onclick = (e) => { e.preventDefault(); e.stopPropagation(); setTimelineViewMode("day"); };
+  
+    const _tlPrev = document.getElementById("tlDayPrev");
+    const _tlNext = document.getElementById("tlDayNext");
+    if (_tlPrev) _tlPrev.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(-1); };
+    if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
+  
+  renderAll();
+  try { __renderToolsDiagnostics(); } catch {}
+  try { __startNotificationsEngine(); } catch {}
+  try { setView('timeline'); } catch {}
+  // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
+  try {
+    const sentinel = document.getElementById("timelineControlsSentinel");
+    const originalRow = sentinel ? sentinel.nextElementSibling : null;
+    if (originalRow && !window.__tlControlsTemplateHTML) {
+      window.__tlControlsTemplateHTML = originalRow.outerHTML;
+    } else if (!window.__tlControlsTemplateHTML) {
+      const g = document.getElementById("tlViewGlobal");
+      const row = g ? g.closest("div.flex.items-center.justify-between") : null;
+      if (row) window.__tlControlsTemplateHTML = row.outerHTML;
+    }
+  } catch (e) { /* no-op */ }
+
+  syncStickyTotalsHeightVar();
+  summaryExpanded = false;
+  applySummaryFold();
+  
+
+  // Sheet trash (single source of truth)
+  const sheetTrash = document.getElementById("eventSheetTrash");
+  if (sheetTrash && !sheetTrash.__bound) {
+    sheetTrash.__bound = true;
+    sheetTrash.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const kind = sheetTrash.dataset.kind;
+      const id = sheetTrash.dataset.id;
+      if (!kind || !id) return;
+      if (!confirm("¿Deseas eliminar este evento?")) return;
+
+      const ok = deleteItemById(kind, id);
+      if (!ok) { toast("No se pudo borrar (id no encontrado)"); return; }
+
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+      try { if (typeof renderAll === "function") renderAll(); } catch {}
+      try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
+      try { if (typeof calcSummary === "function") calcSummary(); } catch {}
+    });
+  }
+
+  // Sheet save (commit button)
+  const sheetSave = document.getElementById("eventSheetSave");
+  if (sheetSave && !sheetSave.__bound) {
+    sheetSave.__bound = true;
+    sheetSave.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      
+      // V226C1A7O: guard de conflicto para actividad y transporte reutilizando la detección ya validada
+      try{
+        const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+        let data = null;
+        if(ctx && String(ctx.kind)==="act"){
+          const detector = (window && window.__actOverlapPassiveInspector && typeof window.__actOverlapPassiveInspector.collect === "function")
+            ? window.__actOverlapPassiveInspector
+            : null;
+          data = detector ? detector.collect() : null;
+        } else if(ctx && String(ctx.kind)==="leg"){
+          data = __mvCollectLegSaveConflictsFromSheet();
+        }
+        const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
+        if(conflicts.length > 0){
+          const body = `
+            <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'}.</div>
+            <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
+              <div class="font-semibold text-slate-900">Eventos conflictivos</div>
+              <ul class="mt-2 space-y-1">${conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(__mvFmtHHMM(c.start))} → ${escapeHtml(__mvFmtHHMM(c.end))}]</span></li>`).join('')}</ul>
+            </div>
+            <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
+          `;
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
+          btnCancel.type = 'button';
+          btnCancel.textContent = 'Cancelar';
+          btnCancel.onclick = ()=>{ try{ closeModal(); }catch{} };
+          const btnForceSave = document.createElement('button');
+          btnForceSave.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
+          btnForceSave.type = 'button';
+          btnForceSave.textContent = 'Guardar de todas formas';
+          btnForceSave.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            try { if (typeof saveState === "function") saveState(); } catch {}
+            try{ __sheetSetSnapshot(); }catch{}
+            try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+            try {
+              if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+                if (typeof renderLegs === "function") renderLegs();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              } else if (__eventSheetCtx && __eventSheetCtx.kind === "stay") {
+                if (typeof renderStays === "function") renderStays();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              } else if (__eventSheetCtx && __eventSheetCtx.kind === "act") {
+                if (typeof renderActivities === "function") renderActivities();
+                if (typeof renderTimeline === "function") renderTimeline();
+                if (typeof calcSummary === "function") calcSummary();
+              }
+            } catch {}
+          };
+          try{ showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]); }catch{}
+          return;
+        }
+      }catch{}
+      try { if (typeof saveState === "function") saveState(); } catch {}
+      try{ __sheetSetSnapshot(); }catch{}
+
+      // Close sheet first (keeps UI consistent)
+      try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+
+      // Re-render only what is needed
+      try {
+        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+          if (typeof renderLegs === "function") renderLegs();
+          if (typeof renderTimeline === "function") renderTimeline();
+          if (typeof calcSummary === "function") calcSummary();
+        } else {
+          if (typeof renderAll === "function") renderAll();
+        }
+      } catch {}
+
+      try {
+        const fb = document.getElementById("eventSheetSaveFeedback");
+        if (fb) {
+          fb.classList.remove("hidden");
+          setTimeout(() => fb.classList.add("hidden"), 900);
+        }
+      } catch {}
+    });
+  }
+
+});
+</script>
+<button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
+<button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨<span id="aiFabBadge" class="hidden"></span></button>
+<div aria-hidden="true" class="hidden" id="aiSheetOverlay">
+  <div aria-label="IA" aria-modal="true" id="aiSheet" role="dialog">
+    <div id="aiSheetHeader">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex w-9 h-9 rounded-2xl bg-violet-50 items-center justify-center text-lg">✨</span>
+          <div class="min-w-0">
+            <div class="font-extrabold text-slate-900">IA · módulo aislado</div>
+            <div class="text-xs text-slate-500">Acción → Resultado · Info solo bajo demanda</div>
+          </div>
+        </div>
+      </div>
+      <button class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="aiSheetClose" type="button">Cerrar</button>
+    </div>
+
+    <div id="aiSheetBody">
+      <!-- STAGE 1: Hub compacto -->
+      <div id="aiHubStage">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <div class="text-xs font-semibold uppercase tracking-wide text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1">IA · funciones</div>
+          <div class="text-xs text-slate-500 font-semibold">Pulsa una acción · La ayuda está en la “i”</div>
+        </div>
+
+        <div id="aiPendingBar" class="hidden mb-3">
+          <button id="aiReviewPendingBtn" type="button" class="tap w-full px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-slate-900 font-extrabold flex items-center justify-between">
+            <span>Revisar pendientes IA</span>
+            <span id="aiPendingCountInline" class="text-xs font-extrabold bg-slate-900 text-white rounded-full px-2 py-1">0</span>
+          </button>
+        </div>
+
+        <!-- Legacy ids (kept hidden for stable wiring) -->
+        <button id="aiPick" type="button" class="hidden"></button>
+        <button id="aiGenerate" type="button" class="hidden"></button>
+
+        <div class="aiActionsGrid" id="aiActionsHub">
+          <div class="aiActionCard" data-ai-title="Resumen contextual del viaje" data-ai-desc="Resumen práctico del viaje actual, sin modificar nada. Útil para ver de un vistazo lo más relevante y si hay algo a revisar.">
+            <button class="tap aiActionMain" id="aiActionSummary" type="button">Resumen contextual del viaje</button>
+            <button class="tap aiInfoBtn" type="button" aria-label="Info">i</button>
+          </div>
+
+          
+          <div class="aiActionCard" data-ai-title="Descubrir ciudades y completar viaje" data-ai-desc="Detecta ciudades del viaje, localiza huecos (09:00–22:00, mínimo 3h) y propone sitios concretos por día/hueco para añadir a Actividades mediante el bridge seguro.">
+            <button class="tap aiActionMain" id="aiActionUnified" type="button">Descubrir ciudades y completar viaje</button>
+            <button class="tap aiInfoBtn" type="button" aria-label="Info">i</button>
+          </div>
+<div class="aiActionCard" data-ai-title="Revisar puntos delicados" data-ai-desc="Señala días/transiciones delicadas o cargadas para que las revises. No cambia el viaje automáticamente.">
+            <button class="tap aiActionMain" id="aiActionSensitive" type="button">Revisar puntos delicados del viaje</button>
+            <button class="tap aiInfoBtn" type="button" aria-label="Info">i</button>
+          </div>
+
+          <div class="aiActionCard" data-ai-title="Revisar tramos de transporte" data-ai-desc="Revisa tramos de transporte y marca observaciones útiles (horas, campos vacíos, coherencia). No modifica el viaje.">
+            <button class="tap aiActionMain" id="aiActionTransport" type="button">Revisar tramos de transporte</button>
+            <button class="tap aiInfoBtn" type="button" aria-label="Info">i</button>
+          </div>
+
+          </div>
+      </div>
+
+      <!-- STAGE 2: Resultado -->
+      <div id="aiDetailStage" class="hidden">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <button id="aiBackToHub" type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold">← Acciones</button>
+          <div class="min-w-0 flex-1 text-center">
+            <div id="aiDetailTitle" class="font-extrabold text-slate-900 truncate">—</div>
+          </div>
+          <button id="aiDetailInfoBtn" type="button" class="tap w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 font-extrabold">i</button>
+        </div>
+
+        <!-- RESULTADOS PRIMERO -->
+        <div class="text-sm text-slate-500 hidden" id="aiStatus"></div>
+        <div class="hidden" id="aiBridgeNote"></div>
+        <div class="mt-2" id="aiActionBody"></div>
+        <div class="mt-3 space-y-3" id="aiResults"></div>
+        <div class="mt-3 flex flex-wrap justify-end gap-2" id="aiActionFooter"></div>
+
+        <!-- Info bajo demanda -->
+        <div class="mt-3">
+          <button class="tap inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-slate-900" id="aiInfoToggle" type="button">
+            <span class="inline-flex w-[18px] h-[18px] items-center justify-center rounded-full border border-slate-300 bg-white font-extrabold">i</span>
+            <span>Más info (qué ha tenido en cuenta)</span>
+            <span aria-hidden="true" class="opacity-70">▾</span>
+          </button>
+          <div class="hidden mt-2 space-y-3" id="aiInfoDrawer">
+            <div class="rounded-2xl border border-violet-100 bg-violet-50/70 p-3" id="aiContextBlock"></div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/70 p-3" id="aiPreferencesBlock"></div>
+          </div>
+        </div>
+
+        <!-- Legacy button id used in transport action -->
+        <button id="aiTransportGoLegs" type="button" class="hidden"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IA: mini ayuda (i) por acción -->
+<div id="aiActionInfoOverlay" class="hidden fixed inset-0 z-[6900]">
+  <div id="aiActionInfoBackdrop" class="absolute inset-0 bg-black/40"></div>
+  <div class="absolute inset-0 flex items-end sm:items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 flex items-center justify-between border-b border-slate-200">
+        <div class="font-extrabold text-slate-900" id="aiActionInfoTitle">Info</div>
+        <button class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="aiActionInfoClose" type="button">✕</button>
+      </div>
+      <div class="p-5 text-sm text-slate-700 whitespace-pre-wrap" id="aiActionInfoBody"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const AI_PREFS_KEY = "miviaje.aiModulePrefs.v225f2";
+  const AI_CITY_CATALOG = {
+    "madrid":[
+      { title:"Museo del Prado", summary:"Colección icónica para una visita potente sin dispersarte.", why:"Es una de las visitas más redondas si quieres asegurar un gran imprescindible." },
+      { title:"Parque del Retiro", summary:"Paseo amplio y muy cómodo para encajar entre otros hitos.", why:"Funciona bien cuando quieres aire y una pausa visual sin salir del centro." },
+      { title:"Mercado de San Miguel", summary:"Parada gastronómica fácil de integrar en una jornada urbana.", why:"Aporta ambiente y logística sencilla si el día está cargado." },
+      { title:"Palacio Real", summary:"Visita monumental en el centro, muy fácil de encajar por bloques.", why:"Es un imprescindible claro si quieres una pieza histórica potente." },
+      { title:"Gran Vía + Plaza Mayor", summary:"Paseo urbano clásico para completar un tramo libre sin mucha logística.", why:"Te da sensación de ciudad y encaja bien como bloque flexible." }
+    ],
+    "barcelona":[
+      { title:"Sagrada Familia", summary:"Visita principal de la ciudad con fuerte impacto visual.", why:"Compensa reservarle hueco porque marca claramente el viaje." },
+      { title:"Passeig de Gràcia y Casa Batlló", summary:"Ruta cómoda para combinar arquitectura y paseo.", why:"Encaja bien incluso con poco margen porque concentra mucho interés." },
+      { title:"Barrio Gótico", summary:"Zona muy caminable para descubrir ambiente histórico.", why:"Es una opción flexible para huecos medianos o tarde-noche." },
+      { title:"Park Güell", summary:"Arquitectura y vistas en un parque muy representativo.", why:"Aporta un ‘imprescindible’ extra si ya tienes Sagrada Familia." },
+      { title:"Montjuïc (vistas + paseo)", summary:"Zona amplia para combinar miradores, paseo y algún museo.", why:"Funciona bien para variar del centro y ajustar intensidad." }
+    ],
+    "nueva york":[
+      { title:"Top of the Rock", summary:"Mirador muy práctico para ubicar la ciudad desde el principio.", why:"Ayuda a situarte rápido y encaja muy bien en un primer día." },
+      { title:"Central Park + Museum Mile", summary:"Combinación equilibrada entre paseo y visita cultural.", why:"Permite ajustar la intensidad según el tiempo disponible." },
+      { title:"DUMBO y Brooklyn Bridge", summary:"Ruta clara con vistas potentes y recorrido muy reconocible.", why:"Aporta una experiencia muy completa sin necesidad de mucha logística." },
+      { title:"Statue of Liberty & Ellis Island", summary:"Icono clásico con visita bien estructurada por ferry.", why:"Da una lectura muy completa de la ciudad y su historia." },
+      { title:"High Line + Chelsea Market", summary:"Paseo lineal cómodo con parada gastronómica integrada.", why:"Encaja perfecto en huecos de media jornada sin dispersarte." }
+    ],
+    "washington":[
+      { title:"National Mall", summary:"Eje principal para agrupar monumentos y museos clave.", why:"Es la manera más limpia de ordenar una primera toma de contacto." },
+      { title:"Capitolio y Library of Congress", summary:"Bloque institucional muy sólido para una mañana.", why:"Concentra visitas con identidad propia y poco desplazamiento." },
+      { title:"Georgetown", summary:"Barrio agradable para bajar ritmo al final del día.", why:"Equilibra jornadas muy monumentales con una zona más relajada." },
+      { title:"Smithsonian Air and Space Museum", summary:"Museo muy potente y fácil de integrar en el Mall.", why:"Aporta un ‘wow’ claro sin complicaciones de traslado." },
+      { title:"Lincoln Memorial + Reflecting Pool", summary:"Tramo icónico y muy reconocible, especialmente al atardecer.", why:"Cierra muy bien un día de monumentos con poca logística." }
+    ],
+    "orlando":[
+      { title:"Disney Springs", summary:"Plan flexible para tarde-noche sin exigir parque completo.", why:"Da ambiente y margen si el día viene ya muy cargado." },
+      { title:"Universal CityWalk", summary:"Opción fácil para completar una jornada de ocio.", why:"Suele funcionar bien cuando quieres algo ligero pero con ambiente." },
+      { title:"Winter Park Scenic Area", summary:"Zona tranquila si te apetece bajar intensidad fuera del núcleo temático.", why:"Aporta variedad cuando el viaje mezcla días muy intensos." },
+      { title:"Walt Disney World (Magic Kingdom)", summary:"El parque más emblemático si quieres una jornada principal temática.", why:"Es el ‘must’ más universal si vas a elegir un parque." },
+      { title:"Universal Studios Florida", summary:"Opción fuerte si buscas atracciones y experiencia cinematográfica.", why:"Complementa muy bien CityWalk con un plan de día completo." }
+    ],
+    "londres":[
+      { title:"Westminster y South Bank", summary:"Ruta muy clara con varios iconos encadenables.", why:"Permite una primera jornada muy reconocible y bien compactada." },
+      { title:"British Museum", summary:"Visita cultural de alto valor con acceso sencillo.", why:"Es una apuesta segura cuando quieres una actividad principal bien definida." },
+      { title:"Covent Garden", summary:"Zona viva para cerrar el día con poco esfuerzo logístico.", why:"Encaja especialmente bien con cenas o tramos libres." },
+      { title:"Tower of London", summary:"Visita histórica muy completa junto al Támesis.", why:"Es un imprescindible si quieres una pieza ‘clásica’ bien definida." },
+      { title:"Camden Market", summary:"Zona con ambiente para comer y pasear sin plan rígido.", why:"Perfecto para huecos flexibles y para variar del centro." }
+    ],
+    "roma":[
+      { title:"Coliseo y Foro", summary:"Bloque histórico principal para reservar con tiempo.", why:"Es uno de los núcleos que mejor estructuran el viaje por Roma." },
+      { title:"Trastevere", summary:"Barrio agradable para tarde o noche con ritmo más relajado.", why:"Da equilibrio a una jornada muy monumental." },
+      { title:"Fontana di Trevi + Plaza de España", summary:"Paseo céntrico muy fácil de encadenar.", why:"Funciona bien como bloque corto o como cierre del día." },
+      { title:"Vaticano (Museos + San Pedro)", summary:"Bloque principal para reservar y organizar con tiempo.", why:"Es una de las visitas más potentes y estructurantes en Roma." },
+      { title:"Panteón + Piazza Navona", summary:"Paseo céntrico muy agradecido y fácil de encadenar.", why:"Da un tramo ‘Roma clásica’ sin exigir una logística compleja." }
+    ],
+    "paris":[
+      { title:"Louvre o entorno del Louvre", summary:"Gran visita central con alternativas alrededor si no quieres museo largo.", why:"Ayuda a fijar una pieza fuerte del viaje." },
+      { title:"Île de la Cité y Notre-Dame", summary:"Ruta compacta y muy representativa.", why:"Aporta una lectura muy clara de la ciudad en poco espacio." },
+      { title:"Montmartre", summary:"Barrio con mucha identidad para un tramo más relajado.", why:"Es una buena forma de variar el tono del día." },
+      { title:"Torre Eiffel + Campos de Marte", summary:"Icono principal con paseo amplio y foto asegurada.", why:"Es el imprescindible más reconocible para estructurar un día." },
+      { title:"Paseo por el Sena (crucero o a pie)", summary:"Tramo muy flexible para noche o para unir zonas clave.", why:"Funciona genial como bloque comodín con mucho retorno visual." }
+    ],
+    "lisboa":[
+      { title:"Alfama y miradores", summary:"Paseo muy reconocible para captar el carácter de la ciudad.", why:"Concentra ambiente y vistas sin pedir una gran logística." },
+      { title:"Belém", summary:"Bloque clásico para media jornada bien cerrada.", why:"Agrupa varios imprescindibles con lógica propia." },
+      { title:"Chiado y Baixa", summary:"Recorrido flexible para encajar compras, paseo y comida.", why:"Sirve muy bien como tramo comodín del plan." },
+      { title:"Tranvía 28 + Graça", summary:"Ruta clásica para ver barrios con un recorrido muy reconocible.", why:"Aporta ‘Lisboa auténtica’ en un plan fácil de ejecutar." },
+      { title:"LX Factory", summary:"Zona creativa para comer, tiendas y paseo relajado.", why:"Sirve como alternativa moderna y flexible al centro histórico." }
+    ],
+    "tokyo":[
+      { title:"Asakusa y Sensō-ji", summary:"Entrada muy clara al lado más tradicional de la ciudad.", why:"Funciona bien como primera toma de contacto ordenada." },
+      { title:"Shibuya + mirador urbano", summary:"Bloque potente para notar el pulso contemporáneo de Tokyo.", why:"Aporta contraste inmediato y suele rendir mucho visualmente." },
+      { title:"Meiji Jingu y Harajuku", summary:"Combinación equilibrada entre calma y ciudad.", why:"Permite un recorrido variado sin dispersarte demasiado." },
+      { title:"Tsukiji Outer Market", summary:"Parada gastronómica y de ambiente muy fácil de integrar por la mañana.", why:"Aporta variedad y encaja muy bien en huecos cortos." },
+      { title:"Akihabara", summary:"Barrio icónico para tecnología, anime y cultura pop.", why:"Da un contraste claro con Asakusa/Meiji sin mucha logística." }
+    ]
+  };
+
+/* ============================================================
+   V226C1B0AJ — Regla 10/5 de catálogo CONCRETO (POIs)
+   - Catálogo único para "Descubrir ciudades" y "Rellenar huecos"
+   - Sin genéricos (solo lugares concretos + tagline)
+   ============================================================ */
+(function(){
+  const normCity = (s)=> String(s||"").trim().toLowerCase();
+
+  const CITY_ALIAS = {
+    // ES/EN + variantes comunes
+    "new york":"new york","nueva york":"new york","nyc":"new york",
+    "london":"london","londres":"london",
+    "paris":"paris","parís":"paris",
+    "rome":"rome","roma":"rome",
+    "barcelona":"barcelona",
+    "tokyo":"tokyo","tokio":"tokyo",
+    "berlin":"berlin","berlín":"berlin",
+    "madrid":"madrid",
+    "seville":"sevilla","sevilla":"sevilla",
+    "lisbon":"lisbon","lisboa":"lisbon",
+    "amsterdam":"amsterdam",
+    "prague":"prague","praga":"prague",
+    "vienna":"vienna","viena":"vienna"
+    ,
+    "sevilla":[
+      { id:"sv_alcazar", title:"Real Alcázar de Sevilla", tagline:"Patios y azulejos: de lo más bonito de España.", what:"Palacio fortificado con jardines y salas mudéjares.", history:"Orígenes islámicos; ampliaciones cristianas posteriores.", pro:"Reserva hora; ve temprano."},
+      { id:"sv_catedral", title:"Catedral + Giralda", tagline:"Catedral inmensa y subida a la Giralda con vistas.", what:"Catedral gótica y torre campanario.", history:"Construida sobre la antigua mezquita mayor.", pro:"Ve a primera hora para evitar colas."},
+      { id:"sv_plazaesp", title:"Plaza de España + Parque de María Luisa", tagline:"El paseo más fotogénico y agradable.", what:"Plaza monumental y parque sombreado.", history:"Construida para la Expo Iberoamericana de 1929.", pro:"Mejor a media mañana o atardecer."},
+      { id:"sv_triana", title:"Triana", tagline:"Barrio con alma: tapas y paseo junto al río.", what:"Zona tradicional al otro lado del Guadalquivir.", history:"Histórico barrio marinero y alfarero.", pro:"Ideal para tarde-noche."},
+      { id:"sv_setas", title:"Las Setas (Metropol Parasol)", tagline:"Mirador moderno con vistas del centro.", what:"Estructura de madera con pasarelas y mirador.", history:"Inaugurada en 2011 como renovación urbana.", pro:"Atardecer = mejor plan."}
+    ],
+    "lisbon":[
+      { id:"ls_belem", title:"Belém (Torre + Jerónimos)", tagline:"Historia marítima y dos iconos en una zona.", what:"Torre de Belém y Monasterio de los Jerónimos.", history:"Belém fue clave en la Era de los Descubrimientos.", pro:"Prueba un pastel de nata en la zona."},
+      { id:"ls_alfama", title:"Alfama + Castelo de São Jorge", tagline:"Callejear con vistas por el barrio más auténtico.", what:"Barrio histórico y castillo-mirador.", history:"Alfama sobrevivió al terremoto de 1755.", pro:"Calzado cómodo: muchas cuestas."},
+      { id:"ls_tram28", title:"Tranvía 28 (ruta clásica)", tagline:"La forma más ‘Lisboa’ de cruzar barrios históricos.", what:"Tranvía histórico que recorre zonas emblemáticas.", history:"Parte del sistema tradicional de tranvías.", pro:"Mejor temprano para evitar colas."},
+      { id:"ls_lxfactory", title:"LX Factory", tagline:"Arte, tiendas y cafés en un ambiente industrial.", what:"Espacio creativo con tiendas y restaurantes.", history:"Antigua zona industrial reconvertida.", pro:"Perfecto para tarde."},
+      { id:"ls_timeout", title:"Time Out Market", tagline:"Parada foodie fácil para probar de todo.", what:"Mercado gastronómico con muchos puestos.", history:"Reunió chefs y puestos bajo un mismo techo.", pro:"Ve fuera de horas punta si quieres mesa."}
+    ],
+    "amsterdam":[
+      { id:"am_rijks", title:"Rijksmuseum", tagline:"El museo nacional: Rembrandt y clásicos neerlandeses.", what:"Gran museo de arte e historia.", history:"Abrió en 1885; símbolo cultural del país.", pro:"Reserva entrada y prioriza salas."},
+      { id:"am_vangogh", title:"Museo Van Gogh", tagline:"La colección más completa del artista.", what:"Museo dedicado a Van Gogh y contemporáneos.", history:"Abrió en 1973 con la colección familiar.", pro:"Reserva franja horaria."},
+      { id:"am_annefrank", title:"Casa de Ana Frank", tagline:"Visita conmovedora: reserva obligatoria.", what:"Casa museo donde se escondió la familia Frank.", history:"Diario publicado tras la guerra; museo desde 1960.", pro:"Entradas se agotan rápido: compra con antelación."},
+      { id:"am_canals", title:"Paseo en barco por los canales", tagline:"La mejor forma de ‘leer’ la ciudad desde el agua.", what:"Crucero por el anillo de canales.", history:"Canales del s. XVII, Patrimonio UNESCO.", pro:"Atardecer suele ser ideal."},
+      { id:"am_jordaan", title:"Jordaan + 9 Straatjes", tagline:"Calles con encanto, tiendas y cafés.", what:"Barrio histórico y zona de ‘nueve calles’.", history:"Antiguo barrio obrero hoy muy agradable.", pro:"Perfecto para perderse sin plan."}
+    ],
+    "prague":[
+      { id:"pr_charles", title:"Puente de Carlos", tagline:"El clásico: cruza temprano para verlo vacío.", what:"Puente histórico sobre el Moldava.", history:"Construido en el s. XIV bajo Carlos IV.", pro:"Amanecer = magia."},
+      { id:"pr_castle", title:"Castillo de Praga", tagline:"Complejo enorme con vistas y catedral.", what:"Castillo, Catedral de San Vito y callejones.", history:"Uno de los complejos palaciegos más grandes del mundo.", pro:"Dedícale medio día si puedes."},
+      { id:"pr_oldtown", title:"Plaza de la Ciudad Vieja + Reloj Astronómico", tagline:"El corazón medieval en un paseo compacto.", what:"Plaza central y reloj del Ayuntamiento.", history:"El reloj data del s. XV.", pro:"Evita horas punta para disfrutar."},
+      { id:"pr_jewish", title:"Barrio Judío (Josefov)", tagline:"Historia intensa y sinagogas muy interesantes.", what:"Zona con sinagogas y cementerio judío.", history:"Uno de los conjuntos judíos más importantes de Europa.", pro:"Compra ticket combinado si visitas varios."},
+      { id:"pr_letna", title:"Letná Park (mirador)", tagline:"Vistas top del río y los puentes.", what:"Parque elevado con miradores.", history:"Zona popular para paseos y atardeceres.", pro:"Atardecer con bebida = plan perfecto."}
+    ],
+    "vienna":[
+      { id:"vi_schonbrunn", title:"Palacio de Schönbrunn", tagline:"El ‘Versalles’ vienés: palacio y jardines.", what:"Residencia imperial con jardines.", history:"Centro del poder Habsburgo en el s. XVIII.", pro:"Reserva visita interior si te interesa."},
+      { id:"vi_stephans", title:"Catedral de San Esteban", tagline:"Icono gótico en pleno centro.", what:"Catedral y posibles subidas a torre.", history:"Construcción principal entre s. XIV–XV.", pro:"Sube si quieres vistas del casco antiguo."},
+      { id:"vi_belvedere", title:"Belvedere (El beso de Klimt)", tagline:"Arte y palacio: visita muy redonda.", what:"Palacio barroco y museo (Klimt).", history:"Residencia del príncipe Eugenio de Saboya.", pro:"Compra entrada con hora."},
+      { id:"vi_hofburg", title:"Hofburg + Museo de Sisi", tagline:"Imperio Habsburgo en un complejo enorme.", what:"Palacio imperial y museos.", history:"Residencia de los Habsburgo durante siglos.", pro:"Elige 1–2 partes para no alargar demasiado."},
+      { id:"vi_prater", title:"Prater + Noria", tagline:"Plan ligero con vistas y ambiente.", what:"Parque y noria histórica.", history:"La noria data de 1897.", pro:"Perfecto al final del día."}
+    ]
+
+  };
+
+  const BIG_CITIES = new Set(["new york","london","paris","rome","barcelona","tokyo","berlin","madrid"]);
+
+  const POIS = {
+    "madrid":[
+      { id:"md_prado", title:"Museo del Prado", tagline:"Pintura clásica en estado puro: una visita imprescindible.", what:"Museo con obras clave de Velázquez, Goya, Rubens y El Bosco.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Abrió en 1819 y es una de las pinacotecas más importantes del mundo.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Ve temprano y prioriza 2–3 salas para no saturarte.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"md_retiro", title:"Parque del Retiro", tagline:"El gran pulmón verde para caminar y bajar revoluciones.", what:"Parque céntrico con el Estanque, el Palacio de Cristal y paseos amplios.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Fue jardín real y acabó como parque público emblemático.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Atardecer = mejor luz y menos calor en verano.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"md_palacio", title:"Palacio Real", tagline:"Monumental y muy céntrico: fácil de encajar por bloques.", what:"Residencia oficial (ceremonial) con salones y armería.\nSuele mezclar salas ceremoniales, patios y jardines; es una visita muy ‘de película’.\nLa escala impresiona: conviene recorrerlo con calma y elegir qué partes te interesan más.\nMuchos tienen audioguía o paneles útiles para entender lo que estás viendo.", history:"Se construyó en el s. XVIII sobre el antiguo Alcázar.\nFue centro de poder (real o imperial) y eso se nota en la arquitectura y el ceremonial.\nA lo largo de los siglos se amplió y reformó, mezclando estilos y dejando capas de historia.\nHoy conserva símbolos y objetos que ayudan a imaginar cómo se vivía y gobernaba desde allí.", pro:"Compra entrada online para evitar colas.\nCompra entradas con hora si es posible: estos lugares se llenan mucho.\nPrioriza 2–3 estancias/puntos clave y luego pasea por patios/jardines sin prisa.\nCombina con un mirador o paseo cercano para redondear la experiencia."},
+      { id:"md_reinasofia", title:"Museo Reina Sofía", tagline:"El Guernica y vanguardia española en un recorrido potente.", what:"Arte moderno y contemporáneo con piezas clave del siglo XX.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Inaugurado como museo en 1992 en el antiguo hospital de San Carlos.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Si vas con poco tiempo, ve directo al Guernica y 2 plantas.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"md_thyssen", title:"Museo Thyssen-Bornemisza", tagline:"El puente perfecto entre Prado y Reina Sofía.", what:"Colección privada con pintura desde el Renacimiento al Pop Art.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Se incorporó al “triángulo del arte” en los 90.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Ideal si quieres una visita más ‘compacta’ que el Prado.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"md_plazamayor", title:"Plaza Mayor + alrededores", tagline:"La postal clásica para una pausa y fotos sin logística.", what:"Plaza histórica y calles del Madrid de los Austrias.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se consolidó en el s. XVII como centro social y comercial.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mejor por la mañana o noche para evitar agobio.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"md_granvia", title:"Gran Vía", tagline:"Arquitectura, ambiente y paseo urbano con energía.", what:"Avenida icónica con teatros, tiendas y edificios históricos.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se abrió en el s. XX como gran eje moderno de la ciudad.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Si quieres skyline, mira algún rooftop cercano.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"md_debod", title:"Templo de Debod", tagline:"Atardecer top con un templo egipcio y vistas.", what:"Templo auténtico trasladado desde Egipto, junto a un mirador.\nAdemás del interior, normalmente hay elementos destacados: claustro, capillas, cripta o museo.\nLa acústica y la luz suelen ser parte del encanto, incluso si no eres religioso.\nSi permite subida a torre/cúpula, las vistas suelen ser de las mejores del centro.", history:"Regalo de Egipto a España en los años 60.\nSuele levantarse sobre capas históricas anteriores (templos previos), lo que cuenta mucho sobre la evolución de la ciudad.\nHa sobrevivido reformas, ampliaciones y momentos históricos que han dejado huella en su arquitectura.\nEs uno de esos lugares que explican poder, arte y sociedad en un mismo espacio.", pro:"Llega con tiempo: se llena al atardecer.\nEvita horas punta para disfrutar del silencio y la luz; cambia mucho la sensación.\nSi hay entrada combinada (torre + museo), suele compensar.\nLleva algo para cubrirte si hay normas de vestimenta."},
+      { id:"md_sol", title:"Puerta del Sol", tagline:"Kilómetro Cero y corazón de la ciudad en 10 minutos.", what:"Plaza central con símbolos como el Oso y el Madroño.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Núcleo urbano desde hace siglos; punto de encuentro madrileño.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Pasa rápido y enlaza con Plaza Mayor/Gran Vía.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"md_sanmiguel", title:"Mercado de San Miguel", tagline:"Parada gastronómica fácil para picar algo bien.", what:"Mercado histórico con puestos de tapas y producto.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Estructura de hierro de principios del s. XX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve fuera de horas punta si quieres sitio.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ],
+    "berlin":[
+      { id:"be_brandenburg", title:"Puerta de Brandeburgo", tagline:"El icono de Berlín y punto perfecto para empezar.", what:"Monumento neoclásico en Pariser Platz.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Símbolo de reunificación tras la caída del Muro.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mejor al amanecer/noche para fotos sin gente.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_reichstag", title:"Cúpula del Reichstag", tagline:"Arquitectura y vistas con reserva gratuita.", what:"Visita a la cúpula acristalada del Parlamento.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Edificio histórico reimaginado por Norman Foster.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva online con antelación.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_eastside", title:"East Side Gallery", tagline:"El tramo de Muro más famoso, convertido en galería.", what:"Murales al aire libre sobre restos del Muro.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Pintado en 1990 por artistas internacionales.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Combínalo con paseo por el Spree.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_museumisland", title:"Isla de los Museos", tagline:"Cinco museos en un enclave precioso junto al río.", what:"Conjunto UNESCO (Pergamon, Neues, Altes, etc.).\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Gran proyecto cultural prusiano del s. XIX.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Elige 1 museo clave para no ‘morir’ de museos.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"be_holocaust", title:"Memorial del Holocausto", tagline:"Espacio sobrecogedor en pleno centro.", what:"Campos de estelas y centro de información subterráneo.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Inaugurado en 2005 para recordar a las víctimas judías.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve con calma; es una visita emocional.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_topography", title:"Topografía del Terror", tagline:"Historia dura y muy bien explicada (entrada libre).", what:"Exposición sobre el aparato represivo nazi.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"En el antiguo cuartel de la Gestapo/SS.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ideal para contextualizar Berlín en 60–90 min.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_checkpoint", title:"Checkpoint Charlie", tagline:"Punto clave de la Guerra Fría, rápido de ver.", what:"Antiguo paso fronterizo entre sectores.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Escenario de tensiones USA-URSS durante décadas.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Muy turístico: combínalo con Topografía del Terror.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_alex", title:"Alexanderplatz + Torre de TV", tagline:"Berlín ‘DDR’ y mirador con panorámica completa.", what:"Plaza central y torre (Fernsehturm).\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"La torre se construyó en 1969 como símbolo del Este.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva el mirador si quieres evitar colas.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"be_charlottenburg", title:"Palacio de Charlottenburg", tagline:"El palacio más bonito de la ciudad y sus jardines.", what:"Residencia barroca con estancias y parque.\nSuele mezclar salas ceremoniales, patios y jardines; es una visita muy ‘de película’.\nLa escala impresiona: conviene recorrerlo con calma y elegir qué partes te interesan más.\nMuchos tienen audioguía o paneles útiles para entender lo que estás viendo.", history:"Construido a finales del s. XVII para Sofía Carlota.\nFue centro de poder (real o imperial) y eso se nota en la arquitectura y el ceremonial.\nA lo largo de los siglos se amplió y reformó, mezclando estilos y dejando capas de historia.\nHoy conserva símbolos y objetos que ayudan a imaginar cómo se vivía y gobernaba desde allí.", pro:"Perfecto si quieres un plan más tranquilo.\nCompra entradas con hora si es posible: estos lugares se llenan mucho.\nPrioriza 2–3 estancias/puntos clave y luego pasea por patios/jardines sin prisa.\nCombina con un mirador o paseo cercano para redondear la experiencia."},
+      { id:"be_markthalle", title:"Markthalle Neun (Kreuzberg)", tagline:"Comida local y ambiente berlinés auténtico.", what:"Mercado cubierto con puestos y eventos gastronómicos.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Mercado histórico reactivado como espacio foodie.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mira si coincide con ‘Street Food Thursday’.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ],
+    "new york":[
+      { id:"ny_statue", title:"Estatua de la Libertad + Ellis Island", tagline:"Ferry, skyline y una visita histórica redonda.", what:"Monumento en Liberty Island y museo de inmigración en Ellis Island.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Inaugurada en 1886 como regalo de Francia.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva ferry con antelación; ve temprano.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ny_centralpark", title:"Central Park", tagline:"Paseo verde enorme para caminar o bici en Manhattan.", what:"Parque con lagos, praderas y rincones míticos.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Diseñado en el s. XIX como gran parque público.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Atardecer suele ser ideal.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"ny_met", title:"The Met (Metropolitan Museum of Art)", tagline:"Colección brutal: Egipto, pintura europea y más.", what:"Museo enciclopédico con piezas icónicas.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Fundado en 1870; referencia cultural mundial.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Define 2–3 zonas y listo.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"ny_moma", title:"MoMA", tagline:"Arte moderno top (Van Gogh, Warhol) y exposiciones.", what:"Museo de referencia del arte moderno.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Abrió en 1929 y marcó el canon del s. XX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mejor entre semana.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ny_highline", title:"High Line + Chelsea Market", tagline:"Paseo elevado con arquitectura y parada foodie.", what:"Parque lineal sobre antigua vía; termina cerca de Chelsea Market.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Reconvertida en parque desde 2009.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Evita horas punta si puedes.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ny_brooklyn", title:"Puente de Brooklyn + DUMBO", tagline:"Caminata con vistas épicas y fotos míticas.", what:"Cruza a pie y baja a DUMBO / Brooklyn Bridge Park.\nMás que ‘cruzarlo’, lo bonito es pararse a mirar el río, la ciudad y el ambiente alrededor.\nA menudo hay músicos, puestos o vida callejera que le da mucha personalidad.\nEs un punto perfecto para fotos porque conecta varios de los mejores encuadres.", history:"Inaugurado en 1883; obra maestra de ingeniería.\nHa sido un eje de paso durante siglos, viendo crecer la ciudad a ambos lados.\nSu construcción y ornamentación suelen contar una historia de poder y comercio.\nCon el tiempo se convirtió en un icono y en escenario habitual de celebraciones y postales.", pro:"Amanecer o atardecer = mejor luz.\nVe al amanecer o de noche: cambia totalmente la atmósfera y hay menos gente.\nCruza por ambos lados (ida y vuelta) para ver vistas diferentes.\nSi hay miradores a la entrada/salida, no te los saltes."},
+      { id:"ny_911", title:"9/11 Memorial + One World Observatory", tagline:"Memorial impactante y mirador moderno.", what:"Piscinas memoriales y observatorio en One World.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Conmemora los atentados de 2001.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva hora si subes al mirador.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ny_times", title:"Times Square + Broadway", tagline:"Luces, energía y (si te apetece) musical.", what:"Zona icónica de neones y teatros.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se convirtió en centro del entretenimiento en el s. XX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve de noche; compra entradas con antelación.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ny_grandcentral", title:"Grand Central + Bryant Park", tagline:"Arquitectura interior preciosa y pausa urbana cerca.", what:"Estación histórica y parque agradable a 10–15 min.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Grand Central abrió en 1913.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Perfecto para encajar entre visitas.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"ny_dumbo", title:"DUMBO + Brooklyn Bridge Park", tagline:"El skyline desde Brooklyn, de los mejores puntos.", what:"Paseo junto al río con vistas y rincones fotogénicos.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Zona industrial reconvertida en barrio creativo.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Ideal al atardecer.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."}
+    ],
+    "london":[
+      { id:"ld_british", title:"British Museum", tagline:"Una colección gigantesca (Rosetta, Egipto) sin entrada.", what:"Museo con piezas clave de civilizaciones antiguas.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Fundado en 1753; uno de los museos más importantes.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Ve a 2 secciones clave para no saturarte.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"ld_tower", title:"Tower of London", tagline:"Historia medieval y las Joyas de la Corona.", what:"Fortaleza histórica junto al Támesis.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Fundada por Guillermo el Conquistador en el s. XI.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva y llega pronto.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ld_westminster", title:"Westminster + Big Ben", tagline:"El Londres más clásico en una caminata corta.", what:"Zona del Parlamento, Abadía y río.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Centro político británico desde hace siglos.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Combina con paseo por South Bank.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ld_buckingham", title:"Buckingham Palace + St James’s Park", tagline:"Cambio de guardia y parque precioso al lado.", what:"Palacio real y parque céntrico.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Buckingham es residencia oficial desde 1837.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Mira horarios del cambio de guardia.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"ld_tate", title:"Tate Modern + Millennium Bridge", tagline:"Arte moderno y un puente con vistas top.", what:"Museo en antigua central eléctrica y puente peatonal.\nMás que ‘cruzarlo’, lo bonito es pararse a mirar el río, la ciudad y el ambiente alrededor.\nA menudo hay músicos, puestos o vida callejera que le da mucha personalidad.\nEs un punto perfecto para fotos porque conecta varios de los mejores encuadres.", history:"Tate Modern abrió en 2000.\nHa sido un eje de paso durante siglos, viendo crecer la ciudad a ambos lados.\nSu construcción y ornamentación suelen contar una historia de poder y comercio.\nCon el tiempo se convirtió en un icono y en escenario habitual de celebraciones y postales.", pro:"Sube a la terraza si está abierta.\nVe al amanecer o de noche: cambia totalmente la atmósfera y hay menos gente.\nCruza por ambos lados (ida y vuelta) para ver vistas diferentes.\nSi hay miradores a la entrada/salida, no te los saltes."},
+      { id:"ld_borough", title:"Borough Market", tagline:"El mejor mercado para comer algo rico y rápido.", what:"Mercado gastronómico junto a London Bridge.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Orígenes medievales; versión moderna muy foodie.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Entre semana es más cómodo.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ld_camden", title:"Camden Market", tagline:"Ambiente alternativo, street food y tiendas curiosas.", what:"Zona de mercados y canal.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Creció como epicentro ‘alternative’ desde los 70.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve con tiempo: es grande.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ld_greenwich", title:"Greenwich + Meridiano", tagline:"Barco o DLR y un plan distinto con vistas.", what:"Observatorio, meridiano 0 y parque.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Clave para la historia de la navegación.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Perfecto en medio día.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ld_hyde", title:"Hyde Park + Kensington", tagline:"Paseo verde clásico con museos cerca.", what:"Parque enorme y entorno de Kensington.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Parque real desde el s. XVII.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Ideal si te apetece bajar ritmo.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"ld_eye", title:"London Eye", tagline:"Vistas panorámicas fáciles si quieres ‘mirador’ seguro.", what:"Noria junto al Támesis.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se inauguró en 2000 como icono moderno.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva hora para evitar cola.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ],
+    "paris":[
+      { id:"pa_eiffel", title:"Torre Eiffel + Champ de Mars", tagline:"La postal de París: vistas y paseo a orillas del Sena.", what:"Torre y parque para fotos y picnic.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Construida para la Exposición Universal de 1889.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva si subes; atardecer es mágico.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_louvre", title:"Museo del Louvre", tagline:"Obras icónicas (Mona Lisa) en un museo inmenso.", what:"Museo de arte y antigüedades en antiguo palacio.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Abrió como museo en 1793.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Elige 2–3 zonas y listo.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"pa_orsay", title:"Musée d’Orsay", tagline:"Impresionismo en una estación preciosa.", what:"Museo con Monet, Renoir, Van Gogh.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Antigua estación reconvertida en museo en 1986.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Más compacto que el Louvre.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_montmartre", title:"Montmartre + Sacré-Cœur", tagline:"Calles con encanto y un mirador brutal.", what:"Barrio bohemio y basílica en lo alto.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona artística histórica del s. XIX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Sube temprano para evitar masas.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_notredame", title:"Île de la Cité + Notre-Dame (exterior)", tagline:"El corazón histórico de París en un paseo corto.", what:"Isla central con catedral y rincones históricos.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Notre-Dame se empezó en el s. XII.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Combina con Sainte-Chapelle.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_saintechapelle", title:"Sainte-Chapelle", tagline:"Vitrales espectaculares: de lo más impresionante.", what:"Capilla gótica famosa por sus vidrieras.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Construida en el s. XIII para reliquias reales.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva entrada; mejor con sol.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_arc", title:"Arco del Triunfo + Champs-Élysées", tagline:"Clásico total con vistas desde lo alto.", what:"Monumento y avenida icónica.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Mandado construir por Napoleón en 1806.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Sube si quieres panorámica.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_seine", title:"Paseo por el Sena", tagline:"París ‘de película’ entre puentes y muelles.", what:"Caminata por las orillas y puentes.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"El Sena estructura la ciudad desde la antigüedad.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Atardecer + luces = top.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_marais", title:"Le Marais", tagline:"Calles con vida, tiendas y plazas bonitas.", what:"Barrio histórico con ambiente y arquitectura.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona aristocrática reconvertida en barrio trendy.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Perfecto para tarde-noche.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"pa_lux", title:"Jardines de Luxemburgo", tagline:"Pausa elegante: bancos, fuentes y ambiente parisino.", what:"Jardines y palacio en la Rive Gauche.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Creados en el s. XVII.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Ideal para descansar entre visitas.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."}
+    ],
+    "rome":[
+      { id:"ro_colosseum", title:"Coliseo + Foro Romano", tagline:"El combo histórico más potente de Roma.", what:"Anfiteatro y ruinas del centro político romano.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"El Coliseo se inauguró en el año 80 d.C.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Compra entrada combinada con hora.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_vatican", title:"Museos Vaticanos + Capilla Sixtina", tagline:"Arte imprescindible (Miguel Ángel) con reserva.", what:"Museos y la Sixtina dentro del Vaticano.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Colecciones papales acumuladas durante siglos.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Reserva primera hora para evitar colas.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"ro_sanpietro", title:"Basílica de San Pedro", tagline:"Gigante y espectacular; sube a la cúpula si puedes.", what:"Basílica principal del Vaticano.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Construida en el s. XVI–XVII.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve temprano; controla dress code.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_pantheon", title:"Panteón", tagline:"Arquitectura romana perfecta en 20–30 minutos.", what:"Templo romano con cúpula monumental.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Reconstruido por Adriano (s. II).\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ideal para huecos cortos.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_trevi", title:"Fontana di Trevi", tagline:"La fuente más famosa: mejor al amanecer.", what:"Fuente barroca icónica.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Finalizada en 1762.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Evita horas punta si quieres disfrutarla.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_navona", title:"Piazza Navona", tagline:"Plaza con ambiente, fuentes y terrazas.", what:"Plaza barroca sobre un antiguo estadio.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se desarrolló en el s. XVII.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Perfecta para tarde-noche.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_trastevere", title:"Trastevere", tagline:"Callejear con encanto y cenar bien.", what:"Barrio tradicional al otro lado del Tíber.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona popular histórica de Roma.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve al atardecer y quédate a cenar.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_borghese", title:"Villa Borghese + Galería Borghese", tagline:"Arte top y parque para respirar.", what:"Galería con Bernini/Caravaggio y parque amplio.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Colección privada de la familia Borghese.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva obligatoria para la galería.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"ro_capitoline", title:"Museos Capitolinos", tagline:"Roma antigua con vistas al Foro.", what:"Museos en la colina Capitolina.\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Considerado el museo público más antiguo (1471).\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"Muy buena alternativa si quieres algo menos masificado.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"ro_appia", title:"Vía Apia + Catacumbas", tagline:"Excursión distinta para ver la Roma ‘exterior’.", what:"Calzada antigua y catacumbas.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"La Vía Apia data del 312 a.C.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mejor con visita guiada o transporte planificado.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ],
+    "barcelona":[
+      { id:"bc_sagrada", title:"Sagrada Familia", tagline:"Impacto visual brutal: el imprescindible nº1.", what:"Basílica de Gaudí, interior espectacular.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Obra iniciada en 1882, aún en construcción.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva hora sí o sí.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_parkguell", title:"Park Güell", tagline:"Gaudí al aire libre con vistas de la ciudad.", what:"Parque con arquitectura modernista.\nEs perfecto para alternar con visitas intensas: caminar, sentarte un rato y recargar energías.\nSuele tener rincones fotogénicos y zonas tranquilas si te alejas de los accesos principales.\nEn días buenos, el ambiente local (familias, deporte, músicos) forma parte de la experiencia.", history:"Proyecto residencial fallido reconvertido en parque.\nMuchos de estos espacios nacieron como jardines privados o proyectos urbanos y acabaron siendo símbolo de la ciudad.\nSu diseño suele reflejar la época en la que se creó: avenidas, estanques, monumentos y paseos.\nHoy funcionan como ‘salón’ al aire libre donde se mezclan turismo y vida cotidiana.", pro:"Compra entrada y ve temprano.\nVe a primera hora o al atardecer para mejor luz y menos calor/aglomeración.\nLleva agua y algo para picar si planeas estar un rato; es fácil alargar la visita.\nSi hay mirador/estanque, priorízalo: suele ser el punto más memorable."},
+      { id:"bc_batllo", title:"Casa Batlló", tagline:"Fachada y visita interior muy ‘wow’.", what:"Casa modernista en Passeig de Gràcia.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Reforma de Gaudí (1904–1906).\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Entrada online para evitar cola.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_pedrera", title:"La Pedrera (Casa Milà)", tagline:"Azotea increíble y arquitectura modernista.", what:"Edificio modernista con recorrido interior.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Construida 1906–1912 por Gaudí.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"La azotea al atardecer es top.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_gotic", title:"Barrio Gótico", tagline:"Calles históricas para callejear sin prisa.", what:"Centro medieval con plazas y catedral.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Núcleo histórico de la ciudad.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ideal para tarde-noche.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_born", title:"El Born + Santa Maria del Mar", tagline:"Ambiente y rincones con mucha vida.", what:"Barrio con basílica gótica y calles con tiendas.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona medieval ligada al comercio.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Combina con paseo al Parc de la Ciutadella.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_montjuic", title:"Montjuïc (miradores + paseo)", tagline:"Vistas y plan variado fuera del centro.", what:"Colina con miradores, jardines y museos.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona clave de la Expo 1929 y Olimpiadas 1992.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Teleférico si quieres vistas extra.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_boqueria", title:"La Boqueria + La Rambla", tagline:"Parada gastronómica y paseo céntrico.", what:"Mercado cubierto y paseo emblemático.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Mercado histórico del s. XIX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve por la mañana para mejor ambiente.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_barceloneta", title:"Barceloneta + paseo marítimo", tagline:"Mar y paseo fácil para descansar de ciudad.", what:"Playa urbana y paseo.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Barrio marinero tradicional.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Atardecer = muy buen plan.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"bc_tibidabo", title:"Tibidabo", tagline:"Mirador + parque: una panorámica distinta.", what:"Colina con vistas y templo.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Zona recreativa histórica de Barcelona.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mira horarios del funicular.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ],
+    "tokyo":[
+      { id:"tk_sensoji", title:"Asakusa (Senso-ji)", tagline:"Templo clásico y calles tradicionales con ambiente.", what:"Templo budista y Nakamise-dori.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Es uno de los templos más antiguos de Tokio.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ve temprano para fotos tranquilas.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_shibuya", title:"Shibuya Crossing + Hachikō", tagline:"El cruce más famoso del mundo en 15 minutos.", what:"Cruce icónico y estatua de Hachikō.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Símbolo del Tokio moderno.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Sube a un mirador/café cercano para verlo desde arriba.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_meiji", title:"Santuario Meiji + Yoyogi", tagline:"Bosque y calma total en pleno Tokio.", what:"Santuario sintoísta y parque.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Dedicado al emperador Meiji (s. XX).\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Ideal para mañana tranquila.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_tsukiji", title:"Tsukiji Outer Market", tagline:"Comida japonesa a tope: sushi y snacks.", what:"Zona de puestos gastronómicos.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Heredero del histórico mercado.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Mañana = mejor momento.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_skytree", title:"Tokyo Skytree", tagline:"Mirador alto y seguro para ver la ciudad entera.", what:"Torre con observatorios.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se inauguró en 2012.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Reserva franja horaria si puedes.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_teamlab", title:"teamLab Planets", tagline:"Experiencia inmersiva muy ‘Tokio’ y diferente.", what:"Instalaciones de arte digital interactivas.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Parte del fenómeno teamLab.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Compra entradas online.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_akihabara", title:"Akihabara", tagline:"Electrónica, anime y cultura otaku sin filtro.", what:"Barrio de tiendas, arcades y gadgets.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Creció como distrito electrónico tras la posguerra.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Perfecto para tarde.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_ueno", title:"Ueno Park + museos", tagline:"Parque grande y museos para un plan completo.", what:"Parque y museos (Tokyo National Museum, etc.).\nSuele tener varias plantas/salas; lo ideal es entrar con una idea clara de qué quieres ver.\nAdemás de la colección permanente, a menudo hay exposiciones temporales que merecen la pena.\nAunque no seas muy de museos, con 1–2 horas bien planificadas se disfruta muchísimo.", history:"Zona cultural histórica.\nCon el tiempo se convirtió en una referencia cultural de la ciudad y en parada obligatoria para entender su arte.\nMuchas de sus obras/espacios están ligados a momentos clave del país o de la escena artística local.\nHoy es también un lugar vivo: exposiciones, restauración y nuevas lecturas de las colecciones.", pro:"En primavera, cerezos = bonus.\nReserva entrada online si existe: ahorra colas y te da tranquilidad con los horarios.\nElige 5–10 ‘imprescindibles’ antes de entrar para no saturarte.\nSi vas con niños o poco tiempo, céntrate en una sección y sal con ganas de volver."},
+      { id:"tk_ginza", title:"Ginza", tagline:"Tokio elegante: tiendas, arquitectura y luces.", what:"Distrito comercial premium.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se desarrolló como zona moderna en el s. XX.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Noche = buen ambiente.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."},
+      { id:"tk_odaiba", title:"Odaiba", tagline:"Bahía, vistas y plan futurista en una isla.", what:"Isla artificial con paseos y centros de ocio.\nEs uno de esos lugares que se disfrutan mejor sin prisa, fijándote en detalles y en el ambiente alrededor.\nSuele encajar bien como ‘bloque’ de 1–2 horas dentro del día, combinándolo con un barrio cercano.\nSi te interesa la foto, hay un par de puntos clásicos donde suele estar el mejor encuadre.", history:"Se expandió como zona moderna desde los 90.\nEstá ligado a la identidad de la ciudad y a cómo ha ido cambiando con el tiempo.\nSu importancia viene tanto por su función como por lo que representa para locales y visitantes.\nHoy se visita también por su contexto: el barrio, las vistas o las historias que lo rodean.", pro:"Atardecer en el paseo = top.\nComprueba horarios y días de cierre: a veces varían según temporada.\nIntenta ir fuera de la franja central del día para evitar picos de gente.\nCombínalo con un paseo o una comida cerca: suele ser la mejor forma de rematar la visita."}
+    ]
+  };
+
+  const cityKey = (raw)=>{
+    const n = normCity(raw);
+    return CITY_ALIAS[n] || n;
+  };
+
+  const getPOIsForCity = (rawCity)=>{
+    const key = cityKey(rawCity);
+    const list = POIS[key] || [];
+    const need = BIG_CITIES.has(key) ? 10 : 5;
+
+    // Caché por ciudad: mantiene estable el conjunto y el orden de recomendaciones entre sesiones.
+    // Nunca introduce genéricos: solo reordena/recorta dentro del catálogo concreto existente.
+    try{
+      const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
+      const raw = localStorage.getItem(cacheKey);
+      if(raw){
+        const data = JSON.parse(raw);
+        const ids = (data && Array.isArray(data.ids)) ? data.ids : null;
+        if(ids && ids.length){
+          const byId = new Map(list.map(it=>[String(it.id||""), it]));
+          const out = [];
+          for(const id of ids){
+            const it = byId.get(String(id));
+            if(it) out.push(it);
+            if(out.length>=need) break;
+          }
+          if(out.length){
+            return out.slice(0, Math.max(0, Math.min(out.length, need)));
+          }
+        }
+      }
+    }catch(e){}
+
+    // Si no hay caché (o está vacía), generamos un orden nuevo (aleatorio) dentro del catálogo concreto.
+// Así, al pulsar ↻ Más opciones, cambian las 5/10 propuestas visibles.
+const shuffled = list.slice();
+for (let i = shuffled.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  const tmp = shuffled[i];
+  shuffled[i] = shuffled[j];
+  shuffled[j] = tmp;
+}
+const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
+// Guardar solo ids (ligero)
+    try{
+      const cacheKey = `MV_POI_RECO_CACHE_V1:${key}`;
+      const ids = out.map(it=> String(it.id||"") ).filter(Boolean);
+      if(ids.length){
+        localStorage.setItem(cacheKey, JSON.stringify({ v:1, ids, ts: Date.now() }));
+      }
+    }catch(e){}
+
+    return out;
+  };
+
+  // Exponer helpers para el módulo IA
+  window.__MV_POI = { CITY_ALIAS, BIG_CITIES, POIS, cityKey, getPOIsForCity };
+})();
+
+  const aiModule = {
+    state: null,
+    init(){
+      if(this.state) return this.state;
+      this.state = {
+        currentAction: "summary",
+        contextualVisible: true,
+        contextualTips: [],
+        detectedCities: [],
+        cityGroups: [],
+        selectedKeys: {},
+        bridgeNote: "",
+        actionInfoHtml: "",
+        actionInfoStatus: "",
+        entrypoint: "timeline",
+        entryLabel: "Cronograma",
+        entryDescription: "Visión global del viaje y de los hitos del día.",
+        preferenceContext: { chips: [], summary: "", tastes: [], pace: "Normal", kids: 0, restrictions: [] }
+      };
+      this.loadPrefs();
+      this.bindUI();
+      this.render();
+      return this.state;
+    },
+    loadPrefs(){
+      try{
+        const raw = localStorage.getItem(AI_PREFS_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        if(data && typeof data.contextualVisible === "boolean") this.state.contextualVisible = data.contextualVisible;
+        if(data && (data.currentAction === "summary" || data.currentAction === "unified" || data.currentAction === "sensitive" || data.currentAction === "transport" || data.currentAction === "cities" || data.currentAction === "gaps")) this.state.currentAction = (data.currentAction==="cities"||data.currentAction==="gaps") ? "unified" : data.currentAction;
+      }catch{}
+    },
+    savePrefs(){
+      try{
+        localStorage.setItem(AI_PREFS_KEY, JSON.stringify({
+          contextualVisible: !!this.state.contextualVisible,
+          currentAction: (this.state.currentAction === "unified") ? "unified" : (this.state.currentAction === "sensitive") ? "sensitive" : (this.state.currentAction === "transport") ? "transport" : "summary"
+        }));
+      }catch{}
+    },
+    bridge: {
+      readTrip(){
+        const sc = (typeof curScenario === "function") ? (curScenario() || {}) : {};
+        const clone = (arr)=> Array.isArray(arr) ? arr.map(item => Object.assign({}, item)) : [];
+        return { legs: clone(sc.legs), stays: clone(sc.stays), activities: clone(sc.activities) };
+      },
+      readPreferences(){
+        try{
+          const p = (typeof __ensurePreferences === "function") ? (__ensurePreferences() || {}) : ((typeof state !== "undefined" && state && state.preferences) ? state.preferences : {});
+          return JSON.parse(JSON.stringify(p || {}));
+        }catch{
+          return {};
+        }
+      },
+      __fmtDT(dt){
+        try{
+          if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
+          const yyyy = dt.getFullYear();
+          const mm = String(dt.getMonth()+1).padStart(2,'0');
+          const dd = String(dt.getDate()).padStart(2,'0');
+          const hh = String(dt.getHours()).padStart(2,'0');
+          const mi = String(dt.getMinutes()).padStart(2,'0');
+          return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+        }catch{ return '—'; }
+      },
+      __fmtHHMM(dt){
+        try{
+          if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
+          return `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        }catch{ return '—'; }
+      },
+      __activityInterval(item){
+        try{
+          if(!item) return null;
+          const dateStr = String(item.date || '').trim();
+          const timeStr = String(item.time || '').trim();
+          const mins = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)),10) || 0);
+          if(!dateStr || !timeStr || mins <= 0) return null;
+          const start = new Date(`${dateStr}T${timeStr}:00`);
+          if(Number.isNaN(start.getTime())) return null;
+          const end = new Date(start.getTime() + mins*60000);
+          return { start, end };
+        }catch{ return null; }
+      },
+      __legInterval(item){
+        try{
+          if(!item) return null;
+          const depDate = String(item.date || '').trim();
+          const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+          const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+          const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+          if(!depDate || !depTime || !arrDate || !arrTime) return null;
+          const start = new Date(`${depDate}T${depTime}:00`);
+          const end = new Date(`${arrDate}T${arrTime}:00`);
+          if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+          if(!(start < end)) return null;
+          return { start, end };
+        }catch{ return null; }
+      },
+      __collectTimedConflictsForActivity(sc, draftAct){
+        const interval = this.__activityInterval(draftAct);
+        const out = { interval, conflicts: [] };
+        if(!sc || !interval) return out;
+        try{
+          (Array.isArray(sc.activities) ? sc.activities : []).forEach((item)=>{
+            try{
+              if(!item) return;
+              if(String(item.id || '') === String(draftAct.id || '')) return;
+              const other = this.__activityInterval(item);
+              if(!other) return;
+              if(interval.start < other.end && other.start < interval.end){
+                out.conflicts.push({
+                  type: 'act',
+                  typeLabel: 'Actividad',
+                  id: String(item.id || ''),
+                  title: String(item.title || item.name || 'Actividad'),
+                  start: other.start,
+                  end: other.end
+                });
+              }
+            }catch{}
+          });
+          (Array.isArray(sc.legs) ? sc.legs : []).forEach((item)=>{
+            try{
+              if(!item) return;
+              const other = this.__legInterval(item);
+              if(!other) return;
+              if(interval.start < other.end && other.start < interval.end){
+                out.conflicts.push({
+                  type: 'leg',
+                  typeLabel: 'Transporte',
+                  id: String(item.id || ''),
+                  title: `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`,
+                  start: other.start,
+                  end: other.end
+                });
+              }
+            }catch{}
+          });
+        }catch{}
+        return out;
+      },
+      __insertActivities(sc, acts){
+        let added = 0;
+        const ids = [];
+        (Array.isArray(acts) ? acts : []).forEach((act)=>{
+          if(!act || !String(act.title || '').trim()) return;
+          sc.activities.unshift(act);
+          ids.push(String(act.id));
+          added += 1;
+        });
+        try{ if(typeof saveState === "function") saveState(); }catch{}
+        try{ if(typeof renderAll === "function") renderAll(); }catch{}
+        try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
+        try{ window.__aiPendingReviewQueue = (window.__aiPendingReviewQueue || []).concat(ids); }catch{}
+        return { added, ids };
+      },
+      addActivities(items, opts){
+        const sc = (typeof curScenario === "function") ? curScenario() : null;
+        if(!sc) return { added:0, error:true };
+        if(!Array.isArray(sc.activities)) sc.activities = [];
+
+        const cfg = (opts && typeof opts === 'object') ? opts : {};
+        const durMinFromItem = (it)=>{
+          if(it && Number.isFinite(it.durationMin)) return Math.max(0, Math.floor(it.durationMin));
+          const dh = Math.max(0, Math.floor(parseInt(it && it.durationH || 0,10) || 0));
+          const dm = Math.max(0, Math.floor(parseInt(it && it.durationM || 0,10) || 0));
+          if(dh || dm) return dh*60 + Math.min(59, dm);
+          const s = String(it && it.duration || "").trim();
+          let mm = 0;
+          let m;
+          if((m=/^(\d{1,2}):(\d{2})$/.exec(s))){
+            mm = (parseInt(m[1],10)||0)*60 + (parseInt(m[2],10)||0);
+            return Math.max(0, mm);
+          }
+          if((m=/^(\d+)\s*m$/i.exec(s))) return Math.max(0, parseInt(m[1],10)||0);
+          if((m=/^(\d+)\s*h\s*(\d+)?\s*m?$/i.exec(s))){
+            const h = parseInt(m[1],10)||0;
+            const mi = parseInt(m[2]||"0",10)||0;
+            return Math.max(0, h*60 + mi);
+          }
+          if((m=/^\d+$/.exec(s))) return Math.max(0, parseInt(s,10)||0);
+          const t = ((it && it.title) ? String(it.title) : "") + " " + ((it && it.summary) ? String(it.summary) : "") + " " + ((it && it.why) ? String(it.why) : "") + " " + ((it && it.kind) ? String(it.kind) : "");
+          const tt = t.toLowerCase();
+          const est = (()=>{
+            if(/\b(universal|disney|parque tem\w+tico|theme\s*park|parque acu\w+tico)\b/.test(tt)) return 360;
+            if(/\b(louvre|british\s*museum|metropolitan|met\b|moma|prado|vatican|vaticanos|uffizi|uffizi)\b/.test(tt)) return 180;
+            if(/\b(museo|museum|galer\w+a|exposici\w+n)\b/.test(tt)) return 120;
+            if(/\b(palacio|catedral|bas\w+lica|iglesia|duomo|castillo|alc\w+zar|coliseo|colosseum|torre|tower)\b/.test(tt)) return 120;
+            if(/\b(mercado|market|food\s*hall)\b/.test(tt)) return 75;
+            if(/\b(parque|jard\w+n|mirador|plaza|paseo|pasear|barrio|walking|walk)\b/.test(tt)) return 90;
+            if(/\b(tour|visita\s*guiada|crucero|cruise|barco|boat|ferry)\b/.test(tt)) return 150;
+            if(/\b(show|espect\w+culo|concierto|concert|teatro|opera)\b/.test(tt)) return 120;
+            return 0;
+          })();
+          if(est) return est;
+          return 0;
+        };
+        const fmtDur = (min)=>{
+          const mm = Math.max(0, Math.floor(min||0));
+          try{ if(typeof __tlFormatDurationHM === "function") return __tlFormatDurationHM(mm); }catch{}
+          const h = Math.floor(mm/60), m = mm%60;
+          if(h<=0) return `${m}m`;
+          if(m<=0) return `${h}h`;
+          return `${h}h ${String(m).padStart(2,"0")}m`;
+        };
+        const acts = [];
+        (Array.isArray(items) ? items : []).forEach((item)=>{
+          const title = String(item && item.title || "").trim();
+          if(!title) return;
+          const city = String(item && item.city || "").trim();
+          const date = String(item && item.date || "").trim();
+          const __timeRaw = String(item && item.time || "").trim();
+          let time = __timeRaw;
+          let suggestedBand = String(item && (item.suggestedBand || item.band || item.timeBand || item.timeWindow || "") || "").trim();
+          const __isHM = /^\d{1,2}:\d{2}$/.test(time);
+          if(time && !__isHM){
+            if(!suggestedBand) suggestedBand = time;
+            time = "";
+          }
+          const durMin = durMinFromItem(item);
+          const noteParts = [
+            suggestedBand ? `Horario sugerido: ${suggestedBand}` : "",
+            String(item && item.summary || "").trim(),
+            String(item && item.why || "").trim()
+          ].filter(Boolean);
+          const note = noteParts.join(" · ");
+          acts.push({
+            id: (typeof nowId === "function") ? nowId() : ("ai-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
+            title,
+            city,
+            date,
+            time,
+            durationMin: durMin,
+            durationH: Math.floor(durMin/60),
+            durationM: durMin%60,
+            duration: fmtDur(durMin),
+            cost: "",
+            notes: note ? `IA · ${note}` : "IA · propuesta añadida desde el módulo IA",
+            fromAI: true,
+            pendingAIReview: true,
+            aiAddedAt: Date.now()
+          });
+        });
+        if(!acts.length) return { added:0, ids:[] };
+        const inspections = acts.map((act)=>{
+          const probe = this.__collectTimedConflictsForActivity(sc, act);
+          return { act, interval: probe.interval, conflicts: probe.conflicts || [] };
+        });
+        const conflictGroups = inspections.filter(x => Array.isArray(x.conflicts) && x.conflicts.length > 0);
+        const commitInsert = ()=>{
+          const res = this.__insertActivities(sc, acts);
+          try{ if(typeof cfg.onCommitted === 'function') cfg.onCommitted(res); }catch{}
+          return res;
+        };
+        if(conflictGroups.length > 0){
+          const body = `
+            <div class="text-sm text-slate-700">Hay conflicto horario en ${conflictGroups.length} propuesta${conflictGroups.length===1?'':'s'} de IA respecto a eventos temporales ya existentes.</div>
+            <div class="mt-3 space-y-3">${conflictGroups.map((group)=>{
+              const act = group.act || {};
+              const interval = group.interval || {};
+              return `<div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
+                <div class="font-semibold text-slate-900">${escapeHtml(String(act.title || 'Actividad'))}</div>
+                <div class="mt-1 text-slate-600">${escapeHtml(this.__fmtDT(interval.start))} → ${escapeHtml(this.__fmtDT(interval.end))}</div>
+                <ul class="mt-2 space-y-1">${group.conflicts.map((c)=>`<li>• <span class="font-medium">${escapeHtml(String(c.typeLabel || 'Evento'))}:</span> <span class="font-medium">${escapeHtml(String(c.title || ''))}</span> <span class="text-slate-500">[#${escapeHtml(String(c.id || ''))} · ${escapeHtml(this.__fmtHHMM(c.start))} → ${escapeHtml(this.__fmtHHMM(c.end))}]</span></li>`).join('')}</ul>
+              </div>`;
+            }).join('')}</div>
+            <div class="mt-3 text-sm text-slate-600">Puedes cancelar para no insertar la propuesta IA o añadir de todas formas.</div>
+          `;
+          const btnCancel = document.createElement('button');
+          btnCancel.className = 'tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold';
+          btnCancel.type = 'button';
+          btnCancel.textContent = 'Cancelar';
+          btnCancel.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            try{ if(typeof cfg.onCancelled === 'function') cfg.onCancelled({ added:0, ids:[], cancelled:true, promptShown:true }); }catch{}
+          };
+          const btnForce = document.createElement('button');
+          btnForce.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
+          btnForce.type = 'button';
+          btnForce.textContent = 'Añadir de todas formas';
+          btnForce.onclick = ()=>{
+            try{ closeModal(); }catch{}
+            commitInsert();
+          };
+          try{ showModal('Conflicto horario al añadir desde IA', body, [btnCancel, btnForce]); }catch{}
+          return { added:0, ids:[], deferred:true, promptShown:true, conflicts: conflictGroups };
+        }
+        return commitInsert();
+      }
+    },
+    bindUI(){
+      const on = (id, fn)=>{
+        const el = document.getElementById(id);
+        if(el && !el.__aiModuleBound){
+          el.__aiModuleBound = true;
+          el.addEventListener("click", fn);
+        }
+      };
+      on("aiActionSummary", ()=> this.selectAction("summary"));
+      on("aiActionUnified", ()=> this.selectAction("unified"));
+      on("aiActionSensitive", ()=> this.selectAction("sensitive"));
+      on("aiActionTransport", ()=> this.selectAction("transport"));
+      
+      on("aiPick", ()=> this.selectAction("summary"));
+      on("aiGenerate", ()=> this.selectAction("unified"));
+      on("aiReviewPendingBtn", ()=> { try{ __aiOpenPendingReviewModal(); }catch{} });
+      try{ if(typeof __aiUpdatePendingBadge==="function") __aiUpdatePendingBadge(); }catch{}
+
+      // Delegación robusta dentro de resultados (Safari-safe)
+      try{
+        const res = document.getElementById("aiResults");
+        if(res && !res.__mvAiDelegation){
+          res.__mvAiDelegation = true;
+          res.addEventListener("click", (ev)=>{
+            const t = ev.target;
+
+            // ⇄ Más opciones por ciudad (DEBE ir antes del toggle del acordeón)
+            const moreBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
+            if(moreBtn){
               try{
-                const key = String(moreCityBtn.getAttribute("data-ai-more-city")||"").trim();
-                if(key){
-                  // Mantener abierta esta ciudad tras refresh
-                  window.__aiKeepOpenCityKey = key;
+                const keyRaw = String(moreBtn.getAttribute("data-ai-more-city")||"").trim();
+                if(keyRaw){
+                  // Mantener abierto el bloque de esta ciudad tras refrescar
+                  window.__aiKeepOpenCityKey = keyRaw;
 
-                  // Avanzar offset de 5 en 5 sobre el mazo filtrado (sin items ya en cronograma)
-                  const offKey = "MV_AI_CITY_OFFSET_V1:" + key;
-
-                  // Construir mazo actual filtrado para esta ciudad
-                  const deck = (window.__MV_POI && window.__MV_POI.getPOIsForCity) ? (window.__MV_POI.getPOIsForCity(key) || []) : [];
-                  // Títulos ya presentes en cronograma (normalizados)
-                  const scheduled = new Set();
+                  // Calcular tamaño real del mazo (catálogo 10/5) y alternar páginas de 5
+                  let deckLen = 0;
                   try{
-                    const trip = (typeof loadTrip==="function") ? loadTrip() : null;
-                    const acts = trip && Array.isArray(trip.activities) ? trip.activities : [];
-                    for(const a of acts){
-                      if(a && a.title){ scheduled.add(__aiNormTitle(String(a.title))); }
+                    const cityName = keyRaw.replace(/-/g," ");
+                    const deck = (window.__MV_POI && window.__MV_POI.getPOIsForCity) ? (window.__MV_POI.getPOIsForCity(cityName) || []) : [];
+                    deckLen = Array.isArray(deck) ? deck.length : 0;
+                  }catch{}
+
+                  const offKey = "MV_AI_CITY_OFFSET_V1:" + keyRaw;
+                  let cur = 0;
+                  try{ cur = parseInt(localStorage.getItem(offKey)||"0",10) || 0; }catch{}
+                  // Si hay >5, alternamos 0/1. Si no, siempre 0.
+                  const next = (deckLen > 5) ? ((cur + 1) % 2) : 0;
+                  try{ localStorage.setItem(offKey, String(next)); }catch{}
+
+                  // Refrescar acción actual sin colapsar acordeones
+                  try{
+                    if(window.aiModule && typeof window.aiModule.refreshCurrentAction==="function"){
+                      window.aiModule.refreshCurrentAction({ force: true });
+                    }else if(typeof refreshCurrentAction==="function"){
+                      refreshCurrentAction({ force: true });
                     }
                   }catch{}
-                  const filtered = [];
-                  const seen = new Set();
-                  for(const it of deck){
-                    if(!it || !it.title) continue;
-                    const nt = __aiNormTitle(String(it.title));
-                    if(!nt || seen.has(nt)) continue;
-                    seen.add(nt);
-                    if(scheduled.has(nt)) continue;
-                    filtered.push(it);
-                  }
-
-                  const len = filtered.length;
-                  let cur = parseInt(localStorage.getItem(offKey)||"0", 10) || 0;
-                  if(len > 0){
-                    cur = (cur + 5) % len;
-                    localStorage.setItem(offKey, String(cur));
-                  }else{
-                    localStorage.setItem(offKey, "0");
-                  }
-
-                  // Forzar refresh de la acción actual
-                  try{ aiModule.refreshCurrentAction({ force:true }); }catch{}
+                }
+              }catch(e){}
+              ev.preventDefault();
+              ev.stopPropagation();
+              return;
+            }
+                  try{ keys.add(keyRaw.replace(/\s+/g,"-")); }catch{}
+                  try{
+                    keys.forEach((k)=>{
+                      if(!k) return;
+                      try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
+                      try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+                    });
+                  }catch{}
+                  toast("Recomendaciones reiniciadas para esta ciudad.");
                 }
               }catch{}
+              try{ aiModule.refreshCurrentAction({ force:true }); }catch{}
               ev.preventDefault(); ev.stopPropagation(); return;
             }
 
@@ -15194,9 +16392,8 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
       const existing = existingTitlesSet || new Set();
       const n = Math.max(1, parseInt(maxN,10)||5);
-      // offsetIndex es un offset absoluto (0..len-1) que avanzamos de 5 en 5 por ciudad
       const idx = Math.max(0, parseInt(offsetIndex,10)||0);
-      const startAt = idx;
+      const startAt = idx * n;
 
       let pool = [];
 
@@ -15658,30 +16855,6 @@ __aiBuildDayBuckets(trip){
       const buildDayHtml = (sec, sidx)=>{
         const bodyId = `aiDayBody-${String(sec.day).replaceAll('-','')}`;
         const headId = `aiDayHead-${String(sec.day).replaceAll('-','')}`;
-        // Disponibles reales (tras dedupe contra cronograma) para decidir si mostrar "Más opciones"
-        let __availCount = 0;
-        try{
-          const cityKey = sec.cityKey || (sec.city ? (window.__MV_POI && window.__MV_POI.cityKey ? window.__MV_POI.cityKey(sec.city) : sec.city) : "");
-          const deck = (window.__MV_POI && window.__MV_POI.getPOIsForCity) ? (window.__MV_POI.getPOIsForCity(cityKey) || []) : [];
-          const scheduled = new Set();
-          try{
-            const trip = (typeof loadTrip==="function") ? loadTrip() : null;
-            const acts = trip && Array.isArray(trip.activities) ? trip.activities : [];
-            for(const a of acts){ if(a && a.title) scheduled.add(__aiNormTitle(String(a.title))); }
-          }catch{}
-          const seen = new Set();
-          let cnt = 0;
-          for(const it of deck){
-            if(!it || !it.title) continue;
-            const nt = __aiNormTitle(String(it.title));
-            if(!nt || seen.has(nt)) continue;
-            seen.add(nt);
-            if(scheduled.has(nt)) continue;
-            cnt++;
-          }
-          __availCount = cnt;
-        }catch{}
-
         const gapsHtml = sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
@@ -15709,7 +16882,7 @@ __aiBuildDayBuckets(trip){
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${(__availCount>5 && sec.cityKey) ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver otras opciones de ${escapeHtml(sec.city||"")}" data-ai-more-city="${escapeHtml(sec.cityKey)}">⇄<span class="ml-1 text-xs font-bold">Más opciones</span></button>` : ``}
+                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver más opciones de ${escapeHtml(sec.city||"")}" data-ai-more-city="${escapeHtml(sec.cityKey)}">↻<span class="ml-1 text-xs font-bold">Más opciones</span></button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
@@ -16436,8 +17609,9 @@ loadTripGapsFill(opts){
         const suggestedTime = suggestTimeForDay(day, b);
 
         // Propuestas por ciudad (máx 5), filtrando duplicados ya existentes
-        const __ck = (window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city);
-        const __off = (function(){ try{ return parseInt(localStorage.getItem("MV_AI_CITY_OFFSET_V1:"+__ck)||"0",10)||0; }catch(e){ return 0; } })();
+        const __ck = ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city));
+        let __off = 0;
+        try{ __off = parseInt(localStorage.getItem("MV_AI_CITY_OFFSET_V1:" + __ck)||"0",10) || 0; }catch{}
         const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, __off);
         if(!proposals.length) continue;
 
@@ -16484,7 +17658,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ``
+                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver más opciones de ${escapeHtml(blk.city||"")}" data-ai-more-city="${escapeHtml(blk.cityKey)}">↻<span class="ml-1 text-xs font-bold">Más opciones</span></button>` : ``}
                 <div>${blk.proposals.length} propuestas</div>
               </div>
             </div>
@@ -16519,7 +17693,25 @@ loadTripGapsFill(opts){
       // Bind reset buttons (per city) — ultra-quirúrgico
       try{
         const self = this;
-}catch{}
+        results.querySelectorAll("[data-ai-more-city]").forEach((btn)=>{
+          if(btn.__mvBound) return;
+          btn.__mvBound = true;
+          btn.addEventListener("click", (ev)=>{
+            ev.preventDefault(); ev.stopPropagation();
+            const key = String(btn.getAttribute("data-ai-more-city")||"").trim();
+            if(!key) return;
+            // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
+            // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
+            const keys = new Set([key]);
+            try{ keys.add(key.replace(/-/g," ")); }catch{}
+            try{ keys.add(key.replace(/\s+/g,"-")); }catch{}
+            try{
+              keys.forEach((k)=>{
+                if(!k) return;
+                try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
+                try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+              });
+            }catch{}
             try{ toast("Recomendaciones reiniciadas para esta ciudad."); }catch{}
             try{ self.refreshCurrentAction({ force:true }); }catch{}
           }, { passive:false });
