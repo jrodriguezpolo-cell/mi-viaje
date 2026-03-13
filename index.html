@@ -1403,7 +1403,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div aria-live="polite" class="hidden" id="subSectionHeader">
 <div class="max-w-6xl mx-auto px-5 py-2">
 <div class="grid grid-cols-[auto,1fr,auto,auto] items-center gap-2">
-<div class="font-extrabold text-slate-900 text-sm leading-tight whitespace-nowrap" id="subSectionTitle">—</div>
+<button type="button" class="tap font-extrabold text-slate-900 text-sm leading-tight whitespace-nowrap text-left" id="subSectionTitle">—</button>
 <div class="hidden" id="dateJumpUI">
 <div class="flex items-center justify-center">
 <select class="h-8 w-full max-w-[150px] rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900" id="dateJumpSelect">
@@ -1543,7 +1543,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="text-left">
 <div class="flex items-center gap-2">
 <div class="font-extrabold">Actividades</div>
-<button type="button" id="actsCountBtn" class="tap px-2 py-0.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50" title="Ver resumen por ciudad">0</button>
 </div>
 </div>
 </div>
@@ -1652,7 +1651,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN";
+const APP_BUILD = "V226C1B0BU_AK_ACTS_COUNT_BUTTON_IN_HEADERBAR";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -1922,7 +1921,29 @@ function updateSubSectionHeader(viewName){
     return;
   }
 
-  title.textContent = txt;
+  // Actividades: show total count and make the title act as a button to open the summary modals
+  if(String(viewName||"")==="acts"){
+    try{
+      const sum = __mvGetActivitiesSummary ? __mvGetActivitiesSummary() : { total: 0 };
+      const n = Number(sum && sum.total) || 0;
+      title.textContent = `Actividades ${n}`;
+      title.setAttribute("title", "Ver resumen por ciudad");
+      // Bind once
+      if(!(title.dataset && title.dataset.actsBound==="1")){
+        if(title.dataset) title.dataset.actsBound = "1";
+        title.addEventListener("click", (e)=>{
+          try{ e.preventDefault(); e.stopPropagation(); }catch{}
+          // Only if we are still in Actividades
+          try{ if(String(activeView||"")!=="acts") return; }catch{}
+          __mvShowActivitiesByCityModal();
+        });
+        title.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
+      }
+    }catch{ title.textContent = txt; }
+  } else {
+    title.textContent = txt;
+    try{ title.removeAttribute("title"); }catch{}
+  }
   bar.classList.remove("hidden");
   // V208: show timeline micro-summary menu only in Cronograma
   try{
@@ -10858,7 +10879,7 @@ function renderActivities() {
 
 
 
-/* ================= V226C1B0BT: Actividades · contador total + desglose por ciudad ================= */
+/* ================= V226C1B0BU: Actividades · contador total + desglose por ciudad (botón en barra superior) ================= */
 
 function __mvActsCityKey(cityName){
   const nm = cap1(String(cityName||"").trim());
@@ -10990,20 +11011,28 @@ function __mvShowActivitiesCityDetailModal(cityKey){
 }
 
 function __mvUpdateActivitiesCountUI(){
+  // Update the subsection header button when we are in Actividades view
+  try{
+    if(String(activeView||"") === "acts"){
+      updateSubSectionHeader("acts");
+    }
+  }catch{}
+
+  // Backward-compat: if a standalone badge exists, keep it updated too
   const btn = document.getElementById("actsCountBtn");
-  if(!btn) return;
-  const sum = __mvGetActivitiesSummary();
-  btn.textContent = String(sum.total);
+  if(btn){
+    const sum = __mvGetActivitiesSummary();
+    btn.textContent = String(sum.total);
 
-  if(btn.dataset && btn.dataset.bound === "1") return;
-  if(btn.dataset) btn.dataset.bound = "1";
-
-  btn.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    __mvShowActivitiesByCityModal();
-  });
-  // Prevent accordion toggle when tapping on the badge
-  btn.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
+    if(!(btn.dataset && btn.dataset.bound === "1")){
+      if(btn.dataset) btn.dataset.bound = "1";
+      btn.addEventListener("click", (e)=>{
+        try{ e.preventDefault(); e.stopPropagation(); }catch{}
+        __mvShowActivitiesByCityModal();
+      });
+      btn.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
+    }
+  }
 }
 
 /* ================= end V226C1B0BT ================= */
