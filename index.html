@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT</title>
+<title>V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1541,7 +1541,10 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
+<div class="flex items-center gap-2">
 <div class="font-extrabold">Actividades</div>
+<button type="button" id="actsCountBtn" class="tap px-2 py-0.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50" title="Ver resumen por ciudad">0</button>
+</div>
 </div>
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
@@ -1649,7 +1652,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT";
+const APP_BUILD = "V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -10790,6 +10793,7 @@ function renderActivities() {
     if (!it) return;
     it.title = inp.value.trim();
     saveState(); renderTimeline();
+    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-city");
@@ -10797,6 +10801,7 @@ function renderActivities() {
     if (!it) return;
     it.city = cap1(inp.value); inp.value = it.city;
     saveState(); renderTimeline();
+    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-date");
@@ -10805,6 +10810,7 @@ function renderActivities() {
     it.date = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
+    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-time");
@@ -10813,6 +10819,7 @@ function renderActivities() {
     it.time = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
+    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-act-cost");
@@ -10843,8 +10850,163 @@ function renderActivities() {
     cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
     cb.onchange = () => handleActDoneToggle(cb.getAttribute('data-act-done'), cb.checked, cb);
   });
+
+  // V226C1B0BT: contador total + desglose por ciudad
+  try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
 }
 
+
+
+
+/* ================= V226C1B0BT: Actividades · contador total + desglose por ciudad ================= */
+
+function __mvActsCityKey(cityName){
+  const nm = cap1(String(cityName||"").trim());
+  try{
+    if(window.__MV_POI && typeof window.__MV_POI.cityKey === "function"){
+      const k = String(window.__MV_POI.cityKey(nm)||"").trim();
+      if(k) return k;
+    }
+  }catch{}
+  try{ return __normalizeCityKey(nm); }catch{}
+  return "";
+}
+
+function __mvGetActivitiesSummary(){
+  const sc = curScenario();
+  const list = Array.isArray(sc && sc.activities) ? sc.activities : [];
+  const total = list.length;
+
+  const by = new Map();
+  for(const a of list){
+    const cityName = cap1(String((a && a.city) || "Sin ciudad").trim()) || "Sin ciudad";
+    const cityKey = __mvActsCityKey(cityName) || "__none__";
+    if(!by.has(cityKey)){
+      by.set(cityKey, { cityKey, cityName, items: [] });
+    }
+    const g = by.get(cityKey);
+    g.items.push({
+      id: String((a && a.id) || ""),
+      title: String((a && a.title) || "").trim() || "—",
+      date: String((a && a.date) || "").trim(),
+      time: String((a && a.time) || "").trim()
+    });
+  }
+
+  const cities = Array.from(by.values()).map(g => {
+    const items = g.items.slice();
+    items.sort((x,y)=>{
+      const dx = String(x.date||"9999-99-99");
+      const dy = String(y.date||"9999-99-99");
+      if(dx !== dy) return dx.localeCompare(dy);
+      const tx = timeSortKey(x.time);
+      const ty = timeSortKey(y.time);
+      if(tx !== ty) return tx - ty;
+      return String(x.title||"").localeCompare(String(y.title||""));
+    });
+    return { ...g, count: items.length, items };
+  }).sort((a,b)=>{
+    // Stable & readable: alphabetical by city
+    return String(a.cityName||"").localeCompare(String(b.cityName||""));
+  });
+
+  return { total, cities };
+}
+
+function __mvShowActivitiesByCityModal(){
+  const sum = __mvGetActivitiesSummary();
+  const cities = sum.cities;
+
+  const rows = cities.map(c => {
+    const safeCity = escapeHtml(c.cityName);
+    return `
+      <button type="button"
+        class="tap w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
+        data-acts-city-key="${escapeHtml(c.cityKey)}">
+        <div class="text-left min-w-0">
+          <div class="font-semibold text-slate-900 truncate">${safeCity}</div>
+          <div class="text-xs text-slate-500">${c.count} actividad${c.count===1?"":"es"}</div>
+        </div>
+        <div class="shrink-0 text-slate-400">›</div>
+      </button>
+    `;
+  }).join("");
+
+  const body = `
+    <div class="space-y-2">
+      <div class="text-sm text-slate-600">Total: <span class="font-semibold text-slate-900">${sum.total}</span></div>
+      <div class="h-px bg-slate-200 my-2"></div>
+      <div class="space-y-2">${rows || `<div class="text-sm text-slate-500">No hay actividades.</div>`}</div>
+    </div>
+  `;
+
+  const btnClose = document.createElement("button");
+  btnClose.className = "tap px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold";
+  btnClose.textContent = "Cerrar";
+  btnClose.onclick = closeModal;
+
+  showModal(`Actividades · ${sum.total}`, body, [btnClose]);
+
+  // Bind city clicks
+  document.querySelectorAll("[data-acts-city-key]").forEach(b => b.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    const k = String(b.getAttribute("data-acts-city-key")||"").trim();
+    if(!k) return;
+    __mvShowActivitiesCityDetailModal(k);
+  }));
+}
+
+function __mvShowActivitiesCityDetailModal(cityKey){
+  const sum = __mvGetActivitiesSummary();
+  const city = sum.cities.find(c => String(c.cityKey) === String(cityKey));
+  if(!city){
+    __mvShowActivitiesByCityModal();
+    return;
+  }
+
+  const lines = (city.items||[]).map(it=>{
+    const d = it.date ? (typeof __fmtDateES==="function" ? __fmtDateES(it.date) : it.date) : "Sin fecha";
+    const t = it.time ? escapeHtml(it.time) : "";
+    const when = t ? `${escapeHtml(d)} · ${t}` : escapeHtml(d);
+    return `
+      <div class="px-3 py-2 rounded-2xl border border-slate-200 bg-white">
+        <div class="font-semibold text-slate-900">${escapeHtml(it.title)}</div>
+        <div class="text-xs text-slate-500 mt-0.5">${when}</div>
+      </div>
+    `;
+  }).join("");
+
+  const btnBack = document.createElement("button");
+  btnBack.className = "tap px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold";
+  btnBack.textContent = "← Ciudades";
+  btnBack.onclick = __mvShowActivitiesByCityModal;
+
+  const btnClose = document.createElement("button");
+  btnClose.className = "tap px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-semibold";
+  btnClose.textContent = "Cerrar";
+  btnClose.onclick = closeModal;
+
+  showModal(`${city.cityName} · ${city.count}`, `<div class="space-y-2">${lines || `<div class="text-sm text-slate-500">No hay actividades en esta ciudad.</div>`}</div>`, [btnBack, btnClose]);
+}
+
+function __mvUpdateActivitiesCountUI(){
+  const btn = document.getElementById("actsCountBtn");
+  if(!btn) return;
+  const sum = __mvGetActivitiesSummary();
+  btn.textContent = String(sum.total);
+
+  if(btn.dataset && btn.dataset.bound === "1") return;
+  if(btn.dataset) btn.dataset.bound = "1";
+
+  btn.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    __mvShowActivitiesByCityModal();
+  });
+  // Prevent accordion toggle when tapping on the badge
+  btn.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
+}
+
+/* ================= end V226C1B0BT ================= */
 
 
 /* ---------------- Timeline: jump to item ---------------- */
