@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B1_ACT_JUMP_SMOOTH</title>
+<title>V227_B2_TERMINAL_MAPS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B1_ACT_JUMP_SMOOTH" rel="manifest"/>
+<link href="manifest.json?v=V227_B2_TERMINAL_MAPS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B1_ACT_JUMP_SMOOTH";
+const APP_BUILD = "V227_B2_TERMINAL_MAPS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4336,6 +4336,72 @@ function __openDirectionsTo(destination, mode){
   setTimeout(()=>{
     try{ window.open(webUrl, "_blank", "noopener,noreferrer"); }catch{}
   }, 700);
+
+// Format "detail" (Terminal / Vía / Dársena / Muelle) so Google Maps understands it better.
+// Quirúrgico: only affects destination string passed to Maps (no UI/storage changes).
+function __formatLegDetailForMaps(mode, detailRaw){
+  const raw = String(detailRaw||"").trim();
+  if(!raw) return "";
+  const m = String(mode||"").toLowerCase().trim();
+
+  // If user already wrote a descriptive word, keep it (just trim).
+  const hasWord = /(terminal|puerta|gate|and[eé]n|v[ií]a|plataforma|platform|d[aá]rsena|muelle|pier)/i.test(raw);
+  if(hasWord) return raw;
+
+  // Normalize the first token for common shorthand patterns.
+  // Plane: "T4", "T4S", "4" => "Terminal 4", "Terminal 4S"
+  if(m==="plane" || m==="flight" || m==="air"){
+    let t = raw;
+    // If starts with T + code
+    const mt = t.match(/^t\s*([0-9]+\s*[a-z0-9]*)\b/i);
+    if(mt){
+      const code = String(mt[1]).replace(/\s+/g,"").toUpperCase();
+      return "Terminal " + code + t.slice(mt[0].length);
+    }
+    const md = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
+    if(md){
+      const code = String(md[1]).replace(/\s+/g,"").toUpperCase();
+      return "Terminal " + code + t.slice(md[0].length);
+    }
+    return raw;
+  }
+
+  // Train: default to "Vía"
+  if(m==="train" || m==="rail"){
+    let t = raw;
+    const mv = t.match(/^(v(?:[ií]a)?\s*)?([0-9]+\s*[a-z0-9]*)\b/i);
+    if(mv){
+      const code = String(mv[2]).replace(/\s+/g,"").toUpperCase();
+      // If raw already began with 'v' or 'via', still normalize spacing/case.
+      return "Vía " + code + t.slice(mv[0].length);
+    }
+    return raw;
+  }
+
+  // Bus: default to "Dársena"
+  if(m==="bus" || m==="coach"){
+    let t = raw;
+    const mb = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
+    if(mb){
+      const code = String(mb[1]).replace(/\s+/g,"").toUpperCase();
+      return "Dársena " + code + t.slice(mb[0].length);
+    }
+    return raw;
+  }
+
+  // Boat/Ferry: default to "Muelle"
+  if(m==="boat" || m==="ferry" || m==="ship"){
+    let t = raw;
+    const ms = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
+    if(ms){
+      const code = String(ms[1]).replace(/\s+/g,"").toUpperCase();
+      return "Muelle " + code + t.slice(ms[0].length);
+    }
+    return raw;
+  }
+
+  return raw;
+}
 }
 
 // V220A: Timeline — contextual "Cómo llegar" button (maps)
@@ -7493,8 +7559,8 @@ qs("from").value = v(legObj.from);
     const _po = qs("placeOut");
     const _pi = qs("placeIn");
     const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
-    __installPinBtn(_po, ()=>__mapsDestWithCity((_po.value + " " + (qs("placeOutDetail")?.value||"")).trim(), _from && _from.value), _modeFn);
-    __installPinBtn(_pi, ()=>__mapsDestWithCity((_pi.value + " " + (qs("placeInDetail")?.value||"")).trim(), _to && _to.value), _modeFn);
+    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity((_po.value + " " + d).trim(), _from && _from.value); }, _modeFn);
+    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity((_pi.value + " " + d).trim(), _to && _to.value); }, _modeFn);
   }catch{}
 
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
