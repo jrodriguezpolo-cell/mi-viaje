@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BV_AK_ACTS_BUTTON_STYLING_AND_JUMP_TO_TIMELINE";
+const APP_BUILD = "V226C1B0BW_AK_ACTS_JUMP_TO_TIMELINE_FIX_DAYMODE_AND_PERSIST";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11065,48 +11065,70 @@ function __mvJumpToTimelineAct(actId, iso){
   iso = String(iso||"").trim();
   if(!actId) return;
 
-  // Switch to cronograma
+  // Switch to Cronograma (timeline)
   try{ if(typeof setView === "function") setView("timeline"); }catch{}
   try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
+
+  // IMPORTANT: Timeline can be in "day" mode. Ensure we are showing the correct day.
+  // This prevents jumping to the first day when the selected activity is on a later date.
+  try{
+    if(typeof timelineViewMode !== "undefined") timelineViewMode = "day";
+    if(iso && typeof __isValidISODate === "function" && __isValidISODate(iso)){
+      if(typeof activeDayISO !== "undefined") activeDayISO = iso;
+    }
+  }catch{}
+
+  // Request a timeline render so the target day/items exist in DOM
+  try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
 
   // After render settles, find the timeline card and anchor it just below the fixed bars
   const tryFindAndGo = ()=>{
     let target = null;
     try{
-      const escId = (CSS && CSS.escape) ? CSS.escape(actId) : actId.replace(/"/g,'\\"');
+      const escId = (CSS && CSS.escape) ? CSS.escape(actId) : actId.replace(/"/g,'\"');
       target = document.querySelector('#timelineList .timelineItem[data-tl-jump-type="act"][data-tl-jump-id="'+escId+'"]')
-            || document.getElementById("tl-act-"+actId)
-            || document.getElementById("tl-act-"+escId);
+            || document.getElementById("tl-act-"+actId);
     }catch{}
     if(!target) return false;
 
     // Persistent highlight (removed on next user interaction)
     try{
       const key = `act:${actId}`;
-      if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key);
+      if(typeof __applyTimelinePersistentFoundHighlight === "function") __applyTimelinePersistentFoundHighlight(key);
       else target.classList.add("tlPersistentFound");
     }catch{}
 
+    // Anchor under top stack (header/totals/controls) reliably
     try{
-      if(typeof __scrollTimelineFoundItemToTopAnchor==="function") __scrollTimelineFoundItemToTopAnchor(target);
-      else target.scrollIntoView({behavior:"smooth", block:"start"});
+      if(typeof __scrollTimelineFoundItemToTopAnchor === "function") __scrollTimelineFoundItemToTopAnchor(target);
+      else {
+        const ms = document.getElementById("mainScroll");
+        const topStack = (typeof getTopStackHeight === "function") ? getTopStackHeight() : 0;
+        if(ms){
+          const y = target.getBoundingClientRect().top + ms.scrollTop - topStack - 8;
+          try{ ms.scrollTo({ top: Math.max(0,y), behavior: "smooth" }); }catch{ ms.scrollTop = Math.max(0,y); }
+        }else{
+          target.scrollIntoView({behavior:"smooth", block:"start"});
+        }
+      }
     }catch{ try{ target.scrollIntoView(true); }catch{} }
 
+    // Visual nudge (brief) WITHOUT removing the persistent highlight
     try{
       target.classList.add("rtFlash");
       setTimeout(()=>{ try{ target.classList.remove("rtFlash"); }catch{} }, 900);
     }catch{}
 
-    // Clear highlight after first meaningful user interaction
+    // Keep highlight until the user interacts (do NOT clear on scroll, since we scroll programmatically)
     try{ __mvBindClearTimelineHighlightOnce(); }catch{}
     return true;
   };
 
-  // Two RAFs to let view/layout settle (iOS)
+  // Multiple retries: timeline may re-render after view switch
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     if(tryFindAndGo()) return;
-    // Last retry shortly after in case timeline rendering is async
-    setTimeout(()=>{ tryFindAndGo(); }, 120);
+    setTimeout(()=>{ if(tryFindAndGo()) return; }, 120);
+    setTimeout(()=>{ tryFindAndGo(); }, 320);
   }));
 }
 
@@ -11119,24 +11141,23 @@ function __mvBindClearTimelineHighlightOnce(){
     const clear = ()=>{
       window.__mvTlClearOnceArmed = false;
       try{
-        if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight();
+        if(typeof __clearTimelinePersistentFoundHighlight === "function") __clearTimelinePersistentFoundHighlight();
       }catch{}
       try{
         document.removeEventListener("pointerdown", onPtr, true);
         document.removeEventListener("keydown", onKey, true);
-        const ms = document.getElementById("mainScroll");
-        if(ms) ms.removeEventListener("scroll", onScroll, true);
+        document.removeEventListener("touchstart", onTouch, true);
       }catch{}
     };
 
-    const onPtr = (e)=>{ clear(); };
-    const onKey = (e)=>{ clear(); };
-    const onScroll = (e)=>{ clear(); };
+    const onPtr = ()=>{ clear(); };
+    const onTouch = ()=>{ clear(); };
+    const onKey = ()=>{ clear(); };
 
+    // IMPORTANT: Do NOT clear on scroll — the jump itself scrolls programmatically.
     document.addEventListener("pointerdown", onPtr, true);
+    document.addEventListener("touchstart", onTouch, true);
     document.addEventListener("keydown", onKey, true);
-    const ms = document.getElementById("mainScroll");
-    if(ms) ms.addEventListener("scroll", onScroll, true);
   }catch{ try{ window.__mvTlClearOnceArmed = false; }catch{} }
 }
 
