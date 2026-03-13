@@ -1684,7 +1684,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0D0_AK_RIGHTRAIL_DURATION_BADGE_LAYOUT_FIX";
+const APP_BUILD = "V226C1B0D1_AK_AI_BUTTONS_NOT_WORKING_DIRECT_BIND_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -18359,6 +18359,27 @@ commitSelectedActivities(){
       });
       aiModule.bindUI();
       aiModule.render();
+
+      // --- V226C1B0D1: AI buttons fallback wiring (direct handlers, idempotent) ---
+      (function(){
+        const bind = (id, fn)=>{
+          const el = document.getElementById(id);
+          if(!el || el.__aiDirectBound) return;
+          el.__aiDirectBound = true;
+          el.addEventListener("click",(e)=>{
+            try{ e.preventDefault(); e.stopPropagation(); }catch{}
+            try{ fn(); }catch(err){ console.error(err); }
+          }, true);
+        };
+        bind("aiActionSummary", ()=> { try{ aiModule.selectAction("summary"); }catch{} });
+        bind("aiActionUnified", ()=> { try{ aiModule.selectAction("unified"); }catch{} });
+        bind("aiActionSensitive", ()=> { try{ aiModule.selectAction("sensitive"); }catch{} });
+        bind("aiActionTransport", ()=> { try{ aiModule.selectAction("transport"); }catch{} });
+        bind("aiPick", ()=> { try{ aiModule.selectAction("summary"); }catch{} });
+        bind("aiGenerate", ()=> { try{ aiModule.selectAction("unified"); }catch{} });
+        bind("aiReviewPendingBtn", ()=> { try{ __aiOpenPendingReviewModal(); }catch{} });
+      })();
+      // --- /V226C1B0D1 ---
       // --- V226C1A: IA hub wiring robusto (delegación estable) ---
       (function(){
         const hub = document.getElementById("aiHubStage");
