@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C1_AK_ACTS_JUMP_REUSE_MICROMENU_SEARCH_ANCHOR";
+const APP_BUILD = "V226C1B0C2_AK_ACTS_JUMP_WAIT_TIMELINE_VISIBLE_BEFORE_SCROLL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11066,29 +11066,57 @@ function __mvJumpToTimelineAct(actId){
 
   const key = `act:${actId}`;
 
-  // Reuse EXACT same anchor path as the timeline micro-menu (🔍): __msEnsureTimelineVisible + __msScrollToKey
-  const attempt = ()=>{
-    try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+  // We must wait until the Timeline accordion body is actually visible; otherwise iOS/Safari reports
+  // getBoundingClientRect().top as 0 and scrollToElWithOffset lands at the top (day 1).
+  const waitTimelineVisible = (cb, tries=0)=>{
     try{
-      if(typeof __msScrollToKey==="function"){
-        return !!__msScrollToKey(key);
+      // Ensure we are in timeline view
+      try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
+      // Ensure accordion open
+      try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
+      try{ if(typeof openAccordionKey==="function") openAccordionKey("timeline"); }catch{}
+
+      const body = document.querySelector('[data-acc-body="timeline"]');
+      const ok = !!(body && !body.classList.contains("hidden") && body.offsetHeight > 0);
+      if(ok){
+        cb();
+        return;
       }
     }catch{}
-    return false;
+    if(tries >= 30){ // ~30 * 50ms = 1500ms max
+      try{ cb(); }catch{}
+      return;
+    }
+    setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
-  // Let view switch + layout settle (Safari/iPhone), then retry a few times (same idea as micro-menu).
-  setTimeout(()=>{
-    let ok = attempt();
-    if(ok) return;
+  const attemptScroll = ()=>{
+    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+    let ok = false;
+    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
+    if(!ok){
+      // One more try next frame after DOM paint
+      requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
+    }
+  };
 
-    requestAnimationFrame(()=>{ try{ attempt(); }catch{} });
-    setTimeout(()=>{ try{ attempt(); }catch{} }, 160);
-    setTimeout(()=>{ try{ attempt(); }catch{} }, 360);
-    setTimeout(()=>{ try{ attempt(); }catch{} }, 700);
+  // Close modal already happened; now switch & scroll after layout settles.
+  setTimeout(()=>{
+    waitTimelineVisible(()=>{
+      // Give layout two frames to settle (fixed header/totals offsets)
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          attemptScroll();
+          // defensive retries in case of slow render
+          setTimeout(attemptScroll, 160);
+          setTimeout(attemptScroll, 360);
+          setTimeout(attemptScroll, 700);
+        });
+      });
+    });
   }, 0);
 }
+
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
 function __mvBindClearTimelineHighlightOnce(){
