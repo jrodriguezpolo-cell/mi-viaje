@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BL_AK_MORE_OPTIONS_ONLY_WORKING_LOADFIX</title>
+<title>V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1629,7 +1629,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnCopyBtoA">
             Copiar B → A
           </button>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsResetTrip">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset">
             Reiniciar viaje
           </button>
 <!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BL_AK_MORE_OPTIONS_ONLY_WORKING_LOADFIX";
+const APP_BUILD = "V226C1B0BM_AK_MORE_OPTIONS_BUTTON_ONLY_UI";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4926,7 +4926,7 @@ document.addEventListener("focusin", (e)=>{
 // Keep heights in sync on load and when viewport changes (iOS-friendly)
 let __initialScrollFixDone = false;
 let __syncTopStackPending = false;
-let __syncTopStackDidFirstMás opciones = false;
+let __syncTopStackDidFirstReset = false;
 function scheduleSyncTopStackHeights(){
   if (__syncTopStackPending) return;
   __syncTopStackPending = true;
@@ -4935,8 +4935,8 @@ function scheduleSyncTopStackHeights(){
     syncTopStackHeights();
     // One-time safety: if mainScroll is born scrolled, reset once.
     const ms = $("mainScroll");
-    if (ms && !__syncTopStackDidFirstMás opciones && ms.scrollTop > 4){
-      __syncTopStackDidFirstMás opciones = true;
+    if (ms && !__syncTopStackDidFirstReset && ms.scrollTop > 4){
+      __syncTopStackDidFirstReset = true;
       ms.scrollTop = 0;
     }
   }));
@@ -8149,7 +8149,7 @@ function openEventSheet({ kind, id, mode, isNew, sourceView } = {}) {
   } catch {}
 
 
-  // Más opciones any previous sheet-only UI fragments
+  // Reset any previous sheet-only UI fragments
   try { body.__chipsHost = null; } catch {}
 
   // Close any previous instance safely
@@ -13200,10 +13200,10 @@ function __aiOpenPendingReviewModal(){
     box.__aiPendBound = true;
     box.addEventListener("click", (ev)=>{
       const t = ev.target;
-            const resetBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
+            const resetBtn = t && t.closest ? t.closest("[data-ai-reset-city]") : null;
             if(resetBtn){
               try{
-                const key = String(resetBtn.getAttribute("data-ai-more-city")||"").trim();
+                const key = String(resetBtn.getAttribute("data-ai-reset-city")||"").trim();
                 if(key){
                   // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
                   // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
@@ -14373,7 +14373,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   const saveBtn = $("toolsSave");
   const loadBtn = $("toolsLoad");
-  const resetBtn = $("toolsResetTrip");
+  const resetBtn = $("toolsReset");
   const copyAtoBBtn = $("btnCopyAtoB");
   const copyBtoABtn = $("btnCopyBtoA");
   const geminiKeyBtn = $("btnGeminiKey");
@@ -15204,7 +15204,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }catch(e){}
 
     // Si no hay caché (o está vacía), generamos un orden nuevo (aleatorio) dentro del catálogo concreto.
-// Así, al pulsar ↻ Más opciones, cambian las 5/10 propuestas visibles.
+// Así, al pulsar ↻ Reset, cambian las 5/10 propuestas visibles.
 const shuffled = list.slice();
 for (let i = shuffled.length - 1; i > 0; i--) {
   const j = Math.floor(Math.random() * (i + 1));
@@ -15547,44 +15547,14 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           res.addEventListener("click", (ev)=>{
             const t = ev.target;
 
-            // ⇄ Más opciones por ciudad (DEBE ir antes del toggle del acordeón)
-            const moreBtn = t && t.closest ? t.closest("[data-ai-more-city]") : null;
-            if(moreBtn){
+            // ↻ Reset por ciudad (DEBE ir antes del toggle del acordeón)
+            const resetBtn = t && t.closest ? t.closest("[data-ai-reset-city]") : null;
+            if(resetBtn){
               try{
-                const keyRaw = String(moreBtn.getAttribute("data-ai-more-city")||"").trim();
+                const keyRaw = String(resetBtn.getAttribute("data-ai-reset-city")||"").trim();
                 if(keyRaw){
-                  // Mantener abierto el bloque de esta ciudad tras refrescar
-                  window.__aiKeepOpenCityKey = keyRaw;
-
-                  // Calcular tamaño real del mazo (catálogo 10/5) y alternar páginas de 5
-                  let deckLen = 0;
-                  try{
-                    const cityName = keyRaw.replace(/-/g," ");
-                    const deck = (window.__MV_POI && window.__MV_POI.getPOIsForCity) ? (window.__MV_POI.getPOIsForCity(cityName) || []) : [];
-                    deckLen = Array.isArray(deck) ? deck.length : 0;
-                  }catch{}
-
-                  const offKey = "MV_AI_CITY_OFFSET_V1:" + keyRaw;
-                  let cur = 0;
-                  try{ cur = parseInt(localStorage.getItem(offKey)||"0",10) || 0; }catch{}
-                  // Si hay >5, alternamos 0/1. Si no, siempre 0.
-                  const next = (deckLen > 5) ? ((cur + 1) % 2) : 0;
-                  try{ localStorage.setItem(offKey, String(next)); }catch{}
-
-                  // Refrescar acción actual sin colapsar acordeones
-                  try{
-                    if(window.aiModule && typeof window.aiModule.refreshCurrentAction==="function"){
-                      window.aiModule.refreshCurrentAction({ force: true });
-                    }else if(typeof refreshCurrentAction==="function"){
-                      refreshCurrentAction({ force: true });
-                    }
-                  }catch{}
-                }
-              }catch(e){}
-              ev.preventDefault();
-              ev.stopPropagation();
-              return;
-            }
+                  const keys = new Set([keyRaw]);
+                  try{ keys.add(keyRaw.replace(/-/g," ")); }catch{}
                   try{ keys.add(keyRaw.replace(/\s+/g,"-")); }catch{}
                   try{
                     keys.forEach((k)=>{
@@ -16882,7 +16852,7 @@ __aiBuildDayBuckets(trip){
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver más opciones de ${escapeHtml(sec.city||"")}" data-ai-more-city="${escapeHtml(sec.cityKey)}">↻<span class="ml-1 text-xs font-bold">Más opciones</span></button>` : ``}
+                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones"")}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
@@ -17609,10 +17579,7 @@ loadTripGapsFill(opts){
         const suggestedTime = suggestTimeForDay(day, b);
 
         // Propuestas por ciudad (máx 5), filtrando duplicados ya existentes
-        const __ck = ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city));
-        let __off = 0;
-        try{ __off = parseInt(localStorage.getItem("MV_AI_CITY_OFFSET_V1:" + __ck)||"0",10) || 0; }catch{}
-        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, __off);
+        const proposals = this.__aiTopProposalsForCity(city, existingTitles, 5, this.state.gapRecoOffset);
         if(!proposals.length) continue;
 
         gapBlocks.push({
@@ -17658,7 +17625,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver más opciones de ${escapeHtml(blk.city||"")}" data-ai-more-city="${escapeHtml(blk.cityKey)}">↻<span class="ml-1 text-xs font-bold">Más opciones</span></button>` : ``}
+                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Más opciones"")}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Más opciones</button>` : ``}
                 <div>${blk.proposals.length} propuestas</div>
               </div>
             </div>
@@ -17693,12 +17660,12 @@ loadTripGapsFill(opts){
       // Bind reset buttons (per city) — ultra-quirúrgico
       try{
         const self = this;
-        results.querySelectorAll("[data-ai-more-city]").forEach((btn)=>{
+        results.querySelectorAll("[data-ai-reset-city]").forEach((btn)=>{
           if(btn.__mvBound) return;
           btn.__mvBound = true;
           btn.addEventListener("click", (ev)=>{
             ev.preventDefault(); ev.stopPropagation();
-            const key = String(btn.getAttribute("data-ai-more-city")||"").trim();
+            const key = String(btn.getAttribute("data-ai-reset-city")||"").trim();
             if(!key) return;
             // Compatibilidad: algunas partes usan cityKey con espacios (p.ej. "new york") y otras con guiones (p.ej. "nueva-york").
             // Al resetear, borramos ambas variantes para asegurar que realmente cambia el pool.
