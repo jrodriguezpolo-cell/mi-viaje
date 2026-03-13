@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN</title>
+<title>V226C1B0C3_AK_ACTS_JUMP_INSTANT_ANCHOR_NO_BOUNCE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C2_AK_ACTS_JUMP_WAIT_TIMELINE_VISIBLE_BEFORE_SCROLL";
+const APP_BUILD = "V226C1B0C3_AK_ACTS_JUMP_INSTANT_ANCHOR_NO_BOUNCE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -6467,7 +6467,7 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
-function __scrollTimelineFoundItemToTopAnchor(el){
+function __scrollTimelineFoundItemToTopAnchor(el, opts){
   // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
   try{
     if(!el) return;
@@ -6502,6 +6502,9 @@ function __scrollTimelineFoundItemToTopAnchor(el){
     const margin = 10; // comfortable gap below the bar
     const targetTop = anchorBottom + margin;
 
+    const __mvAnchorBehavior = (opts && opts.instant) ? "auto" : "smooth";
+
+
     // Current element top in viewport
     const rEl = el.getBoundingClientRect();
     const delta = (rEl.top - targetTop);
@@ -6514,12 +6517,14 @@ function __scrollTimelineFoundItemToTopAnchor(el){
     if(targetScrollTop < 0) targetScrollTop = 0;
     if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
 
-    // Smooth scroll to anchored position
-    try{ scroller.scrollTo({ top: targetScrollTop, behavior: "smooth" }); }
-    catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
+    // Scroll to anchored position (smooth by default; instant when requested)
+    try{
+      if(__mvAnchorBehavior === "auto") scroller.scrollTop = targetScrollTop;
+      else scroller.scrollTo({ top: targetScrollTop, behavior: __mvAnchorBehavior });
+    }catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
 
-    // Second pass: if after layout it drifted, re-anchor once
-    requestAnimationFrame(()=>{
+    // Second pass: if after layout it drifted, re-anchor once (skip in instant mode)
+    if(__mvAnchorBehavior !== "auto") requestAnimationFrame(()=>{
       try{
         const r2 = el.getBoundingClientRect();
         const d2 = (r2.top - targetTop);
@@ -6528,23 +6533,27 @@ function __scrollTimelineFoundItemToTopAnchor(el){
           try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
           if(st < 0) st = 0;
           if(maxScroll && st > maxScroll) st = maxScroll;
-          try{ scroller.scrollTo({ top: st, behavior: "smooth" }); }catch{ try{ scroller.scrollTop = st; }catch{} }
+          try{
+            if(__mvAnchorBehavior === "auto") scroller.scrollTop = st;
+            else scroller.scrollTo({ top: st, behavior: __mvAnchorBehavior });
+          }catch{ try{ scroller.scrollTop = st; }catch{} }
         }
       }catch{}
     });
+    }
   }catch{}
 }
 
 
 
-function __msScrollToKey(key){
+function __msScrollToKey(key, opts){
   if(!key) return false;
   try{
     if(typeof __tlScrollToItemByKey === "function"){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
-        try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{}
+        try{ __scrollTimelineFoundItemToTopAnchor(el, opts); }catch{}
         __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
         return true;
@@ -6554,7 +6563,7 @@ function __msScrollToKey(key){
   try{
     const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     if(!el) return false;
-    try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+    try{ __scrollTimelineFoundItemToTopAnchor(el, opts); }catch{ try{ el.scrollIntoView({behavior:(opts&&opts.instant)?"auto":"smooth", block:"center"}); }catch{} }
     __applyTimelinePersistentFoundHighlight(key);
     __msFlashEl(el);
     return true;
@@ -6792,7 +6801,7 @@ function openTimelineMicroSummaryMenu(){
             try{
               const ok = __msScrollToKey(key);
               if(!ok){
-                requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
+                requestAnimationFrame(()=>{ try{ __msScrollToKey(key, { instant: true }); }catch{} });
               }
             }catch{}
           }, 0);
@@ -11093,10 +11102,10 @@ function __mvJumpToTimelineAct(actId){
   const attemptScroll = ()=>{
     try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     let ok = false;
-    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
+    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key, { instant: true }); }catch{}
     if(!ok){
       // One more try next frame after DOM paint
-      requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
+      requestAnimationFrame(()=>{ try{ __msScrollToKey(key, { instant: true }); }catch{} });
     }
   };
 
