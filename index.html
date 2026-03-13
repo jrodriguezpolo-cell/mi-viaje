@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0C3_AK_ACTS_JUMP_INSTANT_ANCHOR_NO_BOUNCE</title>
+<title>V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C3_AK_ACTS_JUMP_INSTANT_ANCHOR_NO_BOUNCE";
+const APP_BUILD = "V226C1B0C4_AK_ACTS_JUMP_BOUNCELESS_ANCHOR_ONCE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -6467,7 +6467,7 @@ function __applyTimelinePersistentFoundHighlight(key){
     }catch{}
   }
 })();
-function __scrollTimelineFoundItemToTopAnchor(el, opts){
+function __scrollTimelineFoundItemToTopAnchor(el){
   // V212: True top-anchor found item just below the fixed Timeline bar (subSectionHeader)
   try{
     if(!el) return;
@@ -6502,9 +6502,6 @@ function __scrollTimelineFoundItemToTopAnchor(el, opts){
     const margin = 10; // comfortable gap below the bar
     const targetTop = anchorBottom + margin;
 
-    const __mvAnchorBehavior = (opts && opts.instant) ? "auto" : "smooth";
-
-
     // Current element top in viewport
     const rEl = el.getBoundingClientRect();
     const delta = (rEl.top - targetTop);
@@ -6517,43 +6514,44 @@ function __scrollTimelineFoundItemToTopAnchor(el, opts){
     if(targetScrollTop < 0) targetScrollTop = 0;
     if(maxScroll && targetScrollTop > maxScroll) targetScrollTop = maxScroll;
 
-    // Scroll to anchored position (smooth by default; instant when requested)
-    try{
-      if(__mvAnchorBehavior === "auto") scroller.scrollTop = targetScrollTop;
-      else scroller.scrollTo({ top: targetScrollTop, behavior: __mvAnchorBehavior });
-    }catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
+    // Scroll to anchored position (optionally instant for one-off jumps)
+    const __instantOnce = !!window.__mvForceInstantAnchorOnce;
+    if(__instantOnce) window.__mvForceInstantAnchorOnce = false;
 
-    // Second pass: if after layout it drifted, re-anchor once (skip in instant mode)
-    if(__mvAnchorBehavior !== "auto") requestAnimationFrame(()=>{
-      try{
-        const r2 = el.getBoundingClientRect();
-        const d2 = (r2.top - targetTop);
-        if(Math.abs(d2) > 6){
-          let st = 0;
-          try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
-          if(st < 0) st = 0;
-          if(maxScroll && st > maxScroll) st = maxScroll;
-          try{
-            if(__mvAnchorBehavior === "auto") scroller.scrollTop = st;
-            else scroller.scrollTo({ top: st, behavior: __mvAnchorBehavior });
-          }catch{ try{ scroller.scrollTop = st; }catch{} }
-        }
-      }catch{}
-    });
+    if(__instantOnce){
+      try{ scroller.scrollTop = targetScrollTop; }catch{}
+    }else{
+      try{ scroller.scrollTo({ top: targetScrollTop, behavior: "smooth" }); }
+      catch{ try{ scroller.scrollTop = targetScrollTop; }catch{} }
+
+      // Second pass: if after layout it drifted, re-anchor once
+      requestAnimationFrame(()=>{
+        try{
+          const r2 = el.getBoundingClientRect();
+          const d2 = (r2.top - targetTop);
+          if(Math.abs(d2) > 6){
+            let st = 0;
+            try{ st = (scroller.scrollTop || 0) + d2; }catch{ st = d2; }
+            if(st < 0) st = 0;
+            if(maxScroll && st > maxScroll) st = maxScroll;
+            try{ scroller.scrollTo({ top: st, behavior: "smooth" }); }catch{ try{ scroller.scrollTop = st; }catch{} }
+          }
+        }catch{}
+      });
     }
   }catch{}
 }
 
 
 
-function __msScrollToKey(key, opts){
+function __msScrollToKey(key){
   if(!key) return false;
   try{
     if(typeof __tlScrollToItemByKey === "function"){
       const ok = __tlScrollToItemByKey(key);
       if(ok){
         const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
-        try{ __scrollTimelineFoundItemToTopAnchor(el, opts); }catch{}
+        try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{}
         __applyTimelinePersistentFoundHighlight(key);
         __msFlashEl(el);
         return true;
@@ -6563,7 +6561,7 @@ function __msScrollToKey(key, opts){
   try{
     const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     if(!el) return false;
-    try{ __scrollTimelineFoundItemToTopAnchor(el, opts); }catch{ try{ el.scrollIntoView({behavior:(opts&&opts.instant)?"auto":"smooth", block:"center"}); }catch{} }
+    try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
     __applyTimelinePersistentFoundHighlight(key);
     __msFlashEl(el);
     return true;
@@ -6801,7 +6799,7 @@ function openTimelineMicroSummaryMenu(){
             try{
               const ok = __msScrollToKey(key);
               if(!ok){
-                requestAnimationFrame(()=>{ try{ __msScrollToKey(key, { instant: true }); }catch{} });
+                requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
               }
             }catch{}
           }, 0);
@@ -11099,14 +11097,42 @@ function __mvJumpToTimelineAct(actId){
     setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
+  let __done = false;
+  const __timers = [];
+
+  const __clearTimers = ()=>{
+    try{ while(__timers.length) clearTimeout(__timers.pop()); }catch{}
+  };
+
   const attemptScroll = ()=>{
+    if(__done) return;
     try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
     let ok = false;
-    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key, { instant: true }); }catch{}
-    if(!ok){
-      // One more try next frame after DOM paint
-      requestAnimationFrame(()=>{ try{ __msScrollToKey(key, { instant: true }); }catch{} });
+
+    // One-off: for this jump only, anchor instantly (no smooth + no second-pass) to avoid iOS "rebote"
+    try{ window.__mvForceInstantAnchorOnce = true; }catch{}
+
+    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
+    if(ok){
+      __done = true;
+      __clearTimers();
+      return;
     }
+
+    // One more try next frame after DOM paint (still instant-once)
+    requestAnimationFrame(()=>{
+      if(__done) return;
+      try{ window.__mvForceInstantAnchorOnce = true; }catch{}
+      try{
+        if(typeof __msScrollToKey==="function"){
+          const ok2 = !!__msScrollToKey(key);
+          if(ok2){
+            __done = true;
+            __clearTimers();
+          }
+        }
+      }catch{}
+    });
   };
 
   // Close modal already happened; now switch & scroll after layout settles.
@@ -11116,15 +11142,15 @@ function __mvJumpToTimelineAct(actId){
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
           attemptScroll();
-          // defensive retries in case of slow render
-          setTimeout(attemptScroll, 160);
-          setTimeout(attemptScroll, 360);
-          setTimeout(attemptScroll, 700);
+          // Defensive retries in case of slow render; stop as soon as it succeeds
+          __timers.push(setTimeout(attemptScroll, 220));
+          __timers.push(setTimeout(attemptScroll, 520));
         });
       });
     });
   }, 0);
 }
+
 
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
