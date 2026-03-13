@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BX_AK_ACTS_JUMP_GLOBAL_TIMELINE_ANCHOR";
+const APP_BUILD = "V226C1B0BY_AK_ACTS_JUMP_USE_MS_SCROLLTOKEY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11065,69 +11065,42 @@ function __mvJumpToTimelineAct(actId, iso){
   iso = String(iso||"").trim();
   if(!actId) return;
 
-  // Switch to Cronograma (timeline)
+  const key = `act:${actId}`;
+
+  // Switch to Cronograma (timeline) and keep GLOBAL mode (do not hide other days)
   try{ if(typeof setView === "function") setView("timeline"); }catch{}
   try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-
-  // IMPORTANT: Timeline can be in "day" mode. For a safe jump without hiding other days,
-  // force GLOBAL mode so the full cronograma remains visible, then scroll to the selected item.
   try{
     if(typeof timelineViewMode !== "undefined") timelineViewMode = "global";
     if(typeof activeDayISO !== "undefined") activeDayISO = "";
   }catch{}
 
-  // Request a timeline render so the target day/items exist in DOM
+  // Ensure timeline is rendered, then use the SAME scroll/highlight routine used by the 🔍 search.
   try{ if(typeof renderTimeline === "function") renderTimeline(); }catch{}
 
-  // After render settles, find the timeline card and anchor it just below the fixed bars
-  const tryFindAndGo = ()=>{
-    let target = null;
+  const tryGo = ()=>{
     try{
-      const escId = (CSS && CSS.escape) ? CSS.escape(actId) : actId.replace(/"/g,'\"');
-      target = document.querySelector('#timelineList .timelineItem[data-tl-jump-type="act"][data-tl-jump-id="'+escId+'"]')
-            || document.getElementById("tl-act-"+actId);
-    }catch{}
-    if(!target) return false;
-
-    // Persistent highlight (removed on next user interaction)
-    try{
-      const key = `act:${actId}`;
-      if(typeof __applyTimelinePersistentFoundHighlight === "function") __applyTimelinePersistentFoundHighlight(key);
-      else target.classList.add("tlPersistentFound");
-    }catch{}
-
-    // Anchor under top stack (header/totals/controls) reliably
-    try{
-      if(typeof __scrollTimelineFoundItemToTopAnchor === "function") __scrollTimelineFoundItemToTopAnchor(target);
-      else {
-        const ms = document.getElementById("mainScroll");
-        const topStack = (typeof getTopStackHeight === "function") ? getTopStackHeight() : 0;
-        if(ms){
-          const y = target.getBoundingClientRect().top + ms.scrollTop - topStack - 8;
-          try{ ms.scrollTo({ top: Math.max(0,y), behavior: "smooth" }); }catch{ ms.scrollTop = Math.max(0,y); }
-        }else{
-          target.scrollIntoView({behavior:"smooth", block:"start"});
-        }
+      if(typeof __msScrollToKey === "function"){
+        return !!__msScrollToKey(key);
       }
-    }catch{ try{ target.scrollIntoView(true); }catch{} }
-
-    // Visual nudge (brief) WITHOUT removing the persistent highlight
-    try{
-      target.classList.add("rtFlash");
-      setTimeout(()=>{ try{ target.classList.remove("rtFlash"); }catch{} }, 900);
     }catch{}
-
-    // Keep highlight until the user interacts (do NOT clear on scroll, since we scroll programmatically)
-    try{ __mvBindClearTimelineHighlightOnce(); }catch{}
-    return true;
+    // Fallback: basic query + anchor if needed
+    try{
+      const el = document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(String(key))}"]`);
+      if(!el) return false;
+      try{ if(typeof __scrollTimelineFoundItemToTopAnchor==="function") __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ el.scrollIntoView({behavior:"smooth", block:"center"}); }catch{} }
+      try{ if(typeof __applyTimelinePersistentFoundHighlight==="function") __applyTimelinePersistentFoundHighlight(key); }catch{}
+      return true;
+    }catch{}
+    return false;
   };
 
-  // Multiple retries: timeline may re-render after view switch
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    if(tryFindAndGo()) return;
-    setTimeout(()=>{ if(tryFindAndGo()) return; }, 120);
-    setTimeout(()=>{ tryFindAndGo(); }, 320);
-  }));
+  // Multiple attempts to survive render/DOM settling and long lists
+  if(tryGo()) return;
+  requestAnimationFrame(()=>{ if(tryGo()) return; requestAnimationFrame(()=>{ tryGo(); }); });
+  setTimeout(()=>{ tryGo(); }, 60);
+  setTimeout(()=>{ tryGo(); }, 180);
+  setTimeout(()=>{ tryGo(); }, 360);
 }
 
 // Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
