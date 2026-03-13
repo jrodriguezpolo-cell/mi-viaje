@@ -1137,7 +1137,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* V222B3: Transport right-rail cleanup (stable lanes) */
 .mvLegRightRail{
   display:grid;
-  grid-template-rows:1.25rem 1.25rem 1fr auto;
+  grid-template-rows:1.25rem auto 1fr auto;
   justify-items:end;
   align-items:start;
   row-gap:0.25rem;
@@ -1684,7 +1684,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C9_AK_TIMELINE_PIN_ALWAYS_VISIBLE";
+const APP_BUILD = "V226C1B0D0_AK_RIGHTRAIL_DURATION_BADGE_LAYOUT_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4787,7 +4787,7 @@ const depES = depDate ? formatDateShortES(depDate) : "";
   const dateHTML = depES
     ? `<span class="font-semibold">${escapeHtml(depES)}${arrES ? `&nbsp;→&nbsp;${escapeHtml(arrES)}` : ``}</span>`
     : "";
-  const metaHTML = [dateHTML, timeLineHTML].filter(Boolean).join(" · ") || "—";
+  const metaHTML = [dateHTML, timeLineHTML, (durText ? `<span class="mv-nb">${durText}</span>` : "")].filter(Boolean).join(" · ") || "—";
 
   const p0 = String(leg?.placeOut || "").trim();
   const p1 = String(leg?.placeIn || "").trim();
@@ -9397,9 +9397,7 @@ function legCard(leg, idx) {
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
-        <div class="mvLegRightMid">
-          ${__sp.durText ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div>` : ""}
-        </div>
+        <div class="mvLegRightMid"></div>
         <div class="mvLegRightSpacer"></div>
         ${__rtBadge ? `<div class="mvLegRightBottom">${__rtBadge}</div>` : ""}
       </div>
@@ -12168,7 +12166,7 @@ function renderTimeline() {
     const __aiPendingTL = (jumpType === 'act' && __act && __act.pendingAIReview) ? true : false;
     const __aiConfirmedTL = (jumpType === 'act' && __act && __act.fromAI && !__act.pendingAIReview && (__act.aiConfirmedAt||0)) ? true : false;
     const __aiIconHTML = (jumpType==='act' && __act && __act.fromAI) ? `<span class="mvAiSparkle ${__aiPendingTL ? "pending" : ""}" data-ai-sparkle-act="${escapeHtml(String(jumpId))}" title="${__aiPendingTL ? "Añadido por IA · por revisar" : (__aiConfirmedTL ? "Añadido por IA · revisado" : "Añadido por IA")}">✨${__aiConfirmedTL ? `<span class="mvAiSparkleCheck">✓</span>` : ``}</span>` : ``;
-    const __rightDurHTML = (jumpType === 'leg' && __leg) ? (function(){ const sp = buildLegSummaryParts(__leg); return (sp && sp.durText) ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${sp.durText}</div>` : ``; })() : ``;
+    const __rightDurHTML = ``;
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
