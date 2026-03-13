@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT";
+const APP_BUILD = "V226C1B0BR_AK_MORE_OPTIONS_PAGE2_SHORT_NO_REPEATS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -16873,18 +16873,24 @@ __aiBuildDayBuckets(trip){
 
         const gapBlocks = gaps.map((g,gi)=>{
           // elegir 5 por ciudad (paginación 5/5) + dedupe contra cronograma + wrap-around
-          const startAt = ((Number(__mvCityPage)||0) * 5) % pois.length;
-          const pick = [];
+          // elegir por ciudad (paginación 5/5) + dedupe contra cronograma (sin wrap-around en 2ª página)
+          const avail = [];
           const seen = new Set();
-          for(let k=0;k<pois.length && pick.length<5;k++){
-            const p = pois[(startAt + k) % pois.length];
+          for(const p of (Array.isArray(pois)?pois:[])){
             const tt = String(p && p.title || "").trim().toLowerCase();
             if(!tt || seen.has(tt)) continue;
             seen.add(tt);
             if(scheduledTitles.has(tt)) continue;
-            pick.push(p);
+            avail.push(p);
           }
-          const show = pick;
+          let __page = (Number(__mvCityPage)||0) === 1 ? 1 : 0;
+          if(__page === 1 && avail.length <= 5){
+            __page = 0;
+            try{ if(typeof this.__aiSetCityPage === "function") this.__aiSetCityPage(cityKey, 0); }catch(e){}
+          }
+          const startAt = __page * 5;
+          const show = avail.slice(startAt, startAt + 5);
+
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const gapTitle = `${hhmm(g.start)}–${hhmm(g.end)}`;
