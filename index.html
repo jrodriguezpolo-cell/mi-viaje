@@ -1677,7 +1677,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B8_STAY_PROGRESS_SECTION";
+const APP_BUILD = "V227_B9_ACTS_JUMP_SMOOTH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11112,8 +11112,10 @@ function __mvJumpToTimelineAct(actId){
 
   const key = `act:${actId}`;
 
-  // We must wait until the Timeline accordion body is actually visible; otherwise iOS/Safari reports
-  // getBoundingClientRect().top as 0 and scrollToElWithOffset lands at the top (day 1).
+  // Keep it as close as possible to the MicroSummary (🔍) anchoring:
+  // 1) ensure Timeline is visible/open
+  // 2) wait 2 frames for layout/top offsets
+  // 3) do ONE scroll attempt + ONE guarded retry (no cascading timeouts)
   const waitTimelineVisible = (cb, tries=0)=>{
     try{
       // Ensure we are in timeline view
@@ -11124,39 +11126,37 @@ function __mvJumpToTimelineAct(actId){
 
       const body = document.querySelector('[data-acc-body="timeline"]');
       const ok = !!(body && !body.classList.contains("hidden") && body.offsetHeight > 0);
-      if(ok){
-        cb();
-        return;
-      }
+      if(ok){ cb(); return; }
     }catch{}
-    if(tries >= 30){ // ~30 * 50ms = 1500ms max
+    if(tries >= 24){ // ~24 * 50ms = 1200ms max
       try{ cb(); }catch{}
       return;
     }
     setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
   };
 
-  const attemptScroll = ()=>{
-    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+  const attemptScroll = (forceRender=false)=>{
     let ok = false;
-    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
-    if(!ok){
-      // One more try next frame after DOM paint
-      requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
-    }
+    try{
+      if(forceRender && typeof renderTimeline==="function") renderTimeline();
+    }catch{}
+    try{
+      if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key);
+    }catch{}
+    return ok;
   };
 
   // Close modal already happened; now switch & scroll after layout settles.
   setTimeout(()=>{
     waitTimelineVisible(()=>{
-      // Give layout two frames to settle (fixed header/totals offsets)
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
-          attemptScroll();
-          // defensive retries in case of slow render
-          setTimeout(attemptScroll, 160);
-          setTimeout(attemptScroll, 360);
-          setTimeout(attemptScroll, 700);
+          const ok1 = attemptScroll(false);
+          if(!ok1){
+            // single guarded retry after a short delay (gives time for slow paints on iOS)
+            setTimeout(()=>{ try{ attemptScroll(true); }catch{} }, 140);
+          }
+          try{ __mvBindClearTimelineHighlightOnce(); }catch{}
         });
       });
     });
