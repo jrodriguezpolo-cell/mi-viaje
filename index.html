@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B2_TERMINAL_MAPS</title>
+<title>V227_B2_DETAIL_NORMALIZE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B2_TERMINAL_MAPS" rel="manifest"/>
+<link href="manifest.json?v=V227_B2_DETAIL_NORMALIZE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B5_TERMINAL_LATLNG";
+const APP_BUILD = "V227_B2_DETAIL_NORMALIZE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4314,27 +4314,9 @@ function __mapsDestWithCity(value, city){
   return (v + " " + c).trim();
 }
 
-
-
-// Extract lat,lng from a text string (safe opt-in). Supported forms:
-//  - "... @40.4912,-3.5933"
-//  - "... gps:40.4912,-3.5933"
-// Returns {lat,lng} or null. Used only to improve Maps precision when user provides coords.
-function __extractLatLngFromText(s){
-  try{
-    const t = String(s||"");
-    const m1 = t.match(/@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i);
-    if(m1) return { lat: m1[1], lng: m1[2] };
-    const m2 = t.match(/\bgps\s*:\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i);
-    if(m2) return { lat: m2[1], lng: m2[2] };
-  }catch{}
-  return null;
-}
 // Open Google Maps directions FROM "my location" TO destination.
 function __openDirectionsTo(destination, mode){
   const dest = String(destination||"").trim();
-  const ll = __extractLatLngFromText(dest);
-  const destParam = ll ? (ll.lat + "," + ll.lng) : dest;
   if(!dest){ alert("Rellena este campo primero"); return; }
 
   const m = String(mode||"").toLowerCase();
@@ -4343,83 +4325,17 @@ function __openDirectionsTo(destination, mode){
                : (m==="bike" || m==="bicycling") ? "bicycling"
                : "transit";
 
-  const appUrl = "comgooglemaps://?daddr=" + encodeURIComponent(destParam)
+  const appUrl = "comgooglemaps://?daddr=" + encodeURIComponent(dest)
                + "&directionsmode=" + encodeURIComponent(travel);
 
   const webUrl = "https://www.google.com/maps/dir/?api=1"
-               + "&destination=" + encodeURIComponent(destParam)
+               + "&destination=" + encodeURIComponent(dest)
                + "&travelmode=" + encodeURIComponent(travel);
 
   try{ window.location.href = appUrl; }catch{}
   setTimeout(()=>{
     try{ window.open(webUrl, "_blank", "noopener,noreferrer"); }catch{}
   }, 700);
-
-// Format "detail" (Terminal / Vía / Dársena / Muelle) so Google Maps understands it better.
-// Quirúrgico: only affects destination string passed to Maps (no UI/storage changes).
-function __formatLegDetailForMaps(mode, detailRaw){
-  const raw = String(detailRaw||"").trim();
-  if(!raw) return "";
-  const m = String(mode||"").toLowerCase().trim();
-
-  // If user already wrote a descriptive word, keep it (just trim).
-  const hasWord = /(terminal|puerta|gate|and[eé]n|v[ií]a|plataforma|platform|d[aá]rsena|muelle|pier)/i.test(raw);
-  if(hasWord) return raw;
-
-  // Normalize the first token for common shorthand patterns.
-  // Plane: "T4", "T4S", "4" => "Terminal 4", "Terminal 4S"
-  if(m==="plane" || m==="flight" || m==="air"){
-    let t = raw;
-    // If starts with T + code
-    const mt = t.match(/^t\s*([0-9]+\s*[a-z0-9]*)\b/i);
-    if(mt){
-      const code = String(mt[1]).replace(/\s+/g,"").toUpperCase();
-      return "Terminal " + code + t.slice(mt[0].length);
-    }
-    const md = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
-    if(md){
-      const code = String(md[1]).replace(/\s+/g,"").toUpperCase();
-      return "Terminal " + code + t.slice(md[0].length);
-    }
-    return raw;
-  }
-
-  // Train: default to "Vía"
-  if(m==="train" || m==="rail"){
-    let t = raw;
-    const mv = t.match(/^(v(?:[ií]a)?\s*)?([0-9]+\s*[a-z0-9]*)\b/i);
-    if(mv){
-      const code = String(mv[2]).replace(/\s+/g,"").toUpperCase();
-      // If raw already began with 'v' or 'via', still normalize spacing/case.
-      return "Vía " + code + t.slice(mv[0].length);
-    }
-    return raw;
-  }
-
-  // Bus: default to "Dársena"
-  if(m==="bus" || m==="coach"){
-    let t = raw;
-    const mb = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
-    if(mb){
-      const code = String(mb[1]).replace(/\s+/g,"").toUpperCase();
-      return "Dársena " + code + t.slice(mb[0].length);
-    }
-    return raw;
-  }
-
-  // Boat/Ferry: default to "Muelle"
-  if(m==="boat" || m==="ferry" || m==="ship"){
-    let t = raw;
-    const ms = t.match(/^([0-9]+\s*[a-z0-9]*)\b/i);
-    if(ms){
-      const code = String(ms[1]).replace(/\s+/g,"").toUpperCase();
-      return "Muelle " + code + t.slice(ms[0].length);
-    }
-    return raw;
-  }
-
-  return raw;
-}
 }
 
 // V220A: Timeline — contextual "Cómo llegar" button (maps)
@@ -4897,22 +4813,9 @@ function legSummaryLinesHTML(leg, opts){
   );
 
   // V220A/V222G: "Cómo llegar" destino contextual (punto de salida)
-// V227_B3_FIX: incluir detalle (Terminal/Vía/Dársena/Muelle) normalizado para que Google Maps lo reconozca,
-// SIN poder romper el render del cronograma: si algo falla, fallback a base+ciudad.
-const __navDest = ((opts.context==="timeline") || (opts.context==="section")) ? (function(){
-  try{
-    const base = String(leg.placeOut||leg.from||"").trim();
-    const city = String(leg.from||"").trim();
-    const mode = String(leg.mode||leg.transportMode||leg.kind||"plane").toLowerCase().trim() || "plane";
-    const det  = __formatLegDetailForMaps(mode, (leg.placeOutDetail||""));
-    const full = String((base + " " + det)).trim();
-    return __mapsDestWithCity(full || base, city);
-  }catch(e){
-    const base = String(leg.placeOut||leg.from||"").trim();
-    const city = String(leg.from||"").trim();
-    return __mapsDestWithCity(base, city);
-  }
-})() : "";
+  const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
+    ? __mapsDestWithCity((leg.placeOut||leg.from||"").trim(), (leg.from||"").trim())
+    : "";
   const __navMode = (function(){
     const m = String(leg.mode||"").toLowerCase();
     if(m==="car"||m==="driving") return "driving";
@@ -7129,11 +7032,71 @@ function legModeIcon(m){
 
 function __legDetailText(mode){
   const m = legModeDefault(mode);
-  if(m==="plane") return { label:"Terminal", ph:"Ej: T4" };
-  if(m==="train") return { label:"Andén", ph:"Ej: Andén 7" };
-  if(m==="bus")   return { label:"Dársena", ph:"Ej: Dársena 12" };
-  if(m==="boat")  return { label:"Muelle", ph:"Ej: Muelle A" };
+  if(m==="plane") return { label:"Terminal / Puerta", ph:"Ej: T4, Puerta H12…" };
+  if(m==="train") return { label:"Vía / Andén", ph:"Ej: 7, Andén 7…" };
+  if(m==="bus")   return { label:"Dársena", ph:"Ej: 12, Dársena 12…" };
+  if(m==="boat")  return { label:"Muelle", ph:"Ej: A, Muelle A…" };
   return { label:"Detalle", ph:"Ej: Parking / punto" };
+}
+
+function __mvNormalizeLegDetail(mode, raw){
+  try{
+    const m = legModeDefault(mode);
+    let v = String(raw||"").trim();
+    if(!v) return "";
+    // Normalize common separators
+    v = v.replace(/\s+/g," ").trim();
+
+    // Split by comma to normalize first token without destroying extra info
+    const parts = v.split(",").map(x=>x.trim()).filter(Boolean);
+    if(parts.length===0) return v;
+    let head = parts[0];
+
+    if(m==="plane"){
+      // Accept "t4", "T 4", "terminal 4", "4", "t4s"
+      let h = head;
+      const mt = h.match(/^t\s*0*([0-9]+[a-zA-Z]?)$/i);
+      const mt2 = h.match(/^terminal\s*0*([0-9]+[a-zA-Z]?)$/i);
+      const mn = h.match(/^0*([0-9]+[a-zA-Z]?)$/);
+      if(mt) head = "T"+String(mt[1]).toUpperCase();
+      else if(mt2) head = "Terminal "+String(mt2[1]).toUpperCase();
+      else if(mn) head = "T"+String(mn[1]).toUpperCase();
+      else head = h.replace(/^t\s*/i,"T").replace(/^terminal\b/i,"Terminal").trim();
+      // If head is like "T4", keep compact; if user wrote "Terminal 4", keep that
+      if(/^T[0-9]/.test(head) && head.length<=4){
+        // ok
+      }else if(/^Terminal\s+[0-9]/i.test(head)){
+        head = head.replace(/^Terminal\s+/i,"Terminal ");
+      }
+    } else if(m==="train"){
+      // Prefer "Vía N" for bare numbers; keep "Andén" if user wrote it
+      const h = head;
+      const mn = h.match(/^0*([0-9]+)$/);
+      const mv = h.match(/^(v|via|vía)\s*0*([0-9]+)$/i);
+      const ma = h.match(/^(anden|andén)\s*0*([0-9]+)$/i);
+      if(mn) head = "Vía "+mn[1];
+      else if(mv) head = "Vía "+mv[2];
+      else if(ma) head = "Andén "+ma[2];
+      else head = h.replace(/^v\s*/i,"V").replace(/^via\b/i,"Vía").replace(/^vía\b/i,"Vía").replace(/^anden\b/i,"Andén").replace(/^andén\b/i,"Andén").trim();
+    } else if(m==="bus"){
+      const h = head;
+      const mn = h.match(/^0*([0-9]+)$/);
+      const md = h.match(/^(darsena|dársena)\s*0*([0-9]+)$/i);
+      if(mn) head = "Dársena "+mn[1];
+      else if(md) head = "Dársena "+md[2];
+      else head = h.replace(/^darsena\b/i,"Dársena").replace(/^dársena\b/i,"Dársena").trim();
+    } else if(m==="boat"){
+      const h = head;
+      const mm = h.match(/^(muelle)\s*(.+)$/i);
+      if(mm) head = "Muelle "+String(mm[2]).trim().toUpperCase();
+      else head = "Muelle "+h.toUpperCase();
+    }
+
+    const tail = parts.slice(1).join(", ");
+    return tail ? (head + ", " + tail) : head;
+  }catch{
+    return String(raw||"").trim();
+  }
 }
 
 function legModeLabel(m){
@@ -7385,6 +7348,32 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
     }catch{}
   }
   try{ __applyLegDetailText(); }catch{}
+  // V227_B2: Normalize detail on blur (display-quality only; keeps data compatible)
+  (function(){
+    try{
+      const bindNormalize = (key)=>{
+        const el = qs(key);
+        if(!el) return;
+        if(el.__mvNormBound) return;
+        el.__mvNormBound = true;
+        el.addEventListener("blur", ()=>{
+          try{
+            const before = String(el.value||"");
+            const after = __mvNormalizeLegDetail(currentMode, before);
+            if(String(after||"") !== String(before||"")){
+              el.value = after;
+              // ensure bindings capture the new value
+              try{ el.dispatchEvent(new Event("input",{bubbles:true})); }catch{}
+              try{ el.dispatchEvent(new Event("change",{bubbles:true})); }catch{}
+            }
+          }catch{}
+        }, true);
+      };
+      bindNormalize("placeOutDetail");
+      bindNormalize("placeInDetail");
+    }catch{}
+  })();
+
   try{ qs("placeOut").placeholder = __legPlacePlaceholder(currentMode, "from"); }catch{}
   try{ qs("placeIn").placeholder = __legPlacePlaceholder(currentMode, "to"); }catch{}
 
@@ -7590,8 +7579,8 @@ qs("from").value = v(legObj.from);
     const _po = qs("placeOut");
     const _pi = qs("placeIn");
     const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
-    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity((_po.value + " " + d).trim(), _from && _from.value); }, _modeFn);
-    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity((_pi.value + " " + d).trim(), _to && _to.value); }, _modeFn);
+    __installPinBtn(_po, ()=>__mapsDestWithCity((_po.value + " " + (qs("placeOutDetail")?.value||"")).trim(), _from && _from.value), _modeFn);
+    __installPinBtn(_pi, ()=>__mapsDestWithCity((_pi.value + " " + (qs("placeInDetail")?.value||"")).trim(), _to && _to.value), _modeFn);
   }catch{}
 
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
