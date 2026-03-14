@@ -1677,7 +1677,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B9_ACTS_JUMP_SMOOTH";
+const APP_BUILD = "V227_B10_ACTS_JUMP_ANCHOR_MATCH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -11112,53 +11112,59 @@ function __mvJumpToTimelineAct(actId){
 
   const key = `act:${actId}`;
 
-  // Keep it as close as possible to the MicroSummary (🔍) anchoring:
-  // 1) ensure Timeline is visible/open
-  // 2) wait 2 frames for layout/top offsets
-  // 3) do ONE scroll attempt + ONE guarded retry (no cascading timeouts)
-  const waitTimelineVisible = (cb, tries=0)=>{
-    try{
-      // Ensure we are in timeline view
-      try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-      // Ensure accordion open
-      try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
-      try{ if(typeof openAccordionKey==="function") openAccordionKey("timeline"); }catch{}
+  // Goal: match 🔍 anchoring feel (one smooth scroll + stable top anchor), without cascaded jumps.
+  const ensureTimelineReady = (cb, tries=0)=>{
+    try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
+    try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
+    try{ if(typeof openAccordionKey==="function") openAccordionKey("timeline"); }catch{}
+    // try render once (safe noop if already rendered)
+    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
 
+    try{
       const body = document.querySelector('[data-acc-body="timeline"]');
       const ok = !!(body && !body.classList.contains("hidden") && body.offsetHeight > 0);
       if(ok){ cb(); return; }
     }catch{}
-    if(tries >= 24){ // ~24 * 50ms = 1200ms max
-      try{ cb(); }catch{}
-      return;
-    }
-    setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
+
+    if(tries >= 24){ try{ cb(); }catch{} return; }
+    setTimeout(()=>ensureTimelineReady(cb, tries+1), 50);
   };
 
-  const attemptScroll = (forceRender=false)=>{
-    let ok = false;
+  const findTimelineEl = ()=>{
     try{
-      if(forceRender && typeof renderTimeline==="function") renderTimeline();
+      return document.querySelector(`#timelineList .timelineItem[data-tl-key="${CSS.escape(key)}"]`);
     }catch{}
-    try{
-      if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key);
-    }catch{}
-    return ok;
+    return null;
   };
 
-  // Close modal already happened; now switch & scroll after layout settles.
+  const doAnchorScroll = (el)=>{
+    if(!el) return false;
+    try{ __scrollTimelineFoundItemToTopAnchor(el); }catch{ try{ scrollToElWithOffset(el, 0, true); }catch{} }
+    try{ __applyTimelinePersistentFoundHighlight(key); }catch{}
+    try{ __msFlashEl(el); }catch{}
+    return true;
+  };
+
+  // Close modal already happened; now switch & anchor after layout settles.
   setTimeout(()=>{
-    waitTimelineVisible(()=>{
-      requestAnimationFrame(()=>{
-        requestAnimationFrame(()=>{
-          const ok1 = attemptScroll(false);
-          if(!ok1){
-            // single guarded retry after a short delay (gives time for slow paints on iOS)
-            setTimeout(()=>{ try{ attemptScroll(true); }catch{} }, 140);
+    ensureTimelineReady(()=>{
+      // two frames: fixed header/totals offsets stable on iOS
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        const t0 = Date.now();
+        const spin = ()=>{
+          const el = findTimelineEl();
+          if(el){ doAnchorScroll(el); try{ __mvBindClearTimelineHighlightOnce(); }catch{} return; }
+          if(Date.now() - t0 > 1200){
+            // Fallback: last attempt via existing helper (may scroll if item becomes available late)
+            try{ if(typeof __msScrollToKey==="function") __msScrollToKey(key); }catch{}
+            try{ __mvBindClearTimelineHighlightOnce(); }catch{}
+            return;
           }
-          try{ __mvBindClearTimelineHighlightOnce(); }catch{}
-        });
-      });
+          // keep waiting without scrolling (prevents "trompicones")
+          requestAnimationFrame(spin);
+        };
+        spin();
+      }));
     });
   }, 0);
 }
