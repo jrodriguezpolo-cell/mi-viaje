@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B3_TERMINAL_NAV_FIX";
+const APP_BUILD = "V227_B4_TERMINAL_QUERY_BIAS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4404,6 +4404,14 @@ function __formatLegDetailForMaps(mode, detailRaw){
 }
 }
 
+function __joinPlaceAndDetailForMaps(mode, place, detail){
+  const p = String(place||"").trim();
+  const d = String(detail||"").trim();
+  if(!d) return p;
+  // Bias Google Maps search by placing the detail first (e.g., "Terminal 4" before airport name).
+  return String((d + " " + p)).trim();
+}
+
 // V220A: Timeline — contextual "Cómo llegar" button (maps)
 // - Discreet button next to event title in timeline summaries
 // - Has its own interaction (does not open the event sheet)
@@ -4887,7 +4895,7 @@ const __navDest = ((opts.context==="timeline") || (opts.context==="section")) ? 
     const city = String(leg.from||"").trim();
     const mode = String(leg.mode||leg.transportMode||leg.kind||"plane").toLowerCase().trim() || "plane";
     const det  = __formatLegDetailForMaps(mode, (leg.placeOutDetail||""));
-    const full = String((base + " " + det)).trim();
+    const full = __joinPlaceAndDetailForMaps(mode, base, det);
     return __mapsDestWithCity(full || base, city);
   }catch(e){
     const base = String(leg.placeOut||leg.from||"").trim();
@@ -7572,8 +7580,8 @@ qs("from").value = v(legObj.from);
     const _po = qs("placeOut");
     const _pi = qs("placeIn");
     const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
-    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity((_po.value + " " + d).trim(), _from && _from.value); }, _modeFn);
-    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity((_pi.value + " " + d).trim(), _to && _to.value); }, _modeFn);
+    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity(__joinPlaceAndDetailForMaps(_modeFn(), _po.value, d), _from && _from.value); }, _modeFn);
+    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity(__joinPlaceAndDetailForMaps(_modeFn(), _pi.value, d), _to && _to.value); }, _modeFn);
   }catch{}
 
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
