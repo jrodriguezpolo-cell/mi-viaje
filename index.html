@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B10_WEEK_TOGGLE_FIXED</title>
+<title>V227_B10_WEEK_TOGGLE_HEADER</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B10_WEEK_TOGGLE_FIXED" rel="manifest"/>
+<link href="manifest.json?v=V227_B10_WEEK_TOGGLE_HEADER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1677,7 +1677,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B10_WEEK_TOGGLE_FIXED";
+const APP_BUILD = "V227_B10_WEEK_TOGGLE_HEADER";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -18802,7 +18802,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   
 /* ============================================================
-   V227_B10_WEEK_TOGGLE_FIXED
+   V227_B10_WEEK_TOGGLE_HEADER
    Vista alternativa Semana (READ-ONLY) para Cronograma.
    QUIRÚRGICO: no toca guardado/IA; solo UI timeline.
    ============================================================ */
@@ -18849,27 +18849,15 @@ function __mvFmtRangeLabel(weekStartISO){
 }
 
 function __mvEnsureWeekDOM(){
+  // Reuse existing logic for alt-view, but mount the toggle where the user expects it:
+  // in the Cronograma title itself (not as a new floating button).
   if (document.getElementById("mvWeekToggleBtn")) return;
-
-  // Toggle button fixed: always visible in timeline view
-  const btn = document.createElement("button");
-  btn.id = "mvWeekToggleBtn";
-  btn.type = "button";
-  btn.setAttribute("aria-label", "Alternar vista Semana");
-  btn.innerHTML = `<span class="mvWkTxt">Semana</span><span class="mvWkIco">⇄</span>`;
-  btn.addEventListener("click", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    __mvSetTimelineAltView(__mvTimelineAltView === "timeline" ? "week" : "timeline");
-  });
 
   // Week view container (sibling to timeline list)
   const wk = document.createElement("div");
   wk.id = "mvWeekView";
   wk.className = "hidden";
   wk.style.padding = "10px 12px 90px 12px"; // keep bottom nav space
-
-  // Mount button near top stack (fixed) and week view inside main scroll
-  document.body.appendChild(btn);
 
   // Insert week view right before timelineList (so it occupies same area)
   const tl = document.getElementById("timelineList");
@@ -18881,115 +18869,133 @@ function __mvEnsureWeekDOM(){
     if (ms) ms.appendChild(wk);
   }
 
+  // Create the toggle button and mount it replacing the 'Cronograma' text.
+  const toggleBtn = document.createElement("button");
+  toggleBtn.id = "mvWeekToggleBtn";
+  toggleBtn.type = "button";
+  toggleBtn.className = "mvTlTitleToggle";
+  toggleBtn.setAttribute("aria-label", "Alternar vista Cronograma/Semana");
+  toggleBtn.innerHTML = `<span class="mvWkTxt">Cronograma</span><span class="mvWkIco">⇄</span>`;
+  toggleBtn.addEventListener("click", (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    __mvSetTimelineAltView(__mvTimelineAltView === "timeline" ? "week" : "timeline");
+  });
+
+  // Try to replace the title in the timeline accordion header.
+  const hdr = document.querySelector('button[data-acc="timeline"]');
+  const titleEl = hdr ? hdr.querySelector(".font-extrabold") : null;
+  if (titleEl){
+    titleEl.replaceWith(toggleBtn);
+  } else {
+    // Fallback: append next to the icon in the header, but keep it visible.
+    if (hdr){
+      const box = hdr.querySelector(".text-left") || hdr;
+      box.appendChild(toggleBtn);
+    } else {
+      document.body.appendChild(toggleBtn);
+    }
+  }
+
   // Styles (tiny and contained)
   const st = document.createElement("style");
   st.id = "mvWeekToggleStyles";
   st.textContent = `
-    #mvWeekToggleBtn{
-      position: fixed;
-      right: 12px;
-      top: calc(var(--top-stack-h, 0px) + 8px);
-      z-index: 980;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(15, 23, 42, 0.92);
-      color: white;
-      font-size: 13px;
-      line-height: 1;
-      box-shadow: 0 10px 24px rgba(15,23,42,0.18);
-      border: 1px solid rgba(255,255,255,0.08);
+    .mvTlTitleToggle{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:0;
+      margin:0;
+      border:0;
+      background:transparent;
+      color:inherit;
+      font:inherit;
+      font-weight:800; /* match font-extrabold */
+      letter-spacing:0.01em;
       -webkit-tap-highlight-color: transparent;
     }
-    #mvWeekToggleBtn .mvWkIco{ opacity: 0.9; font-size: 14px; }
+    .mvTlTitleToggle:active{ opacity:0.7; }
+    .mvTlTitleToggle .mvWkIco{ opacity:0.75; font-size: 15px; }
+
     #mvWeekView .mvWkTop{
       display:flex; align-items:center; justify-content:space-between;
-      gap:10px; margin: 6px 0 10px 0;
+      gap: 10px; margin-bottom: 10px;
     }
-    #mvWeekView .mvWkNavBtn{
-      padding:6px 10px; border-radius: 12px;
-      border: 1px solid rgba(15,23,42,0.12);
-      background: rgba(255,255,255,0.9);
+    #mvWeekView .mvWkNav{
+      display:flex; align-items:center; gap: 8px;
+    }
+    #mvWeekView .mvWkBtn{
+      padding: 8px 10px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
       font-size: 13px;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
     }
-    #mvWeekView .mvWkChips{
-      display:flex; gap:8px; overflow:auto; padding: 6px 2px 10px 2px;
+    #mvWeekView .mvWkStrip{
+      display:flex; gap: 8px; overflow:auto; padding: 6px 0 2px 0;
       -webkit-overflow-scrolling: touch;
     }
     #mvWeekView .mvWkChip{
       flex: 0 0 auto;
-      padding:6px 10px; border-radius: 999px;
-      border:1px solid rgba(15,23,42,0.12);
-      background: rgba(255,255,255,0.9);
-      font-size: 12.5px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.1;
+      color: #0f172a;
       white-space: nowrap;
     }
-    #mvWeekView .mvWkChip[data-active="1"]{
-      background: rgba(29,78,216,0.10);
-      border-color: rgba(29,78,216,0.35);
+    #mvWeekView .mvWkChip.on{
+      border-color: rgba(59,130,246,0.35);
+      background: rgba(59,130,246,0.10);
+    }
+    #mvWeekView .mvWkGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
     #mvWeekView .mvWkDay{
-      margin-top: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: #fff;
       padding: 10px 12px;
-      border-radius: 16px;
-      border:1px solid rgba(15,23,42,0.08);
-      background: rgba(255,255,255,0.92);
     }
     #mvWeekView .mvWkDayHdr{
-      display:flex; align-items:baseline; justify-content:space-between;
-      gap: 10px;
-      font-weight: 650;
-      font-size: 14px;
+      display:flex; align-items:baseline; justify-content:space-between; gap: 10px;
+      font-weight: 800;
       margin-bottom: 8px;
     }
     #mvWeekView .mvWkItem{
-      display:flex; gap:10px; align-items:flex-start;
-      padding: 7px 0;
-      border-top:1px solid rgba(15,23,42,0.06);
-      font-size: 13.5px;
+      display:flex; justify-content:space-between; gap: 10px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 8px;
+      font-size: 13px;
     }
-    #mvWeekView .mvWkItem:first-child{ border-top:0; }
-    #mvWeekView .mvWkTime{
-      width: 52px;
-      flex: 0 0 52px;
-      color: rgba(15,23,42,0.70);
-      font-variant-numeric: tabular-nums;
-    }
-    #mvWeekView .mvWkTitle{
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    body[data-view="timeline"] #mvWeekToggleBtn{ display:flex; }
+    #mvWeekView .mvWkItem:last-child{ margin-bottom: 0; }
+    #mvWeekView .mvWkTime{ opacity: 0.8; white-space: nowrap; }
+    #mvWeekView .mvWkTitle{ font-weight: 700; min-width: 0; }
+    #mvWeekView .mvWkSub{ opacity: 0.8; font-size: 12px; margin-top: 2px; }
   `;
   document.head.appendChild(st);
+
+  // Sync initial label
+  __mvSyncWeekToggleLabel();
 }
 
-function __mvGetTimelineItemsForWeek(weekStartISO){
-  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
-  const start = weekStartISO;
-  const end = __mvAddDaysISO(weekStartISO, 6);
-  return items.filter(it=>{
-    const d = String(it && it.date || "");
-    return d && d >= start && d <= end;
-  });
+
+function __mvSyncWeekToggleLabel(){
+  const btn = document.getElementById("mvWeekToggleBtn");
+  if (!btn) return;
+  const txt = btn.querySelector(".mvWkTxt");
+  if (txt) txt.textContent = (__mvTimelineAltView === "week") ? "Semana" : "Cronograma";
 }
 
-function __mvBuildWeekStarts(){
-  const days = Array.isArray(__tlDays) ? __tlDays : [];
-  const set = new Set();
-  for (const d of days){
-    const ws = __mvWeekStartMondayISO(d);
-    if (ws) set.add(ws);
-  }
-  const arr = Array.from(set);
-  arr.sort((a,b)=>String(a).localeCompare(String(b)));
-  return arr;
-}
 
 function __mvRenderWeekView(){
   __mvEnsureWeekDOM();
@@ -19102,7 +19108,7 @@ function __mvSetTimelineAltView(mode){
   // Update button label quickly (without making "Cronograma" a button)
   const btn = document.getElementById("mvWeekToggleBtn");
   if (btn){
-    btn.querySelector(".mvWkTxt").textContent = (__mvTimelineAltView==="week") ? "Cronograma" : "Semana";
+    btn.querySelector(".mvWkTxt").textContent = (__mvTimelineAltView==="week") ? "Semana" : "Cronograma";
   }
 }
 
