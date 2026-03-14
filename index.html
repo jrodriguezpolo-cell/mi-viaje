@@ -1119,9 +1119,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 
 /* V222B3: Transport right-rail cleanup (stable lanes) */
-/* V227_B1: Timeline right-rail: match Sections (no fixed spacer row) */
+/* V227_B2: Timeline right-rail: replicate Transport/Sections (dur under top, badge pinned bottom) */
 .timelineItem .mvLegRightRail{
-  grid-template-rows:1.25rem 1.25rem auto auto !important;
+  grid-template-rows:1.25rem 1.25rem 1fr auto !important;
 }
 
 .mvLegRightRail{
@@ -1673,7 +1673,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B1_TL_DUR_ALIGN";
+const APP_BUILD = "V227_B2_TL_RAIL_MATCH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -12301,10 +12301,10 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
           <div class="shrink-0 mvLegRightRail self-stretch">
             <div class="mvLegRightTop">
-              ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}
+              ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}${__aiIconHTML ? __aiIconHTML : ""}
             </div>
-            <div class="mvAiRightSlot">${__aiIconHTML}</div>
             ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
+            <div class="mvLegRightSpacer"></div>
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
           </div>
         </div>
