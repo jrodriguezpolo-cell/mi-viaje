@@ -926,6 +926,22 @@ div[data-acc-body="acts"]{
   margin-left:0;
 }
 
+/* V226C1B0C9: Timeline title line must keep 📍 pin always visible (long titles) */
+.mvTlLineWithPin{
+  display:flex;
+  align-items:flex-start;
+  gap:0.35rem;
+  min-width:0;
+}
+.mvTlLineWithPin .mvTlLineText{
+  min-width:0;
+  flex:1 1 auto;
+}
+.mvTlLineWithPin .tlNavBtn{
+  flex:0 0 auto;
+  margin-left:0;
+}
+
 .filesPeekBtn{
   cursor:pointer;
 }
@@ -1668,7 +1684,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY";
+const APP_BUILD = "V227_B1_AI_STAGE_WIRING";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -1692,6 +1708,32 @@ function __setVersionedManifestHref(){
     url.searchParams.set("v", APP_BUILD);
     manifestEl.setAttribute("href", url.pathname + url.search + url.hash);
   } catch {}
+}
+
+/* ===== V227_B1: IA stage wiring harden (Safari/iPhone) ===== */
+function __mvAiTitleForAction(action){
+  if(action==="summary") return "Resumen contextual del viaje";
+  if(action==="unified") return "Descubrir ciudades y completar viaje";
+  if(action==="cities") return "Descubrir ciudades";
+  if(action==="gaps") return "Rellenar huecos del viaje";
+  if(action==="sensitive") return "Revisar puntos delicados del viaje";
+  if(action==="transport") return "Revisar tramos de transporte";
+  return "—";
+}
+function __mvAiSetStage(which, action){
+  try{
+    const hub = document.getElementById("aiHubStage");
+    const detail = document.getElementById("aiDetailStage");
+    const title = document.getElementById("aiDetailTitle");
+    const w = String(which||"hub");
+    if(hub) hub.classList.toggle("hidden", w!=="hub");
+    if(detail) detail.classList.toggle("hidden", w!=="detail");
+    if(w==="detail" && title){
+      title.textContent = __mvAiTitleForAction(String(action||""));
+    }
+    const body = document.getElementById("aiSheetBody");
+    if(body) body.scrollTop = 0;
+  }catch{}
 }
 
 function __currentBuildRefreshUrl(opts = {}){
@@ -4815,7 +4857,7 @@ function legSummaryLinesHTML(leg, opts){
 
   if (__compact){
     const __contentHTML = `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+      <div class="mvSecMicroLine text-sm font-semibold mvTlLineWithPin"><span class="mvTlLineText truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
       ${__conflictHTML}
     `;
     return (opts.context==="section")
@@ -4824,7 +4866,7 @@ function legSummaryLinesHTML(leg, opts){
   }
 
   const __contentHTML = `
-    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+    <div class="text-sm font-semibold mvTlLineWithPin"><span class="mvTlLineText truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}
     ${__conflictHTML}`;
@@ -9478,8 +9520,8 @@ function staySummaryLinesHTML(stay, opts){
   );
   if (__compact) {
     const __contentHTML = `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+      <div class="mvSecMicroLine text-sm font-semibold mvTlLineWithPin">
+        <span class="mvTlLineText truncate">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
       </div>
     `;
     return (opts.context==="section")
@@ -9493,8 +9535,8 @@ function staySummaryLinesHTML(stay, opts){
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
 
   const __contentHTML = `
-    <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+    <div class="text-sm font-semibold mvTlLineWithPin">
+      <span class="mvTlLineText truncate">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
@@ -10670,11 +10712,11 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  const line1 = `<div class="text-sm font-semibold truncate">
-    <span class="mr-1">🎯</span>
+  const line1 = `<div class="text-sm font-semibold mvTlLineWithPin">
+    <span class="mvTlLineText truncate"><span class="mr-1">🎯</span>
     <span>${escapeHtml(line1Title)}</span>
     <span class="text-slate-400"> · </span>
-    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+    <span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
 
   </div>`;
 
@@ -15868,6 +15910,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       on("aiGenerate", ()=> this.selectAction("unified"));
       on("aiReviewPendingBtn", ()=> { try{ __aiOpenPendingReviewModal(); }catch{} });
       try{ if(typeof __aiUpdatePendingBadge==="function") __aiUpdatePendingBadge(); }catch{}
+      on("aiBackToHub", ()=> { try{ __mvAiSetStage("hub"); }catch{} });
 
       // Delegación robusta dentro de resultados (Safari-safe)
       try{
@@ -16081,6 +16124,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
     selectAction(action){
       this.init();
       this.state.currentAction = (action === "unified") ? "unified" : (action === "cities") ? "cities" : (action === "gaps") ? "gaps" : (action === "sensitive") ? "sensitive" : (action === "transport") ? "transport" : "summary";
+      try{ __mvAiSetStage("detail", this.state.currentAction); }catch{}
       this.savePrefs();
       this.refreshCurrentAction({ force:true });
     },
@@ -17323,6 +17367,8 @@ __aiBuildDayBuckets(trip){
         const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
         const __disableMore = !(__availN > 5);
 
+        const __isExhausted = (__availN === 0);
+
         // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
         const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
         const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
@@ -17345,18 +17391,18 @@ __aiBuildDayBuckets(trip){
                   </div>`;
         }).join("");
 
-        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
+        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden${__isExhausted ? ' opacity-80' : ''}">
                   <div class="tap w-full flex items-center justify-between px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
                     <div class="min-w-0 text-left">
-                      <div class="font-semibold text-slate-900">${sec.title}</div>
+                      <div class="font-semibold text-slate-900${__isExhausted ? ' opacity-70' : ''}">${sec.title}</div>
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
+                      ${sec.cityKey ? `${__isExhausted ? `<span class=\"text-[11px] font-extrabold text-slate-400 border border-slate-200 bg-white rounded-full px-2 py-0.5\">Agotado</span>` : ``}<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
-                  <div id="${bodyId}" class="hidden px-4 py-3">
+                  <div id="${bodyId}" data-ai-avail="${__availN}" class="hidden px-4 py-3">
                     ${gapsHtml}
                   </div>
                 </div>`;
@@ -17384,7 +17430,10 @@ __aiBuildDayBuckets(trip){
           Object.keys(openMap).forEach((id)=>{
             if(!openMap[id]) return;
             const el = document.getElementById(id);
-            if(el) el.classList.remove("hidden");
+            if(el){
+              try{ if(String(el.getAttribute('data-ai-avail')||'')==='0') return; }catch{}
+              el.classList.remove(\"hidden\");
+            }
           });
         }
       }catch{}
