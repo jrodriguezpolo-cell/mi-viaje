@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B1_ACT_JUMP_SMOOTH</title>
+<title>V227_B5_ATTACH_ICON_HIDE_PEEK</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B1_ACT_JUMP_SMOOTH" rel="manifest"/>
+<link href="manifest.json?v=V227_B5_ATTACH_ICON_HIDE_PEEK" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B4_ATTACH_ICON_HIDE";
+const APP_BUILD = "V227_B5_ATTACH_ICON_HIDE_PEEK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -2549,7 +2549,7 @@ function __renderAttachmentsModal(){
   const closeBtn = document.createElement("button");
   closeBtn.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
   closeBtn.textContent = "Cerrar";
-  closeBtn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} window.__attachmentsCtx=null; closeModal(); };
+  closeBtn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} window.__attachmentsCtx=null; try{ __mvRefreshAfterAttachmentsChange(); }catch{} closeModal(); };
 
   showModal("Adjuntos", bodyHtml, [closeBtn]);
 
