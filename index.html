@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B9_ATTACH_ICON_SYNC</title>
+<title>V227_B10_WEEK_TOGGLE_ICON</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B9_ATTACH_ICON_SYNC" rel="manifest"/>
+<link href="manifest.json?v=V227_B10_WEEK_TOGGLE_ICON" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1389,6 +1389,35 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 
 /* V227_B10: Toggle Semana visible */
+/* V227_B10: Toggle Semana (icono) en cabecera de Cronograma */
+.mvWeekIconBtn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px;
+  border-radius:9999px;
+  border:1px solid rgba(148,163,184,.55);
+  background: rgba(248,250,252,.95);
+  color:#0f172a;
+  font-weight:900;
+  font-size:12px;
+  letter-spacing:.02em;
+  flex:0 0 auto;
+}
+.mvWeekIconBtn:active{ transform: translateY(1px); }
+.mvWeekIcon{ opacity:.8; }
+.mvWeekBadge{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:16px;
+  border-radius:8px;
+  border:1px solid rgba(148,163,184,.65);
+  background:white;
+  font-weight:900;
+  font-size:11px;
+}
+.mvWeekIconBtn.isWeek{
+  background: rgba(224,231,255,.75);
+  border-color: rgba(99,102,241,.45);
+}
+
 .mvWeekToggleRow{ position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.98); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 8px 0; border-bottom: 1px solid rgba(15,23,42,0.08); }
 .mvWeekToggleBtn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:9999px; border:1px solid rgba(148,163,184,.55); background: rgba(248,250,252,.95); color:#0f172a; font-weight:900; font-size:12px; letter-spacing:.02em; }
 .mvWeekToggleBadge{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:18px; border-radius:8px; border:1px solid rgba(148,163,184,.65); background:white; font-weight:900; }
@@ -1446,7 +1475,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <option value="JPY">¥</option>
 </select>
 </div>
-<button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</button>
+<button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle">Detalle ▾</span>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
@@ -1506,8 +1535,12 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <button class="w-full tap flex items-center justify-between px-5 py-4" data-acc="timeline">
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-orange-50 items-center justify-center">🗓️</span>
-<div class="text-left">
+<div class="text-left flex items-center gap-2">
 <div class="font-extrabold">Cronograma</div>
+<span class="tap mvWeekIconBtn" id="btnToggleWeekView" role="button" tabindex="0" aria-label="Alternar vista Semana" aria-pressed="false">
+  <span class="mvWeekIcon" aria-hidden="true">⇄</span>
+  <span class="mvWeekBadge" aria-hidden="true">S</span>
+</span>
 </div>
 </div>
 <span class="accIcon text-slate-400 text-xl">▴</span>
@@ -1515,14 +1548,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
   <!-- V227_B10: Vista alternativa Semana (read-only) + selector de semana -->
   <div class="mvWeekToggleRow" id="mvWeekToggleRow">
-    <button class="mvWeekToggleBtn tap" id="btnToggleWeekView" type="button" aria-label="Alternar vista Cronograma/Semana">
-      <span id="mvWeekToggleLabel">Cronograma</span>
-      <span class="mvWeekToggleSep">·</span>
-      <span class="mvWeekToggleBadge">S</span>
-      <span class="mvWeekToggleIcon" aria-hidden="true">⇄</span>
-    </button>
-
-    <div class="flex items-center gap-2" id="mvWeekNavBtns">
+<div class="flex items-center gap-2" id="mvWeekNavBtns">
       <button class="tap mvWeekNavBtn" id="mvWeekPrevBtn" type="button" aria-label="Semana anterior">‹</button>
       <button class="tap mvWeekNavBtn" id="mvWeekNextBtn" type="button" aria-label="Semana siguiente">›</button>
     </div>
@@ -1722,7 +1748,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B10_WEEK_TOGGLE_OBVIOUS";
+const APP_BUILD = "V227_B10_WEEK_TOGGLE_ICON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -10332,7 +10358,6 @@ function __mvSetTimelineAltView(mode){
   timelineAltView = mode;
 
   const toggleBtn = document.getElementById("btnToggleWeekView");
-  const toggleLbl = document.getElementById("mvWeekToggleLabel");
   const navBtns = document.getElementById("mvWeekNavBtns");
 
   const list = document.getElementById("timelineList");
@@ -10345,12 +10370,12 @@ function __mvSetTimelineAltView(mode){
   if(strip) strip.style.display = (mode==="week") ? "" : "none";
   if(navBtns) navBtns.style.display = (mode==="week") ? "" : "none";
 
-  // Update label
-  if(toggleLbl) toggleLbl.textContent = (mode==="week") ? "Semana" : "Cronograma";
-
-  // Keep accessibility state
+  // Update toggle visual state
   if(toggleBtn){
     toggleBtn.setAttribute("aria-pressed", mode==="week" ? "true" : "false");
+    try{
+      toggleBtn.classList.toggle("isWeek", mode==="week");
+    }catch{}
   }
 
   // Render week content if needed
