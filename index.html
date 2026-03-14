@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B2_STAY_PROGRESS";
+const APP_BUILD = "V227_B3_STAY_PROGRESS_ALL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -12242,6 +12242,13 @@ function renderTimeline() {
     if(jumpType==='stay' && it && it.tlProgress){
       __rightDurHTML = `<div class=\"text-xs font-semibold text-slate-600 mv-nb mvLegRightDur\">${escapeHtml(String(it.tlProgress))}</div>`;
     }
+    // V227_B3: show stay progress also on intermediate (compact) stay rows
+    const __isStayCompact = (jumpType==="stay" && __stay && !(it && it.tlMarker));
+    let __aiRightHTML = __aiIconHTML;
+    if(__isStayCompact && it && it.tlProgress){
+      const __prog = `<span class=\"text-xs font-semibold text-slate-600 mv-nb\">${escapeHtml(String(it.tlProgress))}</span>`;
+      __aiRightHTML = (__aiIconHTML ? (__aiIconHTML + `<span style=\"width:6px;display:inline-block\"></span>` + __prog) : __prog);
+    }
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
@@ -12387,7 +12394,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             <div class="mvLegRightTop">
               ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}
             </div>
-            <div class="mvAiRightSlot">${__aiIconHTML}</div>
+            <div class="mvAiRightSlot">${__aiRightHTML}</div>
             ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
           </div>
