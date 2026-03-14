@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B3_TERMINAL_NAV</title>
+<title>V227_B2_TERMINAL_MAPS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B3_TERMINAL_NAV" rel="manifest"/>
+<link href="manifest.json?v=V227_B2_TERMINAL_MAPS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B3_TERMINAL_NAV";
+const APP_BUILD = "V227_B3_TERMINAL_NAV_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4879,15 +4879,22 @@ function legSummaryLinesHTML(leg, opts){
   );
 
   // V220A/V222G: "Cómo llegar" destino contextual (punto de salida)
-  // V227_B3: incluir detalle (Terminal/Vía/Dársena/Muelle) normalizado para que Google Maps lo reconozca.
-  const __navDest = ((opts.context==="timeline") || (opts.context==="section")) ? (function(){
-    const base = (leg.placeOut||leg.from||"").trim();
-    const city = (leg.from||"").trim();
+// V227_B3_FIX: incluir detalle (Terminal/Vía/Dársena/Muelle) normalizado para que Google Maps lo reconozca,
+// SIN poder romper el render del cronograma: si algo falla, fallback a base+ciudad.
+const __navDest = ((opts.context==="timeline") || (opts.context==="section")) ? (function(){
+  try{
+    const base = String(leg.placeOut||leg.from||"").trim();
+    const city = String(leg.from||"").trim();
     const mode = String(leg.mode||leg.transportMode||leg.kind||"plane").toLowerCase().trim() || "plane";
-    const det  = __formatLegDetailForMaps(mode, (leg.placeOutDetail||"").trim());
-    const full = (base + " " + det).trim();
+    const det  = __formatLegDetailForMaps(mode, (leg.placeOutDetail||""));
+    const full = String((base + " " + det)).trim();
     return __mapsDestWithCity(full || base, city);
-  })() : "";
+  }catch(e){
+    const base = String(leg.placeOut||leg.from||"").trim();
+    const city = String(leg.from||"").trim();
+    return __mapsDestWithCity(base, city);
+  }
+})() : "";
   const __navMode = (function(){
     const m = String(leg.mode||"").toLowerCase();
     if(m==="car"||m==="driving") return "driving";
