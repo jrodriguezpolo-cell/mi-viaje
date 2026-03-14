@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B3_STAY_PROGRESS_ALL";
+const APP_BUILD = "V227_B4_ATTACH_ICON_HIDE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -2577,6 +2577,16 @@ function __renderAttachmentsModal(){
   }
 }
 
+
+function __mvRefreshAfterAttachmentsChange(){
+  // Quirúrgico: refrescar iconos 📎/🗒️ sin tocar wiring IA ni estilos.
+  try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
+  try{ if(typeof renderLegs==="function") renderLegs(); }catch{}
+  try{ if(typeof renderStays==="function") renderStays(); }catch{}
+  try{ if(typeof renderActivities==="function") renderActivities(); }catch{}
+  try{ if(typeof calcSummary==="function") calcSummary(); }catch{}
+}
+
 function __handleAttachmentAction(action, id){
   const ctx = window.__attachmentsCtx || {};
   const obj = ctx.obj;
@@ -2643,6 +2653,8 @@ if(action === "rename"){
     files.splice(i,1);
     try{ if(typeof saveState==="function") saveState(); }catch{}
     __renderAttachmentsModal();
+    // Si se ha quedado sin adjuntos, hay que refrescar el resumen para que desaparezca el 📎
+    try{ __mvRefreshAfterAttachmentsChange(); }catch{}
     return;
   }
 }
