@@ -1383,6 +1383,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 }
 .aiInfoBtn:active{ transform: translateY(1px); }
 
+
+.mvStayProgUnderTick{margin-top:2px;}
+.mvStayProgRail{justify-self:end;}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1674,7 +1677,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B6_STAY_PROGRESS_TL";
+const APP_BUILD = "V227_B7_STAY_PROGRESS_TL_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9443,6 +9446,34 @@ function renderLegs() {
 }
 
 
+
+function __mvStayProgressTextForDay(stay, dayKey){
+  try{
+    const ci = String(stay?.date || "").trim();
+    const co = String(__tlStayCheckoutISO(stay) || "").trim();
+    const dk = String(dayKey || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(ci) || !/^\d{4}-\d{2}-\d{2}$/.test(dk)) return "";
+    const d0 = new Date(ci + "T12:00:00");
+    const d1 = new Date(dk + "T12:00:00");
+    if(isNaN(d0.getTime()) || isNaN(d1.getTime())) return "";
+    let totalDays = 0;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(co)){
+      const d2 = new Date(co + "T12:00:00");
+      if(!isNaN(d2.getTime())){
+        totalDays = Math.round((d2.getTime() - d0.getTime()) / 86400000) + 1;
+      }
+    }
+    if(!totalDays || totalDays < 1){
+      const n = Number.isFinite(Number(stay?.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
+      totalDays = n + 1;
+    }
+    if(totalDays <= 1) return "";
+    const diff = Math.round((d1.getTime() - d0.getTime()) / 86400000);
+    const idx = Math.min(totalDays, Math.max(1, diff + 1));
+    return `${idx}/${totalDays}`;
+  }catch{return "";}
+}
+
 function staySummaryLinesHTML(stay, opts){
   opts = opts || {};
   const city = (stay.city||"").trim() || "—";
@@ -9459,23 +9490,8 @@ function staySummaryLinesHTML(stay, opts){
 
   const nights = Number.isFinite(Number(stay.nights)) ? Math.max(1, parseInt(stay.nights,10)) : 1;
 
-  // Multiday progress for timeline compact stays: 1/(nights+1), 2/(nights+1)...
-  const __stayProgressText = (function(){
-    try{
-      if(!(opts && opts.context === "timeline" && opts.tlCompact)) return "";
-      const totalDays = Math.max(1, (Number.isFinite(Number(nights)) ? nights : 1) + 1);
-      if(totalDays <= 1) return "";
-      const dayKey = String(stay?.__mvDayKey || stay?.__mvDayISO || stay?.date || "").trim();
-      const ci = String(stay?.date || "").trim();
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !/^\d{4}-\d{2}-\d{2}$/.test(ci)) return "";
-      const d0 = new Date(ci + "T12:00:00");
-      const d1 = new Date(dayKey + "T12:00:00");
-      if(isNaN(d0.getTime()) || isNaN(d1.getTime())) return "";
-      const diff = Math.round((d1.getTime() - d0.getTime()) / 86400000);
-      const idx = Math.min(totalDays, Math.max(1, diff + 1));
-      return `${idx}/${totalDays}`;
-    }catch{return "";}
-  })();
+  // Multiday progress: show 1/6, 2/6... in timeline
+  const __stayProgressText = (opts && opts.context==="timeline") ? __mvStayProgressTextForDay(stay, (opts.tlDayKey||stay?.__mvDayKey||stay?.date||"")) : "";
 
   const __addDaysISO_inline = (iso, days)=>{
     const s = String(iso||"").trim();
@@ -9504,8 +9520,8 @@ function staySummaryLinesHTML(stay, opts){
     const __contentHTML = `
       <div class="mvSecMicroLine text-sm font-semibold flex items-center gap-1">
         <span class="truncate min-w-0">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>
-        ${__stayProgressText ? `<span class="text-xs font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__stayProgressText)}</span>` : ``}
         ${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
+        ${(opts.context==="timeline" && opts.tlCompact && !opts.tlMarker && __stayProgressText) ? `<span class="text-xs font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__stayProgressText)}</span>` : ``}
       </div>
     `;
     return (opts.context==="section")
@@ -12244,6 +12260,11 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
       : ``;
 
     const bottomBadgeHTML = stayMarkerHTML || rtBadgeHTML;
+
+    const __stayProgText = (jumpType==="stay" && __stay) ? __mvStayProgressTextForDay(__stay, it.date) : "";
+    const __stayProgRailHTML = (jumpType==="stay" && __stay && it && it.tlMarker && __stayProgText)
+      ? `<div class="text-xs font-semibold text-slate-500 mvStayProgRail">${escapeHtml(__stayProgText)}</div>`
+      : ``;
     const notesBtn = (hasItemNotes && jumpType && jumpId && !it.isNote)
         ? `<button type="button"
                  class="tap tlNotesBtn px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs ${hasItemNotes ? "notes-has" : ""}"
@@ -12317,7 +12338,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${((jumpType==="stay" && __stay) || (jumpType==="act" && __act) || (jumpType==="leg" && __leg)) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
 
             <div class="min-w-0">
-              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker)}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker), tlDayKey: it.date}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
@@ -12325,6 +12346,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             <div class="mvLegRightTop">
               ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}${__aiIconHTML ? __aiIconHTML : ""}
             </div>
+            ${__stayProgRailHTML ? `<div class="mvLegRightMid mvStayProgUnderTick">${__stayProgRailHTML}</div>` : ""}
             ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
             <div class="mvLegRightSpacer"></div>
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
