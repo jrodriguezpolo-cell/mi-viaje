@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY</title>
+<title>V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BE_AK_RESET_CITY_CACHE_SHUFFLE_WORKING" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -103,23 +103,6 @@ function deleteItemById(kind, id) {
   /* Timeline highlighting */
   .timelineItem.past { opacity: 0.45; }
   .timelineItem.today { background-color: #ecfdf5; border-color: #10b981; }
-
-  /* V226C1B0BV: Actividades title as an obvious button in subSectionHeader */
-  .mvActsTitleBtn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:flex-start;
-    gap:8px;
-    padding:6px 12px;
-    border-radius:999px;
-    border:1px solid rgba(148,163,184,0.45);
-    background:rgba(255,255,255,0.92);
-    box-shadow:0 1px 2px rgba(15,23,42,0.06);
-    cursor:pointer;
-    user-select:none;
-  }
-  .mvActsTitleBtn:active{ transform: scale(0.985); }
-  .mvActsTitleBtn:focus{ outline:none; box-shadow:0 0 0 3px rgba(59,130,246,.22), 0 1px 2px rgba(15,23,42,0.06); }
 
 
 .ios-scroll{ -webkit-overflow-scrolling: touch; }
@@ -1337,21 +1320,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 }
 
 
-
-/* === IA · ciudades agotadas (V226C1B0C8) === */
-.mvAiExhaustedSec .tap[data-ai-day-toggle]{
-  opacity: 0.72;
-}
-.mvAiExhaustedPill{
-  font-size: 11px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(226,232,240,1);
-  background: rgba(241,245,249,0.9);
-  color: #475569;
-  white-space: nowrap;
-}
 /* === IA · Hub limpio + flujo 2 pasos (V226C1) === */
 .aiActionsGrid{
   display:grid;
@@ -1435,7 +1403,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div aria-live="polite" class="hidden" id="subSectionHeader">
 <div class="max-w-6xl mx-auto px-5 py-2">
 <div class="grid grid-cols-[auto,1fr,auto,auto] items-center gap-2">
-<button type="button" class="tap font-extrabold text-slate-900 text-sm leading-tight whitespace-nowrap text-left" id="subSectionTitle">—</button>
+<div class="font-extrabold text-slate-900 text-sm leading-tight whitespace-nowrap" id="subSectionTitle">—</div>
 <div class="hidden" id="dateJumpUI">
 <div class="flex items-center justify-center">
 <select class="h-8 w-full max-w-[150px] rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-semibold text-slate-900" id="dateJumpSelect">
@@ -1573,9 +1541,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="flex items-center gap-3">
 <span class="inline-flex w-9 h-9 rounded-2xl bg-fuchsia-50 items-center justify-center">🎯</span>
 <div class="text-left">
-<div class="flex items-center gap-2">
 <div class="font-extrabold">Actividades</div>
-</div>
 </div>
 </div>
 <span class="accIcon text-slate-400 text-xl">▾</span>
@@ -1683,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0D2_AK_C7_ROLLUP_EXHAUSTED_PIN_RIGHTRAIL";
+const APP_BUILD = "V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -1953,42 +1919,7 @@ function updateSubSectionHeader(viewName){
     return;
   }
 
-  // Actividades: show total count and make the title act as a button to open the summary modals
-  if(String(viewName||"")==="acts"){
-    try{
-      const sum = __mvGetActivitiesSummary ? __mvGetActivitiesSummary() : { total: 0 };
-      const n = Number(sum && sum.total) || 0;
-      title.textContent = `Actividades ${n}`;
-      title.classList.add("mvActsTitleBtn");
-      title.setAttribute("role","button");
-      try{ title.tabIndex = 0; }catch{}
-      title.setAttribute("title", "Ver resumen por ciudad");
-      // Bind once
-      if(!(title.dataset && title.dataset.actsBound==="1")){
-        if(title.dataset) title.dataset.actsBound = "1";
-        title.addEventListener("click", (e)=>{
-          try{ e.preventDefault(); e.stopPropagation(); }catch{}
-          // Only if we are still in Actividades
-          try{ if(String(activeView||"")!=="acts") return; }catch{}
-          __mvShowActivitiesByCityModal();
-        });
-        title.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
-        title.addEventListener("keydown", (e)=>{
-          const k = e.key || e.code || "";
-          if(k !== "Enter" && k !== " " && k !== "Spacebar") return;
-          try{ e.preventDefault(); e.stopPropagation(); }catch{}
-          try{ if(String(activeView||"")!=="acts") return; }catch{}
-          __mvShowActivitiesByCityModal();
-        });
-      }
-    }catch{ title.textContent = txt; try{ title.classList.add("mvActsTitleBtn"); }catch{} try{ title.setAttribute("role","button"); }catch{} try{ title.tabIndex = 0; }catch{} }
-  } else {
-    title.textContent = txt;
-    try{ title.classList.remove("mvActsTitleBtn"); }catch{}
-    try{ title.removeAttribute("role"); }catch{}
-    try{ title.removeAttribute("tabindex"); }catch{}
-    try{ title.removeAttribute("title"); }catch{}
-  }
+  title.textContent = txt;
   bar.classList.remove("hidden");
   // V208: show timeline micro-summary menu only in Cronograma
   try{
@@ -4786,7 +4717,7 @@ const depES = depDate ? formatDateShortES(depDate) : "";
   const dateHTML = depES
     ? `<span class="font-semibold">${escapeHtml(depES)}${arrES ? `&nbsp;→&nbsp;${escapeHtml(arrES)}` : ``}</span>`
     : "";
-  const metaHTML = [dateHTML, timeLineHTML, (durText ? `<span class="whitespace-nowrap">${durText}</span>` : "")].filter(Boolean).join(" · ") || "—";
+  const metaHTML = [dateHTML, timeLineHTML].filter(Boolean).join(" · ") || "—";
 
   const p0 = String(leg?.placeOut || "").trim();
   const p1 = String(leg?.placeIn || "").trim();
@@ -4820,9 +4751,7 @@ function legSummaryLinesHTML(leg, opts){
     if(m==="walk"||m==="walking") return "walking";
     if(m==="bike"||m==="bicycling") return "bicycling";
     return "transit";
-  })();  const __pin = (opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : "";
-
-
+  })();
 
   const metaCls = (opts.context==="timeline")
     ? "text-xs text-slate-600 mt-0.5 whitespace-normal leading-snug"
@@ -4832,10 +4761,7 @@ function legSummaryLinesHTML(leg, opts){
 
   if (__compact){
     const __contentHTML = `
-      <div class="mvSecMicroLine flex items-start gap-2 min-w-0">
-        <div class="text-sm font-semibold min-w-0 flex-1 truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>
-        ${__pin ? `<div class="shrink-0">${__pin}</div>` : ``}
-      </div>
+      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
       ${__conflictHTML}
     `;
     return (opts.context==="section")
@@ -4844,10 +4770,7 @@ function legSummaryLinesHTML(leg, opts){
   }
 
   const __contentHTML = `
-    <div class="flex items-start gap-2 min-w-0">
-      <div class="text-sm font-semibold min-w-0 flex-1 truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></div>
-      ${__pin ? `<div class="shrink-0">${__pin}</div>` : ``}
-    </div>
+    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}
     ${__conflictHTML}`;
@@ -9468,9 +9391,7 @@ function staySummaryLinesHTML(stay, opts){
   // V220A/V222G: "Cómo llegar" destino contextual (alojamiento)
   const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
     ? __mapsDestWithCity((stay.address||stay.name||"").trim(), city)
-    : "";  const __pin = (opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : "";
-
-
+    : "";
 
   const checkInISO = String(stay.date||"").trim();
   const checkInDateES = (checkInISO ? formatDateShortES(checkInISO) : "") || "—";
@@ -9503,11 +9424,8 @@ function staySummaryLinesHTML(stay, opts){
   );
   if (__compact) {
     const __contentHTML = `
-      <div class="mvSecMicroLine flex items-start gap-2 min-w-0">
-        <div class="text-sm font-semibold min-w-0 flex-1 truncate">
-          🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
-        </div>
-        ${__pin ? `<div class="shrink-0">${__pin}</div>` : ``}
+      <div class="mvSecMicroLine text-sm font-semibold truncate">
+        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
       </div>
     `;
     return (opts.context==="section")
@@ -9521,11 +9439,8 @@ function staySummaryLinesHTML(stay, opts){
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
 
   const __contentHTML = `
-    <div class="flex items-start gap-2 min-w-0">
-      <div class="text-sm font-semibold min-w-0 flex-1 truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>
-      </div>
-      ${__pin ? `<div class="shrink-0">${__pin}</div>` : ``}
+    <div class="text-sm font-semibold truncate">
+      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
     </div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
@@ -10701,16 +10616,12 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  const __pin = (opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : "";
+  const line1 = `<div class="text-sm font-semibold truncate">
+    <span class="mr-1">🎯</span>
+    <span>${escapeHtml(line1Title)}</span>
+    <span class="text-slate-400"> · </span>
+    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
 
-  const line1 = `<div class="flex items-start gap-2 min-w-0">
-    <div class="text-sm font-semibold min-w-0 flex-1 truncate">
-      <span class="mr-1">🎯</span>
-      <span>${escapeHtml(line1Title)}</span>
-      <span class="text-slate-400"> · </span>
-      <span class="font-medium">${escapeHtml(line1City)}</span>
-    </div>
-    ${__pin ? `<div class="shrink-0">${__pin}</div>` : ``}
   </div>`;
 
   const __compact = !!(
@@ -10879,7 +10790,6 @@ function renderActivities() {
     if (!it) return;
     it.title = inp.value.trim();
     saveState(); renderTimeline();
-    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-city");
@@ -10887,7 +10797,6 @@ function renderActivities() {
     if (!it) return;
     it.city = cap1(inp.value); inp.value = it.city;
     saveState(); renderTimeline();
-    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-date");
@@ -10896,7 +10805,6 @@ function renderActivities() {
     it.date = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
-    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
     const id = inp.getAttribute("data-act-time");
@@ -10905,7 +10813,6 @@ function renderActivities() {
     it.time = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
     saveState(); renderTimeline();
-    try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
     const id = inp.getAttribute("data-act-cost");
@@ -10936,280 +10843,8 @@ function renderActivities() {
     cb.addEventListener("click", (e)=>{ try{ e.stopPropagation(); }catch{} });
     cb.onchange = () => handleActDoneToggle(cb.getAttribute('data-act-done'), cb.checked, cb);
   });
-
-  // V226C1B0BT: contador total + desglose por ciudad
-  try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
 }
 
-
-
-
-/* ================= V226C1B0BU: Actividades · contador total + desglose por ciudad (botón en barra superior) ================= */
-
-function __mvActsCityKey(cityName){
-  const nm = cap1(String(cityName||"").trim());
-  try{
-    if(window.__MV_POI && typeof window.__MV_POI.cityKey === "function"){
-      const k = String(window.__MV_POI.cityKey(nm)||"").trim();
-      if(k) return k;
-    }
-  }catch{}
-  try{ return __normalizeCityKey(nm); }catch{}
-  return "";
-}
-
-function __mvGetActivitiesSummary(){
-  const sc = curScenario();
-  const list = Array.isArray(sc && sc.activities) ? sc.activities : [];
-  const total = list.length;
-
-  const by = new Map();
-  for(const a of list){
-    const cityName = cap1(String((a && a.city) || "Sin ciudad").trim()) || "Sin ciudad";
-    const cityKey = __mvActsCityKey(cityName) || "__none__";
-    if(!by.has(cityKey)){
-      by.set(cityKey, { cityKey, cityName, items: [] });
-    }
-    const g = by.get(cityKey);
-    g.items.push({
-      id: String((a && a.id) || ""),
-      title: String((a && a.title) || "").trim() || "—",
-      date: String((a && a.date) || "").trim(),
-      time: String((a && a.time) || "").trim()
-    });
-  }
-
-  const cities = Array.from(by.values()).map(g => {
-    const items = g.items.slice();
-    items.sort((x,y)=>{
-      const dx = String(x.date||"9999-99-99");
-      const dy = String(y.date||"9999-99-99");
-      if(dx !== dy) return dx.localeCompare(dy);
-      const tx = timeSortKey(x.time);
-      const ty = timeSortKey(y.time);
-      if(tx !== ty) return tx - ty;
-      return String(x.title||"").localeCompare(String(y.title||""));
-    });
-    return { ...g, count: items.length, items };
-  }).sort((a,b)=>{
-    // Stable & readable: alphabetical by city
-    return String(a.cityName||"").localeCompare(String(b.cityName||""));
-  });
-
-  return { total, cities };
-}
-
-function __mvShowActivitiesByCityModal(){
-  const sum = __mvGetActivitiesSummary();
-  const cities = sum.cities;
-
-  const rows = cities.map(c => {
-    const safeCity = escapeHtml(c.cityName);
-    return `
-      <button type="button"
-        class="tap w-full flex items-center justify-between px-3 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
-        data-acts-city-key="${escapeHtml(c.cityKey)}">
-        <div class="text-left min-w-0">
-          <div class="font-semibold text-slate-900 truncate">${safeCity}</div>
-          <div class="text-xs text-slate-500">${c.count} actividad${c.count===1?"":"es"}</div>
-        </div>
-        <div class="shrink-0 text-slate-400">›</div>
-      </button>
-    `;
-  }).join("");
-
-  const body = `
-    <div class="space-y-2">
-      <div class="text-sm text-slate-600">Total: <span class="font-semibold text-slate-900">${sum.total}</span></div>
-      <div class="h-px bg-slate-200 my-2"></div>
-      <div class="space-y-2">${rows || `<div class="text-sm text-slate-500">No hay actividades.</div>`}</div>
-    </div>
-  `;
-
-  const btnClose = document.createElement("button");
-  btnClose.className = "tap px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold";
-  btnClose.textContent = "Cerrar";
-  btnClose.onclick = closeModal;
-
-  showModal(`Actividades · ${sum.total}`, body, [btnClose]);
-
-  // Bind city clicks
-  document.querySelectorAll("[data-acts-city-key]").forEach(b => b.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    const k = String(b.getAttribute("data-acts-city-key")||"").trim();
-    if(!k) return;
-    __mvShowActivitiesCityDetailModal(k);
-  }));
-}
-
-function __mvShowActivitiesCityDetailModal(cityKey){
-  const sum = __mvGetActivitiesSummary();
-  const city = sum.cities.find(c => String(c.cityKey) === String(cityKey));
-  if(!city){
-    __mvShowActivitiesByCityModal();
-    return;
-  }
-
-  const lines = (city.items||[]).map(it=>{
-    const d = it.date ? (typeof __fmtDateES==="function" ? __fmtDateES(it.date) : it.date) : "Sin fecha";
-    const t = it.time ? escapeHtml(it.time) : "";
-    const when = t ? `${escapeHtml(d)} · ${t}` : escapeHtml(d);
-    return `
-      <button type="button"
-        class="tap w-full text-left px-3 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50"
-        data-acts-jump-act="${escapeHtml(it.id)}"
-        data-acts-jump-date="${escapeHtml(it.date||"")}"
-        title="Ir al cronograma">
-        <div class="font-semibold text-slate-900">${escapeHtml(it.title)}</div>
-        <div class="text-xs text-slate-500 mt-0.5">${when}</div>
-      </button>
-    `;
-  }).join("");
-
-  const btnBack = document.createElement("button");
-  btnBack.className = "tap px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 font-semibold";
-  btnBack.textContent = "← Ciudades";
-  btnBack.onclick = __mvShowActivitiesByCityModal;
-
-  const btnClose = document.createElement("button");
-  btnClose.className = "tap px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-semibold";
-  btnClose.textContent = "Cerrar";
-  btnClose.onclick = closeModal;
-
-  showModal(`${city.cityName} · ${city.count}`, `<div class="space-y-2">${lines || `<div class="text-sm text-slate-500">No hay actividades en esta ciudad.</div>`}</div>`, [btnBack, btnClose]);
-
-  // V226C1B0BV: Tap on an activity => jump to Cronograma on that item and keep it highlighted until next user interaction
-  try{
-    document.querySelectorAll("[data-acts-jump-act]").forEach(el=>{
-      if(el && el.dataset && el.dataset.boundJump==="1") return;
-      if(el && el.dataset) el.dataset.boundJump="1";
-      el.addEventListener("click",(e)=>{
-        try{ e.preventDefault(); e.stopPropagation(); }catch{}
-        const actId = String(el.getAttribute("data-acts-jump-act")||"").trim();
-        /* date not needed: we jump by timeline key act:<id> */
-        try{ closeModal(); }catch{}
-        try{ __mvJumpToTimelineAct(actId); }catch{}
-      });
-    });
-  }catch{}
-}
-
-
-function __mvJumpToTimelineAct(actId){
-  actId = String(actId||"").trim();
-  if(!actId) return;
-
-  const key = `act:${actId}`;
-
-  // We must wait until the Timeline accordion body is actually visible; otherwise iOS/Safari reports
-  // getBoundingClientRect().top as 0 and scrollToElWithOffset lands at the top (day 1).
-  const waitTimelineVisible = (cb, tries=0)=>{
-    try{
-      // Ensure we are in timeline view
-      try{ if(typeof __msEnsureTimelineVisible==="function") __msEnsureTimelineVisible(); }catch{}
-      // Ensure accordion open
-      try{ if(typeof __tlEnsureTimelineOpen==="function") __tlEnsureTimelineOpen(); }catch{}
-      try{ if(typeof openAccordionKey==="function") openAccordionKey("timeline"); }catch{}
-
-      const body = document.querySelector('[data-acc-body="timeline"]');
-      const ok = !!(body && !body.classList.contains("hidden") && body.offsetHeight > 0);
-      if(ok){
-        cb();
-        return;
-      }
-    }catch{}
-    if(tries >= 30){ // ~30 * 50ms = 1500ms max
-      try{ cb(); }catch{}
-      return;
-    }
-    setTimeout(()=>waitTimelineVisible(cb, tries+1), 50);
-  };
-
-  const attemptScroll = ()=>{
-    try{ if(typeof renderTimeline==="function") renderTimeline(); }catch{}
-    let ok = false;
-    try{ if(typeof __msScrollToKey==="function") ok = !!__msScrollToKey(key); }catch{}
-    if(!ok){
-      // One more try next frame after DOM paint
-      requestAnimationFrame(()=>{ try{ __msScrollToKey(key); }catch{} });
-    }
-  };
-
-  // Close modal already happened; now switch & scroll after layout settles.
-  setTimeout(()=>{
-    waitTimelineVisible(()=>{
-      // Give layout two frames to settle (fixed header/totals offsets)
-      requestAnimationFrame(()=>{
-        requestAnimationFrame(()=>{
-          attemptScroll();
-          // defensive retries in case of slow render
-          setTimeout(attemptScroll, 160);
-          setTimeout(attemptScroll, 360);
-          setTimeout(attemptScroll, 700);
-        });
-      });
-    });
-  }, 0);
-}
-
-
-// Clear tlPersistentFound on first interaction after a jump (so it persists until the user acts)
-function __mvBindClearTimelineHighlightOnce(){
-  try{
-    if(window.__mvTlClearOnceArmed) return;
-    window.__mvTlClearOnceArmed = true;
-
-    const clear = ()=>{
-      window.__mvTlClearOnceArmed = false;
-      try{
-        if(typeof __clearTimelinePersistentFoundHighlight==="function") __clearTimelinePersistentFoundHighlight();
-      }catch{}
-      try{
-        document.removeEventListener("pointerdown", onPtr, true);
-        document.removeEventListener("keydown", onKey, true);
-        const ms = document.getElementById("mainScroll");
-        if(ms) ms.removeEventListener("scroll", onScroll, true);
-      }catch{}
-    };
-
-    const onPtr = (e)=>{ clear(); };
-    const onKey = (e)=>{ clear(); };
-    const onScroll = (e)=>{ clear(); };
-
-    document.addEventListener("pointerdown", onPtr, true);
-    document.addEventListener("keydown", onKey, true);
-    const ms = document.getElementById("mainScroll");
-    if(ms) ms.addEventListener("scroll", onScroll, true);
-  }catch{ try{ window.__mvTlClearOnceArmed = false; }catch{} }
-}
-
-
-function __mvUpdateActivitiesCountUI(){
-  // Update the subsection header button when we are in Actividades view
-  try{
-    if(String(activeView||"") === "acts"){
-      updateSubSectionHeader("acts");
-    }
-  }catch{}
-
-  // Backward-compat: if a standalone badge exists, keep it updated too
-  const btn = document.getElementById("actsCountBtn");
-  if(btn){
-    const sum = __mvGetActivitiesSummary();
-    btn.textContent = String(sum.total);
-
-    if(!(btn.dataset && btn.dataset.bound === "1")){
-      if(btn.dataset) btn.dataset.bound = "1";
-      btn.addEventListener("click", (e)=>{
-        try{ e.preventDefault(); e.stopPropagation(); }catch{}
-        __mvShowActivitiesByCityModal();
-      });
-      btn.addEventListener("touchstart", (e)=>{ try{ e.stopPropagation(); }catch{} }, {passive:true});
-    }
-  }
-}
-
-/* ================= end V226C1B0BT ================= */
 
 
 /* ---------------- Timeline: jump to item ---------------- */
@@ -12187,7 +11822,7 @@ function renderTimeline() {
     const __aiPendingTL = (jumpType === 'act' && __act && __act.pendingAIReview) ? true : false;
     const __aiConfirmedTL = (jumpType === 'act' && __act && __act.fromAI && !__act.pendingAIReview && (__act.aiConfirmedAt||0)) ? true : false;
     const __aiIconHTML = (jumpType==='act' && __act && __act.fromAI) ? `<span class="mvAiSparkle ${__aiPendingTL ? "pending" : ""}" data-ai-sparkle-act="${escapeHtml(String(jumpId))}" title="${__aiPendingTL ? "Añadido por IA · por revisar" : (__aiConfirmedTL ? "Añadido por IA · revisado" : "Añadido por IA")}">✨${__aiConfirmedTL ? `<span class="mvAiSparkleCheck">✓</span>` : ``}</span>` : ``;
-    const __rightDurHTML = ``;
+    const __rightDurHTML = (jumpType === 'leg' && __leg) ? (function(){ const sp = buildLegSummaryParts(__leg); return (sp && sp.durText) ? `<div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${sp.durText}</div>` : ``; })() : ``;
     const icon = (jumpType === 'leg') ? legModeIcon(__leg && __leg.mode) : (jumpType === 'stay') ? '🏨' : (jumpType === 'act') ? '🎯' : '';
 
     const hasNote = !!(isDated && notes[it.date] && String(notes[it.date]).trim());
@@ -15935,30 +15570,6 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
               ev.preventDefault(); ev.stopPropagation(); return;
             }
 
-            // V226C1B0BN: "Más opciones" por ciudad (paginación 5/5 con persistencia)
-            const moreOpt = t && t.closest ? t.closest("[data-ai-more-options]") : null;
-            if(moreOpt){
-              try{
-                const keyRaw = String(moreOpt.getAttribute("data-ai-more-options")||"").trim();
-                if(keyRaw){
-                  // snapshot UI state
-                  const openMap = {};
-                  document.querySelectorAll("[id^='aiDayBody-']").forEach((el)=>{
-                    if(!el || !el.id) return;
-                    openMap[el.id] = !el.classList.contains("hidden");
-                  });
-                  const ms = document.getElementById("mainScroll");
-                  const scrollTop = ms ? (ms.scrollTop||0) : 0;
-
-                  try{ aiModule.__aiToggleCityPage(keyRaw); }catch{}
-
-                  // refrescar SOLO la acción actual, preservando UI
-                  try{ aiModule.refreshCurrentAction({ force:true, preserveOpenMap: openMap, preserveScrollTop: scrollTop }); }catch{}
-                }
-              }catch{}
-              ev.preventDefault(); ev.stopPropagation(); return;
-            }
-
             const toggle = t && t.closest ? t.closest("[data-ai-day-toggle]") : null;
             if(toggle){
               const bodyId = String(toggle.getAttribute("data-ai-day-toggle")||"");
@@ -16786,108 +16397,15 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           return t && !existing.has(t);
         });
 
-      // Slice simple (sin wrap-around): si la "segunda página" tiene menos de 5, se muestran menos.
-      const picked = ranked.slice(startAt, startAt + n);
+      // Slice con wrap-around suave para "otras recomendaciones"
+      const picked = [];
+      for(let i=0; i<ranked.length && picked.length<n; i++){
+        const j = (startAt + i) % ranked.length;
+        const it = ranked[j];
+        if(it) picked.push(it);
+      }
 
       return picked;
-    },
-    // V226C1B0BO: contador de propuestas disponibles (tras dedupe) por ciudad
-    __aiAvailableProposalCountForCity(city, existingTitlesSet){
-      const cityName = String(city||"").trim();
-      if(!cityName) return 0;
-      const key = this.__aiCityKey(cityName);
-      const __recoCachePrefix = "MV_AI_RECO_POOL_V1:";
-      const __recoCacheV = 1;
-      let __cachedPool = null;
-      try{
-        const raw = localStorage.getItem(__recoCachePrefix + key);
-        if(raw){
-          const data = JSON.parse(raw);
-          if(data && data.v === __recoCacheV && Array.isArray(data.pool)) __cachedPool = data.pool;
-        }
-      }catch(e){}
-      let catalog = [];
-      try{
-        if(window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function"){
-          const arr = window.__MV_POI.getPOIsForCity(cityName);
-          if(Array.isArray(arr)) catalog = arr;
-        }
-      }catch(e){}
-      // Deduplicate by normalized title (keeps first occurrence).
-      if(Array.isArray(catalog)){
-        const seen = new Set();
-        catalog = catalog.filter((it)=>{
-          const t = this.__aiNormTitle((it && it.title) || "");
-          if(!t) return false;
-          if(seen.has(t)) return false;
-          seen.add(t);
-          return true;
-        });
-      }
-      let pool = [];
-      if(__cachedPool){
-        pool = Array.isArray(__cachedPool) ? __cachedPool.slice() : [];
-      }else{
-        const ranked = (Array.isArray(catalog)?catalog:[])
-          .map((item)=>{
-            const adapted = this.adaptProposal(item);
-            return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
-          })
-          .filter((it)=>{
-            const t = this.__aiNormTitle(it.title||"");
-            return t;
-          })
-          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
-        pool = ranked.map(({score, ...rest})=> rest);
-        try{
-          if(pool && pool.length){
-            localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
-          }
-        }catch(e){}
-      }
-      const existing = existingTitlesSet || new Set();
-      const ranked = (Array.isArray(pool)?pool:[]).filter((it)=>{
-        const t = this.__aiNormTitle(it.title||"");
-        return t && !existing.has(t);
-      });
-      return ranked.length;
-    },
-    // V226C1B0BN: paginación por ciudad para botón "Más opciones" (5/5)
-    __aiMoreOptionsLSKey(cityKey){
-      return "MV_AI_CITY_PAGE_V1:" + String(cityKey||"").trim();
-    },
-    __aiGetCityPage(cityKey){
-      const k = String(cityKey||"").trim();
-      if(!k) return 0;
-      // V226C1B0BS: al arrancar la app, empezar SIEMPRE por la página 1/2 (page=0).
-      // Reseteo "one-shot" por carga para evitar que se abra directamente en 2/2 por estado persistido.
-      try{
-        if(!window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1){
-          window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1 = true;
-          for(let i=0;i<localStorage.length;i++){
-            const kk = localStorage.key(i);
-            if(kk && kk.indexOf("MV_AI_CITY_PAGE_V1:")===0){
-              try{ localStorage.setItem(kk, "0"); }catch(e){}
-            }
-          }
-        }
-      }catch(e){}
-      try{
-        const v = parseInt(localStorage.getItem(this.__aiMoreOptionsLSKey(k)) || "0", 10);
-        return (v === 1) ? 1 : 0;
-      }catch(e){ return 0; }
-    },
-    __aiSetCityPage(cityKey, page){
-      const k = String(cityKey||"").trim();
-      if(!k) return;
-      const v = (parseInt(page,10) === 1) ? 1 : 0;
-      try{ localStorage.setItem(this.__aiMoreOptionsLSKey(k), String(v)); }catch(e){}
-    },
-    __aiToggleCityPage(cityKey){
-      const cur = this.__aiGetCityPage(cityKey);
-      const next = (cur === 1) ? 0 : 1;
-      this.__aiSetCityPage(cityKey, next);
-      return next;
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
@@ -17204,16 +16722,10 @@ __aiBuildDayBuckets(trip){
         }catch{}
         return "";
       })();
-            // V226C1B0BP: usar el mismo cityKey que el catálogo de POIs para evitar desajustes (ej: Nueva York)
-      const __aiCityKey = (c)=>{
-        try{ if(window.__MV_POI && typeof window.__MV_POI.cityKey === "function") return window.__MV_POI.cityKey(c); }catch(e){}
-        return __normalizeCityKey(c);
-      };
-      const homeCityKey = homeCity ? __aiCityKey(homeCity) : "";
+      const homeCityKey = homeCity ? __normalizeCityKey(homeCity) : "";
       try{ window.__aiHomeCity = homeCity; }catch{}
 
       const scheduledTitles = new Set((trip.activities||[]).map(a=>String(a.title||a.name||"").trim().toLowerCase()).filter(Boolean));
-      const __cityAvailMeta = {};
 
       for(const day of allDays){
         const gaps = collectIntervalsForDay(day);
@@ -17221,54 +16733,23 @@ __aiBuildDayBuckets(trip){
 
         const city = dayCity(day);
         // Excluir ciudad base/residencia (si está definida/inferida)
-        if(homeCityKey && __aiCityKey(city) === homeCityKey) continue;
-
-        const cityKey = __aiCityKey(city);
-        const __mvCityPage = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
+        if(homeCityKey && __normalizeCityKey(city) === homeCityKey) continue;
 
         const pois = getPOIsForCity(city);
-        // V226C1B0BO: contar disponibles (tras dedupe contra cronograma) para UI
-        try{
-          if(cityKey && !__cityAvailMeta[cityKey]){
-            const __seen = new Set();
-            let __avail = 0;
-            for(const pp of (Array.isArray(pois)?pois:[])){
-              const tt = String(pp && pp.title || "").trim().toLowerCase();
-              if(!tt) continue;
-              if(__seen.has(tt)) continue;
-              __seen.add(tt);
-              if(scheduledTitles.has(tt)) continue;
-              __avail++;
-            }
-            const __page = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
-            __cityAvailMeta[cityKey] = { available: __avail, page: __page, pages: (__avail > 5 ? 2 : 1) };
-          }
-        }catch(e){}
         if(!pois.length){
           // si no hay catálogo concreto para esa ciudad, no inventamos genéricos: saltamos
           continue;
         }
 
         const gapBlocks = gaps.map((g,gi)=>{
-          // elegir 5 por ciudad (paginación 5/5) + dedupe contra cronograma + wrap-around
-          // elegir por ciudad (paginación 5/5) + dedupe contra cronograma (sin wrap-around en 2ª página)
-          const avail = [];
-          const seen = new Set();
-          for(const p of (Array.isArray(pois)?pois:[])){
-            const tt = String(p && p.title || "").trim().toLowerCase();
-            if(!tt || seen.has(tt)) continue;
-            seen.add(tt);
-            if(scheduledTitles.has(tt)) continue;
-            avail.push(p);
+          // elegir 5 sin repetir dentro del día (rotación por hueco)
+          const startIdx = (gi*5) % pois.length;
+          const pool = [];
+          for(let k=0;k<pois.length;k++){
+            pool.push(pois[(startIdx+k)%pois.length]);
           }
-          let __page = (Number(__mvCityPage)||0) === 1 ? 1 : 0;
-          if(__page === 1 && avail.length <= 5){
-            __page = 0;
-            try{ if(typeof this.__aiSetCityPage === "function") this.__aiSetCityPage(cityKey, 0); }catch(e){}
-          }
-          const startAt = __page * 5;
-          const show = avail.slice(startAt, startAt + 5);
-
+          const chosen = pool.filter(p=>!scheduledTitles.has(p.title.toLowerCase())).slice(0,5);
+          const show = chosen.length ? chosen : pool.slice(0,5);
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const gapTitle = `${hhmm(g.start)}–${hhmm(g.end)}`;
@@ -17344,23 +16825,7 @@ __aiBuildDayBuckets(trip){
       const buildDayHtml = (sec, sidx)=>{
         const bodyId = `aiDayBody-${String(sec.day).replaceAll('-','')}`;
         const headId = `aiDayHead-${String(sec.day).replaceAll('-','')}`;
-        // V226C1B0BO: contador + hint de página (paginación 5/5 por ciudad)
-        const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
-        const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
-        const __pagesN = (__availN > 5) ? 2 : 1;
-
-        // Si ya no hay 2 páginas (por dedupe o cambios), forzar página 0 para evitar arrancar en 2/2 con listas cortas
-        const __storedPage = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
-        const __pageN = (__pagesN > 1) ? (__storedPage % 2) : 0;
-        if(sec && sec.cityKey && __pagesN === 1 && __storedPage !== 0 && typeof this.__aiSetCityPage === "function"){ try{ this.__aiSetCityPage(sec.cityKey,0); }catch{} }
-
-        const __pageLabel = (__pagesN > 1) ? ` · Viendo ${__pageN+1}/${__pagesN}` : ``;
-        const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
-        const __disableMore = !(__availN > 5);
-
-        // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
-        const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
-        const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
+        const gapsHtml = sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
                       <input class="mt-1" type="checkbox" data-ai-spot="${sidx}:${gi}:${pi}">
@@ -17380,18 +16845,18 @@ __aiBuildDayBuckets(trip){
                   </div>`;
         }).join("");
 
-        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden${(__availN===0) ? " mvAiExhaustedSec" : ""}">
+        return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
                   <div class="tap w-full flex items-center justify-between px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
                     <div class="min-w-0 text-left">
                       <div class="font-semibold text-slate-900">${sec.title}</div>
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div>${(__availN===0)?`<span class="mvAiExhaustedPill">Agotado</span>`:``}<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
+                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(sec.city||"")}" data-ai-reset-city="${escapeHtml(sec.cityKey)}">↻<span class="ml-1 text-xs font-bold">Reset</span></button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
-                  <div id="${bodyId}" class="hidden px-4 py-3" data-ai-exhausted="${(__availN===0)?1:0}">
+                  <div id="${bodyId}" class="hidden px-4 py-3">
                     ${gapsHtml}
                   </div>
                 </div>`;
@@ -17411,31 +16876,6 @@ __aiBuildDayBuckets(trip){
       `;
 
       if(results) results.innerHTML = htmlOut;
-
-      // V226C1B0BN: preservar acordeones abiertos + scroll al alternar "Más opciones"
-      try{
-        const openMap = (opts && opts.preserveOpenMap) ? opts.preserveOpenMap : null;
-        if(openMap && typeof openMap === "object"){
-          Object.keys(openMap).forEach((id)=>{
-            if(!openMap[id]) return;
-            const el = document.getElementById(id);
-            if(!el) return;
-            if(String(el.getAttribute("data-ai-exhausted")||"") === "1") return; // no reabrir ciudades agotadas
-            el.classList.remove("hidden");
-          });
-        }
-      }catch{}
-      try{
-        if(opts && typeof opts.preserveScrollTop === "number"){
-          const top = Math.max(0, Math.floor(opts.preserveScrollTop));
-          requestAnimationFrame(()=>{
-            requestAnimationFrame(()=>{
-              const ms = document.getElementById("mainScroll");
-              if(ms) ms.scrollTop = top;
-            });
-          });
-        }
-      }catch{}
 
       // --- Acciones: Añadir seleccionadas ---
       try{
@@ -18146,8 +17586,6 @@ loadTripGapsFill(opts){
           day,
           city,
           cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city)),
-          availableCount: (typeof this.__aiAvailableProposalCountForCity === "function") ? this.__aiAvailableProposalCountForCity(city, existingTitles) : proposals.length,
-          availablePage: (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city))) : 0,
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -18187,7 +17625,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Disponibles: ${Math.max(0, parseInt(blk.availableCount,10)||0)}${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? (' · Viendo ' + ((parseInt(blk.availablePage,10)||0)+1) + '/2') : ''}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "Más opciones" : "No hay más opciones"}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();" ${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "" : "disabled"}>Más opciones</button>` : ``}
+                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(blk.city||"")}" data-ai-reset-city="${escapeHtml(blk.cityKey)}">↻<span class="ml-1 text-xs font-bold">Reset</span></button>` : ``}
                 <div>${blk.proposals.length} propuestas</div>
               </div>
             </div>
