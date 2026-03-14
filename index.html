@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B1_AI_BUTTONS_FIX</title>
+<title>V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B1_AI_BUTTONS_FIX" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1684,7 +1684,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B1_AI_BUTTONS_FIX";
+const APP_BUILD = "V227_B1_AI_TAP_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13399,18 +13399,8 @@ function openAISheet(){
   if(!overlay) return;
   overlay.classList.remove("hidden");
   document.body.classList.add("ai-sheet-open");
-  // Ensure IA controls are bound even if init ran before DOM or content was re-rendered
-  try{ if(typeof initAISheet === "function") initAISheet(); }catch{}
-  try{
-    if(typeof bindAIControls === "function") bindAIControls();
-    else if(window.aiModule && typeof aiModule.init==="function"){
-      aiModule.init();
-      if(typeof aiModule.bindUI==="function") aiModule.bindUI();
-    }
-  }catch{}
   try{ renderAIContextual(); }catch{}
 }
-
 
 function closeAISheet(){
   const overlay = document.getElementById("aiSheetOverlay");
@@ -18356,6 +18346,36 @@ commitSelectedActivities(){
       document.addEventListener("keydown", (e)=>{ if((e.key || "") === "Escape") closeAISheet(); });
     }
     try{ aiModule.init(); }catch{}
+    // Quirúrgico V227_B1: asegurar taps en iOS en el HUB de IA (delegación) aunque falle el bind inicial
+    try{
+      if(!window.__aiHubDelegateBound){
+        window.__aiHubDelegateBound = true;
+        const hub = document.getElementById("aiActionsHub");
+        const attach = (type)=>{
+          if(!hub) return;
+          hub.addEventListener(type, (ev)=>{
+            try{
+              const btn = ev.target && (ev.target.closest ? ev.target.closest("button") : null);
+              if(!btn) return;
+              const id = btn.id || "";
+              if(!id) return;
+              // Evitar que el overlay cierre o interfiera
+              try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+              if(window.aiModule && typeof aiModule.init === "function"){
+                aiModule.init();
+                if(id === "aiActionSummary") aiModule.selectAction("summary");
+                else if(id === "aiActionUnified") aiModule.selectAction("unified");
+                else if(id === "aiActionSensitive") aiModule.selectAction("sensitive");
+                else if(id === "aiActionTransport") aiModule.selectAction("transport");
+              }
+            }catch(e){ console.error(e); }
+          }, { passive:false });
+        };
+        attach("click");
+        attach("touchend");
+      }
+    }catch(e){ console.error(e); }
+
   }
   window.initAISheet = initAISheet;
 
