@@ -1387,7 +1387,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvStayProgUnderTick{margin-top:2px;}
 .mvStayProgRail{justify-self:end;}
 
-/* V227_B10: Week (Calendar) alternative view for Cronograma — read-only, minimal risk */
+/* V227_B10: Semana (read-only) */
 .mvWeekToggleRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
 .mvSeg{ display:inline-flex; border:1px solid rgb(226 232 240); border-radius:9999px; overflow:hidden; background:white; }
 .mvSeg button{ padding:8px 12px; font-size:12px; font-weight:800; letter-spacing:.02em; }
@@ -1395,9 +1395,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvSeg button:not(.active){ background:white; color: rgb(51 65 85); }
 .mvWeekNavBtn{ width:36px; height:36px; border-radius:9999px; border:1px solid rgb(226 232 240); background:white; display:inline-flex; align-items:center; justify-content:center; font-weight:900; }
 .mvWeekNavBtn:active{ transform:scale(.98); }
-#timelineWeekBox{ display:none; }
-#timelineWeekBox.active{ display:block; }
-#timelineList.weekHidden{ display:none; }
+.mvWeekStrip{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:6px 2px 10px; margin-top:-6px; margin-bottom:6px; }
+.mvWeekChip{ flex:0 0 auto; border:1px solid rgb(226 232 240); background:white; border-radius:9999px; padding:7px 10px; font-size:12px; font-weight:800; color: rgb(51 65 85); white-space:nowrap; }
+.mvWeekChip.active{ background: rgb(15 23 42); border-color: rgb(15 23 42); color:white; }
 .mvWeekDayCard{ border:1px solid rgb(226 232 240); background: rgb(255 255 255); border-radius: 20px; padding: 12px; }
 .mvWeekDayHeader{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
 .mvWeekDayHeader .label{ font-weight:900; color: rgb(15 23 42); }
@@ -1408,7 +1408,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvWeekRow .time .tlTimeBadge{ font-size:11px; }
 .mvWeekRow .title{ flex:1 1 auto; min-width:0; font-size:13px; font-weight:800; color: rgb(15 23 42); line-height:1.2; }
 .mvWeekRow .title .sub{ display:block; margin-top:2px; font-size:12px; font-weight:700; color: rgb(100 116 139); }
-
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1507,10 +1506,14 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <span class="accIcon text-slate-400 text-xl">▴</span>
 </button>
 <div class="px-5 pb-5" data-acc-body="timeline" style="overflow: visible;">
-  <div class="mvWeekToggleRow">
-    <div class="mvSeg" role="tablist" aria-label="Vista del cronograma">
-      <button class="tap active" id="btnTimelineView" type="button" role="tab" aria-selected="true">Cronograma</button>
-      <button class="tap" id="btnWeekView" type="button" role="tab" aria-selected="false">Semana</button>
+  <!-- V227_B10: Vista alternativa Semana (read-only) + selector de semana -->
+  <div class="mvWeekToggleRow" id="mvWeekToggleRow">
+    <div class="flex items-center gap-2">
+      <div class="text-xs font-extrabold text-slate-700">Vista</div>
+      <div class="mvSeg" role="tablist" aria-label="Vista del cronograma">
+        <button class="tap active" id="btnTimelineView" type="button" role="tab" aria-selected="true">Cronograma</button>
+        <button class="tap" id="btnWeekView" type="button" role="tab" aria-selected="false">Semana</button>
+      </div>
     </div>
     <div class="flex items-center gap-2">
       <button class="tap mvWeekNavBtn" id="btnWeekPrev" type="button" aria-label="Semana anterior">‹</button>
@@ -1518,7 +1521,8 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
       <button class="tap mvWeekNavBtn" id="btnWeekNext" type="button" aria-label="Semana siguiente">›</button>
     </div>
   </div>
-  <div class="space-y-3" id="timelineWeekBox"></div>
+  <div class="mvWeekStrip" id="weekStrip" aria-label="Selector de semanas" style="display:none;"></div>
+  <div class="space-y-3" id="timelineWeekBox" style="display:none;"></div>
   <div class="space-y-3" id="timelineList"></div>
 </div>
 <div class="mt-4 bg-white border border-slate-200 rounded-3xl overflow-hidden">
@@ -1712,7 +1716,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B10_WEEK_VIEW_READONLY";
+const APP_BUILD = "V227_B10_WEEK_VIEW_PICKER_READONLY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -10153,189 +10157,9 @@ window.__tlControlsTemplateHTML = window.__tlControlsTemplateHTML || "";
 let __tlDays = []; // derived cache of available days in current filtered timeline
 let __tlLastFilteredItems = []; // cache of current filtered timeline items (in-memory only)
 
-// V227_B10: Alternative view for Cronograma (Semana / Calendario) — read-only
+// V227_B10: Alternative view for Cronograma (Semana) — UI only, not persisted
 let timelineAltView = "timeline"; // "timeline" | "week"
-let __weekStartISO = ""; // Monday ISO for current week view
-
-function __isISODate(iso){
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(iso||""));
-}
-function __isoToDate(iso){
-  const s = String(iso||"").trim();
-  if(!__isISODate(s)) return null;
-  const [y,m,d] = s.split("-").map(n=>parseInt(n,10));
-  if(!y||!m||!d) return null;
-  return new Date(Date.UTC(y, m-1, d, 12, 0, 0));
-}
-function __dateToISO(dt){
-  if(!(dt instanceof Date)) return "";
-  const y = dt.getUTCFullYear();
-  const m = String(dt.getUTCMonth()+1).padStart(2,"0");
-  const d = String(dt.getUTCDate()).padStart(2,"0");
-  return `${y}-${m}-${d}`;
-}
-function __isoAddDays(iso, n){
-  const dt = __isoToDate(iso);
-  if(!dt) return "";
-  dt.setUTCDate(dt.getUTCDate() + (Number(n)||0));
-  return __dateToISO(dt);
-}
-function __startOfWeekMondayISO(iso){
-  const dt = __isoToDate(iso);
-  if(!dt) return "";
-  // JS: 0=Sun..6=Sat => convert to Monday-start
-  const day = dt.getUTCDay();
-  const delta = (day === 0) ? -6 : (1 - day);
-  dt.setUTCDate(dt.getUTCDate() + delta);
-  return __dateToISO(dt);
-}
-
-function __ensureWeekStart(){
-  try{
-    const base = (typeof activeDayISO !== "undefined" && String(activeDayISO||"").trim()) ? String(activeDayISO).trim()
-      : ((typeof todayYMD==="function") ? todayYMD() : new Date().toISOString().slice(0,10));
-    const candidate = __startOfWeekMondayISO(base) || __startOfWeekMondayISO((__tlDays && __tlDays[0]) ? __tlDays[0] : base);
-    __weekStartISO = candidate || base;
-  }catch{
-    __weekStartISO = (typeof todayYMD==="function") ? todayYMD() : new Date().toISOString().slice(0,10);
-  }
-}
-
-function __setTimelineAltView(mode){
-  mode = String(mode||"timeline");
-  if(mode !== "week") mode = "timeline";
-  timelineAltView = mode;
-
-  const btnTL = document.getElementById("btnTimelineView");
-  const btnWK = document.getElementById("btnWeekView");
-  const list = document.getElementById("timelineList");
-  const wkBox = document.getElementById("timelineWeekBox");
-
-  if(btnTL && btnWK){
-    btnTL.classList.toggle("active", mode==="timeline");
-    btnWK.classList.toggle("active", mode==="week");
-    btnTL.setAttribute("aria-selected", mode==="timeline" ? "true" : "false");
-    btnWK.setAttribute("aria-selected", mode==="week" ? "true" : "false");
-  }
-
-  if(list){
-    list.classList.toggle("weekHidden", mode==="week");
-  }
-  if(wkBox){
-    wkBox.classList.toggle("active", mode==="week");
-  }
-
-  // Render week view on demand
-  if(mode==="week"){
-    __ensureWeekStart();
-    try{ renderTimeline(); }catch{} // ensures __tlLastFilteredItems + __tlDays are up to date
-    try{ __renderTimelineWeekView(); }catch{}
-  }else{
-    // Back to timeline view: keep everything as-is
-    try{ const lbl = document.getElementById("weekRangeLabel"); if(lbl) lbl.textContent = "—"; }catch{}
-  }
-}
-
-function __weekRangeLabel(){
-  try{
-    if(!__weekStartISO) return "—";
-    const end = __isoAddDays(__weekStartISO, 6);
-    const a = (typeof __fmtDateES==="function") ? __fmtDateES(__weekStartISO) : __weekStartISO;
-    const b = (typeof __fmtDateES==="function") ? __fmtDateES(end) : end;
-    return `${a} – ${b}`;
-  }catch{ return "—"; }
-}
-
-function __wkItemRowHTML(it){
-  const icon = (it.actId ? "🎯" : (it.legId ? "✈️" : (it.stayId ? "🏨" : "")));
-  const datePart = String(it.date||"");
-  const timePart = (it.time && String(it.time).trim()) ? String(it.time).trim() : "—";
-  const hasTime = (timePart !== "—");
-  const today = (typeof todayYMD==="function") ? todayYMD() : new Date().toISOString().slice(0,10);
-  const rel = (!__isISODate(datePart) ? "" : (datePart < today ? "past" : (datePart > today ? "future" : "today")));
-  const timeCls = hasTime
-    ? `tlTimeBadge ${rel === "today" ? "tlTimeToday" : (rel === "future" ? "tlTimeFuture" : (rel === "past" ? "tlTimePast" : ""))}`
-    : "tlTimeBadge tlTimeNone";
-  const title = String(it.title || "—");
-  const kind = it.actId ? "Actividad" : (it.legId ? "Transporte" : (it.stayId ? "Alojamiento" : String(it.type||"")));
-  return `<div class="mvWeekRow">
-    <div class="time"><span class="${timeCls}">${escapeHtml(timePart)}</span></div>
-    <div class="title"><span>${escapeHtml(icon)} ${escapeHtml(title)}</span><span class="sub">${escapeHtml(kind)}</span></div>
-  </div>`;
-}
-
-function __renderTimelineWeekView(){
-  const wkBox = document.getElementById("timelineWeekBox");
-  if(!wkBox) return;
-
-  __ensureWeekStart();
-  const start = __weekStartISO;
-  const weekDays = [];
-  for(let i=0;i<7;i++) weekDays.push(__isoAddDays(start,i));
-
-  // Update header label
-  const lbl = document.getElementById("weekRangeLabel");
-  if(lbl) lbl.textContent = __weekRangeLabel();
-
-  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
-  const byDay = new Map();
-  for(const d of weekDays) byDay.set(d, []);
-  for(const it of items){
-    const d = String(it?.date||"").trim();
-    if(byDay.has(d)){
-      // Skip note-only placeholders
-      if(it && it.type === "__noteOnly") continue;
-      byDay.get(d).push(it);
-    }
-  }
-  // Keep chronological order within day (same comparator as renderTimeline)
-  const sortInDay = (arr)=>{
-    arr.sort((a,b)=>{
-      const ta = timeSortKey(a.time);
-      const tb = timeSortKey(b.time);
-      if(ta !== tb) return ta - tb;
-      return String(a.uid||"").localeCompare(String(b.uid||""));
-    });
-  };
-  for(const d of weekDays) sortInDay(byDay.get(d));
-
-  const dayCards = weekDays.map(d=>{
-    const dayLabel = (typeof formatDayLabel==="function") ? formatDayLabel(d) : d;
-    const meta = (typeof humanDay==="function") ? humanDay(d) : d;
-    const arr = byDay.get(d) || [];
-    const body = arr.length ? arr.map(__wkItemRowHTML).join("") : `<div class="text-sm text-slate-500">—</div>`;
-    return `<div class="mvWeekDayCard">
-      <div class="mvWeekDayHeader">
-        <div class="label">${escapeHtml(dayLabel)}</div>
-        <div class="meta">${escapeHtml(meta)}</div>
-      </div>
-      ${body}
-    </div>`;
-  }).join("");
-
-  wkBox.innerHTML = dayCards;
-}
-
-// Wire buttons once DOM is ready (safe)
-document.addEventListener("DOMContentLoaded", () => {
-  const btnTL = document.getElementById("btnTimelineView");
-  const btnWK = document.getElementById("btnWeekView");
-  const prev = document.getElementById("btnWeekPrev");
-  const next = document.getElementById("btnWeekNext");
-
-  if(btnTL) btnTL.addEventListener("click", () => __setTimelineAltView("timeline"));
-  if(btnWK) btnWK.addEventListener("click", () => __setTimelineAltView("week"));
-
-  const shiftWeek = (dir)=>{
-    if(!__weekStartISO) __ensureWeekStart();
-    __weekStartISO = __isoAddDays(__weekStartISO, (dir*7));
-    try{ __renderTimelineWeekView(); }catch{}
-  };
-
-  if(prev) prev.addEventListener("click", ()=> { if(timelineAltView==="week") shiftWeek(-1); });
-  if(next) next.addEventListener("click", ()=> { if(timelineAltView==="week") shiftWeek(1); });
-});
-
+let __weekStartISO = ""; // Monday ISO for week view
 
 const timelineFilterState = {
   categories: new Set() // empty = show all
@@ -10366,6 +10190,162 @@ function getFilteredItems(allItems) {
     const c = timelineItemCategory(it);
     return c && cats.has(c);
   });
+}
+
+// ===== V227_B10: Semana (read-only) =====
+function __mvIsoToDate(iso){
+  const s = String(iso||"").slice(0,10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const dt = new Date(s + "T00:00:00Z");
+  if(Number.isNaN(dt.getTime())) return null;
+  return dt;
+}
+function __mvDateToISO(dt){
+  try{ return new Date(dt.getTime()).toISOString().slice(0,10);}catch{ return ""; }
+}
+function __mvIsoAddDays(iso, n){
+  const dt = __mvIsoToDate(iso);
+  if(!dt) return "";
+  dt.setUTCDate(dt.getUTCDate() + (Number(n)||0));
+  return __mvDateToISO(dt);
+}
+function __mvStartOfWeekMondayISO(iso){
+  const dt = __mvIsoToDate(iso);
+  if(!dt) return "";
+  const day = dt.getUTCDay(); // 0=Sun..6=Sat
+  const delta = (day === 0) ? -6 : (1 - day);
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  return __mvDateToISO(dt);
+}
+function __mvEnsureWeekStart(){
+  try{
+    const base = (typeof activeDayISO !== "undefined" && String(activeDayISO||"").trim()) ? String(activeDayISO).trim()
+      : ((typeof todayYMD === "function") ? todayYMD() : new Date().toISOString().slice(0,10));
+    const first = (Array.isArray(__tlDays) && __tlDays[0]) ? __tlDays[0] : base;
+    __weekStartISO = __mvStartOfWeekMondayISO(base) || __mvStartOfWeekMondayISO(first) || base;
+  }catch{
+    __weekStartISO = (typeof todayYMD === "function") ? todayYMD() : new Date().toISOString().slice(0,10);
+  }
+}
+function __mvWeekRangeLabel(){
+  try{
+    if(!__weekStartISO) return "—";
+    const end = __mvIsoAddDays(__weekStartISO, 6);
+    const a = (typeof __fmtDateES === "function") ? __fmtDateES(__weekStartISO) : __weekStartISO;
+    const b = (typeof __fmtDateES === "function") ? __fmtDateES(end) : end;
+    return `${a} – ${b}`;
+  }catch{ return "—"; }
+}
+
+function __mvWkItemRowHTML(it){
+  const icon = (it.actId ? "🎯" : (it.legId ? "✈️" : (it.stayId ? "🏨" : "")));
+  const datePart = String(it.date||"");
+  const timePart = (it.time && String(it.time).trim()) ? String(it.time).trim() : "—";
+  const hasTime = (timePart !== "—");
+  const today = (typeof todayYMD === "function") ? todayYMD() : new Date().toISOString().slice(0,10);
+  const rel = (!/^\d{4}-\d{2}-\d{2}$/.test(datePart) ? "" : (datePart < today ? "past" : (datePart > today ? "future" : "today")));
+  const timeCls = hasTime
+    ? `tlTimeBadge ${rel === "today" ? "tlTimeToday" : (rel === "future" ? "tlTimeFuture" : (rel === "past" ? "tlTimePast" : ""))}`
+    : "tlTimeBadge tlTimeNone";
+  const title = String(it.title || "—");
+  const kind = it.actId ? "Actividad" : (it.legId ? "Transporte" : (it.stayId ? "Alojamiento" : String(it.type||"")));
+  const sub = (it.subtitle && String(it.subtitle).trim()) ? String(it.subtitle).trim() : kind;
+  return `<div class="mvWeekRow">
+    <div class="time"><span class="${timeCls}">${escapeHtml(timePart)}</span></div>
+    <div class="title"><span>${escapeHtml(icon)} ${escapeHtml(title)}</span><span class="sub">${escapeHtml(sub)}</span></div>
+  </div>`;
+}
+
+function __mvRenderWeekStrip(){
+  const strip = document.getElementById("weekStrip");
+  if(!strip) return;
+  // Build weeks from available timeline days (filtered)
+  const days = Array.isArray(__tlDays) ? __tlDays.slice() : [];
+  const first = days[0];
+  const last = days[days.length-1];
+  if(!first || !last){ strip.style.display = "none"; strip.innerHTML = ""; return; }
+  const start = __mvStartOfWeekMondayISO(first) || first;
+  const end = __mvStartOfWeekMondayISO(last) || last;
+  // Enumerate Monday starts until we pass last
+  let cur = start;
+  const chips = [];
+  let idx = 1;
+  const max = 64; // hard safety
+  while(cur && idx <= max){
+    const curEnd = __mvIsoAddDays(cur, 6);
+    chips.push({ start: cur, end: curEnd, idx });
+    if(curEnd >= last) break;
+    cur = __mvIsoAddDays(cur, 7);
+    idx++;
+  }
+  if(chips.length <= 1){ strip.style.display = "none"; strip.innerHTML = ""; return; }
+  strip.style.display = "flex";
+  strip.innerHTML = chips.map(ch => {
+    const active = (ch.start === __weekStartISO);
+    const label = `Sem ${ch.idx}`;
+    const meta = (typeof __fmtDateES === "function") ? `${__fmtDateES(ch.start)} – ${__fmtDateES(ch.end)}` : `${ch.start} – ${ch.end}`;
+    return `<button type="button" class="tap mvWeekChip ${active ? "active" : ""}" data-week-start="${escapeHtml(ch.start)}" aria-pressed="${active ? "true" : "false"}">${escapeHtml(label)} · ${escapeHtml(meta)}</button>`;
+  }).join("");
+}
+
+function __mvRenderTimelineWeekView(){
+  const wkBox = document.getElementById("timelineWeekBox");
+  const lbl = document.getElementById("weekRangeLabel");
+  if(lbl) lbl.textContent = __mvWeekRangeLabel();
+  if(!wkBox) return;
+  const items = Array.isArray(__tlLastFilteredItems) ? __tlLastFilteredItems : [];
+  const start = __weekStartISO || (typeof todayYMD === "function" ? todayYMD() : new Date().toISOString().slice(0,10));
+  const end = __mvIsoAddDays(start, 6);
+  const buckets = {};
+  for(let i=0;i<items.length;i++){
+    const it = items[i];
+    const d = String(it?.date||"");
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    if(d < start || d > end) continue;
+    if(!buckets[d]) buckets[d] = [];
+    buckets[d].push(it);
+  }
+  const dayCards = [];
+  for(let k=0;k<7;k++){
+    const day = __mvIsoAddDays(start, k);
+    const arr = buckets[day] || [];
+    const label = (typeof __fmtDateES === "function") ? __fmtDateES(day) : day;
+    const count = arr.length ? `${arr.length} eventos` : "Sin eventos";
+    dayCards.push(`<div class="mvWeekDayCard">
+      <div class="mvWeekDayHeader"><div class="label">${escapeHtml(label)}</div><div class="meta">${escapeHtml(count)}</div></div>
+      ${arr.length ? arr.map(__mvWkItemRowHTML).join("") : `<div class="text-sm text-slate-500">—</div>`}
+    </div>`);
+  }
+  wkBox.innerHTML = dayCards.join("");
+  __mvRenderWeekStrip();
+}
+
+function __mvSetTimelineAltView(mode){
+  mode = String(mode||"timeline");
+  if(mode !== "week") mode = "timeline";
+  timelineAltView = mode;
+  const btnTL = document.getElementById("btnTimelineView");
+  const btnWK = document.getElementById("btnWeekView");
+  const list = document.getElementById("timelineList");
+  const wkBox = document.getElementById("timelineWeekBox");
+  const strip = document.getElementById("weekStrip");
+  if(btnTL && btnWK){
+    btnTL.classList.toggle("active", mode==="timeline");
+    btnWK.classList.toggle("active", mode==="week");
+    btnTL.setAttribute("aria-selected", mode==="timeline" ? "true" : "false");
+    btnWK.setAttribute("aria-selected", mode==="week" ? "true" : "false");
+  }
+  if(list) list.style.display = (mode==="week") ? "none" : "block";
+  if(wkBox) wkBox.style.display = (mode==="week") ? "block" : "none";
+  if(strip) strip.style.display = (mode==="week") ? (strip.innerHTML ? "flex" : "flex") : "none";
+
+  if(mode === "week"){
+    __mvEnsureWeekStart();
+    try{ renderTimeline(); }catch{}
+    try{ __mvRenderTimelineWeekView(); }catch{}
+  }else{
+    try{ const lbl = document.getElementById("weekRangeLabel"); if(lbl) lbl.textContent = "—"; }catch{}
+  }
 }
 
 function renderTimelineFilterChips() {
@@ -12617,13 +12597,6 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
 
-  // V227_B10: keep Semana view in sync (read-only)
-  try{
-    if (typeof timelineAltView !== "undefined" && timelineAltView === "week") {
-      requestAnimationFrame(() => { try{ __renderTimelineWeekView(); }catch{} });
-    }
-  }catch{}
-
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
     cb.onchange = () => handleActDoneToggle(cb.dataset.tlActDone, cb.checked, cb);
@@ -12686,6 +12659,9 @@ box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
 
 
   renderDailyNotes();
+
+  // V227_B10: Keep Semana view synced (read-only)
+  try{ if(timelineAltView === "week") { __mvEnsureWeekStart(); __mvRenderTimelineWeekView(); } }catch{}
 
   try{ __refreshTimelineNotesBadge(); }catch{}
 }
@@ -15296,6 +15272,47 @@ window.addEventListener('DOMContentLoaded', () => {
   try { __renderToolsDiagnostics(); } catch {}
   setupAccordion();
   try { __initTimelineNavBindings(); } catch {}
+
+  // V227_B10: Cronograma ⇄ Semana (read-only). Keep it UI-only.
+  try {
+    const bTL = document.getElementById("btnTimelineView");
+    const bWK = document.getElementById("btnWeekView");
+    const bPrev = document.getElementById("btnWeekPrev");
+    const bNext = document.getElementById("btnWeekNext");
+    if (bTL && !bTL.__bound) {
+      bTL.__bound = 1;
+      bTL.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __mvSetTimelineAltView("timeline"); }, { passive:false });
+    }
+    if (bWK && !bWK.__bound) {
+      bWK.__bound = 1;
+      bWK.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __mvSetTimelineAltView("week"); }, { passive:false });
+    }
+    if (bPrev && !bPrev.__bound) {
+      bPrev.__bound = 1;
+      bPrev.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} if(!__weekStartISO) __mvEnsureWeekStart(); __weekStartISO = __mvIsoAddDays(__weekStartISO, -7) || __weekStartISO; __mvSetTimelineAltView("week"); }, { passive:false });
+    }
+    if (bNext && !bNext.__bound) {
+      bNext.__bound = 1;
+      bNext.addEventListener("click", (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} if(!__weekStartISO) __mvEnsureWeekStart(); __weekStartISO = __mvIsoAddDays(__weekStartISO, 7) || __weekStartISO; __mvSetTimelineAltView("week"); }, { passive:false });
+    }
+
+    const strip = document.getElementById("weekStrip");
+    if (strip && !strip.__bound) {
+      strip.__bound = 1;
+      strip.addEventListener("click", (e)=>{
+        try{
+          const btn = e.target && (e.target.closest ? e.target.closest("[data-week-start]") : null);
+          if(!btn) return;
+          const ws = String(btn.getAttribute("data-week-start")||"").slice(0,10);
+          if(/^\d{4}-\d{2}-\d{2}$/.test(ws)){
+            __weekStartISO = ws;
+            __mvSetTimelineAltView("week");
+            try{ btn.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }catch{}
+          }
+        }catch{}
+      }, { passive:true });
+    }
+  } catch {}
 
   syncHeaderHeightVar();
   window.addEventListener('resize', () => { syncHeaderHeightVar(); syncStickyTotalsHeightVar(); }, { passive: true });
