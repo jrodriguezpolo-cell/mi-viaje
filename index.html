@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B2_DETAIL_NORMALIZE";
+const APP_BUILD = "V227_B3_DETAIL_NORM_LIVE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -7356,6 +7356,26 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
         if(!el) return;
         if(el.__mvNormBound) return;
         el.__mvNormBound = true;
+
+        // Live tiny-normalization: make common abbreviations immediately readable while typing.
+        // Keep it very conservative to avoid surprising edits.
+        el.addEventListener("input", ()=>{
+          try{
+            const v0 = String(el.value||"");
+            if(!v0) return;
+            // Plane: t4 / T4 -> T4 (upper-case the leading T only when followed by a digit)
+            if(currentMode === "plane" && /^t\d/i.test(v0)){
+              const pos = el.selectionStart;
+              const pos2 = el.selectionEnd;
+              const v1 = "T" + v0.slice(1);
+              if(v1 !== v0){
+                el.value = v1;
+                try{ el.setSelectionRange(pos, pos2); }catch{}
+              }
+            }
+          }catch{}
+        }, true);
+
         el.addEventListener("blur", ()=>{
           try{
             const before = String(el.value||"");
