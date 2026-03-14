@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B1_TL_DUR_ALIGN</title>
+<title>V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B1_TL_DUR_ALIGN" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1119,11 +1119,6 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 
 /* V222B3: Transport right-rail cleanup (stable lanes) */
-/* V227_B1: Timeline right-rail: match Sections (no fixed spacer row) */
-.timelineItem .mvLegRightRail{
-  grid-template-rows:1.25rem 1.25rem auto auto !important;
-}
-
 .mvLegRightRail{
   display:grid;
   grid-template-rows:1.25rem 1.25rem 1fr auto;
@@ -1673,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B1_TL_DUR_ALIGN";
+const APP_BUILD = "V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -12304,7 +12299,10 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
               ${buildEventIndicatorsHTML(itemForNotes, jumpType)}${tlCheckbox ? tlCheckbox : ""}
             </div>
             <div class="mvAiRightSlot">${__aiIconHTML}</div>
-            ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
+            <div class="mvLegRightMid">
+              ${__rightDurHTML || ""}
+            </div>
+            <div class="mvLegRightSpacer"></div>
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
           </div>
         </div>
