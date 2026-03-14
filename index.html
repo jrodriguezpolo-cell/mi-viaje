@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B3_STAY_PROGRESS_ALL";
+const APP_BUILD = "V227_B4_SECTION_SUMMARY_ALIGN";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9406,6 +9406,7 @@ function legCard(leg, idx) {
           <input type="checkbox" class="secDoneToggle" data-leg-done="${escapeHtml(String(leg.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
+        <div class="mvAiRightSlot"></div>
         ${__sp.durText ? `<div class="mvLegRightMid"><div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${__sp.durText}</div></div>` : ""}
         ${__rtBadge ? `<div class="mvLegRightBottom">${__rtBadge}</div>` : ""}
       </div>
@@ -9551,12 +9552,14 @@ function stayCard(stay) {
       <div class="min-w-0">
         ${staySummaryLinesHTML(stay, { context:"section", secCompact:isIntermediate })}
       </div>
-      <div class="shrink-0 flex flex-col items-end gap-2">
-        <div class="flex items-center gap-2">
+      <div class="shrink-0 mvLegRightRail self-stretch">
+        <div class="mvLegRightTop">
           ${buildEventIndicatorsHTML(stay,"stay")}
           <input type="checkbox" class="secDoneToggle" data-stay-done="${escapeHtml(String(stay.id))}" ${st.done ? "checked" : ""} title="Hecho">
           ${badgeState}
         </div>
+        <div class="mvAiRightSlot"></div>
+        <div class="mvLegRightMid"><div class="text-xs font-semibold text-slate-600 mv-nb mvLegRightDur">${escapeHtml(String(stay.nights||"1"))} noche${String(stay.nights||"1")==="1"?"":"s"}</div></div>
       </div>
     </button>
 
@@ -10784,8 +10787,8 @@ function actCard(act) {
               
         ${actSummaryLinesHTML(act, { context:"section", secCompact:isIntermediate })}
       </div>
-      <div class="shrink-0 flex flex-col items-end gap-2">
-        <div class="flex items-center gap-2">
+      <div class="shrink-0 mvLegRightRail self-stretch">
+        <div class="mvLegRightTop">
           ${buildEventIndicatorsHTML(act,"act")}
           <input type="checkbox" class="secDoneToggle" data-act-done="${escapeHtml(String(act.id))}" ${st.done ? "checked" : ""} title="Hecho">
         </div>
