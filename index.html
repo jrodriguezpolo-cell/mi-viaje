@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B4_TERMINAL_QUERY_BIAS";
+const APP_BUILD = "V227_B5_TERMINAL_LATLNG";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4314,9 +4314,27 @@ function __mapsDestWithCity(value, city){
   return (v + " " + c).trim();
 }
 
+
+
+// Extract lat,lng from a text string (safe opt-in). Supported forms:
+//  - "... @40.4912,-3.5933"
+//  - "... gps:40.4912,-3.5933"
+// Returns {lat,lng} or null. Used only to improve Maps precision when user provides coords.
+function __extractLatLngFromText(s){
+  try{
+    const t = String(s||"");
+    const m1 = t.match(/@\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i);
+    if(m1) return { lat: m1[1], lng: m1[2] };
+    const m2 = t.match(/\bgps\s*:\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i);
+    if(m2) return { lat: m2[1], lng: m2[2] };
+  }catch{}
+  return null;
+}
 // Open Google Maps directions FROM "my location" TO destination.
 function __openDirectionsTo(destination, mode){
   const dest = String(destination||"").trim();
+  const ll = __extractLatLngFromText(dest);
+  const destParam = ll ? (ll.lat + "," + ll.lng) : dest;
   if(!dest){ alert("Rellena este campo primero"); return; }
 
   const m = String(mode||"").toLowerCase();
@@ -4325,11 +4343,11 @@ function __openDirectionsTo(destination, mode){
                : (m==="bike" || m==="bicycling") ? "bicycling"
                : "transit";
 
-  const appUrl = "comgooglemaps://?daddr=" + encodeURIComponent(dest)
+  const appUrl = "comgooglemaps://?daddr=" + encodeURIComponent(destParam)
                + "&directionsmode=" + encodeURIComponent(travel);
 
   const webUrl = "https://www.google.com/maps/dir/?api=1"
-               + "&destination=" + encodeURIComponent(dest)
+               + "&destination=" + encodeURIComponent(destParam)
                + "&travelmode=" + encodeURIComponent(travel);
 
   try{ window.location.href = appUrl; }catch{}
@@ -4402,14 +4420,6 @@ function __formatLegDetailForMaps(mode, detailRaw){
 
   return raw;
 }
-}
-
-function __joinPlaceAndDetailForMaps(mode, place, detail){
-  const p = String(place||"").trim();
-  const d = String(detail||"").trim();
-  if(!d) return p;
-  // Bias Google Maps search by placing the detail first (e.g., "Terminal 4" before airport name).
-  return String((d + " " + p)).trim();
 }
 
 // V220A: Timeline — contextual "Cómo llegar" button (maps)
@@ -4895,7 +4905,7 @@ const __navDest = ((opts.context==="timeline") || (opts.context==="section")) ? 
     const city = String(leg.from||"").trim();
     const mode = String(leg.mode||leg.transportMode||leg.kind||"plane").toLowerCase().trim() || "plane";
     const det  = __formatLegDetailForMaps(mode, (leg.placeOutDetail||""));
-    const full = __joinPlaceAndDetailForMaps(mode, base, det);
+    const full = String((base + " " + det)).trim();
     return __mapsDestWithCity(full || base, city);
   }catch(e){
     const base = String(leg.placeOut||leg.from||"").trim();
@@ -7580,8 +7590,8 @@ qs("from").value = v(legObj.from);
     const _po = qs("placeOut");
     const _pi = qs("placeIn");
     const _modeFn = ()=> (wrap.dataset.legModeCurrent || currentMode);
-    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity(__joinPlaceAndDetailForMaps(_modeFn(), _po.value, d), _from && _from.value); }, _modeFn);
-    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity(__joinPlaceAndDetailForMaps(_modeFn(), _pi.value, d), _to && _to.value); }, _modeFn);
+    __installPinBtn(_po, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeOutDetail")?.value||"")); return __mapsDestWithCity((_po.value + " " + d).trim(), _from && _from.value); }, _modeFn);
+    __installPinBtn(_pi, ()=>{ const d=__formatLegDetailForMaps(_modeFn(), (qs("placeInDetail")?.value||"")); return __mapsDestWithCity((_pi.value + " " + d).trim(), _to && _to.value); }, _modeFn);
   }catch{}
 
   try{ __wireLegAutocomplete(wrap, ()=> (wrap.dataset.legModeCurrent || currentMode)); }catch{}
