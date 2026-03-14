@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B5_ATTACH_ICON_HIDE_PEEK</title>
+<title>V227_B6_ATTACH_ICON_HIDE_PEEK_LIVE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B5_ATTACH_ICON_HIDE_PEEK" rel="manifest"/>
+<link href="manifest.json?v=V227_B6_ATTACH_ICON_HIDE_PEEK_LIVE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1685,7 +1685,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B5_ATTACH_ICON_HIDE_PEEK";
+const APP_BUILD = "V227_B6_ATTACH_ICON_HIDE_PEEK_LIVE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -2432,7 +2432,7 @@ function __fileId(){
 function openAttachmentsModal(obj){
   try{
     if(!obj) return;
-    window.__attachmentsCtx = { obj };
+    window.__attachmentsCtx = { obj, launch: (window.__attachmentsLaunch||null) };
     window.__attachmentsFileCache = window.__attachmentsFileCache || {};
     __renderAttachmentsModal();
   }catch(err){
@@ -2467,6 +2467,7 @@ function __bindTimelineFilesPeekDelegation(){
     try{ if(window.__suppressNotePeekUntil!=null) window.__suppressNotePeekUntil = Date.now() + 250; }catch{}
     const kind = el.getAttribute("data-kind") || "";
     const id = el.getAttribute("data-id") || "";
+    try{ window.__attachmentsLaunch = { kind, id }; }catch{}
     const obj = __findEventObjByKindId(kind, id);
     if(!obj){
       // Still open an empty attachments modal if possible by creating a lightweight temp object
@@ -2549,7 +2550,8 @@ function __renderAttachmentsModal(){
   const closeBtn = document.createElement("button");
   closeBtn.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
   closeBtn.textContent = "Cerrar";
-  closeBtn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} window.__attachmentsCtx=null; try{ __mvRefreshAfterAttachmentsChange(); }catch{} closeModal(); };
+  closeBtn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} try{ __mvRefreshAfterAttachmentsChange(); }catch{}
+    try{ __mvPruneFilesPeekIconsIfEmpty(); }catch{} try{ __mvPruneFilesPeekIconsIfEmpty(); }catch{} window.__attachmentsCtx=null; try{ window.__attachmentsLaunch=null; }catch{} closeModal(); };
 
   showModal("Adjuntos", bodyHtml, [closeBtn]);
 
@@ -2586,6 +2588,31 @@ function __mvRefreshAfterAttachmentsChange(){
   try{ if(typeof renderActivities==="function") renderActivities(); }catch{}
   try{ if(typeof calcSummary==="function") calcSummary(); }catch{}
 }
+
+function __mvEscAttr(s){
+  try{ return (window.CSS && CSS.escape) ? CSS.escape(String(s||"")) : String(s||"").replace(/["\\]/g, "\\$&"); }catch{ return String(s||""); }
+}
+
+// If attachments are opened from a 📎 badge, remove that badge live when last file is deleted.
+// This is a safety net in case a full re-render doesn't update a specific stale card.
+function __mvPruneFilesPeekIconsIfEmpty(){
+  try{
+    const ctx = window.__attachmentsCtx || {};
+    const obj = ctx.obj;
+    const launch = ctx.launch || window.__attachmentsLaunch;
+    if(!obj || !launch) return;
+    const n = (Array.isArray(obj.files) ? obj.files.length : 0);
+    if(n > 0) return;
+    const k = __mvEscAttr(launch.kind || "");
+    const id = __mvEscAttr(launch.id || "");
+    if(!k || !id) return;
+    const sel = '.filesPeekBtn[data-kind="' + k + '"][data-id="' + id + '"]';
+    document.querySelectorAll(sel).forEach(el=>{
+      try{ el.remove(); }catch{ try{ el.style.display="none"; }catch{} }
+    });
+  }catch{}
+}
+
 
 function __handleAttachmentAction(action, id){
   const ctx = window.__attachmentsCtx || {};
@@ -2655,6 +2682,7 @@ if(action === "rename"){
     __renderAttachmentsModal();
     // Si se ha quedado sin adjuntos, hay que refrescar el resumen para que desaparezca el 📎
     try{ __mvRefreshAfterAttachmentsChange(); }catch{}
+    try{ __mvPruneFilesPeekIconsIfEmpty(); }catch{}
     return;
   }
 }
