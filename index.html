@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B4_STAY_ENTRY_EXIT_BADGE</title>
+<title>V227_B5_PIN_ALWAYS_VISIBLE</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B4_STAY_ENTRY_EXIT_BADGE" rel="manifest"/>
+<link href="manifest.json?v=V227_B5_PIN_ALWAYS_VISIBLE" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -883,6 +883,7 @@ div[data-acc-body="acts"]{
 /* V220A/B: Timeline "Cómo llegar" contextual button (match Event Sheet pin icon) */
 .tlNavBtn{
   display:inline-flex;
+  flex:0 0 auto;
   align-items:center;
   justify-content:center;
   margin-left:6px;
@@ -1673,7 +1674,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B4_STAY_ENTRY_EXIT_BADGE";
+const APP_BUILD = "V227_B5_PIN_ALWAYS_VISIBLE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -4820,7 +4821,7 @@ function legSummaryLinesHTML(leg, opts){
 
   if (__compact){
     const __contentHTML = `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+      <div class="mvSecMicroLine text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
       ${__conflictHTML}
     `;
     return (opts.context==="section")
@@ -4829,7 +4830,7 @@ function legSummaryLinesHTML(leg, opts){
   }
 
   const __contentHTML = `
-    <div class="text-sm font-semibold truncate">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
+    <div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">${escapeHtml(modeIcon)} <span>${escapeHtml(route)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, __navMode) : ""}</div>
     <div class="${metaCls}">${parts.metaHTML}</div>
     ${parts.placeLineHTML || ""}
     ${__conflictHTML}`;
@@ -9483,9 +9484,7 @@ function staySummaryLinesHTML(stay, opts){
   );
   if (__compact) {
     const __contentHTML = `
-      <div class="mvSecMicroLine text-sm font-semibold truncate">
-        🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
-      </div>
+      <div class="mvSecMicroLine text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>
     `;
     return (opts.context==="section")
       ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
@@ -9498,9 +9497,7 @@ function staySummaryLinesHTML(stay, opts){
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
 
   const __contentHTML = `
-    <div class="text-sm font-semibold truncate">
-      🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
-    </div>
+    <div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
   `;
@@ -10684,13 +10681,7 @@ function actSummaryLinesHTML(act, opts){
   const line2Date = dES || "—";
   const line2Time = t || "";
 
-  const line1 = `<div class="text-sm font-semibold truncate">
-    <span class="mr-1">🎯</span>
-    <span>${escapeHtml(line1Title)}</span>
-    <span class="text-slate-400"> · </span>
-    <span class="font-medium">${escapeHtml(line1City)}</span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}
-
-  </div>`;
+  const line1 = `<div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>`;
 
   const __compact = !!(
     opts && (
