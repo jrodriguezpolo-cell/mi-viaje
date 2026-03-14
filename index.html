@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN</title>
+<title>V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BT_AK_ACTIVITIES_TOTAL_AND_CITY_BREAKDOWN" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1668,7 +1668,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0C2_AK_ACTS_JUMP_WAIT_TIMELINE_VISIBLE_BEFORE_SCROLL";
+const APP_BUILD = "V226C1B0C7_AK_AI_EMPTY_STATE_PER_CITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17313,11 +17313,19 @@ __aiBuildDayBuckets(trip){
         const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
         const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
         const __pagesN = (__availN > 5) ? 2 : 1;
-        const __pageN = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
+
+        // Si ya no hay 2 páginas (por dedupe o cambios), forzar página 0 para evitar arrancar en 2/2 con listas cortas
+        const __storedPage = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
+        const __pageN = (__pagesN > 1) ? (__storedPage % 2) : 0;
+        if(sec && sec.cityKey && __pagesN === 1 && __storedPage !== 0 && typeof this.__aiSetCityPage === "function"){ try{ this.__aiSetCityPage(sec.cityKey,0); }catch{} }
+
         const __pageLabel = (__pagesN > 1) ? ` · Viendo ${__pageN+1}/${__pagesN}` : ``;
         const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
         const __disableMore = !(__availN > 5);
-        const gapsHtml = sec.gaps.map((g,gi)=>{
+
+        // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
+        const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
+        const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
                       <input class="mt-1" type="checkbox" data-ai-spot="${sidx}:${gi}:${pi}">
