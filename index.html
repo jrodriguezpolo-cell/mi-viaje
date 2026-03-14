@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG</title>
+<title>V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V226C1B0BE_AK_RESET_CITY_CACHE_SHUFFLE_WORKING" rel="manifest"/>
+<link href="manifest.json?v=V226C1B0BQ_AK_PAGING_NO_WRAPAROUND_SECOND_PAGE_CAN_BE_SHORT" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1649,7 +1649,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V226C1B0BG_AK_RESET_CITY_TRULY_ROTATES_USE_POI_CATALOG";
+const APP_BUILD = "V226C1B0BS_AK_CITY_PAGE_ALWAYS_STARTS_1_OF_2_ON_BOOT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15570,6 +15570,30 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
               ev.preventDefault(); ev.stopPropagation(); return;
             }
 
+            // V226C1B0BN: "Más opciones" por ciudad (paginación 5/5 con persistencia)
+            const moreOpt = t && t.closest ? t.closest("[data-ai-more-options]") : null;
+            if(moreOpt){
+              try{
+                const keyRaw = String(moreOpt.getAttribute("data-ai-more-options")||"").trim();
+                if(keyRaw){
+                  // snapshot UI state
+                  const openMap = {};
+                  document.querySelectorAll("[id^='aiDayBody-']").forEach((el)=>{
+                    if(!el || !el.id) return;
+                    openMap[el.id] = !el.classList.contains("hidden");
+                  });
+                  const ms = document.getElementById("mainScroll");
+                  const scrollTop = ms ? (ms.scrollTop||0) : 0;
+
+                  try{ aiModule.__aiToggleCityPage(keyRaw); }catch{}
+
+                  // refrescar SOLO la acción actual, preservando UI
+                  try{ aiModule.refreshCurrentAction({ force:true, preserveOpenMap: openMap, preserveScrollTop: scrollTop }); }catch{}
+                }
+              }catch{}
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
+
             const toggle = t && t.closest ? t.closest("[data-ai-day-toggle]") : null;
             if(toggle){
               const bodyId = String(toggle.getAttribute("data-ai-day-toggle")||"");
@@ -16397,15 +16421,108 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           return t && !existing.has(t);
         });
 
-      // Slice con wrap-around suave para "otras recomendaciones"
-      const picked = [];
-      for(let i=0; i<ranked.length && picked.length<n; i++){
-        const j = (startAt + i) % ranked.length;
-        const it = ranked[j];
-        if(it) picked.push(it);
-      }
+      // Slice simple (sin wrap-around): si la "segunda página" tiene menos de 5, se muestran menos.
+      const picked = ranked.slice(startAt, startAt + n);
 
       return picked;
+    },
+    // V226C1B0BO: contador de propuestas disponibles (tras dedupe) por ciudad
+    __aiAvailableProposalCountForCity(city, existingTitlesSet){
+      const cityName = String(city||"").trim();
+      if(!cityName) return 0;
+      const key = this.__aiCityKey(cityName);
+      const __recoCachePrefix = "MV_AI_RECO_POOL_V1:";
+      const __recoCacheV = 1;
+      let __cachedPool = null;
+      try{
+        const raw = localStorage.getItem(__recoCachePrefix + key);
+        if(raw){
+          const data = JSON.parse(raw);
+          if(data && data.v === __recoCacheV && Array.isArray(data.pool)) __cachedPool = data.pool;
+        }
+      }catch(e){}
+      let catalog = [];
+      try{
+        if(window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function"){
+          const arr = window.__MV_POI.getPOIsForCity(cityName);
+          if(Array.isArray(arr)) catalog = arr;
+        }
+      }catch(e){}
+      // Deduplicate by normalized title (keeps first occurrence).
+      if(Array.isArray(catalog)){
+        const seen = new Set();
+        catalog = catalog.filter((it)=>{
+          const t = this.__aiNormTitle((it && it.title) || "");
+          if(!t) return false;
+          if(seen.has(t)) return false;
+          seen.add(t);
+          return true;
+        });
+      }
+      let pool = [];
+      if(__cachedPool){
+        pool = Array.isArray(__cachedPool) ? __cachedPool.slice() : [];
+      }else{
+        const ranked = (Array.isArray(catalog)?catalog:[])
+          .map((item)=>{
+            const adapted = this.adaptProposal(item);
+            return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
+          })
+          .filter((it)=>{
+            const t = this.__aiNormTitle(it.title||"");
+            return t;
+          })
+          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
+        pool = ranked.map(({score, ...rest})=> rest);
+        try{
+          if(pool && pool.length){
+            localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
+          }
+        }catch(e){}
+      }
+      const existing = existingTitlesSet || new Set();
+      const ranked = (Array.isArray(pool)?pool:[]).filter((it)=>{
+        const t = this.__aiNormTitle(it.title||"");
+        return t && !existing.has(t);
+      });
+      return ranked.length;
+    },
+    // V226C1B0BN: paginación por ciudad para botón "Más opciones" (5/5)
+    __aiMoreOptionsLSKey(cityKey){
+      return "MV_AI_CITY_PAGE_V1:" + String(cityKey||"").trim();
+    },
+    __aiGetCityPage(cityKey){
+      const k = String(cityKey||"").trim();
+      if(!k) return 0;
+      // V226C1B0BS: al arrancar la app, empezar SIEMPRE por la página 1/2 (page=0).
+      // Reseteo "one-shot" por carga para evitar que se abra directamente en 2/2 por estado persistido.
+      try{
+        if(!window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1){
+          window.__MV_AI_CITY_PAGE_RESET_ON_BOOT_V1 = true;
+          for(let i=0;i<localStorage.length;i++){
+            const kk = localStorage.key(i);
+            if(kk && kk.indexOf("MV_AI_CITY_PAGE_V1:")===0){
+              try{ localStorage.setItem(kk, "0"); }catch(e){}
+            }
+          }
+        }
+      }catch(e){}
+      try{
+        const v = parseInt(localStorage.getItem(this.__aiMoreOptionsLSKey(k)) || "0", 10);
+        return (v === 1) ? 1 : 0;
+      }catch(e){ return 0; }
+    },
+    __aiSetCityPage(cityKey, page){
+      const k = String(cityKey||"").trim();
+      if(!k) return;
+      const v = (parseInt(page,10) === 1) ? 1 : 0;
+      try{ localStorage.setItem(this.__aiMoreOptionsLSKey(k), String(v)); }catch(e){}
+    },
+    __aiToggleCityPage(cityKey){
+      const cur = this.__aiGetCityPage(cityKey);
+      const next = (cur === 1) ? 0 : 1;
+      this.__aiSetCityPage(cityKey, next);
+      return next;
     },
 __aiBuildDayBuckets(trip){
       const buckets = {};
@@ -16722,10 +16839,16 @@ __aiBuildDayBuckets(trip){
         }catch{}
         return "";
       })();
-      const homeCityKey = homeCity ? __normalizeCityKey(homeCity) : "";
+            // V226C1B0BP: usar el mismo cityKey que el catálogo de POIs para evitar desajustes (ej: Nueva York)
+      const __aiCityKey = (c)=>{
+        try{ if(window.__MV_POI && typeof window.__MV_POI.cityKey === "function") return window.__MV_POI.cityKey(c); }catch(e){}
+        return __normalizeCityKey(c);
+      };
+      const homeCityKey = homeCity ? __aiCityKey(homeCity) : "";
       try{ window.__aiHomeCity = homeCity; }catch{}
 
       const scheduledTitles = new Set((trip.activities||[]).map(a=>String(a.title||a.name||"").trim().toLowerCase()).filter(Boolean));
+      const __cityAvailMeta = {};
 
       for(const day of allDays){
         const gaps = collectIntervalsForDay(day);
@@ -16733,23 +16856,54 @@ __aiBuildDayBuckets(trip){
 
         const city = dayCity(day);
         // Excluir ciudad base/residencia (si está definida/inferida)
-        if(homeCityKey && __normalizeCityKey(city) === homeCityKey) continue;
+        if(homeCityKey && __aiCityKey(city) === homeCityKey) continue;
+
+        const cityKey = __aiCityKey(city);
+        const __mvCityPage = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
 
         const pois = getPOIsForCity(city);
+        // V226C1B0BO: contar disponibles (tras dedupe contra cronograma) para UI
+        try{
+          if(cityKey && !__cityAvailMeta[cityKey]){
+            const __seen = new Set();
+            let __avail = 0;
+            for(const pp of (Array.isArray(pois)?pois:[])){
+              const tt = String(pp && pp.title || "").trim().toLowerCase();
+              if(!tt) continue;
+              if(__seen.has(tt)) continue;
+              __seen.add(tt);
+              if(scheduledTitles.has(tt)) continue;
+              __avail++;
+            }
+            const __page = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
+            __cityAvailMeta[cityKey] = { available: __avail, page: __page, pages: (__avail > 5 ? 2 : 1) };
+          }
+        }catch(e){}
         if(!pois.length){
           // si no hay catálogo concreto para esa ciudad, no inventamos genéricos: saltamos
           continue;
         }
 
         const gapBlocks = gaps.map((g,gi)=>{
-          // elegir 5 sin repetir dentro del día (rotación por hueco)
-          const startIdx = (gi*5) % pois.length;
-          const pool = [];
-          for(let k=0;k<pois.length;k++){
-            pool.push(pois[(startIdx+k)%pois.length]);
+          // elegir 5 por ciudad (paginación 5/5) + dedupe contra cronograma + wrap-around
+          // elegir por ciudad (paginación 5/5) + dedupe contra cronograma (sin wrap-around en 2ª página)
+          const avail = [];
+          const seen = new Set();
+          for(const p of (Array.isArray(pois)?pois:[])){
+            const tt = String(p && p.title || "").trim().toLowerCase();
+            if(!tt || seen.has(tt)) continue;
+            seen.add(tt);
+            if(scheduledTitles.has(tt)) continue;
+            avail.push(p);
           }
-          const chosen = pool.filter(p=>!scheduledTitles.has(p.title.toLowerCase())).slice(0,5);
-          const show = chosen.length ? chosen : pool.slice(0,5);
+          let __page = (Number(__mvCityPage)||0) === 1 ? 1 : 0;
+          if(__page === 1 && avail.length <= 5){
+            __page = 0;
+            try{ if(typeof this.__aiSetCityPage === "function") this.__aiSetCityPage(cityKey, 0); }catch(e){}
+          }
+          const startAt = __page * 5;
+          const show = avail.slice(startAt, startAt + 5);
+
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const gapTitle = `${hhmm(g.start)}–${hhmm(g.end)}`;
@@ -16825,6 +16979,14 @@ __aiBuildDayBuckets(trip){
       const buildDayHtml = (sec, sidx)=>{
         const bodyId = `aiDayBody-${String(sec.day).replaceAll('-','')}`;
         const headId = `aiDayHead-${String(sec.day).replaceAll('-','')}`;
+        // V226C1B0BO: contador + hint de página (paginación 5/5 por ciudad)
+        const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
+        const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
+        const __pagesN = (__availN > 5) ? 2 : 1;
+        const __pageN = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
+        const __pageLabel = (__pagesN > 1) ? ` · Viendo ${__pageN+1}/${__pagesN}` : ``;
+        const __availLabel = `Disponibles: ${__availN}${__pageLabel}`;
+        const __disableMore = !(__availN > 5);
         const gapsHtml = sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
@@ -16852,7 +17014,7 @@ __aiBuildDayBuckets(trip){
                       <div class="text-xs text-slate-500">${sec.gaps.length} hueco(s) detectado(s)</div>
                     </div>
                     <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(sec.city||"")}" data-ai-reset-city="${escapeHtml(sec.cityKey)}">↻<span class="ml-1 text-xs font-bold">Reset</span></button>` : ``}
+                      ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${__disableMore ? "No hay más opciones" : "Más opciones"}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();" ${__disableMore ? "disabled" : ""}>Más opciones</button>` : ``}
                       <div class="text-slate-400 font-bold">⌄</div>
                     </div>
                   </div>
@@ -16876,6 +17038,29 @@ __aiBuildDayBuckets(trip){
       `;
 
       if(results) results.innerHTML = htmlOut;
+
+      // V226C1B0BN: preservar acordeones abiertos + scroll al alternar "Más opciones"
+      try{
+        const openMap = (opts && opts.preserveOpenMap) ? opts.preserveOpenMap : null;
+        if(openMap && typeof openMap === "object"){
+          Object.keys(openMap).forEach((id)=>{
+            if(!openMap[id]) return;
+            const el = document.getElementById(id);
+            if(el) el.classList.remove("hidden");
+          });
+        }
+      }catch{}
+      try{
+        if(opts && typeof opts.preserveScrollTop === "number"){
+          const top = Math.max(0, Math.floor(opts.preserveScrollTop));
+          requestAnimationFrame(()=>{
+            requestAnimationFrame(()=>{
+              const ms = document.getElementById("mainScroll");
+              if(ms) ms.scrollTop = top;
+            });
+          });
+        }
+      }catch{}
 
       // --- Acciones: Añadir seleccionadas ---
       try{
@@ -17586,6 +17771,8 @@ loadTripGapsFill(opts){
           day,
           city,
           cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city)),
+          availableCount: (typeof this.__aiAvailableProposalCountForCity === "function") ? this.__aiAvailableProposalCountForCity(city, existingTitles) : proposals.length,
+          availablePage: (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city))) : 0,
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -17625,7 +17812,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Reiniciar recomendaciones de ${escapeHtml(blk.city||"")}" data-ai-reset-city="${escapeHtml(blk.cityKey)}">↻<span class="ml-1 text-xs font-bold">Reset</span></button>` : ``}
+                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">Disponibles: ${Math.max(0, parseInt(blk.availableCount,10)||0)}${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? (' · Viendo ' + ((parseInt(blk.availablePage,10)||0)+1) + '/2') : ''}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "Más opciones" : "No hay más opciones"}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();" ${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "" : "disabled"}>Más opciones</button>` : ``}
                 <div>${blk.proposals.length} propuestas</div>
               </div>
             </div>
