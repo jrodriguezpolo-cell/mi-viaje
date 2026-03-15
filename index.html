@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B22_SCENARIOS_CD_LAZY_ORDER</title>
+<title>V227_B25_SCENARIOS_COUNT_PICKER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B23_SCENARIOS_CD_STABLE_BUILD_LOCK</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1 relative"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button><div id="scenarioPicker" class="hidden absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-[9999]"><div class="text-[11px] text-slate-500 font-semibold px-2 py-1">Simulaciones visibles</div><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="1">1 (A)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="2">2 (A, B)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="3">3 (A, B, C)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="4">4 (A, B, C, D)</button></div></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B25_SCENARIOS_COUNT_PICKER</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -9348,8 +9348,7 @@ let state = {
 };
 
 
-// Scenario tabs: keep C/D hidden until user explicitly expands via the + button (per-session)
-let __cdUnlocked = false;
+// Scenario tabs: keep C/D hidden unlet __scenarioPickerOpen = false;
 
 function loadState() {
   try {
@@ -9478,16 +9477,14 @@ function renderTabs() {
   if (!state.scenarios.A) state.scenarios.A = emptyScenario();
   if (!state.scenarios.B) state.scenarios.B = emptyScenario();
 
-  // Enabled scenarios count stored in state (default 2). We still keep C/D hidden until the user expands via "+" (per-session).
-  if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 2) state.scenarioCount = 2;
+  // Enabled scenarios count stored in state (default 2).
+  if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 1) state.scenarioCount = 2;
+  if (state.scenarioCount < 1) state.scenarioCount = 1;
   if (state.scenarioCount > letters.length) state.scenarioCount = letters.length;
 
-  // Only show A/B by default; C/D become visible only after pressing "+"
-  const shownCount = __cdUnlocked ? state.scenarioCount : 2;
-
   // Clamp active scenario to enabled (visible) set
-  const enabledLetters = letters.slice(0, shownCount);
-  if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
+  const enabledLetters = letters.slice(0, state.scenarioCount);
+if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
 
   letters.forEach((L,i)=>{
     const btn = $("tab"+L);
@@ -9495,7 +9492,7 @@ function renderTabs() {
     // Force visual order A,B,C,D no matter DOM order
     try{ btn.style.order = String(i+1); }catch{}
 
-    const enabled = i < shownCount;
+    const enabled = i < state.scenarioCount;
     btn.classList.toggle("hidden", !enabled);
 
     const on = state.scenario === L;
@@ -9506,12 +9503,11 @@ function renderTabs() {
   const plus = $("tabPlus");
   if (plus) {
     try{ plus.style.order = "99"; }catch{}
-    const canAdd = state.scenarioCount < letters.length;
-    plus.disabled = !canAdd;
-    plus.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (canAdd ? "text-slate-700" : "opacity-40 cursor-not-allowed");
+    plus.disabled = false;
+    plus.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700";
   }
 
-  const dc = document.getElementById("displayCurrency");
+const dc = document.getElementById("displayCurrency");
   if (dc) dc.value = state.displayCurrency;
   const sc = document.getElementById("selScenario");
   if (sc) sc.value = state.scenario;
@@ -9570,6 +9566,50 @@ function legCard(leg, idx) {
       </div>
     </button>
   </div>`;
+}
+
+
+function setScenarioCount(n){
+  const letters = ["A","B","C","D"];
+  let count = parseInt(n,10);
+  if (!isFinite(count)) return;
+  if (count < 1) count = 1;
+  if (count > letters.length) count = letters.length;
+
+  // Ensure scenarios object
+  if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = {};
+  if (!state.scenarios.A) state.scenarios.A = emptyScenario();
+  if (count >= 2 && !state.scenarios.B) state.scenarios.B = emptyScenario();
+
+  // Lazy-create C/D if user asks for them (clone from current scenario for sensible defaults)
+  for (let i=2;i<count;i++){
+    const L = letters[i];
+    if (!state.scenarios[L]) {
+      let base = null;
+      try{ base = curScenario(); }catch{}
+      if (!base) base = emptyScenario();
+      try{ state.scenarios[L] = JSON.parse(JSON.stringify(base)); }
+      catch{ state.scenarios[L] = emptyScenario(); }
+    }
+  }
+
+  state.scenarioCount = count;
+
+  // Clamp active scenario inside visible set
+  const enabled = letters.slice(0, count);
+  if (!enabled.includes(state.scenario)) state.scenario = enabled[enabled.length-1] || "A";
+
+  saveState();
+  clearExpanded();
+  renderAll();
+}
+
+function toggleScenarioPicker(force){
+  const picker = document.getElementById("scenarioPicker");
+  if (!picker) return;
+  const open = (typeof force === "boolean") ? force : picker.classList.contains("hidden");
+  picker.classList.toggle("hidden", !open);
+  __scenarioPickerOpen = open;
 }
 
 function renderLegs() {
@@ -15018,41 +15058,33 @@ Tu iPhone: ${l}
   if (plus) {
     plus.addEventListener("click", (ev)=>{
       try{ ev.stopPropagation(); }catch{}
-
-      // First tap on "+" unlocks visibility of C/D for this session
-      if (!__cdUnlocked) {
-        __cdUnlocked = true;
-        // If C/D already exist (e.g., from storage), just reveal tabs without forcing an increment.
-        renderTabs();
-      }
-
-      const max = letters.length;
-
-      if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 2) state.scenarioCount = 2;
-      if (state.scenarioCount >= max) return;
-
-      state.scenarioCount += 1;
-      const next = letters[state.scenarioCount - 1];
-      if (!next) return;
-
-      // If scenario already exists in storage, just enable it; otherwise clone from active scenario
-      if (!state.scenarios[next]) {
-        let base = null;
-        try{ base = curScenario(); }catch{}
-        if (!base) base = emptyScenario();
-        try{
-          state.scenarios[next] = JSON.parse(JSON.stringify(base));
-        }catch{
-          state.scenarios[next] = emptyScenario();
-        }
-      }
-
-      state.scenario = next;
-      saveState();
-      clearExpanded();
-      renderAll();
-      toast("Escenario "+next+" creado", 1800);
+      // Open a small dropdown to choose how many scenarios are visible (1–4)
+      toggleScenarioPicker();
     });
+    const picker = document.getElementById("scenarioPicker");
+    if (picker && !picker.__wired) {
+      picker.__wired = true;
+      picker.querySelectorAll("[data-scen-count]").forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+          try{ e.stopPropagation(); }catch{}
+          const n = btn.getAttribute("data-scen-count");
+          toggleScenarioPicker(false);
+          setScenarioCount(n);
+        });
+      });
+    }
+
+    // Close picker on outside tap
+    if (!document.__scenarioPickerDocWired) {
+      document.__scenarioPickerDocWired = true;
+      document.addEventListener("click", ()=>{
+        if (__scenarioPickerOpen) toggleScenarioPicker(false);
+      }, { passive: true });
+      document.addEventListener("scroll", ()=>{
+        if (__scenarioPickerOpen) toggleScenarioPicker(false);
+      }, { passive: true });
+    }
+
   }
 })();
 
