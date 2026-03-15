@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B9_ATTACH_ICON_SYNC</title>
+<title>V227_B11_WEEK_TOGGLE_EMPHASIS</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B9_ATTACH_ICON_SYNC" rel="manifest"/>
+<link href="manifest.json?v=V227_B11_WEEK_TOGGLE_EMPHASIS" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1386,6 +1386,30 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 
 .mvStayProgUnderTick{margin-top:2px;}
 .mvStayProgRail{justify-self:end;}
+
+    /* Week toggle emphasis (subsection header timeline title as button) */
+    .mvTimelineModeBtn{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.9); /* slate-400/300 */
+      background:rgba(255,255,255,0.92);
+      box-shadow:0 1px 0 rgba(15,23,42,0.06);
+      text-decoration:underline;
+      text-decoration-thickness:2px;
+      text-underline-offset:3px;
+    }
+    .mvTimelineModeBtn:active{ transform:scale(0.99); }
+    .mvTimelineModeBtn .mvTimelineModeArrows{
+      font-weight:900;
+      font-size:18px;
+      line-height:1;
+      color:#0f172a;
+      margin-left:2px;
+    }
+
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1685,7 +1709,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B10_WEEK_TOGGLE_HEADER_STABLE";
+const APP_BUILD = "V227_B11_WEEK_TOGGLE_EMPHASIS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -2007,6 +2031,7 @@ function updateSubSectionHeader(viewName){
     title.textContent = txt;
   }
     try{ title.classList.remove("mvActsTitleBtn"); }catch{}
+    if(String(viewName||"")!=="timeline"){ try{ title.classList.remove("mvTimelineModeBtn"); }catch{} }
     try{ title.removeAttribute("role"); }catch{}
     try{ title.removeAttribute("tabindex"); }catch{}
     try{ title.removeAttribute("title"); }catch{}
@@ -12165,9 +12190,10 @@ function __mvApplyTimelineMode(){
     const t=$("subSectionTitle");
     if(t && String(getActiveViewName("")||"")==="timeline"){
       // same width footprint: inline-flex no extra padding
+      t.classList.add("mvTimelineModeBtn");
       t.innerHTML = isWeek
-        ? `Calendario <span class="ml-1 text-slate-400">⇄</span>`
-        : `Cronograma <span class="ml-1 text-slate-400">⇄</span>`;
+        ? `Calendario <span class="mvTimelineModeArrows">⇄</span>`
+        : `Cronograma <span class="mvTimelineModeArrows">⇄</span>`;
       t.title = isWeek ? "Cambiar a Cronograma" : "Cambiar a Calendario";
     }
   }catch(_){}
