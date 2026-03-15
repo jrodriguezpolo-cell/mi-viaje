@@ -1737,7 +1737,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B15_AI_GAPS_SLOTS_REAL";
+const APP_BUILD = "V227_B16_AI_QUAL_COMPARE_MVP";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -15227,18 +15227,195 @@ if (__ro) __ro.addEventListener("click", () => { setReadOnly(!isReadOnly()); });
 $("btnCompare").addEventListener("click", ()=>{
   const a = state.scenarios.A;
   const b = state.scenarios.B;
-  const tot = (sc) => sc.legs.reduce((x,y)=>x+parseMoney(y.cost),0)
-    + sc.stays.reduce((x,y)=>x+parseMoney(y.cost),0)
-    + sc.activities.reduce((x,y)=>x+parseMoney(y.cost),0)
-    + parseMoney(sc.meals.daily) * (parseInt(sc.meals.people||1,10)) * (parseInt(sc.meals.days||1,10));
-  const ta = tot(a), tb = tot(b);
+
+  const moneyTotal = (sc) => (sc.legs||[]).reduce((x,y)=>x+parseMoney(y.cost),0)
+    + (sc.stays||[]).reduce((x,y)=>x+parseMoney(y.cost),0)
+    + (sc.activities||[]).reduce((x,y)=>x+parseMoney(y.cost),0)
+    + parseMoney(sc.meals && sc.meals.daily) * (parseInt((sc.meals && sc.meals.people)||1,10)) * (parseInt((sc.meals && sc.meals.days)||1,10));
+
+  const sumActMinutes = (sc)=>{
+    let total = 0;
+    (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{
+      try{
+        const m = (typeof __tlActDurationMinutes === "function") ? (__tlActDurationMinutes(act) || 0) : (parseInt(act && act.durationMin,10) || 0);
+        total += Math.max(0, parseInt(m,10) || 0);
+      }catch{}
+    });
+    return total;
+  };
+
+  const tripDateRange = (sc)=>{
+    let min = null, max = null;
+    const consider = (ymdStr)=>{
+      const d = parseYMD(String(ymdStr||"").trim());
+      if(!d) return;
+      if(!min || d < min) min = d;
+      if(!max || d > max) max = d;
+    };
+    try{
+      (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{
+        consider(leg && leg.date);
+        consider(leg && (leg.arriveDate || leg.dateIn || leg.arrivalDate || leg.endDate));
+      });
+      (Array.isArray(sc.stays)?sc.stays:[]).forEach((st)=>{
+        consider(st && st.date);
+        consider(st && (st.checkout || st.dateOut || st.endDate));
+      });
+      (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{
+        consider(act && act.date);
+      });
+    }catch{}
+    return { min, max };
+  };
+
+  const freeSlots180 = (sc)=>{
+    // MVP: calcular huecos 09–22 en días del viaje, y convertir a slots de 3h (180 min).
+    const bridge = (window.aiModule && window.aiModule.bridge) ? window.aiModule.bridge : null;
+    if(!bridge) return 0;
+    const rng = tripDateRange(sc);
+    if(!rng.min || !rng.max) return 0;
+
+    const start = new Date(rng.min.getTime());
+    const end = new Date(rng.max.getTime());
+    const slotMin = 180;
+    let totalSlots = 0;
+
+    const collectIntervalsForDay = (dayYMD)=>{
+      const winStart = new Date(`${dayYMD}T09:00:00`);
+      const winEnd = new Date(`${dayYMD}T22:00:00`);
+      const ints = [];
+
+      (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{
+        const iv = bridge.__activityInterval(act);
+        if(!iv) return;
+        if(iv.end <= winStart || iv.start >= winEnd) return;
+        ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+      });
+      (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{
+        const iv = bridge.__legInterval(leg);
+        if(!iv) return;
+        if(iv.end <= winStart || iv.start >= winEnd) return;
+        ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+      });
+
+      ints.sort((a,b)=>a.start-b.start);
+      // merge
+      const merged = [];
+      for(const iv of ints){
+        if(!merged.length) merged.push(iv);
+        else{
+          const last = merged[merged.length-1];
+          if(iv.start <= last.end){
+            if(iv.end > last.end) last.end = iv.end;
+          }else merged.push(iv);
+        }
+      }
+      // gaps -> slots
+      let cur = winStart;
+      for(const iv of merged){
+        const diffMin = (iv.start - cur)/60000;
+        if(diffMin >= slotMin){
+          totalSlots += Math.floor(diffMin / slotMin);
+        }
+        if(iv.end > cur) cur = iv.end;
+      }
+      const tailMin = (winEnd - cur)/60000;
+      if(tailMin >= slotMin) totalSlots += Math.floor(tailMin / slotMin);
+    };
+
+    let d = new Date(start.getTime());
+    let guard = 0;
+    while(d <= end && guard < 180){
+      collectIntervalsForDay(ymd(d));
+      d = addDays(d,1);
+      guard++;
+    }
+    return totalSlots;
+  };
+
+  const metrics = (sc)=>{
+    const legs = Array.isArray(sc.legs) ? sc.legs.length : 0;
+    const acts = Array.isArray(sc.activities) ? sc.activities.length : 0;
+    const pending = (Array.isArray(sc.activities)?sc.activities:[]).filter(a=>a && a.pendingAIReview).length;
+    const actMin = sumActMinutes(sc);
+    const slots = freeSlots180(sc);
+    return { legs, acts, pending, actMin, slots };
+  };
+
+  const ta = moneyTotal(a), tb = moneyTotal(b);
+  const ma = metrics(a), mb = metrics(b);
+
+  const betterCost = (ta<=tb) ? "A" : "B";
+  const diffCost = Math.abs(ta-tb);
+
+  const pick = (cond, whenTrue, whenFalse)=> cond ? whenTrue : whenFalse;
+
+  const qualityLines = [];
+  // Complejidad de transporte
+  if(ma.legs !== mb.legs){
+    qualityLines.push(pick(ma.legs < mb.legs,
+      `A es más simple en transporte (${ma.legs} trayecto${ma.legs===1?"":"s"} vs ${mb.legs}).`,
+      `B es más simple en transporte (${mb.legs} trayecto${mb.legs===1?"":"s"} vs ${ma.legs}).`
+    ));
+  }else{
+    qualityLines.push(`A y B tienen la misma complejidad de transporte (${ma.legs} trayectos).`);
+  }
+
+  // Actividades
+  if(ma.acts !== mb.acts){
+    qualityLines.push(pick(ma.acts > mb.acts,
+      `A incluye más actividades (${ma.acts} vs ${mb.acts}).`,
+      `B incluye más actividades (${mb.acts} vs ${ma.acts}).`
+    ));
+  }else{
+    qualityLines.push(`A y B incluyen el mismo nº de actividades (${ma.acts}).`);
+  }
+
+  // Horas estimadas de actividades (si hay duración)
+  const ha = Math.round((ma.actMin||0)/60*10)/10;
+  const hb = Math.round((mb.actMin||0)/60*10)/10;
+  if(ha || hb){
+    if(ma.actMin !== mb.actMin){
+      qualityLines.push(pick(ma.actMin > mb.actMin,
+        `A es más “intenso” en horas de actividades (~${ha}h vs ~${hb}h).`,
+        `B es más “intenso” en horas de actividades (~${hb}h vs ~${ha}h).`
+      ));
+    }else{
+      qualityLines.push(`A y B tienen horas de actividades similares (~${ha}h).`);
+    }
+  }
+
+  // Tiempo libre (slots)
+  if(ma.slots || mb.slots){
+    if(ma.slots !== mb.slots){
+      qualityLines.push(pick(ma.slots > mb.slots,
+        `A deja más margen (≈${ma.slots} huecos de ~3h vs ${mb.slots}).`,
+        `B deja más margen (≈${mb.slots} huecos de ~3h vs ${ma.slots}).`
+      ));
+    }else{
+      qualityLines.push(`A y B dejan un margen similar (≈${ma.slots} huecos de ~3h).`);
+    }
+  }
+
+  // Pendientes IA (solo informativo)
+  if(ma.pending || mb.pending){
+    qualityLines.push(`Pendientes IA: A ${ma.pending} · B ${mb.pending}.`);
+  }
+
   $("compareBox").classList.remove("hidden");
   $("compareBox").innerHTML = `
-    <div class="font-extrabold">Comparativa (simple)</div>
+    <div class="font-extrabold">Comparativa</div>
     <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${ta.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
     <div class="flex justify-between"><span>B</span><span class="font-semibold">${tb.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
-    <div class="mt-2 text-sm ${ta<=tb ? "text-emerald-700" : "text-emerald-700"}">
-      Mejor: <b>${ta<=tb ? "A" : "B"}</b> (${Math.abs(ta-tb).toFixed(2)} de diferencia)
+    <div class="mt-2 text-sm text-emerald-700">
+      Mejor en coste: <b>${betterCost}</b> (${diffCost.toFixed(2)} de diferencia)
+    </div>
+
+    <div class="mt-3 border-t border-slate-200 pt-3">
+      <div class="font-bold text-slate-900">Calidad del plan (MVP)</div>
+      <div class="mt-2 text-sm text-slate-700 grid gap-1">
+        ${qualityLines.map(l=>`<div>• ${escapeHtml(l)}</div>`).join("")}
+      </div>
     </div>
   `;
 });
