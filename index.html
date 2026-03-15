@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B11_WEEK_TOGGLE_EMPHASIS</title>
+<title>V227_B12_WEEK_TOGGLE_BORDER</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B11_WEEK_TOGGLE_EMPHASIS" rel="manifest"/>
+<link href="manifest.json?v=V227_B12_WEEK_TOGGLE_BORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1387,27 +1387,28 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvStayProgUnderTick{margin-top:2px;}
 .mvStayProgRail{justify-self:end;}
 
-    /* Week toggle emphasis (subsection header timeline title as button) */
+    /* Week toggle: make "Cronograma ⇄" look like the date selector pill */
     .mvTimelineModeBtn{
       display:inline-flex;
       align-items:center;
-      gap:6px;
-      padding:2px 8px;
-      border-radius:999px;
-      border:1px solid rgba(148,163,184,0.9); /* slate-400/300 */
-      background:rgba(255,255,255,0.92);
-      box-shadow:0 1px 0 rgba(15,23,42,0.06);
-      text-decoration:underline;
-      text-decoration-thickness:2px;
-      text-underline-offset:3px;
+      gap:8px;
+      height:32px;              /* same as date selector row controls */
+      padding:0 12px;           /* similar to px-3 */
+      border-radius:12px;       /* rounded-xl */
+      border:1px solid rgba(226,232,240,1); /* slate-200 */
+      background:rgba(255,255,255,0.9);
+      box-shadow:none;
+      text-decoration:none;
+      cursor:pointer;
     }
-    .mvTimelineModeBtn:active{ transform:scale(0.99); }
+    .mvTimelineModeBtn:hover{ background:rgba(248,250,252,0.95); }
+    .mvTimelineModeBtn:active{ transform:translateY(1px); }
     .mvTimelineModeBtn .mvTimelineModeArrows{
       font-weight:900;
-      font-size:18px;
+      font-size:20px;           /* more intense */
       line-height:1;
       color:#0f172a;
-      margin-left:2px;
+      margin-left:0;
     }
 
 </style>
@@ -1709,7 +1710,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B11_WEEK_TOGGLE_EMPHASIS";
+const APP_BUILD = "V227_B12_WEEK_TOGGLE_BORDER";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
