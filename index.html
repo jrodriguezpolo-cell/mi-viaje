@@ -1737,7 +1737,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B17_TOTAL_DETAIL_QUAL_COMPARE";
+const APP_BUILD = "V227_B18_TOTAL_DETAIL_QUAL_COMPARE_V2";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13068,6 +13068,12 @@ function applySummaryFold() {
       const __mb=__metrics(state.scenarios.B||emptyScenario());
 
       const __q=[];
+      // Ventaja económica (línea muy visual)
+      if((aS.total||0)!==(bS.total||0)){
+        __q.push(`Ventaja económica: ${ (aS.total||0) < (bS.total||0) ? "A" : "B" } es más barato (${fmt(aS.total)}€ vs ${fmt(bS.total)}€).`);
+      } else {
+        __q.push(`Ventaja económica: A y B tienen el mismo coste total (${fmt(aS.total)}€).`);
+      }
       const __pick=(cond,a,b)=>cond?a:b;
 
       if(__ma.legs!==__mb.legs) __q.push(__pick(__ma.legs<__mb.legs, `A es más simple en transporte (${__ma.legs} vs ${__mb.legs} trayectos).`, `B es más simple en transporte (${__mb.legs} vs ${__ma.legs} trayectos).`));
@@ -13076,8 +13082,8 @@ function applySummaryFold() {
       if(__ma.acts!==__mb.acts) __q.push(__pick(__ma.acts>__mb.acts, `A incluye más actividades (${__ma.acts} vs ${__mb.acts}).`, `B incluye más actividades (${__mb.acts} vs ${__ma.acts}).`));
       else __q.push(`A y B incluyen el mismo nº de actividades (${__ma.acts}).`);
 
-      const __ha=Math.round((__ma.actMin||0)/60*10)/10;
-      const __hb=Math.round((__mb.actMin||0)/60*10)/10;
+      const __ha=Math.abs(Math.round((__ma.actMin||0)/60*10)/10);
+      const __hb=Math.abs(Math.round((__mb.actMin||0)/60*10)/10);
       if(__ha||__hb){
         if(__ma.actMin!==__mb.actMin) __q.push(__pick(__ma.actMin>__mb.actMin, `A es más “intenso” en horas de actividades (~${__ha}h vs ~${__hb}h).`, `B es más “intenso” en horas de actividades (~${__hb}h vs ~${__ha}h).`));
         else __q.push(`A y B tienen horas de actividades similares (~${__ha}h).`);
