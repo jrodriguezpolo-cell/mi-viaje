@@ -1737,7 +1737,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B16_AI_QUAL_COMPARE_MVP";
+const APP_BUILD = "V227_B17_TOTAL_DETAIL_QUAL_COMPARE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -12882,7 +12882,7 @@ function applySummaryFold() {
   const d = document.getElementById("stickySummaryDetail");
   const inner = document.getElementById("stickySummaryDetailInner");
 
-  if (t) t.textContent = summaryExpanded ? "Ocultar ▴" : "Detalle ▾";
+  if (t) t.textContent = summaryExpanded ? "Ocultar ▴" : "Detalle + comparación ▾";
   if (d) d.classList.toggle("hidden", !summaryExpanded);
 
   // Keep top stack measurements deterministic when detail opens/closes
@@ -12970,6 +12970,126 @@ function applySummaryFold() {
         
       `;
     } else {
+      // Qualitative compare (MVP) under economic breakdown
+      const __sumActMinutes = (sc)=>{
+        let total=0;
+        try{
+          (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{
+            const m = (typeof __tlActDurationMinutes==="function") ? (__tlActDurationMinutes(act)||0) : (parseInt(act && act.durationMin,10)||0);
+            total += Math.max(0, parseInt(m,10)||0);
+          });
+        }catch(_){}
+        return total;
+      };
+      const __pendingCnt = (sc)=> (Array.isArray(sc.activities)?sc.activities:[]).filter(a=>a && a.pendingAIReview).length;
+
+      const __tripDateRange = (sc)=>{
+        let min=null,max=null;
+        const consider=(ymdStr)=>{
+          const d=parseYMD(String(ymdStr||"").trim());
+          if(!d) return;
+          if(!min || d<min) min=d;
+          if(!max || d>max) max=d;
+        };
+        try{
+          (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{ consider(leg && leg.date); consider(leg && (leg.arriveDate||leg.dateIn||leg.endDate)); });
+          (Array.isArray(sc.stays)?sc.stays:[]).forEach((st)=>{ consider(st && st.date); consider(st && (st.checkout||st.dateOut||st.endDate)); });
+          (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{ consider(act && act.date); });
+        }catch(_){}
+        return {min,max};
+      };
+
+      const __freeSlots180 = (sc)=>{
+        const bridge = (window.aiModule && window.aiModule.bridge) ? window.aiModule.bridge : null;
+        if(!bridge) return 0;
+        const rng=__tripDateRange(sc);
+        if(!rng.min || !rng.max) return 0;
+        const slotMin=180;
+        let totalSlots=0;
+
+        const collect=(dayYMD)=>{
+          const winStart=new Date(`${dayYMD}T09:00:00`);
+          const winEnd=new Date(`${dayYMD}T22:00:00`);
+          const ints=[];
+          try{
+            (Array.isArray(sc.activities)?sc.activities:[]).forEach((act)=>{
+              const iv=bridge.__activityInterval(act);
+              if(!iv) return;
+              if(iv.end<=winStart || iv.start>=winEnd) return;
+              ints.push({start:new Date(Math.max(iv.start.getTime(),winStart.getTime())), end:new Date(Math.min(iv.end.getTime(),winEnd.getTime()))});
+            });
+            (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{
+              const iv=bridge.__legInterval(leg);
+              if(!iv) return;
+              if(iv.end<=winStart || iv.start>=winEnd) return;
+              ints.push({start:new Date(Math.max(iv.start.getTime(),winStart.getTime())), end:new Date(Math.min(iv.end.getTime(),winEnd.getTime()))});
+            });
+          }catch(_){}
+          ints.sort((a,b)=>a.start-b.start);
+          const merged=[];
+          for(const iv of ints){
+            if(!merged.length) merged.push(iv);
+            else{
+              const last=merged[merged.length-1];
+              if(iv.start<=last.end){ if(iv.end>last.end) last.end=iv.end; }
+              else merged.push(iv);
+            }
+          }
+          let cur=winStart;
+          for(const iv of merged){
+            const diffMin=(iv.start-cur)/60000;
+            if(diffMin>=slotMin) totalSlots += Math.floor(diffMin/slotMin);
+            if(iv.end>cur) cur=iv.end;
+          }
+          const tailMin=(winEnd-cur)/60000;
+          if(tailMin>=slotMin) totalSlots += Math.floor(tailMin/slotMin);
+        };
+
+        let d=new Date(rng.min.getTime());
+        const end=new Date(rng.max.getTime());
+        let guard=0;
+        while(d<=end && guard<180){
+          collect(ymd(d));
+          d=addDays(d,1);
+          guard++;
+        }
+        return totalSlots;
+      };
+
+      const __metrics = (sc)=>({
+        legs: Array.isArray(sc.legs)?sc.legs.length:0,
+        acts: Array.isArray(sc.activities)?sc.activities.length:0,
+        pending: __pendingCnt(sc),
+        actMin: __sumActMinutes(sc),
+        slots: __freeSlots180(sc)
+      });
+
+      const __ma=__metrics(state.scenarios.A||emptyScenario());
+      const __mb=__metrics(state.scenarios.B||emptyScenario());
+
+      const __q=[];
+      const __pick=(cond,a,b)=>cond?a:b;
+
+      if(__ma.legs!==__mb.legs) __q.push(__pick(__ma.legs<__mb.legs, `A es más simple en transporte (${__ma.legs} vs ${__mb.legs} trayectos).`, `B es más simple en transporte (${__mb.legs} vs ${__ma.legs} trayectos).`));
+      else __q.push(`A y B tienen la misma complejidad de transporte (${__ma.legs} trayectos).`);
+
+      if(__ma.acts!==__mb.acts) __q.push(__pick(__ma.acts>__mb.acts, `A incluye más actividades (${__ma.acts} vs ${__mb.acts}).`, `B incluye más actividades (${__mb.acts} vs ${__ma.acts}).`));
+      else __q.push(`A y B incluyen el mismo nº de actividades (${__ma.acts}).`);
+
+      const __ha=Math.round((__ma.actMin||0)/60*10)/10;
+      const __hb=Math.round((__mb.actMin||0)/60*10)/10;
+      if(__ha||__hb){
+        if(__ma.actMin!==__mb.actMin) __q.push(__pick(__ma.actMin>__mb.actMin, `A es más “intenso” en horas de actividades (~${__ha}h vs ~${__hb}h).`, `B es más “intenso” en horas de actividades (~${__hb}h vs ~${__ha}h).`));
+        else __q.push(`A y B tienen horas de actividades similares (~${__ha}h).`);
+      }
+
+      if(__ma.slots||__mb.slots){
+        if(__ma.slots!==__mb.slots) __q.push(__pick(__ma.slots>__mb.slots, `A deja más margen (≈${__ma.slots} huecos de ~3h vs ${__mb.slots}).`, `B deja más margen (≈${__mb.slots} huecos de ~3h vs ${__ma.slots}).`));
+        else __q.push(`A y B dejan un margen similar (≈${__ma.slots} huecos de ~3h).`);
+      }
+
+      if(__ma.pending||__mb.pending) __q.push(`Pendientes IA: A ${__ma.pending} · B ${__mb.pending}.`);
+
       inner.innerHTML = `
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -12996,8 +13116,15 @@ function applySummaryFold() {
             </tbody>
           </table>
         </div>
-        
+
+        <div class="mt-3 border-t border-slate-200 pt-3">
+          <div class="font-extrabold text-slate-900">Comparación cualitativa</div>
+          <div class="mt-2 text-sm text-slate-700 grid gap-1">
+            ${__q.map(l=>`<div>• ${escapeHtml(l)}</div>`).join("")}
+          </div>
+        </div>
       `;
+
     }
   }
 
