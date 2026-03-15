@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B23_SCENARIOS_CD_LAZY_ORDER_NO_SW</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B23_SCENARIOS_CD_STABLE_BUILD_LOCK</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1748,23 +1748,12 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B23_SCENARIOS_CD_LAZY_ORDER_NO_SW";
+const APP_BUILD = "V227_B23_SCENARIOS_CD_STABLE_BUILD_LOCK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
 const APP_HARD_REFRESH_SNAPSHOT_KEY = "miViaje.diag.hardRefreshSnapshot";
 const APP_LOAD_TS = new Date().toISOString();
-
-// Safety: avoid old Service Worker forcing a cached previous build (common on iOS/PWA).
-(async function __mvEnsureNoStaleServiceWorker(){
-  try {
-    if (!("serviceWorker" in navigator)) return;
-    // If a SW is controlling this page, it may serve an older cached HTML on reload/activate.
-    if (!navigator.serviceWorker.controller) return;
-    const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.all((regs || []).map((reg) => reg.unregister().catch(() => false)));
-  } catch {}
-})();
 
 function __setVisibleBuildLabel(){
   try {
@@ -1772,6 +1761,24 @@ function __setVisibleBuildLabel(){
     const buildEl = document.getElementById("buildId");
     if(buildEl) buildEl.textContent = APP_BUILD;
   } catch {}
+// Build label lock: avoid any later overwrite/flicker from dynamic header updates.
+(function(){
+  try{
+    const lockBuild = APP_BUILD;
+    // write immediately
+    try{ document.title = lockBuild; }catch{}
+    try{ const el=document.getElementById("buildId"); if(el) el.textContent=lockBuild; }catch{}
+    // rewrite a few times during first second (iOS paint/restore quirks)
+    let n=0;
+    const iv=setInterval(()=>{
+      n++;
+      try{ document.title = lockBuild; }catch{}
+      try{ const el=document.getElementById("buildId"); if(el && el.textContent!==lockBuild) el.textContent=lockBuild; }catch{}
+      if(n>=8) clearInterval(iv);
+    }, 150);
+  }catch{}
+})();
+
 }
 
 function __setVersionedManifestHref(){
