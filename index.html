@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B21_SCENARIOS_CD_MVP</title>
+<title>V227_B22_SCENARIOS_CD_LAZY_ORDER</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B21_SCENARIOS_CD_MVP" rel="manifest"/>
+<link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V226C1B0BE_AK_RESET_CITY_CACHE_SHUFFLE_WORKING</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><div class="font-extrabold tracking-tight text-lg">VIAJE</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B23_SCENARIOS_CD_LAZY_ORDER_NO_SW</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1748,12 +1748,23 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B21_SCENARIOS_CD_MVP";
+const APP_BUILD = "V227_B23_SCENARIOS_CD_LAZY_ORDER_NO_SW";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
 const APP_HARD_REFRESH_SNAPSHOT_KEY = "miViaje.diag.hardRefreshSnapshot";
 const APP_LOAD_TS = new Date().toISOString();
+
+// Safety: avoid old Service Worker forcing a cached previous build (common on iOS/PWA).
+(async function __mvEnsureNoStaleServiceWorker(){
+  try {
+    if (!("serviceWorker" in navigator)) return;
+    // If a SW is controlling this page, it may serve an older cached HTML on reload/activate.
+    if (!navigator.serviceWorker.controller) return;
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all((regs || []).map((reg) => reg.unregister().catch(() => false)));
+  } catch {}
+})();
 
 function __setVisibleBuildLabel(){
   try {
@@ -9450,27 +9461,38 @@ function renderAll() {
 
 function renderTabs() {
   const letters = ["A","B","C","D"];
-  // Ensure scenario container exists
-  if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = { A: emptyScenario(), B: emptyScenario() };
 
-  // Show/hide buttons based on existing scenarios
-  letters.forEach(L=>{
+  if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = {};
+  // Always ensure A/B exist
+  if (!state.scenarios.A) state.scenarios.A = emptyScenario();
+  if (!state.scenarios.B) state.scenarios.B = emptyScenario();
+
+  // Enabled scenarios count (default 2). This prevents legacy C/D from showing unless user adds them via "+"
+  if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 2) state.scenarioCount = 2;
+  if (state.scenarioCount > letters.length) state.scenarioCount = letters.length;
+
+  // Clamp active scenario to enabled set
+  const enabledLetters = letters.slice(0, state.scenarioCount);
+  if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
+
+  letters.forEach((L,i)=>{
     const btn = $("tab"+L);
     if (!btn) return;
-    const exists = !!state.scenarios[L];
-    btn.classList.toggle("hidden", !exists);
-    // Active styling
+    // Force visual order A,B,C,D no matter DOM order
+    try{ btn.style.order = String(i+1); }catch{}
+
+    const enabled = i < state.scenarioCount;
+    btn.classList.toggle("hidden", !enabled);
+
     const on = state.scenario === L;
     btn.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (on ? "bg-slate-900 text-white" : "text-slate-700");
-    // Add left margin to first visible tab
     if (L==="A") btn.className = "tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold " + (on ? "bg-slate-900 text-white" : "text-slate-700");
   });
 
-  // Plus button: add next scenario
   const plus = $("tabPlus");
   if (plus) {
-    const count = letters.filter(L=>!!state.scenarios[L]).length;
-    const canAdd = count < letters.length;
+    try{ plus.style.order = "99"; }catch{}
+    const canAdd = state.scenarioCount < letters.length;
     plus.disabled = !canAdd;
     plus.className = "tap px-3 py-1.5 rounded-xl text-sm font-semibold " + (canAdd ? "text-slate-700" : "opacity-40 cursor-not-allowed");
   }
@@ -9481,6 +9503,8 @@ function renderTabs() {
   if (sc) sc.value = state.scenario;
   try { if (typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); } catch {}
 }
+
+
 
 
 function legCard(leg, idx) {
@@ -14980,18 +15004,27 @@ Tu iPhone: ${l}
   if (plus) {
     plus.addEventListener("click", (ev)=>{
       try{ ev.stopPropagation(); }catch{}
-      const existing = letters.filter(L=>state.scenarios && state.scenarios[L]);
-      const next = letters.find(L=>!state.scenarios[L]);
+      const max = letters.length;
+
+      if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 2) state.scenarioCount = 2;
+      if (state.scenarioCount >= max) return;
+
+      state.scenarioCount += 1;
+      const next = letters[state.scenarioCount - 1];
       if (!next) return;
-      // Clone from active scenario to start quickly (user can diverge)
-      let base = null;
-      try{ base = curScenario(); }catch{}
-      if (!base) base = emptyScenario();
-      try{
-        state.scenarios[next] = JSON.parse(JSON.stringify(base));
-      }catch{
-        state.scenarios[next] = emptyScenario();
+
+      // If scenario already exists in storage, just enable it; otherwise clone from active scenario
+      if (!state.scenarios[next]) {
+        let base = null;
+        try{ base = curScenario(); }catch{}
+        if (!base) base = emptyScenario();
+        try{
+          state.scenarios[next] = JSON.parse(JSON.stringify(base));
+        }catch{
+          state.scenarios[next] = emptyScenario();
+        }
       }
+
       state.scenario = next;
       saveState();
       clearExpanded();
