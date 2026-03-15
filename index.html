@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B13_WEEK_TOGGLE_BUTTON_OBVIOUS</title>
+<title>V227_B14_AI_GAPS_SLOTS_HINT</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B13_WEEK_TOGGLE_BUTTON_OBVIOUS" rel="manifest"/>
+<link href="manifest.json?v=V227_B14_AI_GAPS_SLOTS_HINT" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1737,7 +1737,7 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B13_WEEK_TOGGLE_BUTTON_OBVIOUS";
+const APP_BUILD = "V227_B14_AI_GAPS_SLOTS_HINT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -17564,6 +17564,10 @@ __aiBuildDayBuckets(trip){
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
           const gapTitle = `${hhmm(g.start)}–${hhmm(g.end)}`;
+          const __gapMin = Math.max(0, (g.end - g.start)/60000);
+          const __slotMin = 180; // 3h estimadas por actividad (MVP)
+          const __slots = Math.max(1, Math.floor(__gapMin / __slotMin));
+          const gapSlotsLabel = ` · ${__slots} huecos (~${Math.round(__slotMin/60)}h)`;
 
           const spotsHtml = show.map((p,pi)=>{
             const sectionIndex = sections.length;
@@ -17591,7 +17595,7 @@ __aiBuildDayBuckets(trip){
           });
 
           return `<div class="mt-3">
-                    <div class="text-xs font-semibold text-slate-500">Hueco ${gapTitle}</div>
+                    <div class="text-xs font-semibold text-slate-500">Hueco ${gapTitle}${gapSlotsLabel}</div>
                     <div class="mt-2 grid gap-2">${spotsHtml}</div>
                   </div>`;
         }).join("");
