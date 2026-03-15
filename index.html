@@ -4,9 +4,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B22_SCENARIOS_CD_LAZY_ORDER</title>
+<title>V227_B21_TOTAL_METRICS_PER_DAY_ACTIVITY</title>
 <meta content="#1d4ed8" name="theme-color"/>
-<link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
+<link href="manifest.json?v=V227_B21_TOTAL_METRICS_PER_DAY_ACTIVITY" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 /*
@@ -1748,7 +1748,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B23_SCENARIOS_CD_STABLE_BUILD_LOCK";
+const APP_BUILD = "V227_B21_TOTAL_METRICS_PER_DAY_ACTIVITY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -13128,6 +13128,30 @@ function applySummaryFold() {
       // Ventaja económica (línea muy visual)
       const __totA = Number(aS.total)||0;
       const __totB = Number(bS.total)||0;
+
+      // --- V227_B21: Métricas económicas extra (sin IA) ---
+      const __dayCount = (rng)=>{
+        try{
+          if(!rng || !rng.min || !rng.max) return 0;
+          const ms = Math.abs(rng.max.getTime() - rng.min.getTime());
+          const d = Math.round(ms / 86400000) + 1; // inclusivo
+          return (d>0 && Number.isFinite(d)) ? d : 0;
+        }catch(_){ return 0; }
+      };
+      const __rngA = __tripDateRange(state.scenarios.A||emptyScenario());
+      const __rngB = __tripDateRange(state.scenarios.B||emptyScenario());
+      const __daysA = __dayCount(__rngA);
+      const __daysB = __dayCount(__rngB);
+      const __eurPerDayA = (__daysA>0) ? (__totA / __daysA) : 0;
+      const __eurPerDayB = (__daysB>0) ? (__totB / __daysB) : 0;
+
+      const __actsA = __ma.acts || 0;
+      const __actsB = __mb.acts || 0;
+      const __eurPerActA = (__actsA>0) ? (__totA / __actsA) : 0;
+      const __eurPerActB = (__actsB>0) ? (__totB / __actsB) : 0;
+
+      const __hasPerDay = (__daysA>0 && __totA>0) || (__daysB>0 && __totB>0);
+      const __hasPerAct = (__actsA>0 && __totA>0) || (__actsB>0 && __totB>0);
       if(__totA!==__totB){
         const __cheaper = __totA < __totB ? "A" : "B";
         const __diff = Math.abs(__totA - __totB);
@@ -13183,6 +13207,47 @@ function applySummaryFold() {
             </tbody>
           </table>
         </div>
+
+        ${(__hasPerDay || __hasPerAct) ? `
+        <div class="mt-3 border-t border-slate-200 pt-3">
+          <div class="font-extrabold text-slate-900">Métricas</div>
+          <div class="mt-2 overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-slate-500">
+                  <th class="text-left font-semibold py-1">Métrica</th>
+                  <th class="text-right font-semibold py-1">A</th>
+                  <th class="text-right font-semibold py-1">B</th>
+                  <th class="text-right font-semibold py-1">Dif</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${__hasPerDay ? `
+                <tr>
+                  <td class="py-1 text-slate-600">€ por día</td>
+                  <td class="py-1 text-right font-semibold">${fmt(__eurPerDayA)}</td>
+                  <td class="py-1 text-right font-semibold">${fmt(__eurPerDayB)}</td>
+                  <td class="py-1 text-right font-semibold">${difTxt((__eurPerDayB||0) - (__eurPerDayA||0))}</td>
+                </tr>
+                ` : ``}
+                ${__hasPerAct ? `
+                <tr>
+                  <td class="py-1 text-slate-600">€ por actividad</td>
+                  <td class="py-1 text-right font-semibold">${fmt(__eurPerActA)}</td>
+                  <td class="py-1 text-right font-semibold">${fmt(__eurPerActB)}</td>
+                  <td class="py-1 text-right font-semibold">${difTxt((__eurPerActB||0) - (__eurPerActA||0))}</td>
+                </tr>
+                ` : ``}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-1 text-xs text-slate-500">
+            ${__hasPerDay ? `Días: A ${__daysA || "—"} · B ${__daysB || "—"}. ` : ``}
+            ${__hasPerAct ? `Actividades: A ${__actsA || "—"} · B ${__actsB || "—"}.` : ``}
+          </div>
+        </div>
+        ` : ``}
+
 
         <div class="mt-3 border-t border-slate-200 pt-3">
           <div class="font-extrabold text-slate-900">Comparación cualitativa</div>
