@@ -1737,7 +1737,20 @@ const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 
 
-const APP_BUILD = "V227_B18_TOTAL_DETAIL_QUAL_COMPARE_V2";
+// Number formatting (es-ES): thousands + 2 decimals everywhere
+const __NF2 = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtNum2 = (n) => __NF2.format((Number(n) || 0));
+const fmtCur = (n, cur) => `${fmtNum2(n)} ${cur || ""}`.trim();
+const fmtEur = (n) => `${fmtNum2(n)} €`;
+const fmtHours = (h) => {
+  const v = Math.abs(Number(h) || 0);
+  const r = Math.round(v * 10) / 10;
+  // show 1 decimal only if needed
+  return (Math.abs(r - Math.round(r)) < 1e-9) ? String(Math.round(r)) : String(r).replace(".", ",");
+};
+
+
+const APP_BUILD = "V227_B19_TOTAL_DETAIL_QUAL_COMPARE_V3";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9872,7 +9885,7 @@ function renderMeals() {
         <div class="text-xs text-slate-600 mt-1 truncate">${escapeHtml(mealSub)}</div>
       </div>
       <div class="shrink-0 text-right">
-        <div class="text-lg font-extrabold">${escapeHtml(mealsTotal.toFixed(2))}</div>
+        <div class="text-lg font-extrabold">${escapeHtml(fmtNum2(mealsTotal))}</div>
         <div class="text-xs text-slate-500">${escapeHtml(mealCur)}</div>
       </div>
     </button>
@@ -9883,7 +9896,7 @@ function renderMeals() {
         <div class="text-xs text-slate-600 mt-1 truncate">${escapeHtml(miscSub)}</div>
       </div>
       <div class="shrink-0 text-right">
-        <div class="text-lg font-extrabold">${escapeHtml(miscTotal.toFixed(2))}</div>
+        <div class="text-lg font-extrabold">${escapeHtml(fmtNum2(miscTotal))}</div>
         <div class="text-xs text-slate-500">${escapeHtml(targetCur)}</div>
       </div>
     </button>
@@ -9967,7 +9980,7 @@ function openMealsEditorModal(){
     const p = parseInt(String(elPeople?.value||0),10) || 0;
     const n = parseInt(String(elDays?.value||0),10) || 0;
     const total = d * p * n;
-    if (elTotal) elTotal.textContent = total.toFixed(2) + " " + String(elCur?.value || tmp.currency);
+    if (elTotal) elTotal.textContent = fmtCur(total, String(elCur?.value || tmp.currency));
   };
 
   ["input","change"].forEach(ev=>{
@@ -10095,7 +10108,7 @@ function openMiscEditorModal(){
       const fromCur = String(it.currency || targetCur);
       return acc + convertMoney(c, fromCur, targetCur);
     }, 0);
-    if(totalEl) totalEl.textContent = total.toFixed(2);
+    if(totalEl) totalEl.textContent = fmtNum2(total);
   };
 
   renderList();
@@ -12636,7 +12649,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${hasNote ? "📝" : ""}
           </div>
           <div class="mt-1 flex items-center ${showCost ? "justify-between" : "justify-end"} gap-3">
-            ${(showCost && jumpType !== "leg") ? `<div class="text-sm font-semibold">${it.cost ? it.cost.toFixed(2) : "—"}</div>` : ``}
+            ${(showCost && jumpType !== "leg") ? `<div class="text-sm font-semibold">${(it.cost!=null && it.cost!=="" ? fmtNum2(it.cost) : "—")}</div>` : ``}
             <div class="flex items-center gap-2">
               ${tlBadges ? tlBadges : ""}
               
@@ -12944,7 +12957,7 @@ function applySummaryFold() {
       }
     }
 
-    const fmt = (n) => (Number(n)||0).toFixed(2);
+    const fmt = (n) => fmtNum2(n);
     const difTxt = (n) => {
       const v = Number(n)||0;
       const s = fmt(Math.abs(v));
@@ -13085,8 +13098,8 @@ function applySummaryFold() {
       const __ha=Math.abs(Math.round((__ma.actMin||0)/60*10)/10);
       const __hb=Math.abs(Math.round((__mb.actMin||0)/60*10)/10);
       if(__ha||__hb){
-        if(__ma.actMin!==__mb.actMin) __q.push(__pick(__ma.actMin>__mb.actMin, `A es más “intenso” en horas de actividades (~${__ha}h vs ~${__hb}h).`, `B es más “intenso” en horas de actividades (~${__hb}h vs ~${__ha}h).`));
-        else __q.push(`A y B tienen horas de actividades similares (~${__ha}h).`);
+        if(__ma.actMin!==__mb.actMin) __q.push(__pick(__ma.actMin>__mb.actMin, `A es más “intenso” en horas de actividades (${fmtHours(__ha)} horas vs ${fmtHours(__hb)} horas).`, `B es más “intenso” en horas de actividades (${fmtHours(__hb)} horas vs ${fmtHours(__ha)} horas).`));
+        else __q.push(`A y B tienen horas de actividades similares (${fmtHours(__ha)} horas).`);
       }
 
       if(__ma.slots||__mb.slots){
@@ -13192,11 +13205,11 @@ function calcSummary() {
   const misc = sumConverted(sc.miscExpenses || [], "EUR");
   const mealsPlus = meals + misc;
 
-  $("sumTransport").textContent = transport.toFixed(2);
-  $("sumStay").textContent = stay.toFixed(2);
-  $("sumActs").textContent = acts.toFixed(2);
-  $("sumMeals").textContent = mealsPlus.toFixed(2);
-  $("sumTotal").textContent = (transport + stay + acts + mealsPlus).toFixed(2);
+  $("sumTransport").textContent = fmtNum2(transport);
+  $("sumStay").textContent = fmtNum2(stay);
+  $("sumActs").textContent = fmtNum2(acts);
+  $("sumMeals").textContent = fmtNum2(mealsPlus);
+  $("sumTotal").textContent = fmtNum2(transport + stay + acts + mealsPlus);
 
   const stickyVal = document.getElementById("stickyTotalValue");
   if (stickyVal) stickyVal.textContent = `${$("sumTotal").textContent}`;
@@ -15059,7 +15072,7 @@ try {
           return acc + convertMoney(c, fromCur, targetCur);
         }, 0);
         const miscTotalEl = document.getElementById("miscTotal");
-        if (miscTotalEl) miscTotalEl.textContent = miscTotal.toFixed(2);
+        if (miscTotalEl) miscTotalEl.textContent = fmtNum2(miscTotal);
         calcSummary();
       }
     });
@@ -15084,7 +15097,7 @@ try {
         return acc + convertMoney(c, fromCur, targetCur);
       }, 0);
       const miscTotalEl = document.getElementById("miscTotal");
-      if (miscTotalEl) miscTotalEl.textContent = miscTotal.toFixed(2);
+      if (miscTotalEl) miscTotalEl.textContent = fmtNum2(miscTotal);
       calcSummary();
       try{ if(typeof scheduleSyncTopStackHeights==="function") scheduleSyncTopStackHeights(); }catch{}
     });
@@ -15538,10 +15551,10 @@ $("btnCompare").addEventListener("click", ()=>{
   $("compareBox").classList.remove("hidden");
   $("compareBox").innerHTML = `
     <div class="font-extrabold">Comparativa</div>
-    <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${ta.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
-    <div class="flex justify-between"><span>B</span><span class="font-semibold">${tb.toFixed(2)} ${escapeHtml(state.displayCurrency)}</span></div>
+    <div class="mt-2 flex justify-between"><span>A</span><span class="font-semibold">${fmtNum2(ta)}} ${escapeHtml(state.displayCurrency)}</span></div>
+    <div class="flex justify-between"><span>B</span><span class="font-semibold">${fmtNum2(tb)}} ${escapeHtml(state.displayCurrency)}</span></div>
     <div class="mt-2 text-sm text-emerald-700">
-      Mejor en coste: <b>${betterCost}</b> (${diffCost.toFixed(2)} de diferencia)
+      Mejor en coste: <b>${betterCost}</b> (${fmtNum2(diffCost)} de diferencia)
     </div>
 
     <div class="mt-3 border-t border-slate-200 pt-3">
