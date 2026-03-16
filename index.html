@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B32_SIM_HEADER_PLUS_AT_END</title>
+<title>V227_B33_SIM_HEADER_ABCD_ALWAYS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-nowrap"><div class="font-extrabold tracking-tight text-lg whitespace-nowrap">Simulación</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1 relative shrink-0"><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold" id="tabA">A</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold text-slate-700" id="tabPlus">+</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabB">B</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabC">C</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabD">D</button><div id="scenarioPicker" class="hidden absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-[9999]"><div class="text-[11px] text-slate-500 font-semibold px-2 py-1">Simulaciones visibles</div><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="1">1 (A)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="2">2 (A, B)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="3">3 (A, B, C)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="4">4 (A, B, C, D)</button></div></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B32_SIM_HEADER_PLUS_AT_END</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-nowrap"><div class="font-extrabold tracking-tight text-lg whitespace-nowrap">Simulación</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1 relative shrink-0"><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold" id="tabA">A</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold text-slate-700" id="tabB">B</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold text-slate-700" id="tabC">C</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold text-slate-700" id="tabD">D</button></div></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B33_SIM_HEADER_ABCD_ALWAYS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1748,7 +1748,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B32_SIM_HEADER_PLUS_AT_END";
+const APP_BUILD = "V227_B33_SIM_HEADER_ABCD_ALWAYS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9473,53 +9473,25 @@ function renderTabs() {
   const letters = ["A","B","C","D"];
 
   if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = {};
-  // Always ensure A/B exist
-  if (!state.scenarios.A) state.scenarios.A = emptyScenario();
-  if (!state.scenarios.B) state.scenarios.B = emptyScenario();
+  // Ensure all scenarios exist
+  letters.forEach(L => { if (!state.scenarios[L]) state.scenarios[L] = emptyScenario(); });
 
-  // Enabled scenarios count stored in state (default 1).
-  if (typeof state.scenarioCount !== "number" || !isFinite(state.scenarioCount) || state.scenarioCount < 1) state.scenarioCount = 1;
-  if (state.scenarioCount < 1) state.scenarioCount = 1;
-  if (state.scenarioCount > letters.length) state.scenarioCount = letters.length;
+  // Always show A/B/C/D. Active scenario is a single selection.
+  if (!letters.includes(state.scenario)) state.scenario = "A";
 
-  // Clamp active scenario to enabled (visible) set
-  const enabledLetters = letters.slice(0, state.scenarioCount);
-  if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
-
-  // Visual order: Simulación, A, B, C, D, +
-  const plusBtn = $("tabPlus");
-  if (plusBtn) { try{ plusBtn.style.order = "5"; }catch{} }
-
-  letters.forEach((L,i)=>{
+  letters.forEach((L)=>{
     const btn = $("tab"+L);
     if (!btn) return;
-
-    const enabled = i < state.scenarioCount;
     const on = state.scenario === L;
 
-    // Order letters consecutively so "+" is always at the end
-    let order = i + 1; // A=1, B=2, C=3, D=4
-    try{ btn.style.order = String(order); }catch{}
-
-    // Ensure correct visibility without accidentally wiping 'hidden'
-    btn.classList.toggle("hidden", !enabled);
-
-    // Update active/inactive styling without touching other classes
+    btn.classList.remove("hidden");
     btn.classList.toggle("bg-slate-900", on);
     btn.classList.toggle("text-white", on);
     btn.classList.toggle("text-slate-700", !on);
 
-    // Keep a consistent compact size class set (Safari friendly)
+    // Keep compact size (Safari friendly)
     btn.classList.add("tap","px-2.5","py-1","rounded-lg","text-[13px]","font-semibold");
   });
-
-  const plus = $("tabPlus");
-  if (plus) {
-    try{ plus.style.order = "5"; }catch{}
-    plus.disabled = false;
-    plus.classList.remove("hidden");
-    plus.classList.add("tap","px-2.5","py-1","rounded-lg","text-[13px]","font-semibold","text-slate-700");
-  }
 
   const dc = document.getElementById("displayCurrency");
   if (dc) dc.value = state.displayCurrency;
@@ -9528,6 +9500,7 @@ function renderTabs() {
 
   try { if (typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); } catch {}
 }
+
 
 
 
