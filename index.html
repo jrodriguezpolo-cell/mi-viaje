@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B35_HEADER_TOOLS_TOPROW_BUILD_UNDER_SIM</title>
+<title>V227_B36_DATE_SELECTOR_NUMERIC</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1463,7 +1463,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V227_B35_HEADER_TOOLS_TOPROW_BUILD_UNDER_SIM</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V227_B36_DATE_SELECTOR_NUMERIC</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -1758,7 +1758,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B35_HEADER_TOOLS_TOPROW_BUILD_UNDER_SIM";
+const APP_BUILD = "V227_B36_DATE_SELECTOR_NUMERIC";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -10413,6 +10413,18 @@ function __fmtDateES(iso){
     return dt.toLocaleDateString("es-ES",{ day:"2-digit", month:"short", year:"numeric" }).replace(".", "");
   }catch(_){
     return String(iso);
+  }
+}
+
+function __fmtDateSelectorNumeric(iso){
+  // YYYY-MM-DD -> d/m/yy (e.g. 16/3/26) for compact date selector
+  if (!__isValidISODate(iso)) return String(iso||"");
+  try{
+    const [y,m,d]=String(iso).split("-").map(n=>parseInt(n,10));
+    const yy = String(y).slice(-2);
+    return `${d}/${m}/${yy}`;
+  }catch(_){
+    return String(iso||"");
   }
 }
 function __dateSeparatorHTML(label, iso){
@@ -19686,7 +19698,7 @@ function scrollToDateSep(viewName, iso){
       opt.value = iso;
       // Prefer existing formatter if available
       try{
-        opt.textContent = (typeof __fmtDateES === "function") ? __fmtDateES(iso) : iso;
+        opt.textContent = (typeof __fmtDateSelectorNumeric === "function") ? __fmtDateSelectorNumeric(iso) : ((typeof __fmtDateES === "function") ? __fmtDateES(iso) : iso);
       }catch(_){
         opt.textContent = iso;
       }
