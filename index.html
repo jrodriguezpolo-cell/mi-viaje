@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B30_SIM_HEADER_A_PLUS_FINAL</title>
+<title>V227_B31_SIM_HEADER_A_PLUS_DYNAMIC_BUTTONS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1448,7 +1448,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 <div class="flex items-center gap-3 flex-1 min-w-0">
 <img alt="MI VIAJE" class="w-10 h-10 rounded-2xl" src="icon.png"/>
-<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-nowrap"><div class="font-extrabold tracking-tight text-lg whitespace-nowrap">Simulación</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1 relative shrink-0"><button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-semibold" id="tabA">A</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold text-slate-700" id="tabPlus">+</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabB">B</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabC">C</button><button class="tap px-3 py-1.5 rounded-xl text-sm font-semibold hidden" id="tabD">D</button><div id="scenarioPicker" class="hidden absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-[9999]"><div class="text-[11px] text-slate-500 font-semibold px-2 py-1">Simulaciones visibles</div><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="1">1 (A)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="2">2 (A, B)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="3">3 (A, B, C)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="4">4 (A, B, C, D)</button></div></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B30_SIM_HEADER_A_PLUS_FINAL</div></div>
+<div class="leading-tight flex flex-col min-w-0"><div class="flex items-center gap-2 flex-nowrap"><div class="font-extrabold tracking-tight text-lg whitespace-nowrap">Simulación</div><div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-2xl p-1 relative shrink-0"><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold" id="tabA">A</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold text-slate-700" id="tabPlus">+</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabB">B</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabC">C</button><button class="tap px-2.5 py-1 rounded-xl text-[13px] font-semibold hidden" id="tabD">D</button><div id="scenarioPicker" class="hidden absolute right-0 top-full mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-lg p-2 z-[9999]"><div class="text-[11px] text-slate-500 font-semibold px-2 py-1">Simulaciones visibles</div><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="1">1 (A)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="2">2 (A, B)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="3">3 (A, B, C)</button><button class="tap w-full text-left px-3 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50" data-scen-count="4">4 (A, B, C, D)</button></div></div></div><div class="text-[11px] text-slate-500 font-semibold self-end mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[55vw]" id="buildId">V227_B31_SIM_HEADER_A_PLUS_DYNAMIC_BUTTONS</div></div>
 </div>
 <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
 <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools">
@@ -1748,7 +1748,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B30_SIM_HEADER_A_PLUS_FINAL";
+const APP_BUILD = "V227_B31_SIM_HEADER_A_PLUS_DYNAMIC_BUTTONS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
@@ -9484,8 +9484,9 @@ function renderTabs() {
 
   // Clamp active scenario to enabled (visible) set
   const enabledLetters = letters.slice(0, state.scenarioCount);
-if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
+  if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0] || "A";
 
+  // Visual order: Simulación, A, +, B, C, D
   const plusBtn = $("tabPlus");
   if (plusBtn) { try{ plusBtn.style.order = "2"; }catch{} }
 
@@ -9496,7 +9497,6 @@ if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0]
     const enabled = i < state.scenarioCount;
     const on = state.scenario === L;
 
-    // Visual order: A, +, B, C, D
     let order = 5;
     if (L === "A") order = 1;
     if (L === "B") order = 3;
@@ -9504,22 +9504,31 @@ if (!enabledLetters.includes(state.scenario)) state.scenario = enabledLetters[0]
     if (L === "D") order = 5;
     try{ btn.style.order = String(order); }catch{}
 
-    // Keep hidden class intact by building className once.
-    const base = "tap px-2.5 py-1 rounded-lg text-[13px] font-semibold";
-    btn.className = base + (on ? " bg-slate-900 text-white" : " text-slate-700") + (enabled ? "" : " hidden");
+    // Ensure correct visibility without accidentally wiping 'hidden'
+    btn.classList.toggle("hidden", !enabled);
+
+    // Update active/inactive styling without touching other classes
+    btn.classList.toggle("bg-slate-900", on);
+    btn.classList.toggle("text-white", on);
+    btn.classList.toggle("text-slate-700", !on);
+
+    // Keep a consistent compact size class set (Safari friendly)
+    btn.classList.add("tap","px-2.5","py-1","rounded-lg","text-[13px]","font-semibold");
   });
 
   const plus = $("tabPlus");
   if (plus) {
     try{ plus.style.order = "2"; }catch{}
     plus.disabled = false;
-    plus.className = "tap px-2.5 py-1 rounded-lg text-[13px] font-semibold text-slate-700";
+    plus.classList.remove("hidden");
+    plus.classList.add("tap","px-2.5","py-1","rounded-lg","text-[13px]","font-semibold","text-slate-700");
   }
 
-const dc = document.getElementById("displayCurrency");
+  const dc = document.getElementById("displayCurrency");
   if (dc) dc.value = state.displayCurrency;
   const sc = document.getElementById("selScenario");
   if (sc) sc.value = state.scenario;
+
   try { if (typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); } catch {}
 }
 
@@ -15803,8 +15812,14 @@ function __initTimelineNavBindings(){
 window.addEventListener('DOMContentLoaded', () => {
   try { __restoreHardRefreshSnapshotIfNeeded(); } catch {}
   loadState();
-  // Force compact scenario tabs on startup: show only A and '+' until user chooses via picker.
-  try { state.scenarioCount = 1; state.scenario = 'A'; } catch {}
+  // Default: start with only A enabled if scenarioCount is missing (fresh state). Preserve user choice otherwise.
+  try {
+    if (typeof state.scenarioCount !== 'number' || !isFinite(state.scenarioCount) || state.scenarioCount < 1) {
+      state.scenarioCount = 1;
+      state.scenario = 'A';
+      saveState();
+    }
+  } catch {}
   try { __renderToolsDiagnostics(); } catch {}
   setupAccordion();
   try { __initTimelineNavBindings(); } catch {}
