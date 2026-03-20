@@ -21675,6 +21675,73 @@ overlay.classList.remove("hidden");
   function __mvSupportsWebFolderAccess(){
     try{ return typeof window.showDirectoryPicker === "function"; }catch(_){ return false; }
   }
+  function __mvSupportsWebDirectoryInput(){
+    try{
+      var input = document.createElement("input");
+      return ("webkitdirectory" in input) || ("directory" in input);
+    }catch(_){
+      return false;
+    }
+  }
+  function __mvEnsureWebTripFilesMap(){
+    try{
+      if(!(window.__mvWebTripFolderFiles instanceof Map)) window.__mvWebTripFolderFiles = new Map();
+      return window.__mvWebTripFolderFiles;
+    }catch(_){
+      return new Map();
+    }
+  }
+  function __mvNormalizeWebTripRelPath(p){
+    try{
+      return String(p || "").replace(/\/g, "/").replace(/^\/+/, "").trim();
+    }catch(_){
+      return "";
+    }
+  }
+  function __mvSetWebTripFolderFilesFromList(list){
+    try{
+      var arr = Array.from(list || []);
+      var map = __mvEnsureWebTripFilesMap();
+      map.clear();
+      var folderName = "";
+      arr.forEach(function(file){
+        var raw = String((file && file.webkitRelativePath) || (file && file.name) || "").replace(/\/g, "/");
+        var parts = raw.split("/").filter(Boolean);
+        var rel = raw;
+        if(parts.length > 1){
+          folderName = folderName || parts[0];
+          rel = parts.slice(1).join("/");
+        }
+        rel = __mvNormalizeWebTripRelPath(rel);
+        if(rel) map.set(rel, file);
+      });
+      if(map.size){
+        __mvWriteWebTripFolderMeta({
+          picked: true,
+          name: String(folderName || "Carpeta"),
+          ts: Date.now(),
+          mode: "files"
+        });
+        return true;
+      }
+    }catch(_){ }
+    return false;
+  }
+  function __mvFindWebTripFile(relPath){
+    try{
+      var norm = __mvNormalizeWebTripRelPath(relPath);
+      if(!norm) return null;
+      var map = __mvEnsureWebTripFilesMap();
+      if(map.has(norm)) return map.get(norm);
+      var base = norm.split("/").pop();
+      if(!base) return null;
+      for(const entry of map.entries()){
+        var key = String(entry[0] || "");
+        if(key === base || key.endsWith("/" + base)) return entry[1];
+      }
+    }catch(_){ }
+    return null;
+  }
   function __mvReadWebTripFolderMeta(){
     try{
       var raw = localStorage.getItem(MV_WEB_ATTACHMENTS_FOLDER_META_KEY);
@@ -21701,16 +21768,37 @@ overlay.classList.remove("hidden");
   }
   async function __mvPickWebTripFolder(){
     try{
-      if(!__mvSupportsWebFolderAccess()) return false;
-      var handle = await window.showDirectoryPicker({ mode:"read" });
-      if(!handle) return false;
-      window.__mvWebTripFolderHandle = handle;
-      __mvWriteWebTripFolderMeta({
-        picked: true,
-        name: String(handle.name || ""),
-        ts: Date.now()
-      });
-      return true;
+      if(__mvSupportsWebFolderAccess()){
+        var handle = await window.showDirectoryPicker({ mode:"read" });
+        if(!handle) return false;
+        window.__mvWebTripFolderHandle = handle;
+        try{ window.__mvWebTripFolderFiles = new Map(); }catch(_){ }
+        __mvWriteWebTripFolderMeta({
+          picked: true,
+          name: String(handle.name || ""),
+          ts: Date.now(),
+          mode: "handle"
+        });
+        try{ return true; }finally{
+          try{
+            if(window.__mvPendingOpenAttachment){
+              var pending = window.__mvPendingOpenAttachment;
+              window.__mvPendingOpenAttachment = null;
+              Promise.resolve(__mvOpenAttachmentWebFromFolder(pending)).catch(function(){});
+            }
+          }catch(_){ }
+        }
+      }
+      if(__mvSupportsWebDirectoryInput()){
+        var input = document.getElementById("mvWebAttachFolderInput");
+        if(input){
+          try{ input.value = ""; }catch(_){ }
+          input.click();
+          return true;
+        }
+      }
+      try{ toast(t("attach.webFolder.unsupported")); }catch(_){ }
+      return false;
     }catch(_){
       return false;
     }
@@ -21718,8 +21806,11 @@ overlay.classList.remove("hidden");
   async function __mvEnsureWebTripFolderSelected(){
     try{
       if(window.__mvWebTripFolderHandle) return true;
-    }catch(_){}
-    if(!__mvSupportsWebFolderAccess()) return false;
+    }catch(_){ }
+    try{
+      var map = __mvEnsureWebTripFilesMap();
+      if(map && map.size) return true;
+    }catch(_){ }
     return !!(await __mvPickWebTripFolder());
   }
   async function __mvResolveWebAttachmentFileHandle(relPath){
@@ -21741,6 +21832,32 @@ overlay.classList.remove("hidden");
       return null;
     }catch(_){
       return null;
+    }
+  }
+  async function __mvResolveWebAttachmentFile(relPath){
+    try{
+      var fileFromList = __mvFindWebTripFile(relPath);
+      if(fileFromList) return fileFromList;
+      var fh = await __mvResolveWebAttachmentFileHandle(relPath);
+      if(!fh) return null;
+      return await fh.getFile();
+    }catch(_){
+      return null;
+    }
+  }
+  function __mvOpenFileBlobInNewTab(fileObj){
+    try{
+      if(!fileObj) return false;
+      var blobUrl = URL.createObjectURL(fileObj);
+      var win = window.open(blobUrl, "_blank", "noopener");
+      if(!win){
+        try{ URL.revokeObjectURL(blobUrl); }catch(_){ }
+        return false;
+      }
+      setTimeout(function(){ try{ URL.revokeObjectURL(blobUrl); }catch(_){ } }, 60000);
+      return true;
+    }catch(_){
+      return false;
     }
   }
   function __mvOpenAttachmentWeb(file){
@@ -21767,27 +21884,30 @@ overlay.classList.remove("hidden");
       if(__mvOpenAttachmentWeb(file)) return true;
       var f = (file && typeof file === "object") ? file : {};
       var relPath = String(f.relPath || f.path || "").trim();
-      if(!relPath) return false;
-      var ok = await __mvEnsureWebTripFolderSelected();
-      if(!ok){
-        try{ toast(t("attach.webFolder.needPick")); }catch(_){}
+      if(!relPath){
+        try{ toast(t("attach.webOpenUnavailable")); }catch(_){ }
         return false;
       }
-      var fh = await __mvResolveWebAttachmentFileHandle(relPath);
-      if(!fh){
-        try{ toast(t("attach.webFolder.notFound")); }catch(_){}
+      var hasFolder = false;
+      try{ hasFolder = !!window.__mvWebTripFolderHandle; }catch(_){ }
+      try{
+        var map = __mvEnsureWebTripFilesMap();
+        if(map && map.size) hasFolder = true;
+      }catch(_){ }
+      if(!hasFolder){
+        try{ window.__mvPendingOpenAttachment = f; }catch(_){ }
+        var picked = await __mvPickWebTripFolder();
+        if(!picked) return false;
         return false;
       }
-      var realFile = await fh.getFile();
-      if(!realFile) return false;
-      var blobUrl = URL.createObjectURL(realFile);
-      var win = window.open(blobUrl, "_blank", "noopener");
-      if(!win){
-        try{ URL.revokeObjectURL(blobUrl); }catch(_){}
+      var realFile = await __mvResolveWebAttachmentFile(relPath);
+      if(!realFile){
+        try{ toast(t("attach.webFolder.notFound")); }catch(_){ }
         return false;
       }
-      return true;
+      return __mvOpenFileBlobInNewTab(realFile);
     }catch(_){
+      try{ toast(t("attach.webOpenUnavailable")); }catch(__){ }
       return false;
     }
   }
@@ -21902,6 +22022,7 @@ overlay.classList.remove("hidden");
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:14px;background:rgba(248,250,252,.9)">' +
             '<div id="mvWebAttachFolderLine" class="text-xs" style="opacity:.8;min-width:0;flex:1"></div>' +
             '<button id="mvWebAttachPickFolderBtn" class="tap" type="button" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px;flex:0 0 auto"></button>' +
+            '<input id="mvWebAttachFolderInput" type="file" webkitdirectory directory multiple class="hidden" />' +
           '</div>'
         ) : '') +
         '<div style="margin-top:10px">' + rows + '</div>'
@@ -21942,9 +22063,7 @@ overlay.classList.remove("hidden");
 
           if(action === "open"){
             if(!hasBridge){
-              Promise.resolve(__mvOpenAttachmentWebFromFolder(f)).then(function(opened){
-                if(!opened){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } }
-              }).catch(function(){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } });
+              Promise.resolve(__mvOpenAttachmentWebFromFolder(f)).catch(function(){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } });
               return;
             }
             var rp = String(rel || f.relPath || "").trim();
@@ -21977,6 +22096,30 @@ overlay.classList.remove("hidden");
           }).catch(function(){
             __mvRenderAttachList(obj);
           });
+        }, true);
+      }
+      var pickInput = document.getElementById("mvWebAttachFolderInput");
+      if(pickInput && !pickInput.__mvBound){
+        pickInput.__mvBound = true;
+        pickInput.addEventListener("change", function(ev){
+          try{
+            var files = ev && ev.target && ev.target.files ? ev.target.files : null;
+            var ok = __mvSetWebTripFolderFilesFromList(files);
+            if(!ok){
+              try{ toast(t("attach.webFolder.unsupported")); }catch(_){ }
+            }
+            __mvRenderAttachList(obj);
+            try{
+              if(ok && window.__mvPendingOpenAttachment){
+                var pending = window.__mvPendingOpenAttachment;
+                window.__mvPendingOpenAttachment = null;
+                Promise.resolve(__mvOpenAttachmentWebFromFolder(pending)).catch(function(){});
+              }
+            }catch(_){ }
+          }catch(_){
+            try{ toast(t("attach.webFolder.unsupported")); }catch(__){ }
+          }
+          try{ pickInput.value = ""; }catch(_){ }
         }, true);
       }
     }catch(e){ try{ console.log("__mvRenderAttachList error", e); }catch(_){ } }
