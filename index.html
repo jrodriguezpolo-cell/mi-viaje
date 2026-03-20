@@ -2128,6 +2128,11 @@ const I18N = {
     "tools.engines.code": "Código fuente",
     "tools.engines.codeValue": "externo (GitHub/proyecto local)",
     "tools.engines.backupValue": "JSON disponible",
+    "tools.engines.lastManualBackup": "Último backup manual",
+    "tools.engines.lastBackup": "Último backup",
+    "tools.engines.backupUnavailable": "no disponible",
+    "tools.engines.backupType.auto": "automático",
+    "tools.engines.backupType.manual": "manual",
     "tools.engines.icloud": "iCloud Drive",
     "tools.engines.local": "Local",
     "tools.engines.auto": "Automático",
@@ -2549,6 +2554,11 @@ const I18N = {
     "tools.engines.code": "Source code",
     "tools.engines.codeValue": "external (GitHub/local project)",
     "tools.engines.backupValue": "JSON available",
+    "tools.engines.lastManualBackup": "Last manual backup",
+    "tools.engines.lastBackup": "Last backup",
+    "tools.engines.backupUnavailable": "not available",
+    "tools.engines.backupType.auto": "automatic",
+    "tools.engines.backupType.manual": "manual",
     "tools.engines.icloud": "iCloud Drive",
     "tools.engines.local": "Local",
     "tools.engines.auto": "Automatic",
@@ -2848,6 +2858,7 @@ function __renderEngineStatusBox(){
 try{ window.__renderEngineStatusBox = __renderEngineStatusBox; }catch(_){}
 
 const MV_STORAGE_ENGINE_PREF_V1 = "MV_STORAGE_ENGINE_PREF_V1";
+const MV_LAST_MANUAL_BACKUP_META_KEY = "MV_LAST_MANUAL_BACKUP_META_V1";
 
 function __getStorageEnginePref(){
   try{
@@ -2912,6 +2923,41 @@ function __setStorageEnginePref(v){
     try{ toast(t("toast.storagePrefUpdated")); }catch(_){}
   }catch(_){}
 }
+
+function __readLastManualBackupMeta(){
+  try{
+    const raw = localStorage.getItem(MV_LAST_MANUAL_BACKUP_META_KEY);
+    if(!raw) return null;
+    const meta = JSON.parse(raw);
+    if(!meta || !meta.savedAtTs) return null;
+    return meta;
+  }catch(_){
+    return null;
+  }
+}
+
+function __renderLastManualBackupInfo(){
+  try{
+    const el = document.getElementById("toolsLastManualBackupLine");
+    if(!el) return;
+    const meta = __readLastManualBackupMeta();
+    if(!meta){
+      el.textContent = `${t("tools.engines.lastManualBackup")}: ${t("tools.engines.backupUnavailable")}`;
+      return;
+    }
+    const d = new Date(Number(meta.savedAtTs || 0));
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = String(d.getFullYear());
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    el.textContent = `${t("tools.engines.lastManualBackup")}: ${dd}/${mm}/${yyyy} · ${hh}:${mi}`;
+  }catch(_){}
+}
+try{ window.__renderLastManualBackupInfo = __renderLastManualBackupInfo; }catch(_){}
+document.addEventListener("DOMContentLoaded", function(){
+  try{ __renderLastManualBackupInfo(); }catch(_){}
+}, { passive: true });
 
 function __toggleToolsEnginesAcc(){
   try{
@@ -2995,7 +3041,7 @@ function __exportTripJsonBackup(){
     };
     __downloadTripJsonBackup(payload, filename);
   }catch(e){
-    try{ console.log("__exportTripJsonBackup error", e); }catch(_){}
+    try{ console.log("__exportTripJsonBackup error", e); }catch(_){} 
   }
 }
 
@@ -10963,15 +11009,54 @@ function loadState() {
     if (raw) state = Object.assign(state, JSON.parse(raw));
   } catch {}
 }
+function __shouldAlsoWriteIcloud(){
+  try{
+    const pref = (typeof __getStorageEnginePref === "function") ? __getStorageEnginePref() : "auto";
+    if(pref === "local") return false;
+    return (typeof __isIcloudAvailableForStorage === "function") ? __isIcloudAvailableForStorage() : false;
+  }catch(_){
+    return false;
+  }
+}
+function __writeLocalStateNow(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+function __writeIcloudStateNowIfNeeded(){
+  try{
+    if(!__shouldAlsoWriteIcloud()) return false;
+    if(window.__mvApplyingRemote) return false;
+    if(typeof __mvScheduleStateSyncSave === "function"){
+      __mvScheduleStateSyncSave();
+      return true;
+    }
+    return false;
+  }catch(_){
+    return false;
+  }
+}
+// FASE ACTUAL:
+// En app iPhone, Auto e iCloud hacen escritura dual:
+// - Local siempre
+// - iCloud cuando está disponible
+// La lectura aún NO se conmuta por motor; eso irá en una fase posterior si hace falta.
+function __persistStateBySelectedStorageMode(){
+  try{
+    __writeLocalStateNow();
+    __writeIcloudStateNowIfNeeded();
+    try{
+      if(typeof __notifScheduleSyncToIOS === "function") __notifScheduleSyncToIOS();
+    }catch(_){}
+  }catch(_){}
+}
 function saveState() {
-  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  __persistStateBySelectedStorageMode();
   // Update sync meta so "lastSavedAt" reflects real editing time (not only export/import).
   try { setMeta({ lastSavedAt: new Date().toISOString() }); } catch {}
-  try{
-    if(window.__mvApplyingRemote) return;
-    if(typeof __mvScheduleStateSyncSave === "function") __mvScheduleStateSyncSave();
-    if(typeof __notifScheduleSyncToIOS === "function") __notifScheduleSyncToIOS();
-  }catch(_){}
 }
 function curScenario() { return state.scenarios[state.scenario]; }
 
@@ -13402,11 +13487,7 @@ function openDailyNoteModal(dateKey){
       btnSave.onclick = () => {
         const k = String(datePick?.value || key0 || "").trim() || key0;
         const v = String(ta?.value || "").trim();
-        if(!v){
-          try{ delete sc.dailyNotes[k]; }catch{}
-        }else{
-          sc.dailyNotes[k] = v;
-        }
+        try{ __setTimelineNote(k, v); }catch{}
         try{ if(typeof saveState==="function") saveState(); }catch{}
         try{ renderTimeline(); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
@@ -13419,7 +13500,7 @@ function openDailyNoteModal(dateKey){
         const ok = confirm("¿Borrar esta nota del día?");
         if(!ok) return;
         const k = String(datePick?.value || key0 || "").trim() || key0;
-        try{ delete sc.dailyNotes[k]; }catch{}
+        try{ __setTimelineNote(k, ""); }catch{}
         try{ if(typeof saveState==="function") saveState(); }catch{}
         try{ renderTimeline(); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
@@ -21665,6 +21746,7 @@ overlay.classList.remove("hidden");
   try{ window.__mvPostState = __mvPostState; }catch(_){}
   function __mvScheduleStateSyncSave(){
     try{
+      if(!(typeof __shouldAlsoWriteIcloud === "function" && __shouldAlsoWriteIcloud())) return;
       window.__mvLastLocalEditTs = Date.now();
       if(window.__mvApplyingRemote) return;
       clearTimeout(window.__mvStateSyncTimer);
@@ -21843,6 +21925,7 @@ document.addEventListener("DOMContentLoaded", function(){
             <div class="mt-3 flex flex-col gap-2">
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
+              <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
               <input id="inputImportTripJson" type="file" accept=".json,application/json" class="hidden" />
             </div>
             <div class="mt-3 text-xs text-slate-500" id="toolsEngineHelp" data-i18n="tools.engines.help">Este bloque prepara la convivencia entre almacenamiento local, iCloud Drive y backups JSON sin mezclar datos por error.</div>
@@ -21869,7 +21952,17 @@ document.addEventListener("DOMContentLoaded", function(){
         btnExportTripJson.__mvBound = true;
         btnExportTripJson.addEventListener("click", function(e){
           try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-          __exportTripJsonBackup();
+          try{
+            if(typeof __exportTripJsonBackup === "function"){
+              __exportTripJsonBackup();
+              const now = new Date();
+              localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
+                savedAt: now.toISOString(),
+                savedAtTs: now.getTime()
+              }));
+              __renderLastManualBackupInfo();
+            }
+          }catch(_){}
         }, true);
       }
 
@@ -21892,6 +21985,7 @@ document.addEventListener("DOMContentLoaded", function(){
           try{ inputImportTripJson.value = ""; }catch(_){}
         });
       }
+      try{ __renderLastManualBackupInfo(); }catch(_){}
 
       [
         ["btnStorageEngineAuto", "auto"],
@@ -21908,7 +22002,7 @@ document.addEventListener("DOMContentLoaded", function(){
       });
 
       try{ __renderStorageEnginePicker(); }catch(_){}
-      try{ __renderEngineStatusBox(); }catch(_){} 
+      try{ __renderEngineStatusBox(); }catch(_){}
       try{ applyI18n(); }catch(_){}
     }
   }catch(_){}
