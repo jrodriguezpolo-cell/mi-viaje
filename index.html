@@ -2122,6 +2122,8 @@ const I18N = {
     "tools.engines.export": "Exportar backup JSON",
     "tools.engines.import": "Importar backup JSON",
     "tools.engines.help": "Este bloque prepara la convivencia entre almacenamiento local, iCloud Drive y backups JSON sin mezclar datos por error.",
+    "tools.engines.webappHelpTitle": "Continuidad App → WebApp",
+    "tools.engines.webappHelpBody": "Si en algún momento necesitas seguir en la webapp, exporta un backup JSON desde la app e impórtalo allí. Así podrás continuar con la última versión guardada del viaje.",
     "tools.engines.prefHelp": "Cambiar la preferencia no migra datos automáticamente. Usa el backup JSON como red de seguridad.",
     "tools.engines.storage": "Almacenamiento principal",
     "tools.engines.backup": "Backup manual",
@@ -2129,14 +2131,23 @@ const I18N = {
     "tools.engines.codeValue": "externo (GitHub/proyecto local)",
     "tools.engines.backupValue": "JSON disponible",
     "tools.engines.lastManualBackup": "Último backup manual",
+    "tools.engines.lastAutoBackup": "Último backup automático",
     "tools.engines.lastBackup": "Último backup",
     "tools.engines.backupUnavailable": "no disponible",
+    "tools.engines.autoBackupUnavailable": "no disponible",
+    "tools.engines.createAutoBackupNow": "Crear backup automático ahora",
+    "tools.engines.backupFolderTitle": "Carpeta de backups",
+    "tools.engines.backupFolderNone": "Sin carpeta de backups seleccionada",
+    "tools.engines.backupFolderLinkedLine": "Carpeta vinculada backups: {name}",
+    "tools.engines.backupFolderUnavailableLine": "Carpeta vinculada backups: no disponible",
+    "tools.engines.backupFolderHint": "Para cambiar de carpeta, usar “Cambiar carpeta” en Sincronizar iCloud.",
     "tools.engines.backupType.auto": "automático",
     "tools.engines.backupType.manual": "manual",
     "tools.engines.icloud": "iCloud Drive",
     "tools.engines.local": "Local",
     "tools.engines.auto": "Automático",
     "tools.engines.warningFallback": "iCloud no disponible ahora mismo. Se usará Local temporalmente.",
+    "toast.autoBackupCreated": "Backup automático creado",
     "sheet.event": "Evento",
     "sheet.detail": "Detalle",
     "sheet.new": "Nuevo {type}",
@@ -2160,6 +2171,13 @@ const I18N = {
     "attach.delete": "Eliminar",
     "attach.noBridge": "Adjuntos no disponibles en este modo",
     "attach.noPathOpen": "Sin ruta para abrir",
+    "attach.webOpenUnavailable": "Adjunto no disponible para abrir en webapp",
+    "attach.webFolder.none": "Carpeta web de adjuntos: no seleccionada",
+    "attach.webFolder.linked": "Carpeta web de adjuntos: {name}",
+    "attach.webFolder.pick": "Elegir carpeta",
+    "attach.webFolder.change": "Cambiar carpeta",
+    "attach.webFolder.needPick": "Selecciona la carpeta raíz del viaje para acceder a los adjuntos",
+    "attach.webFolder.notFound": "No se encontró el adjunto en la carpeta seleccionada",
     "attach.noPathRecv": "No se recibió la ruta del adjunto",
     "attach.confirmDel": "¿Eliminar este archivo adjunto?",
     "attach.deleted": "Adjunto eliminado",
@@ -2548,6 +2566,8 @@ const I18N = {
     "tools.engines.export": "Export JSON backup",
     "tools.engines.import": "Import JSON backup",
     "tools.engines.help": "This block prepares coexistence between local storage, iCloud Drive and JSON backups without mixing data by mistake.",
+    "tools.engines.webappHelpTitle": "App → WebApp continuity",
+    "tools.engines.webappHelpBody": "If you ever need to continue in the web app, export a JSON backup from the app and import it there. This lets you continue with the latest saved version of the trip.",
     "tools.engines.prefHelp": "Changing the preference does not migrate data automatically. Use JSON backup as a safety net.",
     "tools.engines.storage": "Primary storage",
     "tools.engines.backup": "Manual backup",
@@ -2555,14 +2575,23 @@ const I18N = {
     "tools.engines.codeValue": "external (GitHub/local project)",
     "tools.engines.backupValue": "JSON available",
     "tools.engines.lastManualBackup": "Last manual backup",
+    "tools.engines.lastAutoBackup": "Last automatic backup",
     "tools.engines.lastBackup": "Last backup",
     "tools.engines.backupUnavailable": "not available",
+    "tools.engines.autoBackupUnavailable": "not available",
+    "tools.engines.createAutoBackupNow": "Create automatic backup now",
+    "tools.engines.backupFolderTitle": "Backup folder",
+    "tools.engines.backupFolderNone": "No backup folder selected",
+    "tools.engines.backupFolderLinkedLine": "Linked backup folder: {name}",
+    "tools.engines.backupFolderUnavailableLine": "Linked backup folder: not available",
+    "tools.engines.backupFolderHint": "To change the folder, use “Change folder” in iCloud Sync.",
     "tools.engines.backupType.auto": "automatic",
     "tools.engines.backupType.manual": "manual",
     "tools.engines.icloud": "iCloud Drive",
     "tools.engines.local": "Local",
     "tools.engines.auto": "Automatic",
     "tools.engines.warningFallback": "iCloud is not available right now. Local will be used temporarily.",
+    "toast.autoBackupCreated": "Automatic backup created",
     "sheet.event": "Event",
     "sheet.detail": "Details",
     "sheet.new": "New {type}",
@@ -2586,6 +2615,13 @@ const I18N = {
     "attach.delete": "Delete",
     "attach.noBridge": "Attachments not available in this mode",
     "attach.noPathOpen": "No path to open",
+    "attach.webOpenUnavailable": "Attachment not available to open in web app",
+    "attach.webFolder.none": "Web attachments folder: not selected",
+    "attach.webFolder.linked": "Web attachments folder: {name}",
+    "attach.webFolder.pick": "Choose folder",
+    "attach.webFolder.change": "Change folder",
+    "attach.webFolder.needPick": "Select the trip root folder to access attachments",
+    "attach.webFolder.notFound": "Attachment not found in the selected folder",
     "attach.noPathRecv": "Attachment path not received",
     "attach.confirmDel": "Delete this attachment?",
     "attach.deleted": "Attachment removed",
@@ -2859,6 +2895,8 @@ try{ window.__renderEngineStatusBox = __renderEngineStatusBox; }catch(_){}
 
 const MV_STORAGE_ENGINE_PREF_V1 = "MV_STORAGE_ENGINE_PREF_V1";
 const MV_LAST_MANUAL_BACKUP_META_KEY = "MV_LAST_MANUAL_BACKUP_META_V1";
+const MV_AUTO_BACKUPS_KEY = "MV_AUTO_BACKUPS_V1";
+const MV_LAST_AUTO_BACKUP_META_KEY = "MV_LAST_AUTO_BACKUP_META_V1";
 
 function __getStorageEnginePref(){
   try{
@@ -2955,9 +2993,212 @@ function __renderLastManualBackupInfo(){
   }catch(_){}
 }
 try{ window.__renderLastManualBackupInfo = __renderLastManualBackupInfo; }catch(_){}
+
+function __readAutoBackups(){
+  try{
+    const raw = localStorage.getItem(MV_AUTO_BACKUPS_KEY);
+    if(!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  }catch(_){
+    return [];
+  }
+}
+
+function __writeAutoBackups(arr){
+  try{
+    const next = Array.isArray(arr) ? arr : [];
+    localStorage.setItem(MV_AUTO_BACKUPS_KEY, JSON.stringify(next));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __createAutoBackupNow(reason){
+  try{
+    let raw = "";
+    try{ raw = localStorage.getItem(LS_KEY) || ""; }catch(_){}
+    if(!raw){
+      try{ raw = JSON.stringify(state); }catch(_){}
+    }
+    if(!raw) return false;
+    let parsedState = null;
+    try{ parsedState = JSON.parse(raw); }catch(_){ return false; }
+    if(!parsedState || typeof parsedState !== "object") return false;
+    const now = new Date();
+    const backup = {
+      id: `auto_${now.getTime()}`,
+      type: "auto",
+      savedAt: now.toISOString(),
+      savedAtTs: now.getTime(),
+      state: parsedState
+    };
+    const arr = __readAutoBackups();
+    try{
+      const last = arr.length ? arr[arr.length - 1] : null;
+      if(String(reason || "") !== "manual-test" && last && JSON.stringify(last.state || null) === raw) return false;
+    }catch(_){}
+    arr.push(backup);
+    const kept = arr.slice(-5);
+    __writeAutoBackups(kept);
+    localStorage.setItem(MV_LAST_AUTO_BACKUP_META_KEY, JSON.stringify({
+      type: "auto",
+      savedAt: backup.savedAt,
+      savedAtTs: backup.savedAtTs,
+      reason: String(reason || "")
+    }));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __buildAutoBackupFilename(){
+  try{
+    const d = new Date();
+    const yyyy = String(d.getFullYear());
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    return `MV_AUTO_${yyyy}-${mm}-${dd}_${hh}-${mi}.json`;
+  }catch(_){
+    return `MV_AUTO_${Date.now()}.json`;
+  }
+}
+
+function __getCurrentStateJsonForBackup(){
+  try{
+    if(typeof LS_KEY !== "undefined"){
+      const raw = localStorage.getItem(LS_KEY);
+      if(raw && String(raw).trim()) return String(raw);
+    }
+  }catch(_){}
+  try{
+    if(typeof state !== "undefined" && state){
+      return JSON.stringify(state);
+    }
+  }catch(_){}
+  return "";
+}
+
+function __buildAutoBackupPayload(){
+  try{
+    const stateJson = __getCurrentStateJsonForBackup();
+    if(!stateJson) return "";
+    const parsed = JSON.parse(stateJson);
+    return JSON.stringify({
+      name: "Mi Viaje Auto Backup",
+      type: "auto",
+      savedAt: new Date().toISOString(),
+      state: parsed
+    });
+  }catch(_){
+    return "";
+  }
+}
+
+// FASE 3B:
+// El autobackup crea:
+// 1) copia interna para metadata/seguridad
+// 2) archivo visible MV_AUTO_...json mediante mvTools.writeBackupFile
+// state.json sigue siendo el estado vivo sincronizado y NO se usa como backup histórico.
+function __writeVisibleAutoBackupFile(reason){
+  try{
+    if(!(typeof __mvPostTools === "function")) return false;
+    const filename = __buildAutoBackupFilename();
+    const json = __buildAutoBackupPayload();
+    if(!filename || !json) return false;
+    const ok = __mvPostTools({
+      action: "writeBackupFile",
+      filename: filename,
+      json: json,
+      reason: String(reason || "auto")
+    });
+    return !!ok;
+  }catch(_){
+    return false;
+  }
+}
+
+function __renderLastAutoBackupInfo(){
+  try{
+    const el = document.getElementById("toolsLastAutoBackupLine");
+    if(!el) return;
+    let raw = "";
+    try{ raw = localStorage.getItem(MV_LAST_AUTO_BACKUP_META_KEY) || ""; }catch(_){}
+    let meta = null;
+    if(raw){
+      try{ meta = JSON.parse(raw); }catch(_){}
+    }
+    if(!meta || !meta.savedAtTs){
+      el.textContent = `${t("tools.engines.lastAutoBackup")}: ${t("tools.engines.autoBackupUnavailable")}`;
+      return;
+    }
+    const d = new Date(Number(meta.savedAtTs || 0));
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = String(d.getFullYear());
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    el.textContent = `${t("tools.engines.lastAutoBackup")}: ${dd}/${mm}/${yyyy} · ${hh}:${mi}`;
+  }catch(_){}
+}
+try{ window.__renderLastAutoBackupInfo = __renderLastAutoBackupInfo; }catch(_){}
+
+// FASE 2 AUTOBACKUP:
+// Se crea backup automático interno tras cambios reales del estado,
+// con debounce y sin duplicar copias idénticas.
+// Exportar/Importar manual permanece independiente.
+function __scheduleAutoBackup(reason){
+  try{
+    clearTimeout(window.__mvAutoBackupTimer);
+    window.__mvAutoBackupTimer = setTimeout(function(){
+      try{
+        let snapshot = "";
+        try{ snapshot = localStorage.getItem(LS_KEY) || ""; }catch(_){}
+        if(!snapshot){
+          try{ snapshot = JSON.stringify(state); }catch(_){}
+        }
+        if(!snapshot) return;
+        if(window.__mvLastAutoBackupSnapshot === snapshot) return;
+        if(__createAutoBackupNow(reason || "auto-save")){
+          window.__mvLastAutoBackupSnapshot = snapshot;
+          try{ __renderLastAutoBackupInfo(); }catch(_){}
+          try{ __writeVisibleAutoBackupFile("auto-save"); }catch(_){}
+        }
+      }catch(_){}
+    }, 8000);
+  }catch(_){}
+}
+
+function __renderBackupFolderInfo(){
+  try{
+    const line = document.getElementById("toolsBackupFolderLine");
+    const hint = document.getElementById("toolsBackupFolderHint");
+    if(!line) return;
+    const folderName = String(window.__mvLinkedFolderName || "").trim();
+    line.textContent = folderName
+      ? __tFmt("tools.engines.backupFolderLinkedLine", { name: folderName })
+      : t("tools.engines.backupFolderUnavailableLine");
+    if(hint) hint.textContent = t("tools.engines.backupFolderHint");
+  }catch(_){}
+}
+try{ window.__renderBackupFolderInfo = __renderBackupFolderInfo; }catch(_){}
 document.addEventListener("DOMContentLoaded", function(){
   try{ __renderLastManualBackupInfo(); }catch(_){}
+  try{ __renderLastAutoBackupInfo(); }catch(_){}
+  try{ __renderBackupFolderInfo(); }catch(_){}
 }, { passive: true });
+
+window.addEventListener("mvBackupWriteResult", function(ev){
+  try{
+    const d = (ev && ev.detail) ? ev.detail : {};
+    if(!d || !d.ok) return;
+    try{ window.__mvLastVisibleAutoBackupFilename = String(d.filename || ""); }catch(_){}
+  }catch(_){}
+}, false);
 
 function __toggleToolsEnginesAcc(){
   try{
@@ -11046,8 +11287,9 @@ function __writeIcloudStateNowIfNeeded(){
 // La lectura aún NO se conmuta por motor; eso irá en una fase posterior si hace falta.
 function __persistStateBySelectedStorageMode(){
   try{
-    __writeLocalStateNow();
+    const localOk = __writeLocalStateNow();
     __writeIcloudStateNowIfNeeded();
+    if(localOk && typeof __scheduleAutoBackup === "function") __scheduleAutoBackup("state-change");
     try{
       if(typeof __notifScheduleSyncToIOS === "function") __notifScheduleSyncToIOS();
     }catch(_){}
@@ -21429,6 +21671,126 @@ overlay.classList.remove("hidden");
       return false;
     }
   }
+  const MV_WEB_ATTACHMENTS_FOLDER_META_KEY = "MV_WEB_ATTACHMENTS_FOLDER_META_V1";
+  function __mvSupportsWebFolderAccess(){
+    try{ return typeof window.showDirectoryPicker === "function"; }catch(_){ return false; }
+  }
+  function __mvReadWebTripFolderMeta(){
+    try{
+      var raw = localStorage.getItem(MV_WEB_ATTACHMENTS_FOLDER_META_KEY);
+      if(!raw) return null;
+      var meta = JSON.parse(raw);
+      if(!meta || !meta.picked) return null;
+      return meta;
+    }catch(_){
+      return null;
+    }
+  }
+  function __mvWriteWebTripFolderMeta(meta){
+    try{
+      var clean = (meta && typeof meta === "object") ? meta : {};
+      localStorage.setItem(MV_WEB_ATTACHMENTS_FOLDER_META_KEY, JSON.stringify({
+        picked: !!clean.picked,
+        name: String(clean.name || ""),
+        ts: Number(clean.ts || Date.now())
+      }));
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+  async function __mvPickWebTripFolder(){
+    try{
+      if(!__mvSupportsWebFolderAccess()) return false;
+      var handle = await window.showDirectoryPicker({ mode:"read" });
+      if(!handle) return false;
+      window.__mvWebTripFolderHandle = handle;
+      __mvWriteWebTripFolderMeta({
+        picked: true,
+        name: String(handle.name || ""),
+        ts: Date.now()
+      });
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+  async function __mvEnsureWebTripFolderSelected(){
+    try{
+      if(window.__mvWebTripFolderHandle) return true;
+    }catch(_){}
+    if(!__mvSupportsWebFolderAccess()) return false;
+    return !!(await __mvPickWebTripFolder());
+  }
+  async function __mvResolveWebAttachmentFileHandle(relPath){
+    try{
+      var root = window.__mvWebTripFolderHandle;
+      var rp = String(relPath || "").trim();
+      if(!root || !rp) return null;
+      var parts = rp.split("/").map(function(x){ return String(x || "").trim(); }).filter(Boolean);
+      if(!parts.length) return null;
+      var cur = root;
+      for(var i=0;i<parts.length;i++){
+        var part = parts[i];
+        var isLast = i === parts.length - 1;
+        if(isLast){
+          return await cur.getFileHandle(part);
+        }
+        cur = await cur.getDirectoryHandle(part);
+      }
+      return null;
+    }catch(_){
+      return null;
+    }
+  }
+  function __mvOpenAttachmentWeb(file){
+    try{
+      var f = (file && typeof file === "object") ? file : {};
+      var pick = [
+        String(f.url || "").trim(),
+        String(f.dataUrl || "").trim(),
+        String(f.blobUrl || "").trim(),
+        String(f.relPath || "").trim(),
+        String(f.path || "").trim()
+      ].find(function(v){ return !!v; }) || "";
+      if(!pick) return false;
+      var looksOpenable = /^(https?:|data:|blob:|\/|\.\/|\.\.\/)/i.test(pick);
+      if(!looksOpenable) return false;
+      var win = window.open(pick, "_blank", "noopener");
+      return !!win;
+    }catch(_){
+      return false;
+    }
+  }
+  async function __mvOpenAttachmentWebFromFolder(file){
+    try{
+      if(__mvOpenAttachmentWeb(file)) return true;
+      var f = (file && typeof file === "object") ? file : {};
+      var relPath = String(f.relPath || f.path || "").trim();
+      if(!relPath) return false;
+      var ok = await __mvEnsureWebTripFolderSelected();
+      if(!ok){
+        try{ toast(t("attach.webFolder.needPick")); }catch(_){}
+        return false;
+      }
+      var fh = await __mvResolveWebAttachmentFileHandle(relPath);
+      if(!fh){
+        try{ toast(t("attach.webFolder.notFound")); }catch(_){}
+        return false;
+      }
+      var realFile = await fh.getFile();
+      if(!realFile) return false;
+      var blobUrl = URL.createObjectURL(realFile);
+      var win = window.open(blobUrl, "_blank", "noopener");
+      if(!win){
+        try{ URL.revokeObjectURL(blobUrl); }catch(_){}
+        return false;
+      }
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
   function __mvEnsureAttachmentsArray(obj){
     try{ if(!obj) return []; }catch(_){ return []; }
     if(!Array.isArray(obj.attachments)) obj.attachments = [];
@@ -21441,10 +21803,14 @@ overlay.classList.remove("hidden");
             id: String(x.id||""),
             name: String(x.name||"Adjunto"),
             relPath: String(x.relPath||""),
+            path: String(x.path||""),
+            url: String(x.url||""),
+            dataUrl: String(x.dataUrl||""),
+            blobUrl: String(x.blobUrl||""),
             addedAt: Number(x.addedAt||x.createdAt||Date.now()),
             context: (x.context && typeof x.context === "object") ? x.context : null
           }))
-          .filter(x=>x.relPath || x.name);
+          .filter(x=>x.relPath || x.path || x.url || x.dataUrl || x.blobUrl || x.name);
       }
     }catch(_){}
     // Back-compat por si algo sigue leyendo obj.files
@@ -21483,10 +21849,27 @@ overlay.classList.remove("hidden");
       __mvRenderAttachSummaryLine(obj);
     }catch(_){}
   }
+  function __mvRenderWebAttachFolderInfo(){
+    try{
+      var line = document.getElementById("mvWebAttachFolderLine");
+      var btn = document.getElementById("mvWebAttachPickFolderBtn");
+      if(!line) return;
+      var meta = __mvReadWebTripFolderMeta();
+      if(meta && meta.name){
+        line.textContent = t("attach.webFolder.linked").replace("{name}", String(meta.name));
+      }else{
+        line.textContent = t("attach.webFolder.none");
+      }
+      if(btn){
+        btn.textContent = (meta && meta.name) ? t("attach.webFolder.change") : t("attach.webFolder.pick");
+      }
+    }catch(_){}
+  }
   function __mvRenderAttachList(obj){
     try{
       var host = document.getElementById("mvAttachBody");
       if(!host) return;
+      var hasBridge = __mvHasAttachmentsBridge();
 
       var arr = __mvEnsureAttachmentsArray(obj).slice().sort(function(a,b){
         return (Number((a&&a.addedAt)||0) - Number((b&&b.addedAt)||0));
@@ -21503,9 +21886,9 @@ overlay.classList.remove("hidden");
               '<div style="font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(name)+'</div>' +
               sub +
             '</div>' +
-            '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;flex:0 0 auto">' +
+            '<div style="display:grid;grid-template-columns:repeat('+(hasBridge ? '2' : '1')+',minmax(0,1fr));gap:8px;flex:0 0 auto">' +
               '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="open" data-att-id="'+escapeHtml(id)+'" data-att-rel="'+escapeHtml(rel)+'">'+escapeHtml(t("attach.open"))+'</button>' +
-              '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="delete" data-att-id="'+escapeHtml(id)+'" data-att-rel="'+escapeHtml(rel)+'">'+escapeHtml(t("attach.delete"))+'</button>' +
+              (hasBridge ? '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="delete" data-att-id="'+escapeHtml(id)+'" data-att-rel="'+escapeHtml(rel)+'">'+escapeHtml(t("attach.delete"))+'</button>' : '') +
             '</div>' +
           '</div>'
         );
@@ -21513,10 +21896,17 @@ overlay.classList.remove("hidden");
 
       host.innerHTML = (
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-          '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' +
+          (hasBridge ? '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' : '') +
         '</div>' +
+        (!hasBridge ? (
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:14px;background:rgba(248,250,252,.9)">' +
+            '<div id="mvWebAttachFolderLine" class="text-xs" style="opacity:.8;min-width:0;flex:1"></div>' +
+            '<button id="mvWebAttachPickFolderBtn" class="tap" type="button" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px;flex:0 0 auto"></button>' +
+          '</div>'
+        ) : '') +
         '<div style="margin-top:10px">' + rows + '</div>'
       );
+      if(!hasBridge) __mvRenderWebAttachFolderInfo();
 
       var addBtn = document.getElementById("attAddFile");
       if(addBtn && !addBtn.__mvBound){
@@ -21551,6 +21941,12 @@ overlay.classList.remove("hidden");
           var f = files[idx] || {};
 
           if(action === "open"){
+            if(!hasBridge){
+              Promise.resolve(__mvOpenAttachmentWebFromFolder(f)).then(function(opened){
+                if(!opened){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } }
+              }).catch(function(){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } });
+              return;
+            }
             var rp = String(rel || f.relPath || "").trim();
             if(!rp){ try{ toast(t("attach.noPathOpen")); }catch(_){ } return; }
             __mvPostAttachment({ action:"openAttachment", relPath: rp });
@@ -21558,6 +21954,7 @@ overlay.classList.remove("hidden");
           }
 
           if(action === "delete"){
+            if(!hasBridge) return;
             var rp2 = String(rel || f.relPath || "").trim();
             files.splice(idx, 1);
             __mvSafeSaveAfterAttachmentChange();
@@ -21567,6 +21964,19 @@ overlay.classList.remove("hidden");
             try{ toast(t("attach.deleted")); }catch(_){ }
             return;
           }
+        }, true);
+      }
+
+      var pickBtn = document.getElementById("mvWebAttachPickFolderBtn");
+      if(pickBtn && !pickBtn.__mvBound){
+        pickBtn.__mvBound = true;
+        pickBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          Promise.resolve(__mvPickWebTripFolder()).then(function(){
+            __mvRenderAttachList(obj);
+          }).catch(function(){
+            __mvRenderAttachList(obj);
+          });
         }, true);
       }
     }catch(e){ try{ console.log("__mvRenderAttachList error", e); }catch(_){ } }
@@ -21724,6 +22134,7 @@ overlay.classList.remove("hidden");
         __setIcloudFolderLine();
         __refreshIcloudDiag();
         __refreshToolsStatus();
+        try{ if(window.__renderBackupFolderInfo) window.__renderBackupFolderInfo(); }catch(_){}
       }catch(_){}
     }, false);
   }
@@ -21886,20 +22297,6 @@ document.addEventListener("DOMContentLoaded", function(){
         return group;
       };
 
-      moveNode(document.getElementById("toolsIcloudAcc"));
-      makeAccordionGroup("toolsRefreshGroup", "toolsRefreshGroupAcc", getLang()==="en" ? "Refresh & maintenance" : "Recarga y mantenimiento", [
-        document.getElementById("btnForceRefreshApp"),
-        document.getElementById("toolsBuildRefreshMeta"),
-        document.getElementById("btnHardRefreshApp")
-      ]);
-      makeGroup("toolsGeminiGroup", "Gemini", [
-        document.getElementById("btnGeminiKey"),
-        document.getElementById("btnGeminiKey") ? document.getElementById("btnGeminiKey").nextElementSibling : null
-      ]);
-      makeAccordionGroup("toolsDiagnosticsGroup", "toolsDiagnosticsGroupAcc", t("tools.appDiagnostics"), [
-        document.getElementById("toolsDiagnosticsPanel")
-      ]);
-
       var enginesAcc = document.getElementById("toolsEnginesAcc");
       if(!enginesAcc){
         enginesAcc = document.createElement("div");
@@ -21926,13 +22323,37 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
+              <div class="text-xs text-slate-500" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
+              <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
               <input id="inputImportTripJson" type="file" accept=".json,application/json" class="hidden" />
             </div>
             <div class="mt-3 text-xs text-slate-500" id="toolsEngineHelp" data-i18n="tools.engines.help">Este bloque prepara la convivencia entre almacenamiento local, iCloud Drive y backups JSON sin mezclar datos por error.</div>
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3" id="toolsWebappContinuityHelp">
+              <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.webappHelpTitle">Continuidad App → WebApp</div>
+              <div class="mt-1 text-xs text-slate-600" data-i18n="tools.engines.webappHelpBody">Si en algún momento necesitas seguir en la webapp, exporta un backup JSON desde la app e impórtalo allí. Así podrás continuar con la última versión guardada del viaje.</div>
+            </div>
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3" id="toolsBackupFolderBox">
+              <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.backupFolderTitle">Carpeta de backups</div>
+              <div class="mt-2 text-sm text-slate-700" id="toolsBackupFolderLine">Carpeta vinculada backups: no disponible</div>
+              <div class="mt-2 text-xs text-slate-500" id="toolsBackupFolderHint">Para cambiar de carpeta, usar “Cambiar carpeta” en Sincronizar iCloud.</div>
+            </div>
           </div>
         `;
       }
+      moveNode(document.getElementById("toolsIcloudAcc"));
       advancedBody.appendChild(enginesAcc);
+      makeAccordionGroup("toolsRefreshGroup", "toolsRefreshGroupAcc", getLang()==="en" ? "Refresh & maintenance" : "Recarga y mantenimiento", [
+        document.getElementById("btnForceRefreshApp"),
+        document.getElementById("toolsBuildRefreshMeta"),
+        document.getElementById("btnHardRefreshApp")
+      ]);
+      makeAccordionGroup("toolsDiagnosticsGroup", "toolsDiagnosticsGroupAcc", t("tools.appDiagnostics"), [
+        document.getElementById("toolsDiagnosticsPanel")
+      ]);
+      makeGroup("toolsGeminiGroup", "Gemini", [
+        document.getElementById("btnGeminiKey"),
+        document.getElementById("btnGeminiKey") ? document.getElementById("btnGeminiKey").nextElementSibling : null
+      ]);
 
       var enginesHead = enginesAcc.querySelector('[data-acc="toolsEngines"]');
       if(enginesHead && !enginesHead.__mvBound){
@@ -21975,6 +22396,20 @@ document.addEventListener("DOMContentLoaded", function(){
           try{ inputImportTripJson.click(); }catch(_){}
         }, true);
       }
+      var btnCreateAutoBackupNow = document.getElementById("btnCreateAutoBackupNow");
+      if(btnCreateAutoBackupNow && !btnCreateAutoBackupNow.__mvBound){
+        btnCreateAutoBackupNow.__mvBound = true;
+        btnCreateAutoBackupNow.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          try{
+            if(__createAutoBackupNow("manual-test")){
+              __renderLastAutoBackupInfo();
+              try{ __writeVisibleAutoBackupFile("manual-test"); }catch(_){}
+              try{ toast(t("toast.autoBackupCreated")); }catch(_){} 
+            }
+          }catch(_){} 
+        }, true);
+      }
       if(inputImportTripJson && !inputImportTripJson.__mvBound){
         inputImportTripJson.__mvBound = true;
         inputImportTripJson.addEventListener("change", async function(ev){
@@ -21986,6 +22421,8 @@ document.addEventListener("DOMContentLoaded", function(){
         });
       }
       try{ __renderLastManualBackupInfo(); }catch(_){}
+      try{ __renderLastAutoBackupInfo(); }catch(_){}
+      try{ __renderBackupFolderInfo(); }catch(_){}
 
       [
         ["btnStorageEngineAuto", "auto"],
