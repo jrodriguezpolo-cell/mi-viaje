@@ -2180,6 +2180,10 @@ const I18N = {
     "attach.webFolder.notFound": "No se encontró el adjunto en la carpeta seleccionada",
     "attach.originalName": "Archivo original",
     "attach.renameDone": "Nombre actualizado",
+    "attach.pathCopied": "Ruta copiada",
+    "attach.instructions.title": "Cómo usar adjuntos en webapp",
+    "attach.instructions.body": "1. Copia la dirección de la carpeta de adjuntos.\n2. Si quieres añadir un fichero, búscalo en Archivos.\n3. Cuando lo tengas localizado, muévelo a la carpeta de adjuntos que has copiado.\n4. Renómbralo directamente en Archivos para identificarlo fácilmente.\n5. Si quieres abrir un archivo ya guardado, copia primero la dirección de la carpeta.\n6. Pega esa dirección en el buscador de Archivos.\n7. Cuando llegues a la carpeta, pulsa sobre el nombre del archivo para abrirlo.",
+    "attach.instructions.button": "Instrucciones",
     "attach.noPathRecv": "No se recibió la ruta del adjunto",
     "attach.confirmDel": "¿Eliminar este archivo adjunto?",
     "attach.deleted": "Adjunto eliminado",
@@ -2634,6 +2638,10 @@ const I18N = {
     "attach.webFolder.notFound": "Attachment not found in the selected folder",
     "attach.originalName": "Original file",
     "attach.renameDone": "Name updated",
+    "attach.pathCopied": "Path copied",
+    "attach.instructions.title": "How to use attachments in the web app",
+    "attach.instructions.body": "1. Copy the attachments folder path.\n2. If you want to add a file, find it in Files.\n3. Once located, move it to the copied attachments folder.\n4. Rename it directly in Files so it is easy to identify.\n5. If you want to open an existing file, first copy the folder path.\n6. Paste that path into the Files search box.\n7. Once you reach the folder, tap the file name to open it.",
+    "attach.instructions.button": "Instructions",
     "attach.noPathRecv": "Attachment path not received",
     "attach.confirmDel": "Delete this attachment?",
     "attach.deleted": "Attachment removed",
@@ -4651,11 +4659,38 @@ function __copyToClipboardFallback(t){
   }
 }
 
+function __getWebAttachmentsPathDisplay(){
+  try{
+    var linked = (typeof __getKnownIcloudFolderName === "function") ? String(__getKnownIcloudFolderName() || "").trim() : "";
+    if(linked) return linked.replace(/\/+$/,"") + "/attachments";
+  }catch{}
+  try{
+    var trip = (typeof getTripName === "function") ? String(getTripName() || "").trim() : "";
+    if(trip) return trip.replace(/\/+$/,"") + "/attachments";
+  }catch{}
+  return "attachments";
+}
+
+function __openWebAttachmentsInstructions(){
+  try{
+    const btn = document.createElement("button");
+    btn.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
+    btn.textContent = t("sheet.close");
+    btn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} closeModal(); };
+    showModal(
+      t("attach.instructions.title"),
+      `<div class="whitespace-pre-wrap text-sm text-slate-700">${__eh(t("attach.instructions.body"))}</div>`,
+      [btn]
+    );
+  }catch{}
+}
+
 function __renderAttachmentsModal(){
   const ctx = window.__attachmentsCtx || {};
   const obj = ctx.obj;
   if(!obj) return;
   const hasNativeBridge = (typeof __mvHasAttachmentsBridge === "function") ? __mvHasAttachmentsBridge() : false;
+  const webAttachPath = __getWebAttachmentsPathDisplay();
 
   const files = __ensureFilesArray(obj).slice().sort((a,b)=>(a?.createdAt||0)-(b?.createdAt||0));
   const has = files.length>0;
@@ -4689,9 +4724,22 @@ function __renderAttachmentsModal(){
   const bodyHtml = `
     <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <button id="attAddFile" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold">Archivo</button>
+        <button id="attAddFile" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold">${__eh(hasNativeBridge ? "Archivo" : "Adjuntar archivo")}</button>
+        ${hasNativeBridge ? `` : `<button id="mvWebAttachInstructionsBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold" type="button">${__eh(t("attach.instructions.button"))}</button>`}
       </div>
     </div>
+    ${hasNativeBridge ? `` : `
+      <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Carpeta adjuntos</div>
+        <div class="mt-2 flex items-center justify-between gap-2">
+          <div id="mvWebAttachPathLine" class="text-sm text-slate-700 min-w-0 flex-1">
+            <span class="font-semibold">Carpeta adjuntos:</span>
+            <span id="mvWebAttachPathValue" class="break-all">${__eh(webAttachPath)}</span>
+          </div>
+          <button id="mvWebAttachCopyPathBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold shrink-0" type="button">Copiar</button>
+        </div>
+      </div>
+    `}
     <div class="mt-3">${listHtml}</div>
   `;
 
@@ -4714,7 +4762,21 @@ function __renderAttachmentsModal(){
       __mvPostAttachment({ action:"pickAttachment", context: ctxPayload });
       return;
     }
-    __pickAndRegisterExternalFile({ accept:"*/*" });
+    __openWebAttachmentsInstructions();
+  };
+
+  const bCopyPath = document.getElementById("mvWebAttachCopyPathBtn");
+  if(bCopyPath) bCopyPath.onclick = (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    __copyToClipboard(webAttachPath).then((ok)=>{
+      try{ toast(ok ? t("attach.pathCopied") : t("attachments.copyFailed")); }catch{}
+    });
+  };
+
+  const bInstructions = document.getElementById("mvWebAttachInstructionsBtn");
+  if(bInstructions) bInstructions.onclick = (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    __openWebAttachmentsInstructions();
   };
 
   // Bind list actions (delegated inside modalBody)
