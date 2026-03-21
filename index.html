@@ -4676,7 +4676,11 @@ function __openWebAttachmentsInstructions(){
     const btn = document.createElement("button");
     btn.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
     btn.textContent = t("sheet.close");
-    btn.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} closeModal(); };
+    btn.onclick = (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      closeModal();
+      try{ __renderAttachmentsModal(); }catch{}
+    };
     showModal(
       t("attach.instructions.title"),
       `<div class="whitespace-pre-wrap text-sm text-slate-700">${__eh(t("attach.instructions.body"))}</div>`,
@@ -4762,7 +4766,7 @@ function __renderAttachmentsModal(){
       __mvPostAttachment({ action:"pickAttachment", context: ctxPayload });
       return;
     }
-    __openWebAttachmentsInstructions();
+    __pickAndRegisterExternalFile({ accept:"*/*" });
   };
 
   const bCopyPath = document.getElementById("mvWebAttachCopyPathBtn");
