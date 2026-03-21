@@ -2185,7 +2185,7 @@ const I18N = {
     "attach.renameDone": "Nombre actualizado",
     "attach.pathCopied": "Ruta copiada",
     "attach.instructions.title": "Cómo usar adjuntos en webapp",
-    "attach.instructions.body": "1. Copia la dirección de la carpeta de adjuntos.\n2. Si quieres añadir un fichero, búscalo en Archivos.\n3. Cuando lo tengas localizado, muévelo a la carpeta de adjuntos que has copiado.\n4. Renómbralo directamente en Archivos para identificarlo fácilmente.\n5. Si quieres abrir un archivo ya guardado, copia primero la dirección de la carpeta.\n6. Pega esa dirección en el buscador de Archivos.\n7. Cuando llegues a la carpeta, pulsa sobre el nombre del archivo para abrirlo.",
+    "attach.instructions.body": "1. Copia la dirección de la carpeta de adjuntos.\n2. Si quieres añadir un fichero, búscalo en Archivos.\n3. Cuando lo tengas localizado, muévelo a la carpeta de adjuntos que has copiado.\n4. Renómbralo directamente en Archivos para identificarlo fácilmente.\n5. Si quieres abrir un archivo ya guardado, copia primero el nombre en “Copiar nombre”.\n6. Pega ese nombre en el buscador de Archivos.\n7. Cuando llegues a la carpeta, pulsa sobre el nombre del archivo para abrirlo.",
     "attach.instructions.button": "Instrucciones",
     "common.copy": "Copiar",
     "attach.noPathRecv": "No se recibió la ruta del adjunto",
@@ -2647,7 +2647,7 @@ const I18N = {
     "attach.renameDone": "Name updated",
     "attach.pathCopied": "Path copied",
     "attach.instructions.title": "How to use attachments in the web app",
-    "attach.instructions.body": "1. Copy the attachments folder path.\n2. If you want to add a file, find it in Files.\n3. Once located, move it to the copied attachments folder.\n4. Rename it directly in Files so it is easy to identify.\n5. If you want to open an existing file, first copy the folder path.\n6. Paste that path into the Files search box.\n7. Once you reach the folder, tap the file name to open it.",
+    "attach.instructions.body": "1. Copy the attachments folder path.\n2. If you want to add a file, find it in Files.\n3. Once located, move it to the copied attachments folder.\n4. Rename it directly in Files so it is easy to identify.\n5. If you want to open a file that is already saved, first copy its name using “Copy name”.\n6. Paste that name into the Files search box.\n7. Once you reach the folder, tap the file name to open it.",
     "attach.instructions.button": "Instructions",
     "common.copy": "Copy",
     "attach.noPathRecv": "Attachment path not received",
@@ -3447,11 +3447,8 @@ function __renderBackupFolderInfo(){
     const hint = document.getElementById("toolsBackupFolderHint");
     const input = document.getElementById("toolsBackupFolderPathInput");
     if(!line) return;
-    const folderName = __getKnownIcloudFolderName();
-    line.textContent = folderName
-      ? __tFmt("tools.engines.backupFolderLinkedLine", { name: folderName })
-      : t("tools.engines.backupFolderUnavailableLine");
-    if(hint) hint.textContent = t("tools.engines.backupFolderHint");
+    line.textContent = getLang()==="en" ? "Linked backup folder" : "Carpeta vinculada Backups";
+    if(hint) hint.remove();
     if(input){
       input.placeholder = t("tools.engines.backupFolderPathPlaceholder");
       if(!input.__mvHydrated){
@@ -22980,17 +22977,16 @@ document.addEventListener("DOMContentLoaded", function(){
             </div>
             <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3" id="toolsBackupFolderBox">
               <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.backupFolderTitle">Carpeta de backups</div>
-              <div class="mt-2 text-sm text-slate-700" id="toolsBackupFolderLine">Carpeta vinculada backups: no disponible</div>
+              <div class="mt-2 text-sm text-slate-700" id="toolsBackupFolderLine">Carpeta vinculada Backups</div>
               <div class="mt-2 flex items-center gap-2">
-                <input id="toolsBackupFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" type="text" placeholder="Pega aquí la ruta de la carpeta de backups" />
+                <input id="toolsBackupFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px" type="text" placeholder="Pega aquí la ruta de la carpeta de backups" />
                 <button id="toolsBackupFolderCopyBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold shrink-0" type="button" data-i18n="common.copy">Copiar</button>
               </div>
-              <div class="mt-2 text-xs text-slate-500" id="toolsBackupFolderHint">Para cambiar de carpeta, usar “Cambiar carpeta” en Sincronizar iCloud.</div>
             </div>
             <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3" id="toolsAttachmentsFolderBox">
               <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.attachmentsFolderTitle">Carpeta de archivos adjuntos</div>
               <div class="mt-2 flex items-center gap-2">
-                <input id="toolsAttachmentsFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700" type="text" placeholder="Pega aquí la ruta de la carpeta de archivos adjuntos" />
+                <input id="toolsAttachmentsFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px" type="text" placeholder="Pega aquí la ruta de la carpeta de archivos adjuntos" />
                 <button id="toolsAttachmentsFolderCopyBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold shrink-0" type="button" data-i18n="common.copy">Copiar</button>
               </div>
             </div>
