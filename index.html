@@ -390,7 +390,7 @@ function __eventSheetDeleteCurrent(){
 .tlTimeNone{ background: rgba(148,163,184,0.10); color:#475569; }
 
 
-/* --- v88c2: Tools bottom sheet (iOS-style) --- */
+/* --- Tools modal centered --- */
 #toolsBackdrop{
   opacity: 0;
   transition: opacity .22s ease;
@@ -401,14 +401,41 @@ function __eventSheetDeleteCurrent(){
   pointer-events: auto;
 }
 #toolsSheet{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
   pointer-events: none;
-  transform: translateY(105%);
-  transition: transform .28s cubic-bezier(.2,.8,.2,1);
-  will-change: transform;
+  opacity: 0;
+  transform: scale(.985);
+  transition: opacity .22s ease, transform .22s ease;
+  will-change: opacity, transform;
 }
 #toolsSheet.open{
   pointer-events: auto;
-  transform: translateY(0);
+  opacity: 1;
+  transform: scale(1);
+}
+#toolsSheet > div{
+  width: min(560px, 92vw);
+  max-width: min(560px, 92vw);
+  margin: auto;
+  padding: 0;
+}
+#toolsSheet > div > div{
+  width: 100%;
+  max-height: 82vh;
+  margin: 0 auto;
+  border-radius: 24px;
+  overflow: hidden;
+}
+#toolsSheet > div > div > .p-5{
+  max-height: calc(82vh - 72px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 
 
