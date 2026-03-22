@@ -1847,7 +1847,7 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnPrefs" data-i18n="tools.preferences">
             Preferencias
           </button>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnNotifications" data-i18n="tools.notifications">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold hidden" id="btnNotifications" data-i18n="tools.notifications">
             Notificaciones
           </button>
 <div class="accItem" id="toolsAdvancedAcc">
@@ -23304,6 +23304,13 @@ document.addEventListener("DOMContentLoaded", function(){
         "iCalendar",
         [document.getElementById("toolsICalendarGroup")]
       );
+      try{
+        var iCalendarAcc = document.getElementById("toolsICalendarAcc");
+        var prefsBtn = document.getElementById("btnPrefs");
+        if(iCalendarAcc && prefsBtn && prefsBtn.parentNode){
+          prefsBtn.insertAdjacentElement("afterend", iCalendarAcc);
+        }
+      }catch(_){}
       makeAccordionGroup("toolsRefreshGroup", "toolsRefreshGroupAcc", getLang()==="en" ? "Refresh & maintenance" : "Recarga y mantenimiento", [
         document.getElementById("btnForceRefreshApp"),
         document.getElementById("toolsBuildRefreshMeta"),
