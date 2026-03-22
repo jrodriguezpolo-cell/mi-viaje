@@ -1895,7 +1895,7 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnCopyBtoA" data-i18n="tools.copyBtoA">
             Copiar B → A
           </button>
-<div class="text-xs text-slate-500" style="margin:10px 0 6px;opacity:.85" data-i18n="tools.irreversible">Acción irreversible</div>
+<div class="text-xs text-slate-500 hidden" style="margin:10px 0 6px;opacity:.85" data-i18n="tools.irreversible">Acción irreversible</div>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold hidden" id="toolsReset" data-i18n="tools.restartTrip">
             Reiniciar viaje
           </button>
@@ -18260,65 +18260,13 @@ $("btnTrips").addEventListener("click", openTripsModal);
   if (copyAtoBBtn) copyAtoBBtn.classList.add("hidden");
   if (copyBtoABtn) copyBtoABtn.classList.add("hidden");
 
-  const openResetTripModal = ()=>{
-    try{ if(resetTripBackdrop) resetTripBackdrop.classList.remove("hidden"); }catch{}
-    try{ if(resetTripModal) resetTripModal.classList.remove("hidden"); }catch{}
-  };
-  const closeResetTripModal = ()=>{
-    try{ if(resetTripBackdrop) resetTripBackdrop.classList.add("hidden"); }catch{}
-    try{ if(resetTripModal) resetTripModal.classList.add("hidden"); }catch{}
-  };
-  const resetCurrentSimulationsOnly = ()=>{
-    try{
-      if(!state || typeof state !== "object") return false;
-      const letters = ["A","B","C","D"];
-      if(!state.scenarios || typeof state.scenarios !== "object") state.scenarios = {};
-      letters.forEach((L)=>{
-        state.scenarios[L] = (typeof emptyScenario === "function") ? emptyScenario() : {
-          legs: [],
-          stays: [],
-          meals: { daily: 0, people: "", days: "" },
-          miscExpenses: [],
-          activities: [],
-          dailyNotes: {}
-        };
-      });
-      state.scenario = "A";
-      state.scenarioCount = 1;
-      try{ if(typeof saveState === "function") saveState(); }catch{}
-      try{ if(typeof saveAppState === "function") saveAppState(); }catch{}
-      try{ if(typeof renderAll === "function") renderAll(); }catch{}
-      try{ if(typeof renderScenarioTabs === "function") renderScenarioTabs(); }catch{}
-      try{ toast("Simulaciones reiniciadas"); }catch{}
-      return true;
-    }catch(_){
-      return false;
-    }
-  };
-
-  if (resetTripHeaderBtn) resetTripHeaderBtn.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    openResetTripModal();
-  });
-  if (resetTripCancelBtn) resetTripCancelBtn.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    closeResetTripModal();
-  });
-  if (resetTripBackdrop) resetTripBackdrop.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    closeResetTripModal();
-  });
-  if (resetTripConfirmBtn) resetTripConfirmBtn.addEventListener("click", (e)=>{
-    try{ e.preventDefault(); e.stopPropagation(); }catch{}
-    closeResetTripModal();
-    try{
-      if(resetCurrentSimulationsOnly()) return;
-      if(typeof resetSimulations==="function") resetSimulations();
-      else if(typeof __resetSimulations==="function") __resetSimulations();
-      else if(typeof resetTrip==="function") resetTrip();
-      else try{ toast("Reset pendiente"); }catch(_){ console.log("Reset pending"); }
-    }catch(_){}
-  });
+  if (resetTripHeaderBtn && resetBtn && !resetTripHeaderBtn.__mvBoundReset){
+    resetTripHeaderBtn.__mvBoundReset = true;
+    resetTripHeaderBtn.addEventListener("click", (e)=>{
+      try{ e.preventDefault(); e.stopPropagation(); }catch{}
+      try{ resetBtn.click(); }catch(_){}
+    }, true);
+  }
 
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
