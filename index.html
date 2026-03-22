@@ -3513,13 +3513,13 @@ function __openBackupVersionCheckModal(compare){
     updateBtn.textContent = t("backupCheck.update");
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      var ok = canUpdate ? __loadNewestAvailableBackup() : false;
       __closeBackupVersionCheckModal();
-      if(ok){
-        try{ __refreshToolsStatus(); }catch(_){}
-      }else{
-        try{ toast("Actualizar: pendiente de conectar"); }catch(_){ try{ console.log("Update latest backup pending"); }catch(__){} }
-      }
+      try{ toast("Selecciona el backup más reciente (.json)"); }catch(_){}
+      try{
+        var inp = document.getElementById("inputImportTripJson");
+        if(inp) inp.click();
+        else { try{ toast("❌ No se encontró el selector de import"); }catch(_){} }
+      }catch(_){}
     };
     ov.classList.remove("hidden");
     box.classList.remove("hidden");
