@@ -2187,6 +2187,14 @@ const I18N = {
     "attach.instructions.title": "Cómo usar adjuntos en webapp",
     "attach.instructions.body": "1. Copia la dirección de la carpeta de adjuntos.\n2. Si quieres añadir un fichero, búscalo en Archivos.\n3. Cuando lo tengas localizado, muévelo a la carpeta de adjuntos que has copiado.\n4. Renómbralo directamente en Archivos para identificarlo fácilmente.\n5. Si quieres abrir un archivo ya guardado, copia primero el nombre en “Copiar nombre”.\n6. Pega ese nombre en el buscador de Archivos.\n7. Cuando llegues a la carpeta, pulsa sobre el nombre del archivo para abrirlo.",
     "attach.instructions.button": "Instrucciones",
+    "backupCheck.upToDateTitle": "Versión actual al día",
+    "backupCheck.upToDateBody": "Estás usando el backup más reciente disponible.",
+    "backupCheck.newerTitle": "Hay un backup más reciente",
+    "backupCheck.newerBody": "Se ha detectado un backup más reciente que el que estás usando ahora.",
+    "backupCheck.continue": "Continuar",
+    "backupCheck.continueOld": "Continuar sin actualizar",
+    "backupCheck.update": "Actualizar a la más reciente",
+    "tools.exportICS": "Exportar a Calendario (.ics)",
     "common.copy": "Copiar",
     "attach.noPathRecv": "No se recibió la ruta del adjunto",
     "attach.confirmDel": "¿Eliminar este archivo adjunto?",
@@ -2649,6 +2657,14 @@ const I18N = {
     "attach.instructions.title": "How to use attachments in the web app",
     "attach.instructions.body": "1. Copy the attachments folder path.\n2. If you want to add a file, find it in Files.\n3. Once located, move it to the copied attachments folder.\n4. Rename it directly in Files so it is easy to identify.\n5. If you want to open a file that is already saved, first copy its name using “Copy name”.\n6. Paste that name into the Files search box.\n7. Once you reach the folder, tap the file name to open it.",
     "attach.instructions.button": "Instructions",
+    "backupCheck.upToDateTitle": "Up to date",
+    "backupCheck.upToDateBody": "You are using the latest available backup.",
+    "backupCheck.newerTitle": "A newer backup is available",
+    "backupCheck.newerBody": "A newer backup has been detected than the one you are currently using.",
+    "backupCheck.continue": "Continue",
+    "backupCheck.continueOld": "Continue without updating",
+    "backupCheck.update": "Update to the latest",
+    "tools.exportICS": "Export to Calendar (.ics)",
     "common.copy": "Copy",
     "attach.noPathRecv": "Attachment path not received",
     "attach.confirmDel": "Delete this attachment?",
@@ -2938,6 +2954,7 @@ const MV_STORAGE_ENGINE_PREF_V1 = "MV_STORAGE_ENGINE_PREF_V1";
 const MV_LAST_MANUAL_BACKUP_META_KEY = "MV_LAST_MANUAL_BACKUP_META_V1";
 const MV_AUTO_BACKUPS_KEY = "MV_AUTO_BACKUPS_V1";
 const MV_LAST_AUTO_BACKUP_META_KEY = "MV_LAST_AUTO_BACKUP_META_V1";
+const MV_CURRENT_LOADED_BACKUP_META_KEY = "MV_CURRENT_LOADED_BACKUP_META_V1";
 const MV_ICLOUD_FOLDER_META_KEY = "MV_ICLOUD_FOLDER_META_V1";
 const MV_WEB_BACKUP_REMINDER_KEY = "MV_WEB_BACKUP_REMINDER_V1";
 const MV_MANUAL_BACKUP_PATH_KEY = "MV_MANUAL_BACKUP_PATH_V1";
@@ -3239,6 +3256,187 @@ function __readLastManualBackupMeta(){
     return meta;
   }catch(_){
     return null;
+  }
+}
+
+function __getCurrentLoadedBackupMeta(){
+  try{
+    var raw = localStorage.getItem(MV_CURRENT_LOADED_BACKUP_META_KEY);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      if(parsed && Number(parsed.referenceTs || 0) > 0) return parsed;
+    }
+  }catch(_){}
+  try{
+    var meta = (typeof getMeta === "function") ? getMeta() : {};
+    var iso = String((meta && (meta.lastSavedAt || meta.lastExportAt || meta.lastSyncAt)) || "").trim();
+    var ts = iso ? Date.parse(iso) : 0;
+    if(ts > 0){
+      return {
+        referenceTs: ts,
+        source: "current-session"
+      };
+    }
+  }catch(_){}
+  return null;
+}
+
+function __setCurrentLoadedBackupMeta(meta){
+  try{
+    var ts = Number(meta && meta.referenceTs || 0);
+    if(!(ts > 0)) return false;
+    localStorage.setItem(MV_CURRENT_LOADED_BACKUP_META_KEY, JSON.stringify({
+      referenceTs: ts,
+      source: String((meta && meta.source) || "unknown")
+    }));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __getNewestAvailableBackupMeta(){
+  try{
+    var candidates = [];
+    try{
+      var manualMeta = __readLastManualBackupMeta();
+      var manualTs = Number(manualMeta && manualMeta.savedAtTs || 0);
+      if(manualTs > 0){
+        candidates.push({ referenceTs: manualTs, source: "manual", canLoadDirectly: false });
+      }
+    }catch(_){}
+    try{
+      var autoRaw = localStorage.getItem(MV_LAST_AUTO_BACKUP_META_KEY) || "";
+      var autoMeta = autoRaw ? JSON.parse(autoRaw) : null;
+      var autoTs = Number(autoMeta && autoMeta.savedAtTs || 0);
+      if(autoTs > 0){
+        candidates.push({ referenceTs: autoTs, source: "auto", canLoadDirectly: true });
+      }
+    }catch(_){}
+    if(!candidates.length) return null;
+    candidates.sort(function(a, b){ return Number(b.referenceTs || 0) - Number(a.referenceTs || 0); });
+    return candidates[0] || null;
+  }catch(_){
+    return null;
+  }
+}
+
+function __compareCurrentVsNewestBackup(){
+  try{
+    var current = __getCurrentLoadedBackupMeta();
+    var newest = __getNewestAvailableBackupMeta();
+    var currentTs = Number(current && current.referenceTs || 0);
+    var newestTs = Number(newest && newest.referenceTs || 0);
+    if(!(currentTs > 0) || !(newestTs > 0)){
+      return {
+        currentTs: currentTs,
+        newestTs: newestTs,
+        hasNewer: false,
+        newestSource: newest ? newest.source : "",
+        newestCanLoadDirectly: !!(newest && newest.canLoadDirectly)
+      };
+    }
+    return {
+      currentTs: currentTs,
+      newestTs: newestTs,
+      hasNewer: newestTs > currentTs,
+      newestSource: newest ? newest.source : "",
+      newestCanLoadDirectly: !!(newest && newest.canLoadDirectly)
+    };
+  }catch(_){
+    return {
+      currentTs: 0,
+      newestTs: 0,
+      hasNewer: false,
+      newestSource: "",
+      newestCanLoadDirectly: false
+    };
+  }
+}
+
+function __closeBackupVersionCheckModal(){
+  try{
+    var ov = document.getElementById("backupVersionCheckBackdrop");
+    var box = document.getElementById("backupVersionCheckModal");
+    if(ov) ov.classList.add("hidden");
+    if(box) box.classList.add("hidden");
+    window.__mvBackupVersionCheckOpen = false;
+  }catch(_){}
+}
+
+function __loadNewestAvailableBackup(){
+  try{
+    var newest = __getNewestAvailableBackupMeta();
+    if(!newest || newest.source !== "auto" || !newest.canLoadDirectly) return false;
+    var arr = __readAutoBackups();
+    if(!Array.isArray(arr) || !arr.length) return false;
+    var targetTs = Number(newest.referenceTs || 0);
+    var backup = arr.find(function(item){ return Number(item && item.savedAtTs || 0) === targetTs; }) || arr[arr.length - 1];
+    if(!backup || !backup.state || typeof backup.state !== "object") return false;
+    localStorage.setItem(LS_KEY, JSON.stringify(backup.state));
+    try{ if(typeof loadState === "function") loadState(); else state = backup.state; }catch(_){ state = backup.state; }
+    try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
+    __setCurrentLoadedBackupMeta({
+      referenceTs: Number(backup.savedAtTs || targetTs || Date.now()),
+      source: "auto-backup"
+    });
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __openBackupVersionCheckModal(compare){
+  try{
+    if(!__isWebBackupReminderContext()) return false;
+    if(window.__mvBackupVersionCheckOpen) return false;
+    var ov = document.getElementById("backupVersionCheckBackdrop");
+    var box = document.getElementById("backupVersionCheckModal");
+    var title = document.getElementById("backupVersionCheckTitle");
+    var body = document.getElementById("backupVersionCheckBody");
+    var continueBtn = document.getElementById("backupVersionCheckContinueBtn");
+    var updateBtn = document.getElementById("backupVersionCheckUpdateBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    var hasNewer = !!(compare && compare.hasNewer);
+    title.textContent = t(hasNewer ? "backupCheck.newerTitle" : "backupCheck.upToDateTitle");
+    body.textContent = t(hasNewer ? "backupCheck.newerBody" : "backupCheck.upToDateBody");
+    continueBtn.textContent = t(hasNewer ? "backupCheck.continueOld" : "backupCheck.continue");
+    continueBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __closeBackupVersionCheckModal();
+    };
+    var canUpdate = !!(hasNewer && compare && compare.newestCanLoadDirectly);
+    updateBtn.classList.toggle("hidden", !canUpdate);
+    updateBtn.textContent = t("backupCheck.update");
+    updateBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      if(!canUpdate) return;
+      var ok = __loadNewestAvailableBackup();
+      __closeBackupVersionCheckModal();
+      if(ok){
+        try{ __refreshToolsStatus(); }catch(_){}
+      }
+    };
+    ov.classList.remove("hidden");
+    box.classList.remove("hidden");
+    window.__mvBackupVersionCheckOpen = true;
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __maybeShowBackupVersionCheckOnOpen(){
+  try{
+    if(!__isWebBackupReminderContext()) return false;
+    if(window.__mvBackupVersionCheckShown) return false;
+    var compare = __compareCurrentVsNewestBackup();
+    if(!compare) return false;
+    if(!(Number(compare.currentTs || 0) > 0) || !(Number(compare.newestTs || 0) > 0)) return false;
+    window.__mvBackupVersionCheckShown = true;
+    return __openBackupVersionCheckModal(compare);
+  }catch(_){
+    return false;
   }
 }
 
@@ -3598,10 +3796,22 @@ async function __importTripJsonBackup(file){
     }
     try{ if(typeof pushBackup === "function") pushBackup("before_json_import", { fromFileName: file.name || null }); }catch(_){}
     try{ localStorage.setItem(LS_KEY, JSON.stringify(nextState)); }catch(_){}
+    try{
+      var importedTs = 0;
+      try{ importedTs = Date.parse(String(parsed && parsed.savedAt || "")) || 0; }catch(_){}
+      if(!(importedTs > 0)){
+        try{ importedTs = Number(file && file.lastModified || 0); }catch(_){}
+      }
+      if(!(importedTs > 0)) importedTs = Date.now();
+      __setCurrentLoadedBackupMeta({
+        referenceTs: importedTs,
+        source: "manual-import"
+      });
+    }catch(_){}
     try{ if(typeof loadState === "function") loadState(); else state = nextState; }catch(_){ state = nextState; }
-    try{ if(typeof saveState === "function") saveState(); }catch(_){}
-    try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
-    try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
+    try{ if(typeof saveState === "function") saveState(); }catch(_){} 
+    try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){} 
+    try{ if(typeof renderAll === "function") renderAll(); }catch(_){} 
     try{ __refreshToolsStatus(); }catch(_){}
     try{ toast(t("toast.backupImported")); }catch(_){}
     return true;
@@ -18311,6 +18521,15 @@ window.addEventListener('DOMContentLoaded', () => {
   try { __renderToolsDiagnostics(); } catch {}
   try { __refreshToolsStatus(); } catch {}
   try { if(typeof __mvRequestFolderInfo === "function") __mvRequestFolderInfo(); } catch {}
+  try {
+    if(!localStorage.getItem(MV_CURRENT_LOADED_BACKUP_META_KEY)){
+      var currentMeta = __getCurrentLoadedBackupMeta();
+      if(currentMeta && Number(currentMeta.referenceTs || 0) > 0){
+        __setCurrentLoadedBackupMeta(currentMeta);
+      }
+    }
+  } catch {}
+  try { __maybeShowBackupVersionCheckOnOpen(); } catch {}
   try { __startNotificationsEngine(); } catch {}
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
@@ -21967,6 +22186,17 @@ QA checklist (V89D1):
 </div>
 </div>
 </div>
+<div class="hidden fixed inset-0 z-[2502] bg-slate-900/45" id="backupVersionCheckBackdrop"></div>
+<div class="hidden fixed inset-0 z-[2503] flex items-center justify-center p-5" id="backupVersionCheckModal">
+<div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5" id="backupVersionCheckCard">
+<div class="text-xl font-extrabold text-slate-900" id="backupVersionCheckTitle">Versión actual al día</div>
+<div class="mt-2 text-sm text-slate-600" id="backupVersionCheckBody">Estás usando el backup más reciente disponible.</div>
+<div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="backupVersionCheckContinueBtn" type="button">Continuar</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900 hidden" id="backupVersionCheckUpdateBtn" type="button">Actualizar a la más reciente</button>
+</div>
+</div>
+</div>
 <div class="hidden sheetMiniModal" id="sheetAttachModal">
 <div class="sheetMiniHeader">
 <div class="sheetMiniTitle" data-i18n="attach.modalTitle">Adjuntar archivo</div>
@@ -22957,6 +23187,7 @@ document.addEventListener("DOMContentLoaded", function(){
             <div class="mt-3 flex flex-col gap-2">
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
+              <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportICS" type="button" data-i18n="tools.exportICS">Exportar a Calendario (.ics)</button>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
               <div class="text-xs text-slate-500" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
