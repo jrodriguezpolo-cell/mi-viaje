@@ -3482,15 +3482,16 @@ function __openBackupVersionCheckModal(compare){
       __closeBackupVersionCheckModal();
     };
     var canUpdate = !!(hasNewer && compare && compare.newestCanLoadDirectly);
-    updateBtn.classList.toggle("hidden", !canUpdate);
+    updateBtn.classList.toggle("hidden", !hasNewer);
     updateBtn.textContent = t("backupCheck.update");
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      if(!canUpdate) return;
-      var ok = __loadNewestAvailableBackup();
+      var ok = canUpdate ? __loadNewestAvailableBackup() : false;
       __closeBackupVersionCheckModal();
       if(ok){
         try{ __refreshToolsStatus(); }catch(_){}
+      }else{
+        try{ toast("Actualizar: pendiente de conectar"); }catch(_){ try{ console.log("Update latest backup pending"); }catch(__){} }
       }
     };
     ov.classList.remove("hidden");
@@ -23281,12 +23282,12 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
-              <div class="text-xs text-slate-500" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
-              <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
+              <div class="text-xs text-slate-500 hidden" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
+              <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold hidden" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
               <input id="inputImportTripJson" type="file" accept=".json,application/json" class="hidden" />
             </div>
-            <div class="mt-3 text-xs text-slate-500" id="toolsEngineHelp" data-i18n="tools.engines.help">Este bloque prepara la convivencia entre almacenamiento local, iCloud Drive y backups JSON sin mezclar datos por error.</div>
-            <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3" id="toolsWebappContinuityHelp">
+            <div class="mt-3 text-xs text-slate-500 hidden" id="toolsEngineHelp" data-i18n="tools.engines.help">Este bloque prepara la convivencia entre almacenamiento local, iCloud Drive y backups JSON sin mezclar datos por error.</div>
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 hidden" id="toolsWebappContinuityHelp">
               <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.webappHelpTitle">Continuidad App → WebApp</div>
               <div class="mt-1 text-xs text-slate-600" data-i18n="tools.engines.webappHelpBody">Si en algún momento necesitas seguir en la webapp, exporta un backup JSON desde la app e impórtalo allí. Así podrás continuar con la última versión guardada del viaje.</div>
             </div>
@@ -23304,6 +23305,13 @@ document.addEventListener("DOMContentLoaded", function(){
               <div class="mt-2 flex items-center gap-2">
                 <input id="toolsBackupFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px" type="text" placeholder="Pega aquí la ruta de la carpeta de backups" />
                 <button id="toolsBackupFolderCopyBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold shrink-0" type="button" data-i18n="common.copy">Copiar</button>
+              </div>
+            </div>
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3" id="toolsAttachmentsFolderBox">
+              <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500" data-i18n="tools.engines.attachmentsFolderTitle">Carpeta de archivos adjuntos</div>
+              <div class="mt-2 flex items-center gap-2">
+                <input id="toolsAttachmentsFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px" type="text" placeholder="Pega aquí la ruta de la carpeta de archivos adjuntos" />
+                <button id="toolsAttachmentsFolderCopyBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold shrink-0" type="button" data-i18n="common.copy">Copiar</button>
               </div>
             </div>
             <div class="mt-3 flex flex-col gap-2" id="toolsICalendarGroup">
