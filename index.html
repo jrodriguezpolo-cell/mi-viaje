@@ -24118,6 +24118,19 @@ function __mvICS_BuildEventsFromState(){
   const prefs = __getICSExportPrefs();
   const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
   const events = [];
+  const fallbackUidPart = function(prefix, obj){
+    try{
+      const parts = [
+        prefix,
+        String(obj && (obj.date || obj.arriveDate || obj.checkoutDate || "") || "").trim(),
+        String(obj && (obj.time || obj.arriveTime || obj.checkoutTime || "") || "").trim(),
+        String(obj && (obj.title || obj.name || obj.from || obj.to || obj.city || "") || "").trim()
+      ].filter(Boolean);
+      return parts.join("-").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || `${prefix}-item`;
+    }catch(_){
+      return `${prefix}-item`;
+    }
+  };
   if(!sc || typeof sc !== "object") return events;
 
   if(prefs.includeLegs){
@@ -24134,8 +24147,9 @@ function __mvICS_BuildEventsFromState(){
         const from = String((leg && (leg.from || leg.placeOut)) || "").trim();
         const to = String((leg && (leg.to || leg.placeIn)) || "").trim();
         const mode = String((leg && leg.mode) || "").trim();
+        const stableId = String((leg && leg.id) || fallbackUidPart("leg", leg));
         events.push({
-          uid: `leg-${String(leg && leg.id || Math.random().toString(36).slice(2))}@miviaje`,
+          uid: `leg-${stableId}@mv`,
           start: start,
           end: end,
           summary: `Mi Viaje · Transporte${from || to ? ` · ${from || "—"} → ${to || "—"}` : ""}`,
@@ -24161,8 +24175,9 @@ function __mvICS_BuildEventsFromState(){
         if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
         const name = String((stay && (stay.name || stay.hotel)) || "").trim();
         const city = String((stay && stay.city) || "").trim();
+        const stableId = String((stay && stay.id) || fallbackUidPart("stay", stay));
         events.push({
-          uid: `stay-${String(stay && stay.id || Math.random().toString(36).slice(2))}@miviaje`,
+          uid: `stay-${stableId}@mv`,
           start: start,
           end: end,
           summary: `Mi Viaje · Alojamiento${name ? ` · ${name}` : ""}`,
@@ -24187,8 +24202,9 @@ function __mvICS_BuildEventsFromState(){
         if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
         const title = String((act && (act.title || act.name)) || "Actividad").trim();
         const city = String((act && act.city) || "").trim();
+        const stableId = String((act && act.id) || fallbackUidPart("act", act));
         events.push({
-          uid: `act-${String(act && act.id || Math.random().toString(36).slice(2))}@miviaje`,
+          uid: `act-${stableId}@mv`,
           start: start,
           end: end,
           summary: `Mi Viaje · ${title}`,
