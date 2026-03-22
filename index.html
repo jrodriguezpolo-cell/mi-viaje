@@ -1519,9 +1519,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 .mvHideInWeb{ display:block; }
 body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 .accItem{ border:1px solid rgba(226,232,240,1); border-radius:16px; background:#fff; overflow:hidden; }
-.accHead{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; font-weight:900; }
-.accTitle{ font-size:14px; }
-.accChevron{ opacity:.7; font-weight:900; }
+.accHead{ position:relative; display:flex; align-items:center; justify-content:center; width:100%; padding:12px 44px 12px 14px; font-weight:900; text-align:center; }
+.accTitle{ flex:1; font-size:14px; font-weight:900; text-align:center; }
+.accChevron{ position:absolute; right:14px; top:50%; transform:translateY(-50%); opacity:.7; font-weight:900; }
 .accBody{ padding:12px 14px; background:rgba(248,250,252,.9); }
 </style>
 </head>
@@ -1850,16 +1850,16 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
 <button class="mvLegacyLocal tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold hidden" data-legacy="local-save" id="toolsLoad" data-i18n="app.load">
             Cargar
           </button>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnPrefs" data-i18n="tools.preferences">
-            Preferencias
-          </button>
+<button class="accItem accHead tap w-full" id="btnPrefs" data-i18n="tools.preferences">
+<span class="accTitle">Preferencias</span>
+</button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold hidden" id="btnNotifications" data-i18n="tools.notifications">
             Notificaciones
           </button>
 <div class="accItem" id="toolsAdvancedAcc">
-<button class="tap relative w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center" type="button" data-acc="toolsAdvanced">
-<div data-i18n="tools.advanced">Avanzado</div>
-<div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">▾</div>
+<button class="accHead tap w-full" type="button" data-acc="toolsAdvanced">
+<div class="accTitle" data-i18n="tools.advanced">Avanzado</div>
+<div class="accChevron">▾</div>
 </button>
 <div class="accBody hidden" data-acc-body="toolsAdvanced">
 <div class="text-sm text-slate-600" style="margin-bottom:10px;opacity:.9" data-i18n="tools.systemHelp">
