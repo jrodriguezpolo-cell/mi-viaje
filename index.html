@@ -23948,6 +23948,74 @@ window.addEventListener("DOMContentLoaded", ()=>{ try{ __initTimelineNotesFab();
     if(__v195MealsField(a)) __v195SyncAndKeep(a);
   }, {passive:true});
 })();
+
+function __mvICS_Escape(s){
+  return String(s||"")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;")
+    .trim();
+}
+
+function __mvICS_FormatDT(dt){
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,"0");
+  const d = String(dt.getDate()).padStart(2,"0");
+  const hh = String(dt.getHours()).padStart(2,"0");
+  const mm = String(dt.getMinutes()).padStart(2,"0");
+  const ss = "00";
+  return `${y}${m}${d}T${hh}${mm}${ss}`;
+}
+
+function __mvDownloadTextFile(filename, text){
+  const blob = new Blob([text], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){}; try{ a.remove(); }catch(_){}; }, 3000);
+}
+
+window.__mvExportICS = function(){
+  try{
+    const now = new Date();
+    const start = new Date(now.getTime() + 60*60*1000);
+    const end   = new Date(now.getTime() + 2*60*60*1000);
+    const uid = "mv-test-" + Math.random().toString(36).slice(2) + "@miviaje";
+    const dtstamp = __mvICS_FormatDT(new Date());
+
+    const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Mi Viaje//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${dtstamp}
+DTSTART:${__mvICS_FormatDT(start)}
+DTEND:${__mvICS_FormatDT(end)}
+SUMMARY:${__mvICS_Escape("Mi Viaje · Evento de prueba")}
+DESCRIPTION:${__mvICS_Escape("Exportación iCalendar de prueba")}
+BEGIN:VALARM
+TRIGGER:-PT60M
+ACTION:DISPLAY
+DESCRIPTION:${__mvICS_Escape("Recordatorio")}
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    __mvDownloadTextFile("mi-viaje.ics", ics);
+    try{ toast("📅 Archivo .ics generado"); }catch(_){}
+  }catch(e){
+    console.log("ICS export failed", e);
+    try{ toast("❌ No se pudo generar .ics"); }catch(_){}
+  }
+};
 </script>
 </body>
 </html>
