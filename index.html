@@ -1515,6 +1515,9 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
   border: 1px solid rgba(37,99,235,0.30);
   background: rgba(37,99,235,0.12);
 }
+/* Hide iCloud UI in webapp (keep for iOS native app) */
+.mvHideInWeb{ display:block; }
+body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1797,7 +1800,7 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 </div>
 </div>
 </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden" id="toolsIcloudAcc">
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden mvHideInWeb" id="toolsIcloudAcc">
 <button class="w-full tap flex items-center justify-between px-4 py-4" type="button" data-acc="icloudSync">
 <div class="text-left">
 <div class="font-extrabold" data-i18n="icloud.title">Sincronización iCloud</div>
@@ -23151,6 +23154,7 @@ document.addEventListener("DOMContentLoaded", function(){
   try{
     if(typeof window.__MV_SHOW_LEGACY_LOCAL === "undefined") window.__MV_SHOW_LEGACY_LOCAL = false;
     var isIOSApp = !!(window.webkit && window.webkit.messageHandlers);
+    try{ document.body.setAttribute("data-ios-app", (isIOSApp ? "1" : "0")); }catch(_){}
     if(isIOSApp && !window.__MV_SHOW_LEGACY_LOCAL){
       document.querySelectorAll(".mvLegacyLocal, [data-legacy='local-save']").forEach(function(el){
         try{ el.classList.add("hidden"); }catch(_){}
