@@ -14182,6 +14182,39 @@ function jumpToItem(kind, id) {
   });
 }
 
+window.__mvHandleDeepLinkOnLoad = function(){
+  try {
+    const h = String(location.hash || "");
+    if (!h || !h.startsWith("#open=")) return false;
+    const raw = decodeURIComponent(h.slice(6));
+    const parts = String(raw || "").split(":");
+    const kind = String(parts[0] || "").trim().toLowerCase();
+    const id = String(parts.slice(1).join(":") || "").trim();
+    if (!kind || !id) return false;
+
+    const viewMap = { leg: "legs", stay: "stays", act: "acts" };
+    const targetView = viewMap[kind] || "";
+    if (targetView && typeof setView === "function") {
+      try { setView(targetView); } catch {}
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          if (typeof openEventSheet === "function") {
+            openEventSheet({ kind: kind, id: id, mode: "view", sourceView: targetView || "timeline" });
+            return;
+          }
+        } catch {}
+        try { jumpToItem(kind, id); } catch {}
+      });
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 
 /* ---------------- Item notes (timeline CRUD) ---------------- */
 
@@ -18608,6 +18641,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (_tlNext) _tlNext.onclick = (e) => { e.preventDefault(); e.stopPropagation(); moveActiveDay(1); };
   
   renderAll();
+  try { window.__mvHandleDeepLinkOnLoad(); } catch {}
   try { __renderToolsDiagnostics(); } catch {}
   try { __refreshToolsStatus(); } catch {}
   try { if(typeof __mvRequestFolderInfo === "function") __mvRequestFolderInfo(); } catch {}
@@ -18621,6 +18655,14 @@ window.addEventListener('DOMContentLoaded', () => {
   } catch {}
   try { __maybeShowBackupVersionCheckOnOpen(); } catch {}
   try { __startNotificationsEngine(); } catch {}
+  try {
+    if(!window.__mvBoundHashOpen){
+      window.__mvBoundHashOpen = true;
+      window.addEventListener("hashchange", function(){
+        try { window.__mvHandleDeepLinkOnLoad(); } catch {}
+      });
+    }
+  } catch {}
   try { setView('timeline'); } catch {}
   // Capture stable template for fixed timeline controls (robust against hidden/visibility changes)
   try {
@@ -24191,6 +24233,8 @@ function __mvICS_BuildEventsFromState(){
         const mode = String((leg && leg.mode) || "").trim();
         const stableId = String((leg && leg.id) || fallbackUidPart("leg", leg));
         events.push({
+          kind: "leg",
+          id: stableId,
           uid: `leg-${stableId}@mv`,
           start: start,
           end: end,
@@ -24219,6 +24263,8 @@ function __mvICS_BuildEventsFromState(){
         const city = String((stay && stay.city) || "").trim();
         const stableId = String((stay && stay.id) || fallbackUidPart("stay", stay));
         events.push({
+          kind: "stay",
+          id: stableId,
           uid: `stay-${stableId}@mv`,
           start: start,
           end: end,
@@ -24246,6 +24292,8 @@ function __mvICS_BuildEventsFromState(){
         const city = String((act && act.city) || "").trim();
         const stableId = String((act && act.id) || fallbackUidPart("act", act));
         events.push({
+          kind: "act",
+          id: stableId,
           uid: `act-${stableId}@mv`,
           start: start,
           end: end,
@@ -24272,6 +24320,7 @@ window.__mvExportICS = function(){
       return;
     }
     const body = events.map(function(ev){
+      const deep = MV_WEBAPP_URL + "#open=" + encodeURIComponent(String((ev && ev.kind) || "") + ":" + String((ev && ev.id) || ""));
       return [
         "BEGIN:VEVENT",
         `UID:${ev.uid}`,
@@ -24280,7 +24329,7 @@ window.__mvExportICS = function(){
         `DTEND:${__mvICS_FormatDT(ev.end)}`,
         `SUMMARY:${__mvICS_Escape(ev.summary)}`,
         `DESCRIPTION:${__mvICS_Escape(ev.description)}`,
-        `URL:${MV_WEBAPP_URL}`,
+        `URL:${deep}`,
         "BEGIN:VALARM",
         `TRIGGER:${trigger}`,
         "ACTION:DISPLAY",
