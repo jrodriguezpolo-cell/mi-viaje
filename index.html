@@ -24299,7 +24299,8 @@ function __mvICS_BuildEventsFromState(){
           start: start,
           end: end,
           summary: `Mi Viaje · Transporte${from || to ? ` · ${from || "—"} → ${to || "—"}` : ""}`,
-          description: [mode, from, to].filter(Boolean).join(" · ")
+          description: [mode, from, to].filter(Boolean).join(" · "),
+          note: String((leg && (leg.notes || leg.note)) || "").trim()
         });
       }catch(_){}
     });
@@ -24329,7 +24330,8 @@ function __mvICS_BuildEventsFromState(){
           start: start,
           end: end,
           summary: `Mi Viaje · Alojamiento${name ? ` · ${name}` : ""}`,
-          description: [city, name].filter(Boolean).join(" · ")
+          description: [city, name].filter(Boolean).join(" · "),
+          note: String((stay && (stay.notes || stay.note)) || "").trim()
         });
       }catch(_){}
     });
@@ -24358,7 +24360,8 @@ function __mvICS_BuildEventsFromState(){
           start: start,
           end: end,
           summary: `Mi Viaje · ${title}`,
-          description: city
+          description: city,
+          note: String((act && (act.notes || act.note)) || "").trim()
         });
       }catch(_){}
     });
@@ -24428,6 +24431,9 @@ window.__mvExportICS = function(){
     }
     const body = events.map(function(ev){
       const deep = MV_WEBAPP_URL + "#open=" + encodeURIComponent(String((ev && ev.kind) || "") + ":" + String((ev && ev.id) || ""));
+      const descBase = String((ev && ev.description) || "").trim();
+      const note = String((ev && ev.note) || "").trim();
+      const descFull = descBase + (note ? ((descBase ? "\n\n" : "") + "Nota:\n" + note) : "");
       return [
         "BEGIN:VEVENT",
         `UID:${ev.uid}`,
@@ -24435,7 +24441,7 @@ window.__mvExportICS = function(){
         `DTSTART:${__mvICS_FormatDT(ev.start)}`,
         `DTEND:${__mvICS_FormatDT(ev.end)}`,
         `SUMMARY:${__mvICS_Escape(ev.summary)}`,
-        `DESCRIPTION:${__mvICS_Escape(ev.description)}`,
+        `DESCRIPTION:${__mvICS_Escape(descFull)}`,
         `URL:${deep}`,
         __mvICS_AlarmsBlock().trimEnd(),
         "END:VEVENT"
