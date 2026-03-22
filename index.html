@@ -1857,7 +1857,7 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
             Notificaciones
           </button>
 <div class="accItem" id="toolsAdvancedAcc">
-<button class="accHead tap w-full" id="btnToolsAdvancedToggle" type="button" data-acc="toolsAdvanced">
+<button class="accHead tap w-full" type="button" data-acc="toolsAdvanced">
 <div class="accTitle" data-i18n="tools.advanced">Avanzado</div>
 <div class="accChevron">▾</div>
 </button>
@@ -22321,27 +22321,6 @@ QA checklist (V89D1):
 (function(){
   function $(id){ return document.getElementById(id); }
 
-  document.addEventListener("DOMContentLoaded", function(){
-    var head = $("btnToolsAdvancedToggle");
-    var body = $("toolsAdvancedBody");
-    if(!head || !body) return;
-
-    // Evitar dobles binds
-    if(head.__mvBoundAdvanced) return;
-    head.__mvBoundAdvanced = true;
-
-    head.addEventListener("click", function(e){
-      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      body.classList.toggle("hidden");
-
-      // chevron opcional
-      try{
-        var icon = head.querySelector(".accChevron");
-        if(icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
-      }catch(_){}
-    }, true);
-  });
-
   function openSheetMiniModal(which){
     var overlay = $("sheetMiniOverlay");
     var attach  = $("sheetAttachModal");
@@ -23217,14 +23196,6 @@ document.addEventListener("DOMContentLoaded", function(){
 
   try{
     var advancedBody = document.getElementById("toolsAdvancedBody");
-    var toolsAdvancedHead = document.querySelector('#toolsAdvancedAcc [data-acc="toolsAdvanced"]');
-    if(toolsAdvancedHead && !toolsAdvancedHead.__mvBound){
-      toolsAdvancedHead.__mvBound = true;
-      toolsAdvancedHead.addEventListener("click", function(e){
-        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-        return __toggleToolsAdvancedSubAcc("toolsAdvancedAcc","toolsAdvanced");
-      });
-    }
     if(advancedBody && !advancedBody.__mvBuilt){
       advancedBody.__mvBuilt = true;
 
