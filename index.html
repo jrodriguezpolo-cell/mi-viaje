@@ -23398,7 +23398,7 @@ document.addEventListener("DOMContentLoaded", function(){
               <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3" id="icalAlarmsBox" style="margin-bottom:10px">
                 <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Avisos (iCalendar)</div>
                 <div class="mt-2 grid grid-cols-1 gap-2">
-                  <label class="text-sm font-semibold text-slate-700" for="icalAlarm1Select">Aviso 1</label>
+                  <label class="text-sm font-semibold text-slate-700" for="icalAlarm1Select">Aviso temprano</label>
                   <select id="icalAlarm1Select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px">
                     <option value="0">Sin aviso</option>
                     <option value="5">5 min</option>
@@ -23409,7 +23409,7 @@ document.addEventListener("DOMContentLoaded", function(){
                     <option value="120">2 horas</option>
                   </select>
 
-                  <label class="text-sm font-semibold text-slate-700" for="icalAlarm2Select" style="margin-top:6px">Aviso 2</label>
+                  <label class="text-sm font-semibold text-slate-700" for="icalAlarm2Select" style="margin-top:6px">Aviso cercano</label>
                   <select id="icalAlarm2Select" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px">
                     <option value="0">Sin aviso</option>
                     <option value="5">5 min</option>
@@ -24247,22 +24247,29 @@ function __mvICS_AlarmTrigger(minutes){
 function __mvICS_AlarmsBlock(){
   try{
     const pref = (typeof window.__mvGetIcalAlarms === "function") ? window.__mvGetIcalAlarms() : {a1:60,a2:15};
-    const a1 = Math.max(0, Math.floor(Number(pref.a1||0)));
-    const a2 = Math.max(0, Math.floor(Number(pref.a2||0)));
+    let a1 = Math.max(0, Math.floor(Number(pref.a1||0)));
+    let a2 = Math.max(0, Math.floor(Number(pref.a2||0)));
 
-    const blocks = [];
-    function addAlarm(min){
-      blocks.push(
-`BEGIN:VALARM
+    // dedupe
+    if(a1>0 && a2>0 && a1===a2) a2 = 0;
+
+    const mins = [];
+    if(a1>0) mins.push(a1);
+    if(a2>0) mins.push(a2);
+
+    // sort: early first (bigger minutes), then near
+    mins.sort((x,y)=> y - x);
+
+    function block(min){
+      return `BEGIN:VALARM
 TRIGGER:-PT${min}M
 ACTION:DISPLAY
 DESCRIPTION:Recordatorio
-END:VALARM`
-      );
+END:VALARM`;
     }
-    if(a1>0) addAlarm(a1);
-    if(a2>0 && a2!==a1) addAlarm(a2);
-    return blocks.length ? ("\n" + blocks.join("\n") + "\n") : "\n";
+
+    if(!mins.length) return "\n";
+    return "\n" + mins.map(block).join("\n") + "\n";
   }catch(_){
     return "\n";
   }
