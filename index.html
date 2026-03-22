@@ -2195,6 +2195,10 @@ const I18N = {
     "backupCheck.continueOld": "Continuar sin actualizar",
     "backupCheck.update": "Actualizar a la más reciente",
     "tools.exportICS": "Exportar a Calendario (.ics)",
+    "tools.ics.alertBefore": "Aviso antes",
+    "tools.ics.includeTransport": "Incluir Transporte",
+    "tools.ics.includeStays": "Incluir Alojamiento",
+    "tools.ics.includeActivities": "Incluir Actividades",
     "common.copy": "Copiar",
     "attach.noPathRecv": "No se recibió la ruta del adjunto",
     "attach.confirmDel": "¿Eliminar este archivo adjunto?",
@@ -2665,6 +2669,10 @@ const I18N = {
     "backupCheck.continueOld": "Continue without updating",
     "backupCheck.update": "Update to the latest",
     "tools.exportICS": "Export to Calendar (.ics)",
+    "tools.ics.alertBefore": "Alert before",
+    "tools.ics.includeTransport": "Include Transport",
+    "tools.ics.includeStays": "Include Accommodation",
+    "tools.ics.includeActivities": "Include Activities",
     "common.copy": "Copy",
     "attach.noPathRecv": "Attachment path not received",
     "attach.confirmDel": "Delete this attachment?",
@@ -2959,6 +2967,8 @@ const MV_ICLOUD_FOLDER_META_KEY = "MV_ICLOUD_FOLDER_META_V1";
 const MV_WEB_BACKUP_REMINDER_KEY = "MV_WEB_BACKUP_REMINDER_V1";
 const MV_MANUAL_BACKUP_PATH_KEY = "MV_MANUAL_BACKUP_PATH_V1";
 const MV_MANUAL_ATTACHMENTS_PATH_KEY = "MV_MANUAL_ATTACHMENTS_PATH_V1";
+const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
+const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
 
 function __getStorageEnginePref(){
   try{
@@ -3128,6 +3138,63 @@ function __getWebBackupReminderSetting(){
   }catch(_){
     return "on";
   }
+}
+
+function __getICSExportPrefs(){
+  try{
+    var minutes = Number(localStorage.getItem(MV_ICS_ALERT_MINUTES_KEY) || 60);
+    if([15,30,60,120].indexOf(minutes) === -1) minutes = 60;
+    var raw = localStorage.getItem(MV_ICS_INCLUDE_TYPES_KEY) || "";
+    var parsed = raw ? JSON.parse(raw) : {};
+    return {
+      minutes: minutes,
+      includeLegs: parsed && parsed.includeLegs !== false,
+      includeStays: parsed && parsed.includeStays !== false,
+      includeActivities: parsed && parsed.includeActivities !== false
+    };
+  }catch(_){
+    return { minutes: 60, includeLegs: true, includeStays: true, includeActivities: true };
+  }
+}
+
+function __saveICSExportPrefs(next){
+  try{
+    var safe = Object.assign({ minutes: 60, includeLegs: true, includeStays: true, includeActivities: true }, next || {});
+    var minutes = Number(safe.minutes || 60);
+    if([15,30,60,120].indexOf(minutes) === -1) minutes = 60;
+    localStorage.setItem(MV_ICS_ALERT_MINUTES_KEY, String(minutes));
+    localStorage.setItem(MV_ICS_INCLUDE_TYPES_KEY, JSON.stringify({
+      includeLegs: safe.includeLegs !== false,
+      includeStays: safe.includeStays !== false,
+      includeActivities: safe.includeActivities !== false
+    }));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __renderICSExportPrefs(){
+  try{
+    var prefs = __getICSExportPrefs();
+    var sel = document.getElementById("toolsICSAlertMinutes");
+    if(sel) sel.value = String(prefs.minutes);
+    [
+      ["btnICSIncludeLegs", prefs.includeLegs],
+      ["btnICSIncludeStays", prefs.includeStays],
+      ["btnICSIncludeActivities", prefs.includeActivities]
+    ].forEach(function(entry){
+      var btn = document.getElementById(entry[0]);
+      if(!btn) return;
+      var on = !!entry[1];
+      btn.classList.toggle("bg-slate-900", on);
+      btn.classList.toggle("text-white", on);
+      btn.classList.toggle("border-slate-900", on);
+      btn.classList.toggle("bg-white", !on);
+      btn.classList.toggle("text-slate-700", !on);
+      btn.classList.toggle("border-slate-200", !on);
+    });
+  }catch(_){}
 }
 
 function __setWebBackupReminderSetting(v){
@@ -23188,6 +23255,20 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportICS" type="button" data-i18n="tools.exportICS">Exportar a Calendario (.ics)</button>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <div class="text-xs font-semibold text-slate-600" data-i18n="tools.ics.alertBefore">Aviso antes</div>
+                <select id="toolsICSAlertMinutes" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+                  <option value="15">15 min</option>
+                  <option value="30">30 min</option>
+                  <option value="60">1 h</option>
+                  <option value="120">2 h</option>
+                </select>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeLegs" type="button" data-i18n="tools.ics.includeTransport">Incluir Transporte</button>
+                  <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeStays" type="button" data-i18n="tools.ics.includeStays">Incluir Alojamiento</button>
+                  <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeActivities" type="button" data-i18n="tools.ics.includeActivities">Incluir Actividades</button>
+                </div>
+              </div>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
               <div class="text-xs text-slate-500" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
@@ -23284,6 +23365,36 @@ document.addEventListener("DOMContentLoaded", function(){
           }catch(_){}
         }, true);
       }
+      var toolsICSAlertMinutes = document.getElementById("toolsICSAlertMinutes");
+      if(toolsICSAlertMinutes && !toolsICSAlertMinutes.__mvBound){
+        toolsICSAlertMinutes.__mvBound = true;
+        toolsICSAlertMinutes.addEventListener("change", function(){
+          try{
+            var prefs = __getICSExportPrefs();
+            prefs.minutes = Number(toolsICSAlertMinutes.value || 60);
+            __saveICSExportPrefs(prefs);
+            __renderICSExportPrefs();
+          }catch(_){}
+        });
+      }
+      [
+        ["btnICSIncludeLegs", "includeLegs"],
+        ["btnICSIncludeStays", "includeStays"],
+        ["btnICSIncludeActivities", "includeActivities"]
+      ].forEach(function(entry){
+        var btn = document.getElementById(entry[0]);
+        if(!btn || btn.__mvBoundICS) return;
+        btn.__mvBoundICS = true;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          try{
+            var prefs = __getICSExportPrefs();
+            prefs[entry[1]] = !prefs[entry[1]];
+            __saveICSExportPrefs(prefs);
+            __renderICSExportPrefs();
+          }catch(_){}
+        }, true);
+      });
 
       var btnImportTripJson = document.getElementById("btnImportTripJson");
       var inputImportTripJson = document.getElementById("inputImportTripJson");
@@ -23321,6 +23432,7 @@ document.addEventListener("DOMContentLoaded", function(){
       try{ __renderLastManualBackupInfo(); }catch(_){}
       try{ __renderLastAutoBackupInfo(); }catch(_){}
       try{ __renderBackupFolderInfo(); }catch(_){}
+      try{ __renderICSExportPrefs(); }catch(_){}
 
       [
         ["btnStorageEngineAuto", "auto"],
@@ -23980,13 +24092,142 @@ function __mvDownloadTextFile(filename, text){
   setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch(_){}; try{ a.remove(); }catch(_){}; }, 3000);
 }
 
+function __mvICS_ParseDateTime(dateStr, timeStr, fallbackTime){
+  try{
+    const d = String(dateStr || "").trim().slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+    var t = String(timeStr || "").trim();
+    if(!/^\d{2}:\d{2}$/.test(t)) t = String(fallbackTime || "09:00");
+    const dt = new Date(`${d}T${t}:00`);
+    return Number.isFinite(dt.getTime()) ? dt : null;
+  }catch(_){
+    return null;
+  }
+}
+
+function __mvICS_AddMinutes(dt, minutes){
+  return new Date(dt.getTime() + (Number(minutes || 0) * 60000));
+}
+
+function __mvICS_AlarmTrigger(minutes){
+  const n = Number(minutes || 60);
+  return `-PT${n}M`;
+}
+
+function __mvICS_BuildEventsFromState(){
+  const prefs = __getICSExportPrefs();
+  const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
+  const events = [];
+  if(!sc || typeof sc !== "object") return events;
+
+  if(prefs.includeLegs){
+    (Array.isArray(sc.legs) ? sc.legs : []).forEach(function(leg){
+      try{
+        const start = __mvICS_ParseDateTime(leg && leg.date, leg && (leg.time || leg.depTime || leg.departTime || leg.departureTime), "09:00");
+        if(!start) return;
+        let end = __mvICS_ParseDateTime(
+          leg && (leg.arriveDate || leg.dateIn || leg.arrivalDate || leg.endDate || leg.date),
+          leg && (leg.arriveTime || leg.arrivalTime || leg.arrTime || leg.timeIn || leg.endTime),
+          ""
+        );
+        if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
+        const from = String((leg && (leg.from || leg.placeOut)) || "").trim();
+        const to = String((leg && (leg.to || leg.placeIn)) || "").trim();
+        const mode = String((leg && leg.mode) || "").trim();
+        events.push({
+          uid: `leg-${String(leg && leg.id || Math.random().toString(36).slice(2))}@miviaje`,
+          start: start,
+          end: end,
+          summary: `Mi Viaje · Transporte${from || to ? ` · ${from || "—"} → ${to || "—"}` : ""}`,
+          description: [mode, from, to].filter(Boolean).join(" · ")
+        });
+      }catch(_){}
+    });
+  }
+
+  if(prefs.includeStays){
+    (Array.isArray(sc.stays) ? sc.stays : []).forEach(function(stay){
+      try{
+        const start = __mvICS_ParseDateTime(stay && stay.date, stay && stay.time, "15:00");
+        if(!start) return;
+        let checkoutDate = String((stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate)) || "").trim();
+        if(!checkoutDate && start){
+          const nights = Math.max(1, parseInt(stay && stay.nights, 10) || 1);
+          const temp = new Date(start.getTime());
+          temp.setDate(temp.getDate() + nights);
+          checkoutDate = `${temp.getFullYear()}-${String(temp.getMonth()+1).padStart(2,"0")}-${String(temp.getDate()).padStart(2,"0")}`;
+        }
+        let end = __mvICS_ParseDateTime(checkoutDate, stay && (stay.checkoutTime || stay.checkout_time), "11:00");
+        if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
+        const name = String((stay && (stay.name || stay.hotel)) || "").trim();
+        const city = String((stay && stay.city) || "").trim();
+        events.push({
+          uid: `stay-${String(stay && stay.id || Math.random().toString(36).slice(2))}@miviaje`,
+          start: start,
+          end: end,
+          summary: `Mi Viaje · Alojamiento${name ? ` · ${name}` : ""}`,
+          description: [city, name].filter(Boolean).join(" · ")
+        });
+      }catch(_){}
+    });
+  }
+
+  if(prefs.includeActivities){
+    (Array.isArray(sc.activities) ? sc.activities : []).forEach(function(act){
+      try{
+        const start = __mvICS_ParseDateTime(act && act.date, act && act.time, "10:00");
+        if(!start) return;
+        let end = null;
+        try{
+          if(typeof __tlActEndDateTime === "function"){
+            const endInfo = __tlActEndDateTime(act) || null;
+            if(endInfo) end = __mvICS_ParseDateTime(endInfo.endISO, endInfo.endTime, "");
+          }
+        }catch(_){}
+        if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
+        const title = String((act && (act.title || act.name)) || "Actividad").trim();
+        const city = String((act && act.city) || "").trim();
+        events.push({
+          uid: `act-${String(act && act.id || Math.random().toString(36).slice(2))}@miviaje`,
+          start: start,
+          end: end,
+          summary: `Mi Viaje · ${title}`,
+          description: city
+        });
+      }catch(_){}
+    });
+  }
+
+  return events.sort(function(a, b){ return a.start - b.start; });
+}
+
 window.__mvExportICS = function(){
   try{
-    const now = new Date();
-    const start = new Date(now.getTime() + 60*60*1000);
-    const end   = new Date(now.getTime() + 2*60*60*1000);
-    const uid = "mv-test-" + Math.random().toString(36).slice(2) + "@miviaje";
+    const prefs = __getICSExportPrefs();
     const dtstamp = __mvICS_FormatDT(new Date());
+    const trigger = __mvICS_AlarmTrigger(prefs.minutes);
+    const events = __mvICS_BuildEventsFromState();
+    if(!events.length){
+      try{ toast("❌ No hay eventos válidos para exportar"); }catch(_){}
+      return;
+    }
+    const body = events.map(function(ev){
+      return [
+        "BEGIN:VEVENT",
+        `UID:${ev.uid}`,
+        `DTSTAMP:${dtstamp}`,
+        `DTSTART:${__mvICS_FormatDT(ev.start)}`,
+        `DTEND:${__mvICS_FormatDT(ev.end)}`,
+        `SUMMARY:${__mvICS_Escape(ev.summary)}`,
+        `DESCRIPTION:${__mvICS_Escape(ev.description)}`,
+        "BEGIN:VALARM",
+        `TRIGGER:${trigger}`,
+        "ACTION:DISPLAY",
+        `DESCRIPTION:${__mvICS_Escape("Recordatorio")}`,
+        "END:VALARM",
+        "END:VEVENT"
+      ].join("\n");
+    }).join("\n");
 
     const ics =
 `BEGIN:VCALENDAR
@@ -23994,19 +24235,7 @@ VERSION:2.0
 PRODID:-//Mi Viaje//ES
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
-BEGIN:VEVENT
-UID:${uid}
-DTSTAMP:${dtstamp}
-DTSTART:${__mvICS_FormatDT(start)}
-DTEND:${__mvICS_FormatDT(end)}
-SUMMARY:${__mvICS_Escape("Mi Viaje · Evento de prueba")}
-DESCRIPTION:${__mvICS_Escape("Exportación iCalendar de prueba")}
-BEGIN:VALARM
-TRIGGER:-PT60M
-ACTION:DISPLAY
-DESCRIPTION:${__mvICS_Escape("Recordatorio")}
-END:VALARM
-END:VEVENT
+${body}
 END:VCALENDAR`;
 
     __mvDownloadTextFile("mi-viaje.ics", ics);
