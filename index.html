@@ -1550,6 +1550,47 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 .accTitle{ flex:1; font-size:14px; font-weight:900; text-align:center; }
 .accChevron{ position:absolute; right:14px; top:50%; transform:translateY(-50%); opacity:.7; font-weight:900; }
 .accBody{ padding:12px 14px; background:rgba(248,250,252,.9); }
+
+/* PWA open banner (shown when arriving via Safari from Calendar links) */
+#mvPwaOpenBanner{
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: calc(12px + env(safe-area-inset-top));
+  z-index: 4000;
+}
+#mvPwaOpenBanner .mvPwaOpenInner{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+  padding: 12px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(226,232,240,1);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 12px 30px rgba(2,6,23,.12);
+}
+.mvPwaOpenTitle{ font-weight: 900; font-size: 14px; color:#0f172a; }
+.mvPwaOpenDesc{ font-size: 12px; color: rgba(15,23,42,.68); margin-top:2px; line-height:1.25; }
+.mvPwaOpenBtns{ display:flex; align-items:center; gap:8px; flex:0 0 auto; }
+.mvPwaPrimary{
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #0f172a;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 900;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.mvPwaClose{
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(226,232,240,1);
+  background: #fff;
+  font-weight: 900;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -22367,6 +22408,18 @@ QA checklist (V89D1):
     </div>
   </div>
 </div>
+<div id="mvPwaOpenBanner" class="hidden">
+  <div class="mvPwaOpenInner">
+    <div class="mvPwaOpenText">
+      <div class="mvPwaOpenTitle">Abrir en Mi Viaje</div>
+      <div class="mvPwaOpenDesc">Si tienes la webapp instalada, abre Mi Viaje desde el icono. Si no, este botón abrirá el enlace en Safari.</div>
+    </div>
+    <div class="mvPwaOpenBtns">
+      <button id="mvPwaOpenBtn" class="tap mvPwaPrimary" type="button">Abrir en Mi Viaje</button>
+      <button id="mvPwaOpenClose" class="tap mvPwaClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+  </div>
+</div>
 <div class="hidden sheetMiniModal" id="sheetAttachModal">
 <div class="sheetMiniHeader">
 <div class="sheetMiniTitle" data-i18n="attach.modalTitle">Adjuntar archivo</div>
@@ -24382,6 +24435,66 @@ END:VCALENDAR`;
     try{ toast("❌ No se pudo generar .ics"); }catch(_){}
   }
 };
+</script>
+<script>
+(function(){
+  function isStandalone(){
+    try{
+      return (window.navigator && window.navigator.standalone) ||
+             (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+    }catch(_){ return false; }
+  }
+  function cameWithDeepLink(){
+    try{
+      const h = String(location.hash||"");
+      return h.includes("open=") || h.includes("day=");
+    }catch(_){ return false; }
+  }
+  function showBanner(){
+    const b = document.getElementById("mvPwaOpenBanner");
+    if(!b) return;
+    b.classList.remove("hidden");
+  }
+  function hideBanner(){
+    const b = document.getElementById("mvPwaOpenBanner");
+    if(!b) return;
+    b.classList.add("hidden");
+    try{ sessionStorage.setItem("MV_HIDE_PWA_BANNER","1"); }catch(_){}
+  }
+
+  document.addEventListener("DOMContentLoaded", function(){
+    try{
+      if(isStandalone()) return;
+      try{ if(sessionStorage.getItem("MV_HIDE_PWA_BANNER")==="1") return; }catch(_){}
+      if(!cameWithDeepLink()) return;
+
+      showBanner();
+
+      const btn = document.getElementById("mvPwaOpenBtn");
+      const close = document.getElementById("mvPwaOpenClose");
+
+      if(close && !close.__mvBound){
+        close.__mvBound = true;
+        close.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          hideBanner();
+        }, true);
+      }
+
+      if(btn && !btn.__mvBound){
+        btn.__mvBound = true;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          try{
+            const url = location.href;
+            window.location.href = url;
+          }catch(_){}
+          try{ toast("Si no se abre la webapp instalada, vuelve atrás y abre Mi Viaje desde el icono."); }catch(_){}
+        }, true);
+      }
+    }catch(_){}
+  });
+})();
 </script>
 </body>
 </html>
