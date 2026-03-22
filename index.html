@@ -1857,7 +1857,7 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
             Notificaciones
           </button>
 <div class="accItem" id="toolsAdvancedAcc">
-<button class="accHead tap w-full" type="button" data-acc="toolsAdvanced" onclick="return __toggleToolsAdvancedSubAcc('toolsAdvancedAcc','toolsAdvanced');">
+<button class="accHead tap w-full" type="button" data-acc="toolsAdvanced">
 <div class="accTitle" data-i18n="tools.advanced">Avanzado</div>
 <div class="accChevron">▾</div>
 </button>
@@ -23196,6 +23196,14 @@ document.addEventListener("DOMContentLoaded", function(){
 
   try{
     var advancedBody = document.getElementById("toolsAdvancedBody");
+    var toolsAdvancedHead = document.querySelector('#toolsAdvancedAcc [data-acc="toolsAdvanced"]');
+    if(toolsAdvancedHead && !toolsAdvancedHead.__mvBound){
+      toolsAdvancedHead.__mvBound = true;
+      toolsAdvancedHead.addEventListener("click", function(e){
+        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+        return __toggleToolsAdvancedSubAcc("toolsAdvancedAcc","toolsAdvanced");
+      });
+    }
     if(advancedBody && !advancedBody.__mvBuilt){
       advancedBody.__mvBuilt = true;
 
@@ -24259,6 +24267,8 @@ function __mvICS_BuildEventsFromState(){
   return events.sort(function(a, b){ return a.start - b.start; });
 }
 
+const MV_WEBAPP_URL = "https://TUUSUARIO.github.io/TUREPO/";
+
 window.__mvExportICS = function(){
   try{
     const prefs = __getICSExportPrefs();
@@ -24278,6 +24288,7 @@ window.__mvExportICS = function(){
         `DTEND:${__mvICS_FormatDT(ev.end)}`,
         `SUMMARY:${__mvICS_Escape(ev.summary)}`,
         `DESCRIPTION:${__mvICS_Escape(ev.description)}`,
+        `URL:${MV_WEBAPP_URL}`,
         "BEGIN:VALARM",
         `TRIGGER:${trigger}`,
         "ACTION:DISPLAY",
