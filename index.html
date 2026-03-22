@@ -1518,6 +1518,11 @@ body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !imp
 /* Hide iCloud UI in webapp (keep for iOS native app) */
 .mvHideInWeb{ display:block; }
 body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
+.accItem{ border:1px solid rgba(226,232,240,1); border-radius:16px; background:#fff; overflow:hidden; }
+.accHead{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; font-weight:900; }
+.accTitle{ font-size:14px; }
+.accChevron{ opacity:.7; font-weight:900; }
+.accBody{ padding:12px 14px; background:rgba(248,250,252,.9); }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -1555,7 +1560,8 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
           </div>
         </div>
       </div>
-      <div class="flex items-center justify-end flex-shrink-0 min-w-[48px]">
+      <div class="flex items-center justify-end gap-2 flex-shrink-0 min-w-[48px]">
+        <button id="btnResetTrip" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" type="button" title="Reiniciar simulaciones" aria-label="Reiniciar simulaciones">🔄</button>
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
@@ -1800,14 +1806,14 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 </div>
 </div>
 </div>
-<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden mvHideInWeb" id="toolsIcloudAcc">
-<button class="w-full tap flex items-center justify-between px-4 py-4" type="button" data-acc="icloudSync">
+<div class="bg-white border border-slate-200 rounded-3xl overflow-hidden mvHideInWeb accItem" id="toolsIcloudAcc">
+<button class="accHead tap w-full" type="button" data-acc="icloudSync">
 <div class="text-left">
-<div class="font-extrabold" data-i18n="icloud.title">Sincronización iCloud</div>
+<div class="font-extrabold accTitle" data-i18n="icloud.title">Sincronización iCloud</div>
 </div>
 <span class="accChevron accIcon text-slate-400 text-xl">▾</span>
 </button>
-<div class="px-4 pb-4 hidden" data-acc-body="icloudSync">
+<div class="accBody hidden" data-acc-body="icloudSync">
 <div id="icloudStatusLine" class="text-xs text-slate-600 mvHideInWeb hidden" style="opacity:.85;margin-bottom:10px"></div>
 <div id="icloudFolderLine" class="text-xs text-slate-600 mvHideInWeb" style="opacity:.85;margin-bottom:10px"></div>
 <div class="text-sm text-slate-600" style="margin-bottom:10px;opacity:.9" data-i18n-html="icloud.linkHelp">
@@ -1890,13 +1896,13 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
             Copiar B → A
           </button>
 <div class="text-xs text-slate-500" style="margin:10px 0 6px;opacity:.85" data-i18n="tools.irreversible">Acción irreversible</div>
-<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold" id="toolsReset" data-i18n="tools.restartTrip">
+<button class="tap w-full px-4 py-3 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold hidden" id="toolsReset" data-i18n="tools.restartTrip">
             Reiniciar viaje
           </button>
 <!-- Keep existing Trips button in DOM for legacy listeners (hidden) -->
 <button class="hidden" id="btnTrips"></button>
 </div>
-<div class="mvLegacyLocal mt-4 text-xs text-slate-500" data-legacy="local-save">
+<div class="mvLegacyLocal mt-4 text-xs text-slate-500 hidden" data-legacy="local-save">
           Nota: “Guardar” y “Cargar” abren el panel de archivos (incluye backups).
         </div>
 </div>
@@ -18113,6 +18119,11 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const saveBtn = $("toolsSave");
   const loadBtn = $("toolsLoad");
   const resetBtn = $("toolsReset");
+  const resetTripHeaderBtn = $("btnResetTrip");
+  const resetTripBackdrop = $("resetTripBackdrop");
+  const resetTripModal = $("resetTripModal");
+  const resetTripCancelBtn = $("btnResetTripCancel");
+  const resetTripConfirmBtn = $("btnResetTripConfirm");
   const copyAtoBBtn = $("btnCopyAtoB");
   const copyBtoABtn = $("btnCopyBtoA");
   const geminiKeyBtn = $("btnGeminiKey");
@@ -18248,6 +18259,66 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   if (copyAtoBBtn) copyAtoBBtn.classList.add("hidden");
   if (copyBtoABtn) copyBtoABtn.classList.add("hidden");
+
+  const openResetTripModal = ()=>{
+    try{ if(resetTripBackdrop) resetTripBackdrop.classList.remove("hidden"); }catch{}
+    try{ if(resetTripModal) resetTripModal.classList.remove("hidden"); }catch{}
+  };
+  const closeResetTripModal = ()=>{
+    try{ if(resetTripBackdrop) resetTripBackdrop.classList.add("hidden"); }catch{}
+    try{ if(resetTripModal) resetTripModal.classList.add("hidden"); }catch{}
+  };
+  const resetCurrentSimulationsOnly = ()=>{
+    try{
+      if(!state || typeof state !== "object") return false;
+      const letters = ["A","B","C","D"];
+      if(!state.scenarios || typeof state.scenarios !== "object") state.scenarios = {};
+      letters.forEach((L)=>{
+        state.scenarios[L] = (typeof emptyScenario === "function") ? emptyScenario() : {
+          legs: [],
+          stays: [],
+          meals: { daily: 0, people: "", days: "" },
+          miscExpenses: [],
+          activities: [],
+          dailyNotes: {}
+        };
+      });
+      state.scenario = "A";
+      state.scenarioCount = 1;
+      try{ if(typeof saveState === "function") saveState(); }catch{}
+      try{ if(typeof saveAppState === "function") saveAppState(); }catch{}
+      try{ if(typeof renderAll === "function") renderAll(); }catch{}
+      try{ if(typeof renderScenarioTabs === "function") renderScenarioTabs(); }catch{}
+      try{ toast("Simulaciones reiniciadas"); }catch{}
+      return true;
+    }catch(_){
+      return false;
+    }
+  };
+
+  if (resetTripHeaderBtn) resetTripHeaderBtn.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    openResetTripModal();
+  });
+  if (resetTripCancelBtn) resetTripCancelBtn.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    closeResetTripModal();
+  });
+  if (resetTripBackdrop) resetTripBackdrop.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    closeResetTripModal();
+  });
+  if (resetTripConfirmBtn) resetTripConfirmBtn.addEventListener("click", (e)=>{
+    try{ e.preventDefault(); e.stopPropagation(); }catch{}
+    closeResetTripModal();
+    try{
+      if(resetCurrentSimulationsOnly()) return;
+      if(typeof resetSimulations==="function") resetSimulations();
+      else if(typeof __resetSimulations==="function") __resetSimulations();
+      else if(typeof resetTrip==="function") resetTrip();
+      else try{ toast("Reset pendiente"); }catch(_){ console.log("Reset pending"); }
+    }catch(_){}
+  });
 
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
@@ -22266,6 +22337,17 @@ QA checklist (V89D1):
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900 hidden" id="backupVersionCheckUpdateBtn" type="button">Actualizar a la más reciente</button>
 </div>
 </div>
+</div>
+<div id="resetTripBackdrop" class="hidden fixed inset-0 z-[2600] bg-black/40"></div>
+<div id="resetTripModal" class="hidden fixed inset-0 z-[2601] flex items-center justify-center p-5">
+  <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
+    <div class="text-xl font-extrabold text-slate-900">Reiniciar simulaciones</div>
+    <div class="mt-2 text-sm text-slate-600">Se borrarán todas las simulaciones actuales. Esta acción no afecta a los backups.</div>
+    <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <button id="btnResetTripCancel" class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" type="button">Cancelar</button>
+      <button id="btnResetTripConfirm" class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" type="button">Confirmar</button>
+    </div>
+  </div>
 </div>
 <div class="hidden sheetMiniModal" id="sheetAttachModal">
 <div class="sheetMiniHeader">
