@@ -18774,6 +18774,11 @@ window.addEventListener('DOMContentLoaded', () => {
             try{ closeModal(); }catch{}
             let __mvReviewedAIFromSave = false;
             try{ __mvReviewedAIFromSave = !!__aiMarkPendingReviewedFromEventSheet(); }catch{}
+            try{
+              var ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+              var obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
+              if(obj && typeof obj === "object") obj.updatedAt = Date.now();
+            }catch(_){}
             try { if (typeof saveState === "function") saveState(); } catch {}
             try{ __sheetSetSnapshot(); }catch{}
             try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
@@ -18800,6 +18805,11 @@ window.addEventListener('DOMContentLoaded', () => {
       }catch{}
       let __mvReviewedAIFromSave = false;
       try{ __mvReviewedAIFromSave = !!__aiMarkPendingReviewedFromEventSheet(); }catch{}
+      try{
+        var ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+        var obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
+        if(obj && typeof obj === "object") obj.updatedAt = Date.now();
+      }catch(_){}
       try { if (typeof saveState === "function") saveState(); } catch {}
       try{ __sheetSetSnapshot(); }catch{}
 
@@ -24262,6 +24272,11 @@ function __mvICS_BuildEventsFromState(){
   const prefs = __getICSExportPrefs();
   const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
   const events = [];
+  const last = Number(localStorage.getItem("MV_ICAL_LAST_EXPORT_TS") || 0);
+  const isChanged = function(obj){
+    const ts = Number(obj && (obj.updatedAt || obj.createdAt || obj.addedAt) || 0);
+    return ts > last;
+  };
   const fallbackUidPart = function(prefix, obj){
     try{
       const parts = [
@@ -24280,6 +24295,7 @@ function __mvICS_BuildEventsFromState(){
   if(prefs.includeLegs){
     (Array.isArray(sc.legs) ? sc.legs : []).forEach(function(leg){
       try{
+        if(!isChanged(leg)) return;
         const start = __mvICS_ParseDateTime(leg && leg.date, leg && (leg.time || leg.depTime || leg.departTime || leg.departureTime), "09:00");
         if(!start) return;
         let end = __mvICS_ParseDateTime(
@@ -24309,6 +24325,7 @@ function __mvICS_BuildEventsFromState(){
   if(prefs.includeStays){
     (Array.isArray(sc.stays) ? sc.stays : []).forEach(function(stay){
       try{
+        if(!isChanged(stay)) return;
         const start = __mvICS_ParseDateTime(stay && stay.date, stay && stay.time, "15:00");
         if(!start) return;
         let checkoutDate = String((stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate)) || "").trim();
@@ -24340,6 +24357,7 @@ function __mvICS_BuildEventsFromState(){
   if(prefs.includeActivities){
     (Array.isArray(sc.activities) ? sc.activities : []).forEach(function(act){
       try{
+        if(!isChanged(act)) return;
         const start = __mvICS_ParseDateTime(act && act.date, act && act.time, "10:00");
         if(!start) return;
         let end = null;
@@ -24426,7 +24444,7 @@ window.__mvExportICS = function(){
     const dtstamp = __mvICS_FormatDT(new Date());
     const events = __mvICS_BuildEventsFromState();
     if(!events.length){
-      try{ toast("❌ No hay eventos válidos para exportar"); }catch(_){}
+      try{ toast("No hay cambios desde la última exportación"); }catch(_){} 
       return;
     }
     const body = events.map(function(ev){
@@ -24458,7 +24476,8 @@ ${body}
 END:VCALENDAR`;
 
     __mvDownloadTextFile("mi-viaje.ics", ics);
-    try{ toast("📅 Archivo .ics generado"); }catch(_){}
+    try{ localStorage.setItem("MV_ICAL_LAST_EXPORT_TS", String(Date.now())); }catch(_){}
+    try{ toast("📅 Archivo .ics generado"); }catch(_){} 
   }catch(e){
     console.log("ICS export failed", e);
     try{ toast("❌ No se pudo generar .ics"); }catch(_){}
