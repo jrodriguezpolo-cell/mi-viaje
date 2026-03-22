@@ -23270,6 +23270,20 @@ document.addEventListener("DOMContentLoaded", function(){
           }catch(_){}
         }, true);
       }
+      var btnExportICS = document.getElementById("btnExportICS");
+      if(btnExportICS && !btnExportICS.__mvBound){
+        btnExportICS.__mvBound = true;
+        btnExportICS.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          try{
+            if(typeof window.__mvExportICS === "function"){
+              window.__mvExportICS();
+            }else{
+              try{ toast("ICS: pendiente"); }catch(_){ console.log("ICS pending"); }
+            }
+          }catch(_){}
+        }, true);
+      }
 
       var btnImportTripJson = document.getElementById("btnImportTripJson");
       var inputImportTripJson = document.getElementById("inputImportTripJson");
