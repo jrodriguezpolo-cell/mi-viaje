@@ -3009,6 +3009,7 @@ const MV_LAST_SCENARIO_EXPORT_META_KEY = "MV_LAST_SCENARIO_EXPORT_META_V1";
 const MV_CURRENT_LOADED_SCENARIO_META_KEY_PREFIX = "miviaje.scenario.loadedMeta.";
 const MV_SCENARIO_SNAPSHOTS_KEY_PREFIX = "miviaje.scenario.snapshots.";
 const MV_SCENARIO_DIRTY_PREFIX = "miviaje.scenario.dirty.";
+const MV_SCENARIO_VERSION_CHECK_SNOOZE_KEY = "miviaje.scenario.versionCheckSnooze.v1";
 const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
 const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
 
@@ -3716,6 +3717,60 @@ function __closeScenarioVersionCheckModal(){
   }catch(_){}
 }
 
+function __mvFormatScenarioVersionDate(ts){
+  try{
+    var n = Number(ts || 0);
+    if(!(n > 0)) return "desconocida";
+    return new Date(n).toLocaleString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+  }catch(_){
+    return "desconocida";
+  }
+}
+
+function __mvScenarioVersionSnoozeToday(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    var today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(MV_SCENARIO_VERSION_CHECK_SNOOZE_KEY, JSON.stringify({ slot: slot, day: today }));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvIsScenarioVersionSnoozedToday(slotLetter){
+  try{
+    var raw = localStorage.getItem(MV_SCENARIO_VERSION_CHECK_SNOOZE_KEY);
+    var parsed = raw ? JSON.parse(raw) : null;
+    if(!parsed) return false;
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    var today = new Date().toISOString().slice(0, 10);
+    return String(parsed.slot || "") === slot && String(parsed.day || "") === today;
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvShowScenarioSelectionWarning(title, body){
+  try{
+    var btn = document.createElement("button");
+    btn.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+    btn.type = "button";
+    btn.textContent = "Entendido";
+    btn.onclick = function(){ try{ closeModal(); }catch(_){} };
+    showModal(title || "Simulación no actualizada", `<div class="text-sm text-slate-700">${body || ""}</div>`, [btn]);
+  }catch(_){
+    try{ toast(String(title || "Simulación no actualizada")); }catch(__){}
+  }
+}
+
 function __loadNewestAvailableScenario(slotLetter){
   try{
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
@@ -3749,21 +3804,38 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
     var body = document.getElementById("scenarioVersionCheckBody");
     var continueBtn = document.getElementById("scenarioVersionCheckContinueBtn");
     var updateBtn = document.getElementById("scenarioVersionCheckUpdateBtn");
+    var snoozeBtn = document.getElementById("scenarioVersionCheckSnoozeBtn");
     if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
-    title.textContent = "Hay una simulación más reciente";
-    var details = __formatScenarioMetaLabel({
-      referenceTs: Number(compare && compare.newestTs || 0),
-      deviceName: String(compare && compare.newestDeviceName || "")
-    });
-    body.textContent = details
-      ? `Se ha detectado una simulación más reciente para ${slot}. ${details}`
-      : `Se ha detectado una simulación más reciente para ${slot}.`;
+    var currentMeta = __getCurrentLoadedScenarioMeta(slot);
+    var newestMeta = __getNewestAvailableScenarioMeta(slot);
+    var currentLabel = __mvFormatScenarioVersionDate(currentMeta && currentMeta.referenceTs);
+    var newestLabel = __mvFormatScenarioVersionDate(compare && compare.newestTs);
+    var extraBits = [];
+    if(newestMeta && newestMeta.deviceName) extraBits.push(`Origen: ${escapeHtml(String(newestMeta.deviceName || ""))}`);
+    if(compare && compare.newestSource) extraBits.push(`Fuente: ${escapeHtml(String(compare.newestSource || ""))}`);
+    title.textContent = "Nueva simulación disponible";
+    body.innerHTML = [
+      `<div>Simulación actual: <span class="font-semibold text-slate-900">${escapeHtml(currentLabel)}</span></div>`,
+      `<div>Simulación nueva: <span class="font-semibold text-slate-900">${escapeHtml(newestLabel)}</span></div>`,
+      `<div>Cambios detectados en eventos.</div>`,
+      extraBits.length ? `<div class="text-xs text-slate-500">${extraBits.join(" · ")}</div>` : "",
+      `<div class="text-xs text-slate-500">Para actualizar, selecciona el archivo de simulación más reciente.</div>`
+    ].filter(Boolean).join("");
     continueBtn.textContent = "Ahora no";
-    updateBtn.textContent = "Actualizar simulación";
+    updateBtn.textContent = "Actualizar";
     continueBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       __closeScenarioVersionCheckModal();
     };
+    if(snoozeBtn){
+      snoozeBtn.classList.remove("hidden");
+      snoozeBtn.textContent = "No avisar hoy";
+      snoozeBtn.onclick = function(e){
+        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+        __mvScenarioVersionSnoozeToday(slot);
+        __closeScenarioVersionCheckModal();
+      };
+    }
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       try{
@@ -3774,6 +3846,7 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
         }
         inp.dataset.targetSlot = slot;
         inp.dataset.closeScenarioModal = "1";
+        inp.dataset.currentTs = String(Number(currentMeta && currentMeta.referenceTs || 0));
         inp.value = "";
         inp.click();
       }catch(_){
@@ -3794,6 +3867,7 @@ function __maybeShowScenarioVersionCheckOnOpen(){
     if(!__isWebBackupReminderContext()) return false;
     if(window.__mvScenarioVersionCheckShown) return false;
     var slot = String((state && state.scenario) || "A").trim().toUpperCase();
+    if(__mvIsScenarioVersionSnoozedToday(slot)) return false;
     var compare = __compareCurrentVsNewestScenario(slot);
     if(!compare || !compare.hasNewer) return false;
     window.__mvScenarioVersionCheckShown = true;
@@ -17959,7 +18033,7 @@ async function __mvRunScenarioImportFlow(ev){
     });
     const payload = JSON.parse(txt);
     if (!payload || payload.mv_kind !== "scenario_export" || Number(payload.mv_version) !== 1) {
-      try{ toast("Archivo de simulación no válido"); }catch(_){}
+      try{ toast("Este archivo no es una simulación válida."); }catch(_){}
       return;
     }
     const forcedSlot = String((input && input.dataset && input.dataset.targetSlot) || "").trim().toUpperCase();
@@ -17967,18 +18041,36 @@ async function __mvRunScenarioImportFlow(ev){
       ? forcedSlot
       : __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
     if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
+    const importedTs = Number(Date.parse(String(payload && payload.exportedAt || "")) || 0);
+    const currentMeta = __getCurrentLoadedScenarioMeta(slot);
+    const currentTs = Number((input && input.dataset && input.dataset.currentTs) || (currentMeta && currentMeta.referenceTs) || 0);
+    if(forcedSlot && payload && payload.scenarioSlot && String(payload.scenarioSlot).trim().toUpperCase() !== slot){
+      __mvShowScenarioSelectionWarning(
+        "Simulación no corresponde",
+        `La simulación seleccionada corresponde al slot ${escapeHtml(String(payload.scenarioSlot).trim().toUpperCase())} y no al slot activo ${escapeHtml(slot)}.`
+      );
+      return;
+    }
+    if(forcedSlot && (!(importedTs > 0) || importedTs <= currentTs)){
+      __mvShowScenarioSelectionWarning(
+        "Simulación no actualizada",
+        `Has seleccionado una simulación que no es más reciente.<br><br>Actual: ${escapeHtml(__mvFormatScenarioVersionDate(currentTs))}<br>Seleccionada: ${escapeHtml(__mvFormatScenarioVersionDate(importedTs))}`
+      );
+      return;
+    }
     __mvScenarioImport(payload, slot);
     if(input && input.dataset && input.dataset.closeScenarioModal === "1"){
       try{ __closeScenarioVersionCheckModal(); }catch(_){}
       try{ toast("Simulación actualizada"); }catch(_){}
     }
   } catch (_) {
-    try{ toast("Archivo de simulación no válido"); }catch(_){}
+    try{ toast("Este archivo no es una simulación válida."); }catch(_){}
   } finally {
     if (input){
       input.value = "";
       try{ delete input.dataset.targetSlot; }catch(_){}
       try{ delete input.dataset.closeScenarioModal; }catch(_){}
+      try{ delete input.dataset.currentTs; }catch(_){}
     }
   }
 }
@@ -23222,11 +23314,12 @@ QA checklist (V89D1):
 <div class="hidden fixed inset-0 z-[2506] bg-slate-900/45" id="scenarioVersionCheckBackdrop"></div>
 <div class="hidden fixed inset-0 z-[2507] flex items-center justify-center p-5" id="scenarioVersionCheckModal">
 <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
-<div class="text-xl font-extrabold text-slate-900" id="scenarioVersionCheckTitle">Hay una simulación más reciente</div>
+<div class="text-xl font-extrabold text-slate-900" id="scenarioVersionCheckTitle">Nueva simulación disponible</div>
 <div class="mt-2 text-sm text-slate-600" id="scenarioVersionCheckBody">Se ha detectado una simulación más reciente que la que estás usando ahora.</div>
 <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white hidden" id="scenarioVersionCheckSnoozeBtn" type="button">No avisar hoy</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioVersionCheckContinueBtn" type="button">Ahora no</button>
-<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioVersionCheckUpdateBtn" type="button">Actualizar simulación</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioVersionCheckUpdateBtn" type="button">Actualizar</button>
 </div>
 </div>
 </div>
