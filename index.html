@@ -1963,6 +1963,8 @@ const fmtHours = (h) => {
 
 const APP_BUILD = "V227_B37_TL_AI_ICON_UNDER_TICK";
 const APP_BUILD_PARAM = "mv_build";
+const APP_REMOTE_BUILD_INFO_PATH = "build.json";
+const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
 const APP_REFRESH_KIND_PARAM = "mv_refresh";
 const APP_LAST_REFRESH_KEY = "miViaje.diag.lastRefresh";
 const APP_HARD_REFRESH_SNAPSHOT_KEY = "miViaje.diag.hardRefreshSnapshot";
@@ -3715,6 +3717,91 @@ function __closeScenarioVersionCheckModal(){
     if(box) box.classList.add("hidden");
     window.__mvScenarioVersionCheckOpen = false;
   }catch(_){}
+}
+
+function __closeRemoteBuildCheckModal(){
+  try{
+    var ov = document.getElementById("remoteBuildCheckBackdrop");
+    var box = document.getElementById("remoteBuildCheckModal");
+    if(ov) ov.classList.add("hidden");
+    if(box) box.classList.add("hidden");
+    window.__mvRemoteBuildCheckOpen = false;
+  }catch(_){}
+}
+
+function __mvFormatBuildPublishedAt(value){
+  try{
+    var ts = Date.parse(String(value || "").trim());
+    if(!(ts > 0)) return "";
+    return new Date(ts).toLocaleString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    });
+  }catch(_){
+    return "";
+  }
+}
+
+function __openRemoteBuildCheckModal(remote){
+  try{
+    if(window.__mvRemoteBuildCheckOpen) return false;
+    var ov = document.getElementById("remoteBuildCheckBackdrop");
+    var box = document.getElementById("remoteBuildCheckModal");
+    var title = document.getElementById("remoteBuildCheckTitle");
+    var body = document.getElementById("remoteBuildCheckBody");
+    var continueBtn = document.getElementById("remoteBuildCheckContinueBtn");
+    var updateBtn = document.getElementById("remoteBuildCheckUpdateBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    var remoteBuild = String(remote && remote.build || "").trim();
+    var published = __mvFormatBuildPublishedAt(remote && remote.publishedAt);
+    title.textContent = "Nueva versión disponible";
+    body.innerHTML = [
+      `<div>Tu versión: <span class="font-semibold text-slate-900">${escapeHtml(APP_BUILD)}</span></div>`,
+      `<div>Nueva versión: <span class="font-semibold text-slate-900">${escapeHtml(remoteBuild || "desconocida")}</span></div>`,
+      published ? `<div>Publicada: <span class="font-semibold text-slate-900">${escapeHtml(published)}</span></div>` : ``
+    ].join("");
+    continueBtn.textContent = "Ahora no";
+    updateBtn.textContent = "Actualizar ahora";
+    continueBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      try{ localStorage.setItem(APP_IGNORED_REMOTE_BUILD_KEY, remoteBuild); }catch(_){}
+      __closeRemoteBuildCheckModal();
+    };
+    updateBtn.onclick = async function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      try{ if(typeof saveState === "function") saveState(); }catch(_){}
+      try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
+      __closeRemoteBuildCheckModal();
+      try{ await __forceRefreshApp(); }catch(_){}
+    };
+    ov.classList.remove("hidden");
+    box.classList.remove("hidden");
+    window.__mvRemoteBuildCheckOpen = true;
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+async function __maybeShowRemoteBuildCheckOnOpen(){
+  try{
+    if(window.__mvRemoteBuildCheckShown) return false;
+    var ignored = String(localStorage.getItem(APP_IGNORED_REMOTE_BUILD_KEY) || "").trim();
+    var res = await fetch(`${APP_REMOTE_BUILD_INFO_PATH}?ts=${Date.now()}`, { cache: "no-store" });
+    if(!res || !res.ok) return false;
+    var remote = await res.json();
+    var remoteBuild = String(remote && remote.build || "").trim();
+    if(!remoteBuild || remoteBuild === APP_BUILD) return false;
+    if(ignored && ignored === remoteBuild) return false;
+    window.__mvRemoteBuildCheckShown = true;
+    return __openRemoteBuildCheckModal(remote);
+  }catch(_){
+    return false;
+  }
 }
 
 function __mvFormatScenarioVersionDate(ts){
@@ -19609,6 +19696,7 @@ window.addEventListener('DOMContentLoaded', () => {
   } catch {}
   try { __maybeShowBackupVersionCheckOnOpen(); } catch {}
   try { __maybeShowScenarioVersionCheckOnOpen(); } catch {}
+  try { Promise.resolve(__maybeShowRemoteBuildCheckOnOpen()).catch(function(){}); } catch {}
   try { __startNotificationsEngine(); } catch {}
   try {
     if(!window.__mvBoundHashOpen){
@@ -23320,6 +23408,20 @@ QA checklist (V89D1):
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white hidden" id="scenarioVersionCheckSnoozeBtn" type="button">No avisar hoy</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioVersionCheckContinueBtn" type="button">Ahora no</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioVersionCheckUpdateBtn" type="button">Actualizar</button>
+</div>
+</div>
+</div>
+<div class="hidden fixed inset-0 z-[2508] bg-slate-900/45" id="remoteBuildCheckBackdrop"></div>
+<div class="hidden fixed inset-0 z-[2509] flex items-center justify-center p-5" id="remoteBuildCheckModal">
+<div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
+<div class="text-xl font-extrabold text-slate-900" id="remoteBuildCheckTitle">Nueva versión disponible</div>
+<div class="mt-2 text-sm text-slate-600 space-y-1" id="remoteBuildCheckBody">
+<div>Tu versión: —</div>
+<div>Nueva versión: —</div>
+</div>
+<div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="remoteBuildCheckContinueBtn" type="button">Ahora no</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="remoteBuildCheckUpdateBtn" type="button">Actualizar ahora</button>
 </div>
 </div>
 </div>
