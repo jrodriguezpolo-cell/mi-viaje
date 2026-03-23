@@ -3006,6 +3006,9 @@ const MV_MANUAL_BACKUP_PATH_KEY = "MV_MANUAL_BACKUP_PATH_V1";
 const MV_MANUAL_ATTACHMENTS_PATH_KEY = "MV_MANUAL_ATTACHMENTS_PATH_V1";
 const MV_MANUAL_SCENARIOS_PATH_KEY = "MV_MANUAL_SCENARIOS_PATH_V1";
 const MV_LAST_SCENARIO_EXPORT_META_KEY = "MV_LAST_SCENARIO_EXPORT_META_V1";
+const MV_CURRENT_LOADED_SCENARIO_META_KEY_PREFIX = "miviaje.scenario.loadedMeta.";
+const MV_SCENARIO_SNAPSHOTS_KEY_PREFIX = "miviaje.scenario.snapshots.";
+const MV_SCENARIO_DIRTY_PREFIX = "miviaje.scenario.dirty.";
 const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
 const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
 
@@ -3332,22 +3335,7 @@ function __openWebBackupReminderModal(){
 
 function __scheduleWebBackupReminder(reason){
   try{
-    if(!__isWebBackupReminderContext()) return false;
-    if(__getWebBackupReminderSetting() === "off") return false;
-    if(window.__mvWebBackupReminderOpen) return false;
-    var lastDismissTs = Number(window.__mvWebBackupReminderLastDismissTs || 0);
-    if(lastDismissTs && (Date.now() - lastDismissTs) < (10 * 60 * 1000)) return false;
-    clearTimeout(window.__mvWebBackupReminderTimer);
-    window.__mvWebBackupReminderTimer = setTimeout(function(){
-      try{
-        if(window.__mvWebBackupReminderOpen) return;
-        if(__getWebBackupReminderSetting() === "off") return;
-        var dismissTs = Number(window.__mvWebBackupReminderLastDismissTs || 0);
-        if(dismissTs && (Date.now() - dismissTs) < (10 * 60 * 1000)) return;
-        __openWebBackupReminderModal();
-      }catch(_){}
-    }, 10000);
-    return true;
+    return false;
   }catch(_){
     return false;
   }
@@ -3457,6 +3445,343 @@ function __compareCurrentVsNewestBackup(){
       newestSource: "",
       newestCanLoadDirectly: false
     };
+  }
+}
+
+function __mvScenarioMetaKey(slotLetter){
+  return `${MV_CURRENT_LOADED_SCENARIO_META_KEY_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
+}
+
+function __mvScenarioSnapshotsKey(slotLetter){
+  return `${MV_SCENARIO_SNAPSHOTS_KEY_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
+}
+
+function __mvScenarioDirtyKey(slotLetter){
+  return `${MV_SCENARIO_DIRTY_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
+}
+
+function __getCurrentLoadedScenarioMeta(slotLetter){
+  try{
+    var raw = localStorage.getItem(__mvScenarioMetaKey(slotLetter));
+    if(!raw) return null;
+    var parsed = JSON.parse(raw);
+    if(parsed && Number(parsed.referenceTs || 0) > 0) return parsed;
+  }catch(_){}
+  return null;
+}
+
+function __setCurrentLoadedScenarioMeta(slotLetter, meta){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    var ts = Number(meta && meta.referenceTs || 0);
+    if(!/^[ABCD]$/.test(slot) || !(ts > 0)) return false;
+    localStorage.setItem(__mvScenarioMetaKey(slot), JSON.stringify({
+      referenceTs: ts,
+      savedAt: String((meta && meta.savedAt) || ""),
+      source: String((meta && meta.source) || "unknown"),
+      deviceName: String((meta && meta.deviceName) || ""),
+      scenarioLetter: slot
+    }));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __getScenarioSnapshots(slotLetter){
+  try{
+    var raw = localStorage.getItem(__mvScenarioSnapshotsKey(slotLetter));
+    var arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch(_){
+    return [];
+  }
+}
+
+function __saveScenarioSnapshots(slotLetter, arr){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!/^[ABCD]$/.test(slot)) return false;
+    localStorage.setItem(__mvScenarioSnapshotsKey(slot), JSON.stringify(Array.isArray(arr) ? arr : []));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __pushScenarioSnapshot(slotLetter, payload, source){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!/^[ABCD]$/.test(slot) || !payload || typeof payload !== "object") return false;
+    var ts = Number(Date.parse(String(payload.exportedAt || "")) || Date.now());
+    var entry = {
+      savedAt: String(payload.exportedAt || new Date(ts).toISOString()),
+      savedAtTs: ts,
+      source: String(source || "scenario-export"),
+      deviceName: String(payload.deviceName || ((typeof getDeviceName === "function") ? (getDeviceName(false) || "") : "")),
+      scenarioSlot: slot,
+      scenario: __mvNormalizeScenarioForTransfer(deepCloneJSON(payload.scenario || {}) || {})
+    };
+    var arr = __getScenarioSnapshots(slot).filter(function(item){
+      return Number(item && item.savedAtTs || 0) !== ts;
+    });
+    arr.unshift(entry);
+    if(arr.length > 20) arr = arr.slice(0, 20);
+    __saveScenarioSnapshots(slot, arr);
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __getNewestAvailableScenarioMeta(slotLetter){
+  try{
+    var arr = __getScenarioSnapshots(slotLetter);
+    if(!arr.length) return null;
+    arr.sort(function(a,b){ return Number(b && b.savedAtTs || 0) - Number(a && a.savedAtTs || 0); });
+    var newest = arr[0];
+    var ts = Number(newest && newest.savedAtTs || 0);
+    if(!(ts > 0)) return null;
+    return {
+      referenceTs: ts,
+      savedAt: String(newest && newest.savedAt || ""),
+      source: String(newest && newest.source || "scenario-export"),
+      deviceName: String(newest && newest.deviceName || ""),
+      scenarioLetter: String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase()
+    };
+  }catch(_){
+    return null;
+  }
+}
+
+function __compareCurrentVsNewestScenario(slotLetter){
+  try{
+    var current = __getCurrentLoadedScenarioMeta(slotLetter);
+    var newest = __getNewestAvailableScenarioMeta(slotLetter);
+    var currentTs = Number(current && current.referenceTs || 0);
+    var newestTs = Number(newest && newest.referenceTs || 0);
+    return {
+      currentTs: currentTs,
+      newestTs: newestTs,
+      hasNewer: (currentTs > 0 && newestTs > 0 && newestTs > currentTs),
+      newestSource: String(newest && newest.source || ""),
+      newestDeviceName: String(newest && newest.deviceName || ""),
+      newestSavedAt: String(newest && newest.savedAt || ""),
+      scenarioLetter: String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase()
+    };
+  }catch(_){
+    return {
+      currentTs: 0,
+      newestTs: 0,
+      hasNewer: false,
+      newestSource: "",
+      newestDeviceName: "",
+      newestSavedAt: "",
+      scenarioLetter: String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase()
+    };
+  }
+}
+
+function __isScenarioDirty(slotLetter){
+  try{
+    return localStorage.getItem(__mvScenarioDirtyKey(slotLetter)) === "1";
+  }catch(_){
+    return false;
+  }
+}
+
+function __markScenarioDirty(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!/^[ABCD]$/.test(slot)) return false;
+    localStorage.setItem(__mvScenarioDirtyKey(slot), "1");
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __clearScenarioDirty(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    localStorage.removeItem(__mvScenarioDirtyKey(slot));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __formatScenarioMetaLabel(meta){
+  try{
+    var ts = Number(meta && (meta.referenceTs || meta.savedAtTs) || 0);
+    var when = ts > 0 ? new Date(ts).toLocaleString() : "";
+    var dev = String(meta && meta.deviceName || "").trim();
+    return [when, dev].filter(Boolean).join(" · ");
+  }catch(_){
+    return "";
+  }
+}
+
+function __closeScenarioSavePromptModal(){
+  try{
+    var ov = document.getElementById("scenarioSavePromptBackdrop");
+    var box = document.getElementById("scenarioSavePromptModal");
+    if(ov) ov.classList.add("hidden");
+    if(box) box.classList.add("hidden");
+    window.__mvScenarioSavePromptOpen = false;
+  }catch(_){}
+}
+
+function __saveCurrentScenarioSnapshot(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!/^[ABCD]$/.test(slot)) return false;
+    var ok = !!__mvRunScenarioExportFlow(slot);
+    if(!ok) return false;
+    __clearScenarioDirty(slot);
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __openScenarioSavePromptModal(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!__isWebBackupReminderContext()) return false;
+    if(window.__mvScenarioSavePromptOpen) return false;
+    var ov = document.getElementById("scenarioSavePromptBackdrop");
+    var box = document.getElementById("scenarioSavePromptModal");
+    var title = document.getElementById("scenarioSavePromptTitle");
+    var body = document.getElementById("scenarioSavePromptBody");
+    var continueBtn = document.getElementById("scenarioSavePromptContinueBtn");
+    var updateBtn = document.getElementById("scenarioSavePromptUpdateBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    title.textContent = "¿Guardar simulación ahora?";
+    body.textContent = `Has hecho cambios en la simulación ${slot}. Puedes guardar una copia ahora para tener la última versión al día.`;
+    continueBtn.textContent = "Ahora no";
+    updateBtn.textContent = "Guardar ahora";
+    continueBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      window.__mvScenarioSavePromptLastDismissTs = Date.now();
+      __closeScenarioSavePromptModal();
+    };
+    updateBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __closeScenarioSavePromptModal();
+      var ok = __saveCurrentScenarioSnapshot(slot);
+      if(!ok){
+        try{ toast("No se pudo guardar la simulación"); }catch(_){}
+      }
+    };
+    ov.classList.remove("hidden");
+    box.classList.remove("hidden");
+    window.__mvScenarioSavePromptOpen = true;
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __maybePromptSaveScenario(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!__isWebBackupReminderContext()) return false;
+    if(!__isScenarioDirty(slot)) return false;
+    if(window.__mvScenarioSavePromptOpen) return false;
+    var lastDismissTs = Number(window.__mvScenarioSavePromptLastDismissTs || 0);
+    if(lastDismissTs && (Date.now() - lastDismissTs) < (2 * 60 * 1000)) return false;
+    return __openScenarioSavePromptModal(slot);
+  }catch(_){
+    return false;
+  }
+}
+
+function __closeScenarioVersionCheckModal(){
+  try{
+    var ov = document.getElementById("scenarioVersionCheckBackdrop");
+    var box = document.getElementById("scenarioVersionCheckModal");
+    if(ov) ov.classList.add("hidden");
+    if(box) box.classList.add("hidden");
+    window.__mvScenarioVersionCheckOpen = false;
+  }catch(_){}
+}
+
+function __loadNewestAvailableScenario(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    var arr = __getScenarioSnapshots(slot).slice().sort(function(a,b){
+      return Number(b && b.savedAtTs || 0) - Number(a && a.savedAtTs || 0);
+    });
+    var newest = arr[0];
+    if(!newest || !newest.scenario) return false;
+    __mvScenarioImport({
+      mv_kind: "scenario_export",
+      mv_version: 1,
+      exportedAt: String(newest.savedAt || new Date(Number(newest.savedAtTs || Date.now())).toISOString()),
+      scenarioSlot: slot,
+      scenario: newest.scenario,
+      deviceName: String(newest.deviceName || "")
+    }, slot);
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __openScenarioVersionCheckModal(slotLetter, compare){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(!__isWebBackupReminderContext()) return false;
+    if(window.__mvScenarioVersionCheckOpen) return false;
+    var ov = document.getElementById("scenarioVersionCheckBackdrop");
+    var box = document.getElementById("scenarioVersionCheckModal");
+    var title = document.getElementById("scenarioVersionCheckTitle");
+    var body = document.getElementById("scenarioVersionCheckBody");
+    var continueBtn = document.getElementById("scenarioVersionCheckContinueBtn");
+    var updateBtn = document.getElementById("scenarioVersionCheckUpdateBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    title.textContent = "Hay una simulación más reciente";
+    var details = __formatScenarioMetaLabel({
+      referenceTs: Number(compare && compare.newestTs || 0),
+      deviceName: String(compare && compare.newestDeviceName || "")
+    });
+    body.textContent = details
+      ? `Se ha detectado una simulación más reciente para ${slot}. ${details}`
+      : `Se ha detectado una simulación más reciente para ${slot}.`;
+    continueBtn.textContent = "Ahora no";
+    updateBtn.textContent = "Actualizar simulación";
+    continueBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __closeScenarioVersionCheckModal();
+    };
+    updateBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __closeScenarioVersionCheckModal();
+      if(!__loadNewestAvailableScenario(slot)){
+        try{ toast("No se pudo actualizar la simulación"); }catch(_){}
+      }
+    };
+    ov.classList.remove("hidden");
+    box.classList.remove("hidden");
+    window.__mvScenarioVersionCheckOpen = true;
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __maybeShowScenarioVersionCheckOnOpen(){
+  try{
+    if(!__isWebBackupReminderContext()) return false;
+    if(window.__mvScenarioVersionCheckShown) return false;
+    var slot = String((state && state.scenario) || "A").trim().toUpperCase();
+    var compare = __compareCurrentVsNewestScenario(slot);
+    if(!compare || !compare.hasNewer) return false;
+    window.__mvScenarioVersionCheckShown = true;
+    return __openScenarioVersionCheckModal(slot, compare);
+  }catch(_){
+    return false;
   }
 }
 
@@ -3816,6 +4141,7 @@ document.addEventListener("DOMContentLoaded", function(){
   try{ __renderLastAutoBackupInfo(); }catch(_){}
   try{ __renderBackupFolderInfo(); }catch(_){}
   try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
+  try{ __renderLastScenarioExportInfo(); }catch(_){}
   try{ __renderWebBackupReminderSetting(); }catch(_){}
 }, { passive: true });
 
@@ -17411,6 +17737,7 @@ function __mvScenarioExport(slotLetter){
     exportedAt: new Date().toISOString(),
     sourceBuild: APP_BUILD,
     scenarioSlot: slot,
+    deviceName: (typeof getDeviceName === "function") ? (getDeviceName(false) || "") : "",
     scenario: __mvNormalizeScenarioForTransfer(deepCloneJSON(src) || {})
   };
 }
@@ -17426,14 +17753,27 @@ function __mvScenarioImport(obj, destSlotLetter){
     state.scenarios = { A: emptyScenario(), B: emptyScenario(), C: emptyScenario(), D: emptyScenario() };
   }
   state.scenarios[slot] = normalizedScenario;
+  try{
+    __setCurrentLoadedScenarioMeta(slot, {
+      referenceTs: Number(Date.parse(String(obj.exportedAt || "")) || Date.now()),
+      savedAt: String(obj.exportedAt || ""),
+      source: "scenario-import",
+      deviceName: String(obj.deviceName || ""),
+      scenarioLetter: slot
+    });
+  }catch(_){}
+  try{ __pushScenarioSnapshot(slot, obj, "scenario-import"); }catch(_){}
+  try{ __clearScenarioDirty(slot); }catch(_){}
   saveState();
   renderAll();
   try { syncStickyTotalsHeightVar(); } catch {}
   try { toast(`Simulación importada en ${slot}`); } catch {}
 }
 
-function __mvRunScenarioExportFlow(){
-  const slot = __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
+function __mvRunScenarioExportFlow(slotLetter){
+  const slot = slotLetter
+    ? String(slotLetter).trim().toUpperCase()
+    : __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
   if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
   const payload = __mvScenarioExport(slot);
   const tripName = (typeof getTripName === "function") ? String(getTripName() || "").trim() : String(localStorage.getItem("miviaje.tripName") || "").trim();
@@ -17475,10 +17815,23 @@ function __mvRunScenarioExportFlow(){
     localStorage.setItem(MV_LAST_SCENARIO_EXPORT_META_KEY, JSON.stringify({
       slot: slot,
       savedAt: payload.exportedAt,
-      savedAtTs: Date.parse(payload.exportedAt) || Date.now()
+      savedAtTs: Date.parse(payload.exportedAt) || Date.now(),
+      deviceName: String(payload.deviceName || "")
     }));
   }catch(_){}
-  try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){}
+  try{ __pushScenarioSnapshot(slot, payload, "scenario-export"); }catch(_){}
+  try{
+    __setCurrentLoadedScenarioMeta(slot, {
+      referenceTs: Number(Date.parse(payload.exportedAt) || Date.now()),
+      savedAt: String(payload.exportedAt || ""),
+      source: "scenario-export",
+      deviceName: String(payload.deviceName || ""),
+      scenarioLetter: slot
+    });
+  }catch(_){}
+  try{ __clearScenarioDirty(slot); }catch(_){}
+  try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){} 
+  return true;
 }
 
 async function __mvRunScenarioImportFlow(ev){
@@ -19042,6 +19395,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } catch {}
   try { __maybeShowBackupVersionCheckOnOpen(); } catch {}
+  try { __maybeShowScenarioVersionCheckOnOpen(); } catch {}
   try { __startNotificationsEngine(); } catch {}
   try {
     if(!window.__mvBoundHashOpen){
@@ -19085,10 +19439,12 @@ window.addEventListener('DOMContentLoaded', () => {
       if (!ok) { toast("No se pudo borrar (id no encontrado)"); return; }
 
       try { if (typeof saveState === "function") saveState(); } catch {}
+      try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
       try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
       try { if (typeof renderAll === "function") renderAll(); } catch {}
       try { if (typeof renderTimeline === "function") renderTimeline(); } catch {}
       try { if (typeof calcSummary === "function") calcSummary(); } catch {}
+      try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
     });
   }
 
@@ -19140,6 +19496,7 @@ window.addEventListener('DOMContentLoaded', () => {
               if(obj && typeof obj === "object") obj.updatedAt = Date.now();
             }catch(_){}
             try { if (typeof saveState === "function") saveState(); } catch {}
+            try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
             try{ __sheetSetSnapshot(); }catch{}
             try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
             try {
@@ -19157,6 +19514,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (typeof calcSummary === "function") calcSummary();
               }
             } catch {}
+            try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
             try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
           };
           try{ showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]); }catch{}
@@ -19171,6 +19529,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if(obj && typeof obj === "object") obj.updatedAt = Date.now();
       }catch(_){}
       try { if (typeof saveState === "function") saveState(); } catch {}
+      try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
       try{ __sheetSetSnapshot(); }catch{}
 
       // Close sheet first (keeps UI consistent)
@@ -19186,6 +19545,7 @@ window.addEventListener('DOMContentLoaded', () => {
           if (typeof renderAll === "function") renderAll();
         }
       } catch {}
+      try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
       try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
 
       try {
@@ -22724,6 +23084,28 @@ QA checklist (V89D1):
 <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="backupVersionCheckContinueBtn" type="button">Continuar</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900 hidden" id="backupVersionCheckUpdateBtn" type="button">Actualizar a la más reciente</button>
+</div>
+</div>
+</div>
+<div class="hidden fixed inset-0 z-[2504] bg-slate-900/45" id="scenarioSavePromptBackdrop"></div>
+<div class="hidden fixed inset-0 z-[2505] flex items-center justify-center p-5" id="scenarioSavePromptModal">
+<div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
+<div class="text-xl font-extrabold text-slate-900" id="scenarioSavePromptTitle">¿Guardar simulación ahora?</div>
+<div class="mt-2 text-sm text-slate-600" id="scenarioSavePromptBody">Has hecho cambios en la simulación activa. Puedes guardar una copia ahora para tener la última versión al día.</div>
+<div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioSavePromptContinueBtn" type="button">Ahora no</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioSavePromptUpdateBtn" type="button">Guardar ahora</button>
+</div>
+</div>
+</div>
+<div class="hidden fixed inset-0 z-[2506] bg-slate-900/45" id="scenarioVersionCheckBackdrop"></div>
+<div class="hidden fixed inset-0 z-[2507] flex items-center justify-center p-5" id="scenarioVersionCheckModal">
+<div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
+<div class="text-xl font-extrabold text-slate-900" id="scenarioVersionCheckTitle">Hay una simulación más reciente</div>
+<div class="mt-2 text-sm text-slate-600" id="scenarioVersionCheckBody">Se ha detectado una simulación más reciente que la que estás usando ahora.</div>
+<div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioVersionCheckContinueBtn" type="button">Ahora no</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioVersionCheckUpdateBtn" type="button">Actualizar simulación</button>
 </div>
 </div>
 </div>
