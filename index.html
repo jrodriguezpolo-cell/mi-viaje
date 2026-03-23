@@ -4145,6 +4145,26 @@ function __renderScenariosFolderPathSetting(){
   }catch(_){}
 }
 try{ window.__renderScenariosFolderPathSetting = __renderScenariosFolderPathSetting; }catch(_){} 
+function __renderCurrentBackupLoadedInfo(){
+  try{
+    const line = document.getElementById("toolsCurrentBackupLoadedLine");
+    if(!line) return;
+    const meta = __getCurrentLoadedBackupMeta();
+    if(!meta || !Number(meta.referenceTs || 0)){
+      line.textContent = getLang()==="en"
+        ? "Current backup version: not available"
+        : "Versión de backup en uso: no disponible";
+      return;
+    }
+    const d = new Date(Number(meta.referenceTs || 0));
+    const pretty = isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    const source = String(meta.source || "").trim();
+    line.textContent = getLang()==="en"
+      ? `Current backup version: ${pretty}${source ? ` · ${source}` : ""}`
+      : `Versión de backup en uso: ${pretty}${source ? ` · ${source}` : ""}`;
+  }catch(_){}  
+}
+try{ window.__renderCurrentBackupLoadedInfo = __renderCurrentBackupLoadedInfo; }catch(_){} 
 function __renderCurrentScenarioLoadedInfo(){
   try{
     const line = document.getElementById("toolsCurrentScenarioLoadedLine");
@@ -4188,8 +4208,9 @@ function __renderLastScenarioExportInfo(){
 }
 try{ window.__renderLastScenarioExportInfo = __renderLastScenarioExportInfo; }catch(_){}
 document.addEventListener("DOMContentLoaded", function(){
-  try{ __renderLastManualBackupInfo(); }catch(_){}
-  try{ __renderLastAutoBackupInfo(); }catch(_){}
+  try{ __renderCurrentBackupLoadedInfo(); }catch(_){}  
+  try{ __renderLastManualBackupInfo(); }catch(_){} 
+  try{ __renderLastAutoBackupInfo(); }catch(_){} 
   try{ __renderBackupFolderInfo(); }catch(_){}
   try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
   try{ __renderCurrentScenarioLoadedInfo(); }catch(_){}
@@ -24193,6 +24214,7 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportTripJson" type="button" data-i18n="tools.engines.export">Exportar backup JSON</button>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
+              <div class="text-xs text-slate-500" id="toolsCurrentBackupLoadedLine">Versión de backup en uso: no disponible</div>
               <div class="text-xs text-slate-500 hidden" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold hidden" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
               <input id="inputImportTripJson" type="file" accept=".json,application/json" class="hidden" />
