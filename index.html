@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A1_CONFIRM_DELETE_EVENT_TRASH";
+const APP_BUILD = "V240_A2_CUSTOM_NAMES_FOR_EXPORTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3324,24 +3324,39 @@ function __closeWebBackupReminderModal(){
   }catch(_){}
 }
 
-function __runManualBackupExportWithMeta(){
+async function __runManualBackupExportWithMeta(){
   try{
+    var customName = await __mvPromptExportNameModal({
+      title: "Guardar backup",
+      label: "Nombre del backup (opcional)",
+      placeholder: "Ej: Antes de la mejora X",
+      confirmText: "Guardar backup"
+    });
+    if(customName === null) return false;
     if(typeof __exportTripJsonBackup !== "function") return false;
-    var payload = __exportTripJsonBackup();
+    var payload = __exportTripJsonBackup(customName);
     var nowIso = String(payload && payload.savedAt || "");
     var nowTs = Number(Date.parse(nowIso) || Date.now());
     localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
+      name: String(payload && payload.name || "").trim(),
       savedAt: nowIso || new Date(nowTs).toISOString(),
-      savedAtTs: nowTs
+      savedAtTs: nowTs,
+      build: String(payload && payload.sourceBuild || APP_BUILD)
     }));
     try{
       __setCurrentLoadedBackupMeta({
         referenceTs: nowTs,
-        source: "manual"
+        source: "manual",
+        name: String(payload && payload.name || "").trim(),
+        build: String(payload && payload.sourceBuild || APP_BUILD)
       });
     }catch(_){}
     try{ if(typeof __renderCurrentBackupLoadedInfo === "function") __renderCurrentBackupLoadedInfo(); }catch(_){} 
     try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){} 
+    try{
+      var pretty = new Date(nowTs).toLocaleString("es-ES", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+      toast(customName ? `Backup guardado: ${customName} · ${pretty}` : `Backup guardado: ${pretty}`);
+    }catch(_){}
     return true;
   }catch(_){
     return false;
@@ -4532,9 +4547,12 @@ function __exportTripJsonBackup(){
     var now = new Date();
     var pad2 = function(n){ return String(n).padStart(2, "0"); };
     var filename = `MI_VIAJE_BACKUP_${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}_${pad2(now.getHours())}-${pad2(now.getMinutes())}.json`;
+    var customLabel = String(arguments[0] || "").trim();
     var payload = {
-      name: "Mi Viaje Backup",
+      name: customLabel,
       savedAt: now.toISOString(),
+      sourceBuild: APP_BUILD,
+      type: "backup",
       state: currentState
     };
     __downloadTripJsonBackup(payload, filename);
@@ -4579,7 +4597,9 @@ async function __importTripJsonBackup(file){
       if(!(importedTs > 0)) importedTs = Date.now();
       __setCurrentLoadedBackupMeta({
         referenceTs: importedTs,
-        source: "manual-import"
+        source: "manual-import",
+        name: String(parsed && parsed.name || "").trim(),
+        build: String(parsed && parsed.sourceBuild || "")
       });
     }catch(_){}
     try{ if(typeof loadState === "function") loadState(); else state = nextState; }catch(_){ state = nextState; }
@@ -8582,6 +8602,63 @@ function closeModal() {
 }
 $("modalClose").addEventListener("click", closeModal);
 $("modalBackdrop").addEventListener("click", closeModal);
+
+function __mvPromptExportNameModal(opts){
+  return new Promise(function(resolve){
+    try{
+      var cfg = opts || {};
+      var title = String(cfg.title || "Guardar").trim();
+      var label = String(cfg.label || "Nombre (opcional)").trim();
+      var placeholder = String(cfg.placeholder || "").trim();
+      var confirmText = String(cfg.confirmText || "Guardar").trim();
+      var initialValue = String(cfg.initialValue || "").trim();
+      var inputId = `mvExportNameInput_${Date.now()}`;
+      var body = `
+        <div class="space-y-3">
+          <div class="text-sm text-slate-700">${escapeHtml(label)}</div>
+          <input id="${inputId}" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700" style="font-size:16px" type="text" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(initialValue)}" />
+        </div>
+      `;
+      var done = false;
+      function finish(value){
+        if(done) return;
+        done = true;
+        try{ closeModal(); }catch(_){}
+        resolve(value);
+      }
+      var btnCancel = document.createElement("button");
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.type = "button";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ finish(null); };
+      var btnConfirm = document.createElement("button");
+      btnConfirm.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnConfirm.type = "button";
+      btnConfirm.textContent = confirmText;
+      btnConfirm.onclick = function(){
+        var input = document.getElementById(inputId);
+        finish(String(input && input.value || "").trim());
+      };
+      showModal(title, body, [btnCancel, btnConfirm]);
+      setTimeout(function(){
+        try{
+          var input = document.getElementById(inputId);
+          if(!input) return;
+          input.focus();
+          input.setSelectionRange(input.value.length, input.value.length);
+          input.addEventListener("keydown", function(ev){
+            if(ev.key === "Enter"){
+              ev.preventDefault();
+              btnConfirm.click();
+            }
+          }, { once:false });
+        }catch(_){}
+      }, 0);
+    }catch(_){
+      resolve(null);
+    }
+  });
+}
 
 
 /* ================= V223D: Notificaciones fase 2 ================= */
@@ -18034,16 +18111,18 @@ function __mvNormalizeScenarioForTransfer(src){
   return normalized;
 }
 
-function __mvScenarioExport(slotLetter){
+function __mvScenarioExport(slotLetter, customName){
   const slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
   if (!/^[ABCD]$/.test(slot)) throw new Error("Slot inválido");
   const src = (state && state.scenarios && state.scenarios[slot]) ? state.scenarios[slot] : emptyScenario();
+  const scenarioName = String(customName || "").trim();
   return {
     mv_kind: "scenario_export",
     mv_version: 1,
     exportedAt: new Date().toISOString(),
     sourceBuild: APP_BUILD,
     scenarioSlot: slot,
+    scenarioName: scenarioName,
     deviceName: (typeof getDeviceName === "function") ? (getDeviceName(false) || "") : "",
     scenario: __mvNormalizeScenarioForTransfer(deepCloneJSON(src) || {})
   };
@@ -18066,7 +18145,9 @@ function __mvScenarioImport(obj, destSlotLetter){
       savedAt: String(obj.exportedAt || ""),
       source: "scenario-import",
       deviceName: String(obj.deviceName || ""),
-      scenarioLetter: slot
+      scenarioLetter: slot,
+      name: String(obj.scenarioName || "").trim(),
+      build: String(obj.sourceBuild || "")
     });
   }catch(_){}
   try{ __pushScenarioSnapshot(slot, obj, "scenario-import"); }catch(_){}
@@ -18078,12 +18159,19 @@ function __mvScenarioImport(obj, destSlotLetter){
   try { toast(`Simulación importada en ${slot}`); } catch {}
 }
 
-function __mvRunScenarioExportFlow(slotLetter){
+async function __mvRunScenarioExportFlow(slotLetter){
   const slot = slotLetter
     ? String(slotLetter).trim().toUpperCase()
     : __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
   if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
-  const payload = __mvScenarioExport(slot);
+  const customName = await __mvPromptExportNameModal({
+    title: `Guardar simulación ${slot}`,
+    label: "Nombre (opcional)",
+    placeholder: "Ej: Roma final",
+    confirmText: "Guardar"
+  });
+  if(customName === null) return false;
+  const payload = __mvScenarioExport(slot, customName);
   const tripName = (typeof getTripName === "function") ? String(getTripName() || "").trim() : String(localStorage.getItem("miviaje.tripName") || "").trim();
   const baseTrip = (typeof sanitizeFileBaseName === "function")
     ? sanitizeFileBaseName(tripName || "MI_VIAJE")
@@ -18122,9 +18210,11 @@ function __mvRunScenarioExportFlow(slotLetter){
   try{
     localStorage.setItem(MV_LAST_SCENARIO_EXPORT_META_KEY, JSON.stringify({
       slot: slot,
+      name: String(payload.scenarioName || "").trim(),
       savedAt: payload.exportedAt,
       savedAtTs: Date.parse(payload.exportedAt) || Date.now(),
-      deviceName: String(payload.deviceName || "")
+      deviceName: String(payload.deviceName || ""),
+      build: String(payload.sourceBuild || APP_BUILD)
     }));
   }catch(_){}
   try{ __pushScenarioSnapshot(slot, payload, "scenario-export"); }catch(_){}
@@ -18134,12 +18224,18 @@ function __mvRunScenarioExportFlow(slotLetter){
       savedAt: String(payload.exportedAt || ""),
       source: "scenario-export",
       deviceName: String(payload.deviceName || ""),
-      scenarioLetter: slot
+      scenarioLetter: slot,
+      name: String(payload.scenarioName || "").trim(),
+      build: String(payload.sourceBuild || APP_BUILD)
     });
   }catch(_){}
   try{ __clearScenarioDirty(slot); }catch(_){}
-  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){}
+  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){} 
   try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){} 
+  try{
+    const pretty = new Date(Date.parse(payload.exportedAt) || Date.now()).toLocaleString("es-ES", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
+    toast(payload.scenarioName ? `Guardada: ${payload.scenarioName} · Simulación ${slot} · ${pretty}` : `Guardada: Simulación ${slot} · ${pretty}`);
+  }catch(_){}
   return true;
 }
 
@@ -24602,27 +24698,11 @@ document.addEventListener("DOMContentLoaded", function(){
       var btnExportTripJson = document.getElementById("btnExportTripJson");
       if(btnExportTripJson && !btnExportTripJson.__mvBound){
         btnExportTripJson.__mvBound = true;
-        btnExportTripJson.addEventListener("click", function(e){
+        btnExportTripJson.addEventListener("click", async function(e){
           try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
           try{
-            if(typeof __exportTripJsonBackup === "function"){
-              const payload = __exportTripJsonBackup();
-              const nowIso = String(payload && payload.savedAt || "");
-              const nowTs = Number(Date.parse(nowIso) || Date.now());
-              localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
-                savedAt: nowIso || new Date(nowTs).toISOString(),
-                savedAtTs: nowTs
-              }));
-              try{
-                __setCurrentLoadedBackupMeta({
-                  referenceTs: nowTs,
-                  source: "manual"
-                });
-              }catch(_){}
-              __renderLastManualBackupInfo();
-              try{ __renderCurrentBackupLoadedInfo(); }catch(_){}
-            }
-          }catch(_){} 
+            if(typeof __runManualBackupExportWithMeta === "function") await __runManualBackupExportWithMeta();
+          }catch(_){}
         }, true);
       }
       var btnExportICS = document.getElementById("btnExportICS");
