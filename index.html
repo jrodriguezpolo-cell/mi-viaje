@@ -24380,6 +24380,19 @@ function __mvICS_Escape(s){
     .trim();
 }
 
+function __mvMapsWebUrl(destination, mode){
+  const dest = String(destination || "").trim();
+  if(!dest) return "";
+  const m = String(mode || "").toLowerCase();
+  const travel = (m==="car" || m==="driving") ? "driving"
+               : (m==="walk" || m==="walking") ? "walking"
+               : (m==="bike" || m==="bicycling") ? "bicycling"
+               : "transit";
+  return "https://www.google.com/maps/dir/?api=1"
+       + "&destination=" + encodeURIComponent(dest)
+       + "&travelmode=" + encodeURIComponent(travel);
+}
+
 function __mvICS_FormatDT(dt){
   const y = dt.getFullYear();
   const m = String(dt.getMonth()+1).padStart(2,"0");
@@ -24493,6 +24506,10 @@ function __mvICS_BuildEventsFromState(){
         const from = String((leg && (leg.from || leg.placeOut)) || "").trim();
         const to = String((leg && (leg.to || leg.placeIn)) || "").trim();
         const mode = String((leg && leg.mode) || "").trim();
+        const outBase = [leg && leg.placeOut, leg && leg.placeOutDetail].filter(Boolean).join(" · ").trim();
+        const inBase = [leg && leg.placeIn, leg && leg.placeInDetail].filter(Boolean).join(" · ").trim();
+        const mapsOutDest = __mapsDestWithCity(outBase || from, from);
+        const mapsInDest = __mapsDestWithCity(inBase || to, to);
         const stableId = String((leg && leg.id) || fallbackUidPart("leg", leg));
         events.push({
           kind: "leg",
@@ -24502,7 +24519,10 @@ function __mvICS_BuildEventsFromState(){
           end: end,
           summary: `Mi Viaje · Transporte${from || to ? ` · ${from || "—"} → ${to || "—"}` : ""}`,
           description: [mode, from, to].filter(Boolean).join(" · "),
-          note: String((leg && (leg.notes || leg.note)) || "").trim()
+          note: String((leg && (leg.notes || leg.note)) || "").trim(),
+          mapsOutDest: mapsOutDest,
+          mapsInDest: mapsInDest,
+          mapsMode: mode || "transit"
         });
       }catch(_){}
     });
@@ -24525,6 +24545,7 @@ function __mvICS_BuildEventsFromState(){
         if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
         const name = String((stay && (stay.name || stay.hotel)) || "").trim();
         const city = String((stay && stay.city) || "").trim();
+        const mapsDest = __mapsDestWithCity(name, city) || city;
         const stableId = String((stay && stay.id) || fallbackUidPart("stay", stay));
         events.push({
           kind: "stay",
@@ -24534,7 +24555,9 @@ function __mvICS_BuildEventsFromState(){
           end: end,
           summary: `Mi Viaje · Alojamiento${name ? ` · ${name}` : ""}`,
           description: [city, name].filter(Boolean).join(" · "),
-          note: String((stay && (stay.notes || stay.note)) || "").trim()
+          note: String((stay && (stay.notes || stay.note)) || "").trim(),
+          mapsDest: mapsDest,
+          mapsMode: "transit"
         });
       }catch(_){}
     });
@@ -24556,6 +24579,7 @@ function __mvICS_BuildEventsFromState(){
         if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
         const title = String((act && (act.title || act.name)) || "Actividad").trim();
         const city = String((act && act.city) || "").trim();
+        const mapsDest = __mapsDestWithCity(title, city) || city;
         const stableId = String((act && act.id) || fallbackUidPart("act", act));
         events.push({
           kind: "act",
@@ -24565,7 +24589,9 @@ function __mvICS_BuildEventsFromState(){
           end: end,
           summary: `Mi Viaje · ${title}`,
           description: city,
-          note: String((act && (act.notes || act.note)) || "").trim()
+          note: String((act && (act.notes || act.note)) || "").trim(),
+          mapsDest: mapsDest,
+          mapsMode: "transit"
         });
       }catch(_){}
     });
@@ -24639,7 +24665,20 @@ window.__mvExportICS = function(){
       const deep = MV_WEBAPP_URL + "#open=" + encodeURIComponent(String((ev && ev.kind) || "") + ":" + String((ev && ev.id) || ""));
       const descBase = String((ev && ev.description) || "").trim();
       const note = String((ev && ev.note) || "").trim();
-      const descFull = descBase + (note ? ((descBase ? "\n\n" : "") + "Nota:\n" + note) : "");
+      const descParts = [];
+      if(descBase) descParts.push(descBase);
+      if(note) descParts.push(`Nota:\n${note}`);
+      if(ev && ev.mapsDest){
+        const mapsUrl = __mvMapsWebUrl(ev.mapsDest, ev.mapsMode);
+        if(mapsUrl) descParts.push(`Cómo llegar: ${mapsUrl}`);
+      }
+      if(ev && (ev.mapsOutDest || ev.mapsInDest)){
+        const mapsUrlOut = __mvMapsWebUrl(ev.mapsOutDest, ev.mapsMode);
+        const mapsUrlIn = __mvMapsWebUrl(ev.mapsInDest, ev.mapsMode);
+        if(mapsUrlOut) descParts.push(`Cómo llegar (salida): ${mapsUrlOut}`);
+        if(mapsUrlIn) descParts.push(`Cómo llegar (llegada): ${mapsUrlIn}`);
+      }
+      const descFull = descParts.join("\n\n");
       return [
         "BEGIN:VEVENT",
         `UID:${ev.uid}`,
