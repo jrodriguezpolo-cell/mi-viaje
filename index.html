@@ -13657,11 +13657,9 @@ function actSummaryLinesHTML(act, opts){
   const line1Title = title || "—";
 
   const line2Date = dES || "—";
-  const crossesDay = !!(startDateISO && endDateISO && endDateISO !== startDateISO);
-  const overnightHint = crossesDay ? ` (+${Math.max(1, Math.round((new Date(endDateISO + "T12:00:00").getTime() - new Date(startDateISO + "T12:00:00").getTime()) / 86400000))})` : "";
   const line2Time = (isOvernightPart && partIndex === 2)
     ? (endHHMM ? `00:00 → ${endHHMM}` : "00:00")
-    : ((t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}${overnightHint}` : (t || ""));
+    : ((t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}` : (t || ""));
 
   const line1 = `<div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>`;
 
@@ -15364,9 +15362,8 @@ function renderTimeline() {
     const segments = (typeof __mvBuildActSegments === "function") ? (__mvBuildActSegments(a) || []) : [a];
     for (const seg of segments) {
       const d = String(seg?.__mvDayKey || seg?.date || startISO || "").trim();
-      const startShown = Number(seg?.__mvStartMinShown);
-      const shownTime = Number.isFinite(startShown)
-        ? __fmtHHMM_fromMinutes(Math.max(0, Math.min(1439, startShown)))
+      const shownTime = Number.isFinite(Number(seg?.__mvStartMinShown))
+        ? __fmtHHMM_fromMinutes(Math.max(0, Math.min(1439, Number(seg.__mvStartMinShown))))
         : (a.time || "");
       items.push({
         date: (d || "9999-99-99"),
@@ -15380,7 +15377,7 @@ function renderTimeline() {
         __mvPartIndex: Number(seg?.__mvPartIndex || 1),
         __mvPartTotal: Number(seg?.__mvPartTotal || 1),
         __mvPartText: String(seg?.__mvPartText || ""),
-        __mvStartMinShown: Number.isFinite(startShown) ? startShown : null,
+        __mvStartMinShown: Number(seg?.__mvStartMinShown || 0),
         __mvEndMinShown: Number(seg?.__mvEndMinShown || 0),
         __mvRealEndDateISO: String(seg?.__mvRealEndDateISO || ""),
         __mvRealEndClockMin: Number(seg?.__mvRealEndClockMin || 0)
