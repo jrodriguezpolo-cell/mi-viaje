@@ -3004,6 +3004,7 @@ const MV_ICLOUD_FOLDER_META_KEY = "MV_ICLOUD_FOLDER_META_V1";
 const MV_WEB_BACKUP_REMINDER_KEY = "MV_WEB_BACKUP_REMINDER_V1";
 const MV_MANUAL_BACKUP_PATH_KEY = "MV_MANUAL_BACKUP_PATH_V1";
 const MV_MANUAL_ATTACHMENTS_PATH_KEY = "MV_MANUAL_ATTACHMENTS_PATH_V1";
+const MV_MANUAL_SCENARIOS_PATH_KEY = "MV_MANUAL_SCENARIOS_PATH_V1";
 const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
 const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
 
@@ -3774,6 +3775,20 @@ function __renderAttachmentsFolderPathSetting(){
   }catch(_){}
 }
 try{ window.__renderAttachmentsFolderPathSetting = __renderAttachmentsFolderPathSetting; }catch(_){}
+function __renderScenariosFolderPathSetting(){
+  try{
+    const input = document.getElementById("toolsScenariosFolderPathInput");
+    if(!input) return;
+    input.placeholder = getLang()==="en"
+      ? "Paste the simulations folder path here"
+      : "Pega aquí la ruta de la carpeta de simulaciones";
+    if(!input.__mvHydrated){
+      input.__mvHydrated = true;
+      input.value = String(localStorage.getItem(MV_MANUAL_SCENARIOS_PATH_KEY) || "");
+    }
+  }catch(_){}
+}
+try{ window.__renderScenariosFolderPathSetting = __renderScenariosFolderPathSetting; }catch(_){}
 document.addEventListener("DOMContentLoaded", function(){
   try{ __renderLastManualBackupInfo(); }catch(_){}
   try{ __renderLastAutoBackupInfo(); }catch(_){}
@@ -23665,6 +23680,13 @@ document.addEventListener("DOMContentLoaded", function(){
         toolsScenarioGroup.className = "flex flex-col gap-2";
         toolsScenarioGroup.innerHTML = `
           <div class="text-sm text-slate-600" style="margin-bottom:10px;opacity:.9">Exporta o importa una simulación concreta (A/B/C/D) sin tocar el state completo.</div>
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3" id="toolsScenariosFolderBox">
+            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Carpeta de simulaciones</div>
+            <div class="mt-2 flex items-center gap-2">
+              <input id="toolsScenariosFolderPathInput" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-700" style="font-size:16px" type="text" placeholder="Pega aquí la ruta de la carpeta de simulaciones" />
+              <button id="toolsScenariosFolderCopyBtn" class="tap px-3 py-2 rounded-xl border border-slate-300 text-sm font-semibold shrink-0" type="button" data-i18n="common.copy">Copiar</button>
+            </div>
+          </div>
           <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnToolsScenarioExport" type="button">Exportar simulación…</button>
           <label class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold text-center cursor-pointer">
             Importar simulación…
@@ -23941,7 +23963,8 @@ document.addEventListener("DOMContentLoaded", function(){
 
       [
         ["toolsBackupFolderPathInput", MV_MANUAL_BACKUP_PATH_KEY],
-        ["toolsAttachmentsFolderPathInput", MV_MANUAL_ATTACHMENTS_PATH_KEY]
+        ["toolsAttachmentsFolderPathInput", MV_MANUAL_ATTACHMENTS_PATH_KEY],
+        ["toolsScenariosFolderPathInput", MV_MANUAL_SCENARIOS_PATH_KEY]
       ].forEach(function(entry){
         var input = document.getElementById(entry[0]);
         if(!input || input.__mvBoundPath) return;
@@ -23956,7 +23979,8 @@ document.addEventListener("DOMContentLoaded", function(){
 
       [
         ["toolsBackupFolderCopyBtn", "toolsBackupFolderPathInput"],
-        ["toolsAttachmentsFolderCopyBtn", "toolsAttachmentsFolderPathInput"]
+        ["toolsAttachmentsFolderCopyBtn", "toolsAttachmentsFolderPathInput"],
+        ["toolsScenariosFolderCopyBtn", "toolsScenariosFolderPathInput"]
       ].forEach(function(entry){
         var btn = document.getElementById(entry[0]);
         var input = document.getElementById(entry[1]);
@@ -23975,6 +23999,7 @@ document.addEventListener("DOMContentLoaded", function(){
       try{ __renderEngineStatusBox(); }catch(_){}
       try{ __renderBackupFolderInfo(); }catch(_){}
       try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
+      try{ __renderScenariosFolderPathSetting(); }catch(_){}
       try{ applyI18n(); }catch(_){}
     }
   }catch(_){}
