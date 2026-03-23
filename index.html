@@ -13677,15 +13677,24 @@ function actSummaryLinesHTML(act, opts){
 
   const line2Date = dES || "—";
   const crossesDay = !!(startDateISO && endDateISO && endDateISO !== startDateISO);
-  // NO mostrar (+1) ni rangos ficticios 00:00 → ...: solo horas reales.
-  const overnightHint = "";
-  const line2Time = (isOvernightPart && partTotal > 1)
-    ? ((partIndex === 2)
-        ? (endHHMM || "")
-        : ((t && endHHMM) ? `${t} → ${endHHMM}` : (t || "")))
-    : ((displayDateISO && startDateISO && displayDateISO !== startDateISO)
-        ? (endHHMM || "")
-        : ((t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}` : (t || "")));
+
+  // Overnight UX rules:
+  // - NO "(+1)" hint
+  // - For (1/2): show "start → end" (end is real clock, even if next day)
+  // - For (2/2): show only end clock (NO "00:00 → ...")
+  let line2Time = "";
+  if(isOvernightPart && crossesDay){
+    if(partIndex === 2){
+      line2Time = (endHHMM || "");
+    }else{
+      line2Time = (t && endHHMM) ? `${t} → ${endHHMM}` : (t || endHHMM || "");
+    }
+  }else if(displayDateISO && startDateISO && displayDateISO !== startDateISO){
+    // Segment rendered on next day: show only the meaningful clock time
+    line2Time = (endHHMM || t || "");
+  }else{
+    line2Time = (t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}` : (t || "");
+  }
 
   const line1 = `<div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>`;
 
@@ -15137,12 +15146,9 @@ function __mvBuildActSegments(act){
         __mvPartIndex: 2,
         __mvPartTotal: 2,
         __mvOvernight: true,
-        // Segment 2/2: tarjeta de "fin" (se muestra la hora real de fin, NO 00:00)
-        time: (typeof __fmtHHMM_fromMinutes === "function")
-          ? __fmtHHMM_fromMinutes(realEndClockMin)
-          : `${String(Math.floor(realEndClockMin/60)%24).padStart(2,"0")}:${String(realEndClockMin%60).padStart(2,"0")}`,
         __mvSegmentStartMin: realEndClockMin,
         __mvSegmentEndMinShown: realEndClockMin,
+        time: ((typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(realEndClockMin) : `${String(Math.floor(realEndClockMin/60)%24).padStart(2,"0")}:${String(realEndClockMin%60).padStart(2,"0")}`),
         __mvRealEndDateISO: nextISO,
         __mvRealEndClockMin: realEndClockMin
       })
