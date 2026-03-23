@@ -15310,6 +15310,8 @@ function __mvBindWeekNavOnce(){
 // =========================================================
 
 function renderTimeline() {
+  console.log("[MV] renderTimeline called");
+  try{
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
@@ -15762,7 +15764,58 @@ box.querySelectorAll("[data-daily-note-open]").forEach(btn => {
   try{ __refreshTimelineNotesBadge(); }catch{}
   // V227_B10: keep alternate view state in sync
   try{ __mvBindWeekNavOnce(); __mvApplyTimelineMode(); }catch(_){ }
-
+  }catch(e){
+    console.error("[MV] renderTimeline failed", e);
+    try{
+      var host = document.getElementById("timelineList");
+      var scSafe = (typeof curScenario === "function") ? curScenario() : null;
+      if(!host || !scSafe){
+        try{ toast("No se pudo renderizar el cronograma"); }catch(_){}
+        return;
+      }
+      var basicItems = [];
+      (Array.isArray(scSafe.legs) ? scSafe.legs : []).forEach(function(leg){
+        basicItems.push({
+          date: String((leg && leg.date) || "").trim() || "9999-99-99",
+          time: String((leg && leg.time) || "").trim(),
+          label: `${String((leg && leg.from) || "—").trim() || "—"} → ${String((leg && leg.to) || "—").trim() || "—"}`
+        });
+      });
+      (Array.isArray(scSafe.stays) ? scSafe.stays : []).forEach(function(stay){
+        basicItems.push({
+          date: String((stay && stay.date) || "").trim() || "9999-99-99",
+          time: String((stay && stay.time) || "").trim(),
+          label: `🏨 ${String((stay && (stay.name || stay.hotel || stay.city)) || "Alojamiento").trim() || "Alojamiento"}`
+        });
+      });
+      (Array.isArray(scSafe.activities) ? scSafe.activities : []).forEach(function(act){
+        var t0 = String((act && (act.time || act.startTime)) || "").trim();
+        var dur = (typeof __tlActDurationMinutes === "function") ? Math.max(0, Math.floor(__tlActDurationMinutes(act) || 0)) : 0;
+        var t1 = "";
+        try{
+          var s0 = (typeof timeToMinutes === "function") ? timeToMinutes(t0) : null;
+          if(s0 !== null && Number.isFinite(s0) && dur > 0 && typeof __fmtHHMM_fromMinutes === "function"){
+            t1 = __fmtHHMM_fromMinutes((s0 + dur) % 1440);
+          }
+        }catch(_){}
+        basicItems.push({
+          date: String((act && act.date) || "").trim() || "9999-99-99",
+          time: t0,
+          label: `🎯 ${String((act && (act.title || act.name)) || "Actividad").trim() || "Actividad"}${(t0 && t1) ? ` · ${t0} → ${t1}` : ""}`
+        });
+      });
+      basicItems.sort(function(a,b){
+        if(String(a.date) !== String(b.date)) return String(a.date).localeCompare(String(b.date));
+        return String(a.time || "").localeCompare(String(b.time || ""));
+      });
+      host.innerHTML = basicItems.length ? basicItems.map(function(it){
+        return `<div class="timelineItem border border-slate-200 rounded-2xl p-3 bg-white">
+          <div class="text-xs text-slate-500">${escapeHtml(String(it.date || "Sin fecha"))}${it.time ? ` · <span class="font-semibold text-slate-700">${escapeHtml(String(it.time))}</span>` : ""}</div>
+          <div class="text-sm font-semibold text-slate-900 mt-1">${escapeHtml(String(it.label || "Evento"))}</div>
+        </div>`;
+      }).join("") : `<div class="text-sm text-slate-500">${escapeHtml(t("empty.timeline"))}</div>`;
+    }catch(_){}
+  }
 }
 
 function renderDailyNotes() {
@@ -24570,6 +24623,8 @@ function __mvICS_BuildEventsFromState(){
     }catch(_){ return { a1:60, a2:15 }; }
   };
 })();
+
+window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } });
 
 const MV_WEBAPP_URL = "https://jrodriguezpolo-cell.github.io/mi-viaje/";
 
