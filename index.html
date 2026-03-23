@@ -15069,6 +15069,69 @@ function __tlActCoveredDays(act){
   }
   return out;
 }
+
+function __mvBuildActSegments(act){
+  try{
+    const base = (act && typeof act === "object") ? act : {};
+    const startISO = String(base.date || "").trim();
+    const startMin = timeToMinutes(base.time);
+    const durMin = (typeof __tlActDurationMinutes === "function")
+      ? Math.max(0, Math.floor(__tlActDurationMinutes(base) || 0))
+      : 0;
+
+    if(!startISO || !/^\d{4}-\d{2}-\d{2}$/.test(startISO) || startMin === null || durMin <= 0){
+      return [Object.assign({}, base, {
+        __mvDayKey: startISO || String(base.date || "").trim(),
+        __mvOvernight: false,
+        __mvPartIndex: 1,
+        __mvPartTotal: 1,
+        __mvPartText: ""
+      })];
+    }
+
+    const endAbs = startMin + durMin;
+    if(endAbs < 1440){
+      return [Object.assign({}, base, {
+        __mvDayKey: startISO,
+        __mvOvernight: false,
+        __mvPartIndex: 1,
+        __mvPartTotal: 1,
+        __mvPartText: "",
+        __mvStartMinShown: startMin,
+        __mvEndMinShown: endAbs
+      })];
+    }
+
+    const nextISO = __tlAddDaysISO(startISO, 1) || startISO;
+    const endClock = endAbs % 1440;
+    return [
+      Object.assign({}, base, {
+        __mvDayKey: startISO,
+        __mvOvernight: true,
+        __mvPartIndex: 1,
+        __mvPartTotal: 2,
+        __mvPartText: "1/2",
+        __mvStartMinShown: startMin,
+        __mvEndMinShown: 1440,
+        __mvRealEndDateISO: nextISO,
+        __mvRealEndClockMin: endClock
+      }),
+      Object.assign({}, base, {
+        __mvDayKey: nextISO,
+        __mvOvernight: true,
+        __mvPartIndex: 2,
+        __mvPartTotal: 2,
+        __mvPartText: "2/2",
+        __mvStartMinShown: 0,
+        __mvEndMinShown: endClock,
+        __mvRealEndDateISO: nextISO,
+        __mvRealEndClockMin: endClock
+      })
+    ];
+  }catch(_){
+    return [Object.assign({}, act || {})];
+  }
+}
 /* ---------------- /Activities overnight visibility (V219B) ---------------- */
 
 
@@ -15298,24 +15361,29 @@ function renderTimeline() {
       items.push({ date: "9999-99-99", time: (a.time || ""), type:t("type.act"), title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
       continue;
     }
-    const endInfo = __tlActEndDateTime(a) || { endISO: startISO, endTime: "" };
-    const endISO = String(endInfo.endISO || startISO || "").trim();
-    const endTime = String(endInfo.endTime || "").trim();
-    const days = __tlActCoveredDays(a);
-
-    for (const d of days) {
-      const isStart = startISO && String(d) === String(startISO);
-      const isEnd = endISO && String(d) === String(endISO);
-
+    const segments = (typeof __mvBuildActSegments === "function") ? (__mvBuildActSegments(a) || []) : [a];
+    for (const seg of segments) {
+      const d = String(seg?.__mvDayKey || seg?.date || startISO || "").trim();
+      const startShown = Number(seg?.__mvStartMinShown);
+      const shownTime = Number.isFinite(startShown)
+        ? __fmtHHMM_fromMinutes(Math.max(0, Math.min(1439, startShown)))
+        : (a.time || "");
       items.push({
         date: (d || "9999-99-99"),
-        // Mantener ordenación: hora solo en inicio y fin; intermedios sin hora
-        time: (isStart ? (a.time || "") : (isEnd ? (endTime || "") : "")),
+        time: shownTime,
         type:t("type.act"),
         title: `${a.city || "—"} • ${a.title || "Actividad"}`,
         cost: parseMoney(a.cost),
         actId: a.id,
-        uid: `act:${a.id}:${d || ""}`
+        uid: `act:${a.id}:${d || ""}:${String(seg?.__mvPartText || "")}`,
+        __mvOvernight: !!seg?.__mvOvernight,
+        __mvPartIndex: Number(seg?.__mvPartIndex || 1),
+        __mvPartTotal: Number(seg?.__mvPartTotal || 1),
+        __mvPartText: String(seg?.__mvPartText || ""),
+        __mvStartMinShown: Number.isFinite(startShown) ? startShown : null,
+        __mvEndMinShown: Number(seg?.__mvEndMinShown || 0),
+        __mvRealEndDateISO: String(seg?.__mvRealEndDateISO || ""),
+        __mvRealEndClockMin: Number(seg?.__mvRealEndClockMin || 0)
       });
     }
   }
