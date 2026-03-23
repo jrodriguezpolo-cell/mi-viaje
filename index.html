@@ -13641,7 +13641,7 @@ function actSummaryLinesHTML(act, opts){
   const dES = ((displayDateISO || startDateISO) ? formatDateShortES(displayDateISO || startDateISO) : "");
   const t = String(act?.__mvSummaryTime || act?.time || "").trim();
   const durationMin = __tlActDurationMinutes(act);
-  const durationLabel = act?.__mvHideDurationLabel ? "" : __tlFormatDurationHM(durationMin);
+  const durationLabel = __tlFormatDurationHM(durationMin);
   let endDateISO = startDateISO;
   let endHHMM = "";
   try{
@@ -13690,9 +13690,15 @@ function actSummaryLinesHTML(act, opts){
       : __contentHTML;
   }
 
+  const line2TimeHTML = (() => {
+    const tt = String(line2Time || "").trim();
+    if(!tt) return "";
+    if(/^\d{2}:\d{2}$/.test(tt)) return __timeBadgeHTML(displayDateISO || startDateISO, tt);
+    return `<span class="font-medium">${escapeHtml(tt)}</span>`;
+  })();
   const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
     <span class="font-semibold">${escapeHtml(line2Date)}</span>
-    ${line2Time ? `<span class="text-slate-400"> · </span>${__timeBadgeHTML(displayDateISO || startDateISO, line2Time)}` : ``}
+    ${line2TimeHTML ? `<span class="text-slate-400"> · </span>${line2TimeHTML}` : ``}
     ${durationLabel ? `<span class="text-slate-400"> · </span><span class="mv-nb">${escapeHtml(durationLabel).replace(/\s+/g,"&nbsp;")}</span>` : ``}
   </div>`;
 
@@ -13815,8 +13821,7 @@ function renderActivities() {
           __mvCardInstanceId: "start",
           __mvSummaryStage: "Inicio",
           __mvSummaryDate: iso,
-          __mvSummaryTime: `${time} → ${endTime}`,
-          __mvHideDurationLabel: true
+          __mvSummaryTime: `${time} → ${endTime}`
         }),
         Object.assign({}, base, {
           date: endISO,
@@ -13825,8 +13830,7 @@ function renderActivities() {
           __mvCardInstanceId: "end",
           __mvSummaryStage: "Fin",
           __mvSummaryDate: endISO,
-          __mvSummaryTime: `00:00 → ${endTime}`,
-          __mvHideDurationLabel: true
+          __mvSummaryTime: `00:00 → ${endTime}`
         })
       ];
     }catch(_){
