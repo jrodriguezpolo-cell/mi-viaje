@@ -3005,6 +3005,7 @@ const MV_WEB_BACKUP_REMINDER_KEY = "MV_WEB_BACKUP_REMINDER_V1";
 const MV_MANUAL_BACKUP_PATH_KEY = "MV_MANUAL_BACKUP_PATH_V1";
 const MV_MANUAL_ATTACHMENTS_PATH_KEY = "MV_MANUAL_ATTACHMENTS_PATH_V1";
 const MV_MANUAL_SCENARIOS_PATH_KEY = "MV_MANUAL_SCENARIOS_PATH_V1";
+const MV_LAST_SCENARIO_EXPORT_META_KEY = "MV_LAST_SCENARIO_EXPORT_META_V1";
 const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
 const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
 
@@ -3789,6 +3790,27 @@ function __renderScenariosFolderPathSetting(){
   }catch(_){}
 }
 try{ window.__renderScenariosFolderPathSetting = __renderScenariosFolderPathSetting; }catch(_){}
+function __renderLastScenarioExportInfo(){
+  try{
+    const line = document.getElementById("toolsLastScenarioExportLine");
+    if(!line) return;
+    let meta = null;
+    try{ meta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null"); }catch(_){}
+    if(!meta || !meta.savedAtTs){
+      line.textContent = getLang()==="en"
+        ? "Last saved simulation: not available"
+        : "Última simulación guardada: no disponible";
+      return;
+    }
+    const d = new Date(Number(meta.savedAtTs || 0));
+    const slot = String(meta.slot || "").trim().toUpperCase();
+    const pretty = isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    line.textContent = getLang()==="en"
+      ? `Last saved simulation${slot ? ` (${slot})` : ""}: ${pretty}`
+      : `Última simulación guardada${slot ? ` (${slot})` : ""}: ${pretty}`;
+  }catch(_){}
+}
+try{ window.__renderLastScenarioExportInfo = __renderLastScenarioExportInfo; }catch(_){}
 document.addEventListener("DOMContentLoaded", function(){
   try{ __renderLastManualBackupInfo(); }catch(_){}
   try{ __renderLastAutoBackupInfo(); }catch(_){}
@@ -17449,6 +17471,14 @@ function __mvRunScenarioExportFlow(){
   } catch {
     doDownload();
   }
+  try{
+    localStorage.setItem(MV_LAST_SCENARIO_EXPORT_META_KEY, JSON.stringify({
+      slot: slot,
+      savedAt: payload.exportedAt,
+      savedAtTs: Date.parse(payload.exportedAt) || Date.now()
+    }));
+  }catch(_){}
+  try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){}
 }
 
 async function __mvRunScenarioImportFlow(ev){
@@ -23692,6 +23722,7 @@ document.addEventListener("DOMContentLoaded", function(){
             Importar simulación…
             <input id="inputToolsScenarioImport" type="file" accept=".json,application/json" class="hidden" />
           </label>
+          <div class="text-xs text-slate-500" id="toolsLastScenarioExportLine">Última simulación guardada: no disponible</div>
         `;
       }
 
@@ -24000,6 +24031,7 @@ document.addEventListener("DOMContentLoaded", function(){
       try{ __renderBackupFolderInfo(); }catch(_){}
       try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
       try{ __renderScenariosFolderPathSetting(); }catch(_){}
+      try{ __renderLastScenarioExportInfo(); }catch(_){}
       try{ applyI18n(); }catch(_){}
     }
   }catch(_){}
