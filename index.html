@@ -13706,10 +13706,12 @@ function actSummaryLinesHTML(act, opts){
 
 function actCard(act) {
   const dateKey = String((act?.__mvDayKey || act?.date) || "").trim();
+  const cardDomId = `act-${act.id}${act?.__mvCardInstanceId ? `-${act.__mvCardInstanceId}` : ""}`;
   const vc = __sectionVisualClass("act", act, dateKey);
   const st = vc.st;
   const actMeta = __mvActSectionMeta(act, dateKey);
   const isIntermediate = !!actMeta.isIntermediate;
+  const stageLabel = String(act?.__mvSummaryStage || "").trim();
 
   const __aiPending = !!(act && (act.pendingAIReview || act.pendingAIReview===true));
   const __aiConfirmed = !!(act && act.fromAI && !act.pendingAIReview && (act.aiConfirmedAt||0));
@@ -13717,7 +13719,7 @@ function actCard(act) {
   const __aiIconHTML = (act && act.fromAI) ? `<span class="mvAiSparkle ${__aiPending ? "pending" : ""}" data-ai-sparkle-act="${escapeHtml(String(act.id))}" title="${__aiPending ? "Añadido por IA · por revisar" : (__aiConfirmed ? "Añadido por IA · revisado" : "Añadido por IA")}">✨${__aiConfirmed ? `<span class="mvAiSparkleCheck">✓</span>` : ``}</span>` : ``;
 
   return `
-  <div id="act-${act.id}" class="secCard${__aiPending ? " ai-pending-card" : ""} border border-slate-200 rounded-2xl bg-white p-3${isIntermediate ? " mvSecMicroSummary" : ""}${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}${__actConflictState.hasConflict ? " mvConflictCard" : ""}">
+  <div id="${cardDomId}" class="secCard${__aiPending ? " ai-pending-card" : ""} border border-slate-200 rounded-2xl bg-white p-3${isIntermediate ? " mvSecMicroSummary" : ""}${vc.visualClass}${st.done ? " done-item" : ""}${st.skipped ? " skipped-item" : ""}${__actConflictState.hasConflict ? " mvConflictCard" : ""}">
     <button type="button"
             class="tap w-full text-left flex items-start justify-between gap-3"
             data-act-open="${act.id}"
@@ -13731,6 +13733,7 @@ function actCard(act) {
           ${buildEventIndicatorsHTML(act,"act")}
           <input type="checkbox" class="secDoneToggle" data-act-done="${escapeHtml(String(act.id))}" ${st.done ? "checked" : ""} title="Hecho">
         </div>
+        ${stageLabel ? `<div class="text-xs font-semibold text-slate-500 mt-1 whitespace-nowrap">${escapeHtml(stageLabel)}</div>` : ``}
         <div class="mvAiRightSlot">${__aiIconHTML}</div>
       </div>
     </button>
@@ -13785,8 +13788,50 @@ function renderActivities() {
   const sc = curScenario();
   sortByDateTimeEmptyFirst(sc.activities);
 
+  function buildSectionCards(act){
+    try{
+      const base = act && typeof act === "object" ? act : {};
+      const iso = String(base.date || "").trim();
+      const time = String(base.time || "").trim();
+      const startMin = (typeof __parseHHMM_toMinutes === "function") ? __parseHHMM_toMinutes(time) : NaN;
+      const durMin = Math.max(0, Math.floor(Number(__tlActDurationMinutes(base) || 0)));
+      if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !Number.isFinite(startMin) || durMin <= 0){
+        return [base];
+      }
+      const endAbs = startMin + durMin;
+      if(endAbs < 1440){
+        return [base];
+      }
+      const endClock = endAbs % 1440;
+      const endISO = __mvAddDaysISO(iso, Math.floor(endAbs / 1440)) || iso;
+      const endTime = (typeof __fmtHHMM_fromMinutes === "function")
+        ? __fmtHHMM_fromMinutes(endClock)
+        : `${String(Math.floor(endClock/60)%24).padStart(2,"0")}:${String(endClock%60).padStart(2,"0")}`;
+      return [
+        Object.assign({}, base, {
+          __mvDayKey: iso,
+          __mvCardInstanceId: "start",
+          __mvSummaryStage: "Inicio"
+        }),
+        Object.assign({}, base, {
+          date: endISO,
+          time: endTime,
+          __mvDayKey: endISO,
+          __mvCardInstanceId: "end",
+          __mvSummaryStage: "Fin"
+        })
+      ];
+    }catch(_){
+      return [act];
+    }
+  }
+
   box.innerHTML = sc.activities.length
-    ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard)
+    ? __renderGroupedByDate(
+        sc.activities.flatMap((it)=>buildSectionCards(it)),
+        (it)=>(it.__mvDayKey || it.date),
+        actCard
+      )
     : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
