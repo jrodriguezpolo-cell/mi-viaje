@@ -15345,6 +15345,46 @@ function renderTimeline() {
       items.push({ date: "9999-99-99", time: (a.time || ""), type:t("type.act"), title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
       continue;
     }
+    try{
+      const time = String(a?.time || "").trim();
+      const startMin = (typeof __parseHHMM_toMinutes === "function")
+        ? __parseHHMM_toMinutes(time)
+        : timeToMinutes(time);
+      const durMin = Math.max(0, Math.floor(Number(__tlActDurationMinutes(a) || 0)));
+      const endAbs = Number.isFinite(startMin) ? (startMin + durMin) : NaN;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(startISO) && Number.isFinite(startMin) && durMin > 0 && endAbs >= 1440){
+        const endClock = endAbs % 1440;
+        const endISO = __mvAddDaysISO(startISO, Math.floor(endAbs / 1440)) || startISO;
+        const endTime = (typeof __fmtHHMM_fromMinutes === "function")
+          ? __fmtHHMM_fromMinutes(endClock)
+          : `${String(Math.floor(endClock/60)%24).padStart(2,"0")}:${String(endClock%60).padStart(2,"0")}`;
+        items.push({
+          date: startISO,
+          time: time,
+          type:t("type.act"),
+          title: `${a.city || "—"} • ${a.title || "Actividad"}`,
+          cost: parseMoney(a.cost),
+          actId: a.id,
+          uid: `act:${a.id}:${startISO}:start`,
+          __mvSummaryStage: "Inicio",
+          __mvSummaryDate: startISO,
+          __mvSummaryTime: time
+        });
+        items.push({
+          date: endISO,
+          time: endTime,
+          type:t("type.act"),
+          title: `${a.city || "—"} • ${a.title || "Actividad"}`,
+          cost: parseMoney(a.cost),
+          actId: a.id,
+          uid: `act:${a.id}:${endISO}:end`,
+          __mvSummaryStage: "Fin",
+          __mvSummaryDate: endISO,
+          __mvSummaryTime: endTime
+        });
+        continue;
+      }
+    }catch(_){}
     items.push({
       date: startISO,
       time: (a.time || ""),
@@ -15538,8 +15578,12 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     const bottomBadgeHTML = stayMarkerHTML || rtBadgeHTML;
 
     const __stayProgText = (jumpType==="stay" && __stay) ? __mvStayProgressTextForDay(__stay, it.date) : "";
+    const __actStageText = (jumpType==="act" && it && it.__mvSummaryStage) ? String(it.__mvSummaryStage || "").trim() : "";
     const __stayProgRailHTML = (jumpType==="stay" && __stay && it && it.tlMarker && __stayProgText)
       ? `<div class="text-xs font-semibold text-slate-500 mvStayProgRail">${escapeHtml(__stayProgText)}</div>`
+      : ``;
+    const __actStageRailHTML = __actStageText
+      ? `<div class="text-xs font-semibold text-slate-500 mt-1 whitespace-nowrap">${escapeHtml(__actStageText)}</div>`
       : ``;
     const notesBtn = (hasItemNotes && jumpType && jumpId && !it.isNote)
         ? `<button type="button"
@@ -15614,7 +15658,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             ${((jumpType==="stay" && __stay) || (jumpType==="act" && __act) || (jumpType==="leg" && __leg)) ? "" : '<div class="shrink-0 text-lg leading-none mt-[2px]">' + escapeHtml(icon || (it.isNote ? "📝" : "•")) + '</div>'}
 
             <div class="min-w-0">
-              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(__act, {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker), tlDayKey: it.date}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${(jumpType==="act" && __act) ? actSummaryLinesHTML(Object.assign({}, __act, { __mvSummaryDate: it.__mvSummaryDate, __mvSummaryTime: it.__mvSummaryTime }), {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker), tlDayKey: it.date}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
             </div>
           </div>
 
@@ -15624,6 +15668,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             </div>
             ${__aiIconHTML ? `<div class="mvAiRightSlot">${__aiIconHTML}</div>` : ""}
             ${__stayProgRailHTML ? `<div class="mvLegRightMid mvStayProgUnderTick">${__stayProgRailHTML}</div>` : ""}
+            ${__actStageRailHTML ? `<div class="mvLegRightMid">${__actStageRailHTML}</div>` : ""}
             ${__rightDurHTML ? `<div class="mvLegRightMid">${__rightDurHTML}</div>` : ""}
             <div class="mvLegRightSpacer"></div>
             ${bottomBadgeHTML ? `<div class="mvLegRightBottom">${bottomBadgeHTML}</div>` : ""}
