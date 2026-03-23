@@ -13631,8 +13631,8 @@ function actSummaryLinesHTML(act, opts){
   opts = opts || {};
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
-  const displayDateISO = String((act && (act.__mvDayKey || act.date)) || "").trim();
-  const startDateISO = String(act?.date || "").trim();
+  const displayDateISO = String((act && act.date) || "").trim();
+  const startDateISO = displayDateISO;
 
   // V220A/V222G: "Cómo llegar" destino contextual (lugar de la actividad)
   const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
@@ -13642,33 +13642,22 @@ function actSummaryLinesHTML(act, opts){
   const t = (act.time||"").trim();
   const durationMin = __tlActDurationMinutes(act);
   const durationLabel = __tlFormatDurationHM(durationMin);
-  const partIndex = Math.max(1, parseInt(String(act?.__mvPartIndex || 1), 10) || 1);
-  const partTotal = Math.max(1, parseInt(String(act?.__mvPartTotal || 1), 10) || 1);
-  const isOvernightPart = !!act?.__mvOvernight && partTotal > 1;
   let endDateISO = startDateISO;
   let endHHMM = "";
   try{
-    if(isOvernightPart && Number.isFinite(Number(act?.__mvRealEndClockMin))){
-      endDateISO = String(act?.__mvRealEndDateISO || startDateISO || "").trim() || startDateISO;
-      const realEndClockMin = Math.max(0, Math.floor(Number(act?.__mvRealEndClockMin || 0)));
-      endHHMM = (typeof __fmtHHMM_fromMinutes === "function")
-        ? __fmtHHMM_fromMinutes(realEndClockMin)
-        : `${String(Math.floor(realEndClockMin/60)%24).padStart(2,"0")}:${String(realEndClockMin%60).padStart(2,"0")}`;
-    }else{
-      const startMin = (typeof __parseHHMM_toMinutes === "function") ? __parseHHMM_toMinutes(t) : NaN;
-      const durMin = Math.max(0, Math.floor(Number(durationMin || 0)));
-      if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(startDateISO) && Number.isFinite(startMin) && durMin > 0){
-        let endMin = startMin + durMin;
-        let endClockMin = endMin;
-        if(endMin >= 1440){
-          const daysPlus = Math.floor(endMin / 1440);
-          endDateISO = __mvAddDaysISO(startDateISO, daysPlus);
-          endClockMin = endMin % 1440;
-        }
-        endHHMM = (typeof __fmtHHMM_fromMinutes === "function")
-          ? __fmtHHMM_fromMinutes(endClockMin)
-          : `${String(Math.floor(endClockMin/60)%24).padStart(2,"0")}:${String(endClockMin%60).padStart(2,"0")}`;
+    const startMin = (typeof __parseHHMM_toMinutes === "function") ? __parseHHMM_toMinutes(t) : NaN;
+    const durMin = Math.max(0, Math.floor(Number(durationMin || 0)));
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(startDateISO) && Number.isFinite(startMin) && durMin > 0){
+      let endMin = startMin + durMin;
+      let endClockMin = endMin;
+      if(endMin >= 1440){
+        const daysPlus = Math.floor(endMin / 1440);
+        endDateISO = __mvAddDaysISO(startDateISO, daysPlus);
+        endClockMin = endMin % 1440;
       }
+      endHHMM = (typeof __fmtHHMM_fromMinutes === "function")
+        ? __fmtHHMM_fromMinutes(endClockMin)
+        : `${String(Math.floor(endClockMin/60)%24).padStart(2,"0")}:${String(endClockMin%60).padStart(2,"0")}`;
     }
   }catch{}
 
@@ -13676,25 +13665,7 @@ function actSummaryLinesHTML(act, opts){
   const line1Title = title || "—";
 
   const line2Date = dES || "—";
-  const crossesDay = !!(startDateISO && endDateISO && endDateISO !== startDateISO);
-
-  // Overnight UX rules:
-  // - NO "(+1)" hint
-  // - For (1/2): show "start → end" (end is real clock, even if next day)
-  // - For (2/2): show only end clock (NO "00:00 → ...")
-  let line2Time = "";
-  if(isOvernightPart && crossesDay){
-    if(partIndex === 2){
-      line2Time = (endHHMM || "");
-    }else{
-      line2Time = (t && endHHMM) ? `${t} → ${endHHMM}` : (t || endHHMM || "");
-    }
-  }else if(displayDateISO && startDateISO && displayDateISO !== startDateISO){
-    // Segment rendered on next day: show only the meaningful clock time
-    line2Time = (endHHMM || t || "");
-  }else{
-    line2Time = (t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}` : (t || "");
-  }
+  const line2Time = t || "";
 
   const line1 = `<div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>`;
 
@@ -13726,12 +13697,6 @@ function actSummaryLinesHTML(act, opts){
   </div>`;
 
   let line3 = ``;
-  try{
-    if(!isOvernightPart && displayDateISO === startDateISO && endDateISO && endHHMM){
-      const endES = formatDateShortES(endDateISO) || endDateISO;
-      line3 = `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Fin:</span> <span class="font-semibold">${escapeHtml(endES)}</span> <span class="text-slate-400">·</span> ${__timeBadgeHTML(endDateISO, endHHMM)}</div>`;
-    }
-  }catch{}
 
   const __contentHTML = `${line1}${line2}${line3}${__conflictHTML}`;
   return (opts.context==="section")
@@ -13745,7 +13710,6 @@ function actCard(act) {
   const st = vc.st;
   const actMeta = __mvActSectionMeta(act, dateKey);
   const isIntermediate = !!actMeta.isIntermediate;
-  const __actProgressTextSec = String(act?.__mvPartText || ((typeof __mvActProgressTextForDay === "function") ? __mvActProgressTextForDay(act, dateKey) : "") || "").trim();
 
   const __aiPending = !!(act && (act.pendingAIReview || act.pendingAIReview===true));
   const __aiConfirmed = !!(act && act.fromAI && !act.pendingAIReview && (act.aiConfirmedAt||0));
@@ -13767,7 +13731,6 @@ function actCard(act) {
           ${buildEventIndicatorsHTML(act,"act")}
           <input type="checkbox" class="secDoneToggle" data-act-done="${escapeHtml(String(act.id))}" ${st.done ? "checked" : ""} title="Hecho">
         </div>
-        ${__actProgressTextSec ? `<div class="text-xs font-semibold text-slate-500 mt-1 whitespace-nowrap">${escapeHtml(__actProgressTextSec)}</div>` : ``}
         <div class="mvAiRightSlot">${__aiIconHTML}</div>
       </div>
     </button>
@@ -13823,13 +13786,7 @@ function renderActivities() {
   sortByDateTimeEmptyFirst(sc.activities);
 
   box.innerHTML = sc.activities.length
-    ? __renderGroupedByDate(
-        sc.activities.flatMap((it)=>{
-          try{ return (typeof __mvBuildActSegments === "function") ? (__mvBuildActSegments(it) || []) : [it]; }catch(_){ return [it]; }
-        }),
-        (it)=>it.__mvDayKey || it.date,
-        actCard
-      )
+    ? __renderGroupedByDate(sc.activities, (it)=>it.date, actCard)
     : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
@@ -15097,69 +15054,6 @@ function __tlActCoveredDays(act){
   return out;
 }
 
-function __mvBuildActSegments(act){
-  try{
-    const base = act && typeof act === "object" ? act : {};
-    const startISO = String(base.date || "").trim();
-    const startMin = timeToMinutes(base.time);
-    const durationMin = (typeof __tlActDurationMinutes === "function") ? Math.max(0, Math.floor(__tlActDurationMinutes(base) || 0)) : 0;
-    if(!startISO || !/^\d{4}-\d{2}-\d{2}$/.test(startISO) || startMin === null || durationMin <= 0){
-      return [Object.assign({}, base, {
-        __mvDayKey: startISO || String(base.date || "").trim(),
-        __mvPartText: "",
-        __mvPartIndex: 1,
-        __mvPartTotal: 1,
-        __mvOvernight: false
-      })];
-    }
-
-    const endMinAbs = startMin + durationMin;
-    if(endMinAbs < 1440){
-      return [Object.assign({}, base, {
-        __mvDayKey: startISO,
-        __mvPartText: "",
-        __mvPartIndex: 1,
-        __mvPartTotal: 1,
-        __mvOvernight: false,
-        __mvSegmentStartMin: startMin,
-        __mvSegmentEndMinShown: endMinAbs
-      })];
-    }
-
-    const nextISO = __mvAddDaysISO(startISO, Math.floor(endMinAbs / 1440));
-    const realEndClockMin = endMinAbs % 1440;
-    return [
-      Object.assign({}, base, {
-        __mvDayKey: startISO,
-        __mvPartText: "1/2",
-        __mvPartIndex: 1,
-        __mvPartTotal: 2,
-        __mvOvernight: true,
-        __mvSegmentStartMin: startMin,
-        __mvSegmentEndMinShown: 1440,
-        __mvRealEndDateISO: nextISO,
-        __mvRealEndClockMin: realEndClockMin
-      }),
-      Object.assign({}, base, {
-        __mvDayKey: nextISO,
-        __mvPartText: "2/2",
-        __mvPartIndex: 2,
-        __mvPartTotal: 2,
-        __mvOvernight: true,
-        __mvSegmentStartMin: realEndClockMin,
-        __mvSegmentEndMinShown: realEndClockMin,
-        time: ((typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(realEndClockMin) : `${String(Math.floor(realEndClockMin/60)%24).padStart(2,"0")}:${String(realEndClockMin%60).padStart(2,"0")}`),
-        __mvRealEndDateISO: nextISO,
-        __mvRealEndClockMin: realEndClockMin
-      })
-    ];
-  }catch(_){
-    return [Object.assign({}, act || {})];
-  }
-}
-/* ---------------- /Activities overnight visibility (V219B) ---------------- */
-
-
 // ===== V227_B10: Semana (vista alternativa read-only) =====
 function __mvISOToDateSafe(iso){
   try{
@@ -15388,32 +15282,15 @@ function renderTimeline() {
       items.push({ date: "9999-99-99", time: (a.time || ""), type:t("type.act"), title: `${a.city || "—"} • ${a.title || "Actividad"}`, cost: parseMoney(a.cost), actId: a.id, uid: `act:${a.id}` });
       continue;
     }
-    const segments = (typeof __mvBuildActSegments === "function") ? (__mvBuildActSegments(a) || []) : [a];
-    for (const seg of segments) {
-      const d = String(seg?.__mvDayKey || seg?.date || startISO || "").trim();
-      const startShown = Number(seg?.__mvSegmentStartMin);
-      const endShown = Number(seg?.__mvSegmentEndMinShown);
-      const shownTime = Number.isFinite(startShown)
-        ? __fmtHHMM_fromMinutes(Math.max(0, Math.min(1439, startShown)))
-        : (a.time || "");
-      items.push({
-        date: (d || "9999-99-99"),
-        time: shownTime,
-        type:t("type.act"),
-        title: `${a.city || "—"} • ${a.title || "Actividad"}`,
-        cost: parseMoney(a.cost),
-        actId: a.id,
-        uid: `act:${a.id}:${d || ""}:${String(seg?.__mvPartText || "")}`,
-        __mvPartText: String(seg?.__mvPartText || ""),
-        __mvPartIndex: Number(seg?.__mvPartIndex || 1),
-        __mvPartTotal: Number(seg?.__mvPartTotal || 1),
-        __mvOvernight: !!seg?.__mvOvernight,
-        __mvSegmentStartMin: Number.isFinite(startShown) ? startShown : null,
-        __mvSegmentEndMinShown: Number.isFinite(endShown) ? endShown : null,
-        __mvRealEndDateISO: String(seg?.__mvRealEndDateISO || ""),
-        __mvRealEndClockMin: Number(seg?.__mvRealEndClockMin || 0)
-      });
-    }
+    items.push({
+      date: startISO,
+      time: (a.time || ""),
+      type:t("type.act"),
+      title: `${a.city || "—"} • ${a.title || "Actividad"}`,
+      cost: parseMoney(a.cost),
+      actId: a.id,
+      uid: `act:${a.id}:${startISO}`
+    });
   }
 
   
