@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A2_CUSTOM_NAMES_FOR_EXPORTS";
+const APP_BUILD = "V240_A3_EXPORT_FILENAME_USES_CUSTOM_NAME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -4546,8 +4546,12 @@ function __exportTripJsonBackup(){
     if(!currentState) currentState = state;
     var now = new Date();
     var pad2 = function(n){ return String(n).padStart(2, "0"); };
-    var filename = `MI_VIAJE_BACKUP_${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}_${pad2(now.getHours())}-${pad2(now.getMinutes())}.json`;
     var customLabel = String(arguments[0] || "").trim();
+    var slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(customLabel) : "";
+    var stamp = `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+    var filename = slug
+      ? `MiViaje_BACKUP_${slug}_${stamp}.json`
+      : `MiViaje_BACKUP_${stamp}.json`;
     var payload = {
       name: customLabel,
       savedAt: now.toISOString(),
@@ -5358,6 +5362,19 @@ function sanitizeFileBaseName(name) {
   name = name.replace(/\s+/g, "_");
   name = name.replace(/[^A-Za-z0-9_-]/g, "");
   return name || "MI_VIAJE";
+}
+
+function __mvSafeFileSlug(name) {
+  let value = String(name || "").trim();
+  if (!value) return "";
+  try {
+    value = value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  } catch {}
+  value = value.replace(/['’]/g, "");
+  value = value.replace(/[^A-Za-z0-9]+/g, "-");
+  value = value.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
+  if (value.length > 48) value = value.slice(0, 48).replace(/-+$/g, "");
+  return value;
 }
 
 function yyyyMmDdToday() {
@@ -18172,12 +18189,13 @@ async function __mvRunScenarioExportFlow(slotLetter){
   });
   if(customName === null) return false;
   const payload = __mvScenarioExport(slot, customName);
-  const tripName = (typeof getTripName === "function") ? String(getTripName() || "").trim() : String(localStorage.getItem("miviaje.tripName") || "").trim();
-  const baseTrip = (typeof sanitizeFileBaseName === "function")
-    ? sanitizeFileBaseName(tripName || "MI_VIAJE")
-    : ((tripName || "MI_VIAJE").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
-  const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
-  const filename = `${baseTrip}_scenario_${slot}_${date}.json`;
+  const exportDt = new Date(String(payload.exportedAt || "") || Date.now());
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const stamp = `${exportDt.getFullYear()}${pad2(exportDt.getMonth()+1)}${pad2(exportDt.getDate())}_${pad2(exportDt.getHours())}${pad2(exportDt.getMinutes())}`;
+  const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(payload.scenarioName || customName || "") : "";
+  const filename = slug
+    ? `MiViaje_SIM_${slot}_${slug}_${stamp}.json`
+    : `MiViaje_SIM_${slot}_${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   function doDownload() {
     const a = document.createElement("a");
