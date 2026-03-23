@@ -3293,6 +3293,13 @@ function __runManualBackupExportWithMeta(){
       savedAt: nowIso || new Date(nowTs).toISOString(),
       savedAtTs: nowTs
     }));
+    try{
+      __setCurrentLoadedBackupMeta({
+        referenceTs: nowTs,
+        source: "manual"
+      });
+    }catch(_){}
+    try{ if(typeof __renderCurrentBackupLoadedInfo === "function") __renderCurrentBackupLoadedInfo(); }catch(_){} 
     try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){} 
     return true;
   }catch(_){
@@ -4151,7 +4158,15 @@ function __renderCurrentBackupLoadedInfo(){
   try{
     const line = document.getElementById("toolsCurrentBackupLoadedLine");
     if(!line) return;
-    const meta = __getCurrentLoadedBackupMeta();
+    let meta = __getCurrentLoadedBackupMeta();
+    if((!meta || !Number(meta.referenceTs || 0)) && typeof __readLastManualBackupMeta === "function"){
+      const last = __readLastManualBackupMeta();
+      const ts = Number(last && last.savedAtTs || 0);
+      if(ts > 0){
+        meta = { referenceTs: ts, source: "manual" };
+        try{ __setCurrentLoadedBackupMeta(meta); }catch(_){}
+      }
+    }
     if(!meta || !Number(meta.referenceTs || 0)){
       line.textContent = getLang()==="en"
         ? "Current backup version: not available"
@@ -4172,7 +4187,22 @@ function __renderCurrentScenarioLoadedInfo(){
     const line = document.getElementById("toolsCurrentScenarioLoadedLine");
     if(!line) return;
     const slot = String((state && state.scenario) || "A").trim().toUpperCase();
-    const meta = __getCurrentLoadedScenarioMeta(slot);
+    let meta = __getCurrentLoadedScenarioMeta(slot);
+    if((!meta || !Number(meta.referenceTs || 0))){
+      let last = null;
+      try{ last = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null"); }catch(_){}
+      const ts = Number(last && last.savedAtTs || 0);
+      const lastSlot = String(last && last.slot || "").trim().toUpperCase();
+      if(ts > 0 && lastSlot === slot){
+        meta = {
+          referenceTs: ts,
+          deviceName: String(last && last.deviceName || ""),
+          source: "scenario-export",
+          scenarioLetter: slot
+        };
+        try{ __setCurrentLoadedScenarioMeta(slot, meta); }catch(_){}
+      }
+    }
     if(!meta || !Number(meta.referenceTs || 0)){
       line.textContent = getLang()==="en"
         ? `Current simulation version (${slot}): not available`
@@ -24350,7 +24380,14 @@ document.addEventListener("DOMContentLoaded", function(){
                 savedAt: nowIso || new Date(nowTs).toISOString(),
                 savedAtTs: nowTs
               }));
+              try{
+                __setCurrentLoadedBackupMeta({
+                  referenceTs: nowTs,
+                  source: "manual"
+                });
+              }catch(_){}
               __renderLastManualBackupInfo();
+              try{ __renderCurrentBackupLoadedInfo(); }catch(_){}
             }
           }catch(_){} 
         }, true);
