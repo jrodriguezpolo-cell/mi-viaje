@@ -13612,21 +13612,45 @@ function actSummaryLinesHTML(act, opts){
   opts = opts || {};
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
+  const displayDateISO = String((act && (act.__mvDayKey || act.date)) || "").trim();
+  const startDateISO = String(act?.date || "").trim();
 
   // V220A/V222G: "Cómo llegar" destino contextual (lugar de la actividad)
   const __navDest = ((opts.context==="timeline") || (opts.context==="section"))
     ? __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city)
     : "";
-  const dES = (act.date ? formatDateShortES(act.date) : "");
+  const dES = ((displayDateISO || startDateISO) ? formatDateShortES(displayDateISO || startDateISO) : "");
   const t = (act.time||"").trim();
   const durationMin = __tlActDurationMinutes(act);
   const durationLabel = __tlFormatDurationHM(durationMin);
+  let endDateISO = startDateISO;
+  let endHHMM = "";
+  try{
+    const startMin = (typeof __parseHHMM_toMinutes === "function") ? __parseHHMM_toMinutes(t) : NaN;
+    const durMin = Math.max(0, Math.floor(Number(durationMin || 0)));
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(startDateISO) && Number.isFinite(startMin) && durMin > 0){
+      let endMin = startMin + durMin;
+      let endClockMin = endMin;
+      if(endMin >= 1440){
+        const daysPlus = Math.floor(endMin / 1440);
+        endDateISO = __mvAddDaysISO(startDateISO, daysPlus);
+        endClockMin = endMin % 1440;
+      }
+      endHHMM = (typeof __fmtHHMM_fromMinutes === "function")
+        ? __fmtHHMM_fromMinutes(endClockMin)
+        : `${String(Math.floor(endClockMin/60)%24).padStart(2,"0")}:${String(endClockMin%60).padStart(2,"0")}`;
+    }
+  }catch{}
 
   const line1City = city || "—";
   const line1Title = title || "—";
 
   const line2Date = dES || "—";
-  const line2Time = t || "";
+  const crossesDay = !!(startDateISO && endDateISO && endDateISO !== startDateISO);
+  const overnightHint = crossesDay ? ` (+${Math.max(1, Math.round((new Date(endDateISO + "T12:00:00").getTime() - new Date(startDateISO + "T12:00:00").getTime()) / 86400000))})` : "";
+  const line2Time = (displayDateISO && startDateISO && displayDateISO !== startDateISO)
+    ? ((endDateISO === displayDateISO && endHHMM) ? endHHMM : "")
+    : ((t && endHHMM && durationMin > 0) ? `${t} → ${endHHMM}${overnightHint}` : (t || ""));
 
   const line1 = `<div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0"><span class="mr-1">🎯</span><span>${escapeHtml(line1Title)}</span><span class="text-slate-400"> · </span><span class="font-medium">${escapeHtml(line1City)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>`;
 
@@ -13653,24 +13677,15 @@ function actSummaryLinesHTML(act, opts){
 
   const line2 = `<div class="text-xs text-slate-600 mt-1 truncate">
     <span class="font-semibold">${escapeHtml(line2Date)}</span>
-    ${line2Time ? `<span class="text-slate-400"> · </span>${__timeBadgeHTML(act.date, line2Time)}` : ``}
+    ${line2Time ? `<span class="text-slate-400"> · </span>${__timeBadgeHTML(displayDateISO || startDateISO, line2Time)}` : ``}
     ${durationLabel ? `<span class="text-slate-400"> · </span><span class="mv-nb">${escapeHtml(durationLabel).replace(/\s+/g,"&nbsp;")}</span>` : ``}
   </div>`;
 
   let line3 = ``;
   try{
-    const iso = String(act.date||"").trim();
-    const hhmm = String(act.time||"").trim();
-    const dm = Math.max(0, Math.floor(+durationMin || 0));
-    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(iso) && /^[0-9]{2}:[0-9]{2}$/.test(hhmm) && dm>0){
-      const start = new Date(iso + "T" + hhmm + ":00");
-      if(!isNaN(start.getTime())){
-        const end = new Date(start.getTime() + dm*60000);
-        const endISO = end.toISOString().slice(0,10);
-        const endTime = String(end.toTimeString().slice(0,5));
-        const endES = formatDateShortES(endISO) || endISO;
-        line3 = `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Fin:</span> <span class="font-semibold">${escapeHtml(endES)}</span> <span class="text-slate-400">·</span> ${__timeBadgeHTML(endISO, endTime)}</div>`;
-      }
+    if(displayDateISO === startDateISO && endDateISO && endHHMM){
+      const endES = formatDateShortES(endDateISO) || endDateISO;
+      line3 = `<div class="text-xs text-slate-600 mt-1 truncate"><span class="text-slate-500">Fin:</span> <span class="font-semibold">${escapeHtml(endES)}</span> <span class="text-slate-400">·</span> ${__timeBadgeHTML(endDateISO, endHHMM)}</div>`;
     }
   }catch{}
 
@@ -14835,6 +14850,13 @@ function __tlAddDaysISO(iso, days){
   const n = Number(days||0);
   d.setDate(d.getDate() + (isFinite(n) ? n : 0));
   return __tlDateToISO(d);
+}
+function __mvAddDaysISO(iso, days){
+  try{
+    return __tlAddDaysISO(iso, days) || String(iso || "").trim();
+  }catch(_){
+    return String(iso || "").trim();
+  }
 }
 function __tlStayCoveredDays(stayObj){
   const ci = String(stayObj?.date || "").trim();
