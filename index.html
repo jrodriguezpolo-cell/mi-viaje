@@ -17395,6 +17395,75 @@ function __mvScenarioImport(obj, destSlotLetter){
   try { toast(`Simulación importada en ${slot}`); } catch {}
 }
 
+function __mvRunScenarioExportFlow(){
+  const slot = __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
+  if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
+  const payload = __mvScenarioExport(slot);
+  const tripName = (typeof getTripName === "function") ? String(getTripName() || "").trim() : String(localStorage.getItem("miviaje.tripName") || "").trim();
+  const baseTrip = (typeof sanitizeFileBaseName === "function")
+    ? sanitizeFileBaseName(tripName || "MI_VIAJE")
+    : ((tripName || "MI_VIAJE").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
+  const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
+  const filename = `${baseTrip}_scenario_${slot}_${date}.json`;
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  function doDownload() {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  try {
+    if (navigator.canShare && navigator.share) {
+      const file = new File([blob], filename, { type: "application/json" });
+      const can = (typeof navigator.canShare === "function") ? navigator.canShare({ files: [file] }) : true;
+      if (can) {
+        Promise.resolve(
+          navigator.share({
+            files: [file],
+            title: `Simulación ${slot}`,
+            text: "Simulación exportada desde Mi Viaje"
+          })
+        ).catch(() => { doDownload(); });
+      } else {
+        doDownload();
+      }
+    } else {
+      doDownload();
+    }
+  } catch {
+    doDownload();
+  }
+}
+
+async function __mvRunScenarioImportFlow(ev){
+  const input = ev?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  try {
+    const txt = await new Promise((resolve, reject) => {
+      try{
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result || ""));
+        fr.onerror = () => reject(new Error("No se pudo leer el archivo"));
+        fr.readAsText(file);
+      }catch(err){ reject(err); }
+    });
+    const payload = JSON.parse(txt);
+    if (!payload || payload.mv_kind !== "scenario_export" || Number(payload.mv_version) !== 1) {
+      try{ toast("Archivo de simulación no válido"); }catch(_){}
+      return;
+    }
+    const slot = __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
+    if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
+    __mvScenarioImport(payload, slot);
+  } catch (_) {
+    try{ toast("Archivo de simulación no válido"); }catch(_){}
+  } finally {
+    if (input) input.value = "";
+  }
+}
+
 function formatManualBackupLabel(b) {
   const iso = b?.savedAt || "";
   let pretty = iso;
@@ -17519,14 +17588,6 @@ function openTripsModal() {
           <input id="doImport" type="file" accept="application/json" class="hidden">
         </label>
 
-        <button id="doScenarioExport" class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold">
-          Exportar simulación…
-        </button>
-
-        <label class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-center cursor-pointer">
-          Importar simulación…
-          <input id="doScenarioImport" type="file" accept="application/json" class="hidden">
-        </label>
       </div>
 
       <!-- Acordeón: Mis viajes (local) — cerrado por defecto -->
@@ -17629,78 +17690,6 @@ function openTripsModal() {
     $("doExport").onclick = () => { exportTrip(); refresh(); };
     $("doExportMilestone").onclick = () => { exportMilestone(); refresh(); };
     $("doImport").onchange = async (ev) => { await importTrip(ev); refresh(); };
-    $("doScenarioExport").onclick = () => {
-      try{
-        const slot = __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
-        if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
-        const payload = __mvScenarioExport(slot);
-        const tripName = (typeof getTripName === "function") ? String(getTripName() || "").trim() : String(localStorage.getItem("miviaje.tripName") || "").trim();
-        const baseTrip = (typeof sanitizeFileBaseName === "function")
-          ? sanitizeFileBaseName(tripName || "MI_VIAJE")
-          : ((tripName || "MI_VIAJE").replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "") || "MI_VIAJE");
-        const date = (typeof yyyyMmDdToday === "function") ? yyyyMmDdToday() : new Date().toISOString().slice(0, 10);
-        const filename = `${baseTrip}_scenario_${slot}_${date}.json`;
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-        function doDownload() {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(a.href);
-        }
-        try {
-          if (navigator.canShare && navigator.share) {
-            const file = new File([blob], filename, { type: "application/json" });
-            const can = (typeof navigator.canShare === "function") ? navigator.canShare({ files: [file] }) : true;
-            if (can) {
-              Promise.resolve(
-                navigator.share({
-                  files: [file],
-                  title: `Simulación ${slot}`,
-                  text: "Simulación exportada desde Mi Viaje"
-                })
-              ).catch(() => { doDownload(); });
-            } else {
-              doDownload();
-            }
-          } else {
-            doDownload();
-          }
-        } catch {
-          doDownload();
-        }
-      }catch(_){
-        try{ toast("No se pudo exportar la simulación"); }catch(_){}
-      }
-    };
-    $("doScenarioImport").onchange = async (ev) => {
-      const input = ev?.target;
-      const file = input?.files?.[0];
-      if (!file) return;
-      try {
-        const txt = await new Promise((resolve, reject) => {
-          try{
-            const fr = new FileReader();
-            fr.onload = () => resolve(String(fr.result || ""));
-            fr.onerror = () => reject(new Error("No se pudo leer el archivo"));
-            fr.readAsText(file);
-          }catch(err){ reject(err); }
-        });
-        const payload = JSON.parse(txt);
-        if (!payload || payload.mv_kind !== "scenario_export" || Number(payload.mv_version) !== 1) {
-          try{ toast("Archivo de simulación no válido"); }catch(_){}
-          return;
-        }
-        const slot = __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
-        if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
-        __mvScenarioImport(payload, slot);
-        refresh();
-      } catch (_) {
-        try{ toast("Archivo de simulación no válido"); }catch(_){}
-      } finally {
-        if (input) input.value = "";
-      }
-    };
 
 // Trip name input: show custom name if set, otherwise keep empty (auto will use destination)
 const tn = $("tripNameInput");
@@ -23669,6 +23658,20 @@ document.addEventListener("DOMContentLoaded", function(){
         }
         return group;
       };
+      var toolsScenarioGroup = document.getElementById("toolsScenarioGroup");
+      if(!toolsScenarioGroup){
+        toolsScenarioGroup = document.createElement("div");
+        toolsScenarioGroup.id = "toolsScenarioGroup";
+        toolsScenarioGroup.className = "flex flex-col gap-2";
+        toolsScenarioGroup.innerHTML = `
+          <div class="text-sm text-slate-600" style="margin-bottom:10px;opacity:.9">Exporta o importa una simulación concreta (A/B/C/D) sin tocar el state completo.</div>
+          <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnToolsScenarioExport" type="button">Exportar simulación…</button>
+          <label class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold text-center cursor-pointer">
+            Importar simulación…
+            <input id="inputToolsScenarioImport" type="file" accept=".json,application/json" class="hidden" />
+          </label>
+        `;
+      }
 
       var enginesAcc = document.getElementById("toolsEnginesAcc");
       if(!enginesAcc){
@@ -23761,6 +23764,9 @@ document.addEventListener("DOMContentLoaded", function(){
         `;
       }
       moveNode(document.getElementById("toolsIcloudAcc"));
+      makeAccordionGroup("toolsSimulationsAcc", "toolsSimulations", "Simulaciones", [
+        toolsScenarioGroup
+      ]);
       advancedBody.appendChild(enginesAcc);
       makeAccordionGroup(
         "toolsICalendarAcc",
@@ -23848,9 +23854,25 @@ document.addEventListener("DOMContentLoaded", function(){
             prefs[entry[1]] = !prefs[entry[1]];
             __saveICSExportPrefs(prefs);
             __renderICSExportPrefs();
-          }catch(_){}
+          }catch(_){} 
         }, true);
       });
+
+      var btnToolsScenarioExport = document.getElementById("btnToolsScenarioExport");
+      if(btnToolsScenarioExport && !btnToolsScenarioExport.__mvBound){
+        btnToolsScenarioExport.__mvBound = true;
+        btnToolsScenarioExport.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+          try{ __mvRunScenarioExportFlow(); }catch(_){ try{ toast("No se pudo exportar la simulación"); }catch(_){} }
+        }, true);
+      }
+      var inputToolsScenarioImport = document.getElementById("inputToolsScenarioImport");
+      if(inputToolsScenarioImport && !inputToolsScenarioImport.__mvBound){
+        inputToolsScenarioImport.__mvBound = true;
+        inputToolsScenarioImport.addEventListener("change", async function(ev){
+          try{ await __mvRunScenarioImportFlow(ev); }catch(_){ try{ toast("Archivo de simulación no válido"); }catch(_){} }
+        });
+      }
 
       var btnImportTripJson = document.getElementById("btnImportTripJson");
       var inputImportTripJson = document.getElementById("inputImportTripJson");
