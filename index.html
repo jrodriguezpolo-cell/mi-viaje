@@ -13631,7 +13631,7 @@ function actSummaryLinesHTML(act, opts){
   opts = opts || {};
   const city = (act.city||"").trim();
   const title = (act.title||act.name||"").trim();
-  const displayDateISO = String((act && act.date) || "").trim();
+  const displayDateISO = String((act && (act.__mvSummaryDate || act.date)) || "").trim();
   const startDateISO = displayDateISO;
 
   // V220A/V222G: "Cómo llegar" destino contextual (lugar de la actividad)
@@ -13639,9 +13639,9 @@ function actSummaryLinesHTML(act, opts){
     ? __mapsDestWithCity((act.place||act.location||act.address||title||"").trim(), city)
     : "";
   const dES = ((displayDateISO || startDateISO) ? formatDateShortES(displayDateISO || startDateISO) : "");
-  const t = (act.time||"").trim();
+  const t = String(act?.__mvSummaryTime || act?.time || "").trim();
   const durationMin = __tlActDurationMinutes(act);
-  const durationLabel = __tlFormatDurationHM(durationMin);
+  const durationLabel = act?.__mvHideDurationLabel ? "" : __tlFormatDurationHM(durationMin);
   let endDateISO = startDateISO;
   let endHHMM = "";
   try{
@@ -13793,7 +13793,9 @@ function renderActivities() {
       const base = act && typeof act === "object" ? act : {};
       const iso = String(base.date || "").trim();
       const time = String(base.time || "").trim();
-      const startMin = (typeof __parseHHMM_toMinutes === "function") ? __parseHHMM_toMinutes(time) : NaN;
+      const startMin = (typeof __parseHHMM_toMinutes === "function")
+        ? __parseHHMM_toMinutes(time)
+        : timeToMinutes(time);
       const durMin = Math.max(0, Math.floor(Number(__tlActDurationMinutes(base) || 0)));
       if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso) || !Number.isFinite(startMin) || durMin <= 0){
         return [base];
@@ -13811,14 +13813,20 @@ function renderActivities() {
         Object.assign({}, base, {
           __mvDayKey: iso,
           __mvCardInstanceId: "start",
-          __mvSummaryStage: "Inicio"
+          __mvSummaryStage: "Inicio",
+          __mvSummaryDate: iso,
+          __mvSummaryTime: `${time} → ${endTime}`,
+          __mvHideDurationLabel: true
         }),
         Object.assign({}, base, {
           date: endISO,
           time: endTime,
           __mvDayKey: endISO,
           __mvCardInstanceId: "end",
-          __mvSummaryStage: "Fin"
+          __mvSummaryStage: "Fin",
+          __mvSummaryDate: endISO,
+          __mvSummaryTime: `00:00 → ${endTime}`,
+          __mvHideDurationLabel: true
         })
       ];
     }catch(_){
@@ -13826,9 +13834,15 @@ function renderActivities() {
     }
   }
 
-  box.innerHTML = sc.activities.length
+  const sectionCards = [];
+  for(const it of (sc.activities || [])){
+    const cards = buildSectionCards(it);
+    for(const card of cards) sectionCards.push(card);
+  }
+
+  box.innerHTML = sectionCards.length
     ? __renderGroupedByDate(
-        sc.activities.flatMap((it)=>buildSectionCards(it)),
+        sectionCards,
         (it)=>(it.__mvDayKey || it.date),
         actCard
       )
