@@ -105,57 +105,95 @@ function __eventSheetDeleteCurrent(){
       return false;
     }
 
-    let removed = false;
+    const info = __deleteConfirmText(ctx, ctx && ctx.objRef ? ctx.objRef : null);
+    return confirmDeleteEvent({
+      kind: kind,
+      id: id,
+      title: info && info.detail ? info.detail : "",
+      onDelete: function(){
+        let removed = false;
+        const removeById = (arr, targetId)=>{
+          if(!Array.isArray(arr)) return false;
+          const idx = arr.findIndex(x => String(x && x.id) === String(targetId));
+          if(idx < 0) return false;
+          arr.splice(idx, 1);
+          return true;
+        };
 
-    const removeById = (arr, targetId)=>{
-      if(!Array.isArray(arr)) return false;
-      const idx = arr.findIndex(x => String(x && x.id) === String(targetId));
-      if(idx < 0) return false;
-      arr.splice(idx, 1);
-      return true;
-    };
+        if(kind === "leg"){
+          removed =
+            removeById(scLive.legs, id) ||
+            removeById(scLive.transport, id) ||
+            removeById(scLive.transports, id) ||
+            removeById(scLive.trips, id);
+        }else if(kind === "stay"){
+          removed =
+            removeById(scLive.stays, id) ||
+            removeById(scLive.lodgings, id) ||
+            removeById(scLive.accommodations, id) ||
+            removeById(scLive.hotels, id);
+        }else if(kind === "act"){
+          removed =
+            removeById(scLive.activities, id) ||
+            removeById(scLive.acts, id) ||
+            removeById(scLive.events, id);
+        }
 
-    if(kind === "leg"){
-      removed =
-        removeById(scLive.legs, id) ||
-        removeById(scLive.transport, id) ||
-        removeById(scLive.transports, id) ||
-        removeById(scLive.trips, id);
-    }else if(kind === "stay"){
-      removed =
-        removeById(scLive.stays, id) ||
-        removeById(scLive.lodgings, id) ||
-        removeById(scLive.accommodations, id) ||
-        removeById(scLive.hotels, id);
-    }else if(kind === "act"){
-      removed =
-        removeById(scLive.activities, id) ||
-        removeById(scLive.acts, id) ||
-        removeById(scLive.events, id);
-    }
+        if(!removed){
+          try{ toast("No se ha eliminado nada"); }catch(_){} 
+          return false;
+        }
 
-    if(!removed){
-      try{ toast("No se ha eliminado nada"); }catch(_){}
-      return false;
-    }
-
-    try{ if(typeof saveState === "function") saveState(); }catch(_){}
-    try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
-
-    try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
-    try{ if(typeof renderLegs === "function") renderLegs(); }catch(_){}
-    try{ if(typeof renderStays === "function") renderStays(); }catch(_){}
-    try{ if(typeof renderActivities === "function") renderActivities(); }catch(_){}
-    try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){}
-    try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
-
-    try{ if(typeof closeEventSheet === "function") closeEventSheet(); }catch(_){}
-
-    try{ toast("Evento eliminado"); }catch(_){}
-    return false;
+        try{ if(typeof saveState === "function") saveState(); }catch(_){} 
+        try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){} 
+        try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){} 
+        try{ if(typeof renderLegs === "function") renderLegs(); }catch(_){} 
+        try{ if(typeof renderStays === "function") renderStays(); }catch(_){} 
+        try{ if(typeof renderActivities === "function") renderActivities(); }catch(_){} 
+        try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){} 
+        try{ if(typeof renderAll === "function") renderAll(); }catch(_){} 
+        try{ if(typeof closeEventSheet === "function") closeEventSheet(); }catch(_){} 
+        try{ toast("Evento eliminado"); }catch(_){} 
+        return true;
+      }
+    });
   }catch(e){
-    try{ console.log("__eventSheetDeleteCurrent error", e); }catch(_){}
-    try{ toast("No se pudo eliminar el evento"); }catch(_){}
+    try{ console.log("__eventSheetDeleteCurrent error", e); }catch(_){} 
+    try{ toast("No se pudo eliminar el evento"); }catch(_){} 
+    return false;
+  }
+}
+
+function confirmDeleteEvent(opts){
+  try{
+    var cfg = opts || {};
+    var detail = String(cfg.title || "").trim();
+    var body = [
+      `<div class="text-sm text-slate-700">¿Seguro que quieres eliminar este evento? Esta acción no se puede deshacer.</div>`,
+      detail ? `<div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">${escapeHtml(detail)}</div>` : ``
+    ].join("");
+    var btnCancel = document.createElement("button");
+    btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnCancel.type = "button";
+    btnCancel.textContent = "Cancelar";
+    btnCancel.onclick = function(){
+      try{ closeModal(); }catch(_){}
+    };
+    var btnDelete = document.createElement("button");
+    btnDelete.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+    btnDelete.type = "button";
+    btnDelete.textContent = "Eliminar";
+    btnDelete.onclick = function(){
+      try{ closeModal(); }catch(_){}
+      try{
+        if(typeof cfg.onDelete === "function") cfg.onDelete();
+      }catch(_){
+        try{ toast("No se pudo eliminar el evento"); }catch(__){}
+      }
+    };
+    showModal("Eliminar evento", body, [btnCancel, btnDelete]);
+    return false;
+  }catch(_){
     return false;
   }
 }
@@ -1961,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V227_B37_TL_AI_ICON_UNDER_TICK";
+const APP_BUILD = "V240_A1_CONFIRM_DELETE_EVENT_TRASH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
