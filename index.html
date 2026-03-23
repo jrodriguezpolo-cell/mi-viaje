@@ -4144,7 +4144,28 @@ function __renderScenariosFolderPathSetting(){
     }
   }catch(_){}
 }
-try{ window.__renderScenariosFolderPathSetting = __renderScenariosFolderPathSetting; }catch(_){}
+try{ window.__renderScenariosFolderPathSetting = __renderScenariosFolderPathSetting; }catch(_){} 
+function __renderCurrentScenarioLoadedInfo(){
+  try{
+    const line = document.getElementById("toolsCurrentScenarioLoadedLine");
+    if(!line) return;
+    const slot = String((state && state.scenario) || "A").trim().toUpperCase();
+    const meta = __getCurrentLoadedScenarioMeta(slot);
+    if(!meta || !Number(meta.referenceTs || 0)){
+      line.textContent = getLang()==="en"
+        ? `Current simulation version (${slot}): not available`
+        : `Versión de simulación en uso (${slot}): no disponible`;
+      return;
+    }
+    const d = new Date(Number(meta.referenceTs || 0));
+    const pretty = isNaN(d.getTime()) ? "—" : d.toLocaleString();
+    const dev = String(meta.deviceName || "").trim();
+    line.textContent = getLang()==="en"
+      ? `Current simulation version (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`
+      : `Versión de simulación en uso (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`;
+  }catch(_){}  
+}
+try{ window.__renderCurrentScenarioLoadedInfo = __renderCurrentScenarioLoadedInfo; }catch(_){} 
 function __renderLastScenarioExportInfo(){
   try{
     const line = document.getElementById("toolsLastScenarioExportLine");
@@ -4171,6 +4192,7 @@ document.addEventListener("DOMContentLoaded", function(){
   try{ __renderLastAutoBackupInfo(); }catch(_){}
   try{ __renderBackupFolderInfo(); }catch(_){}
   try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
+  try{ __renderCurrentScenarioLoadedInfo(); }catch(_){}
   try{ __renderLastScenarioExportInfo(); }catch(_){}
   try{ __renderWebBackupReminderSetting(); }catch(_){}
 }, { passive: true });
@@ -17796,6 +17818,7 @@ function __mvScenarioImport(obj, destSlotLetter){
   try{ __clearScenarioDirty(slot); }catch(_){}
   saveState();
   renderAll();
+  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){}
   try { syncStickyTotalsHeightVar(); } catch {}
   try { toast(`Simulación importada en ${slot}`); } catch {}
 }
@@ -17860,6 +17883,7 @@ function __mvRunScenarioExportFlow(slotLetter){
     });
   }catch(_){}
   try{ __clearScenarioDirty(slot); }catch(_){}
+  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){}
   try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){} 
   return true;
 }
@@ -24146,6 +24170,7 @@ document.addEventListener("DOMContentLoaded", function(){
             Importar simulación…
             <input id="inputToolsScenarioImport" type="file" accept=".json,application/json" class="hidden" />
           </label>
+          <div class="text-xs text-slate-500" id="toolsCurrentScenarioLoadedLine">Versión de simulación en uso: no disponible</div>
           <div class="text-xs text-slate-500" id="toolsLastScenarioExportLine">Última simulación guardada: no disponible</div>
         `;
       }
