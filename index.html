@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A3_EXPORT_FILENAME_USES_CUSTOM_NAME";
+const APP_BUILD = "V240_A4_EXPORT_NAME_ORDER_AND_ALERT_LABELS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3948,15 +3948,15 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
     if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
     var currentMeta = __getCurrentLoadedScenarioMeta(slot);
     var newestMeta = __getNewestAvailableScenarioMeta(slot);
-    var currentLabel = __mvFormatScenarioVersionDate(currentMeta && currentMeta.referenceTs);
-    var newestLabel = __mvFormatScenarioVersionDate(compare && compare.newestTs);
+    var currentLabel = __mvNameDateLabel(currentMeta && currentMeta.name, currentMeta && currentMeta.referenceTs);
+    var newestLabel = __mvNameDateLabel((newestMeta && newestMeta.name) || (compare && compare.newestName), compare && compare.newestTs);
     var extraBits = [];
     if(newestMeta && newestMeta.deviceName) extraBits.push(`Origen: ${escapeHtml(String(newestMeta.deviceName || ""))}`);
     if(compare && compare.newestSource) extraBits.push(`Fuente: ${escapeHtml(String(compare.newestSource || ""))}`);
     title.textContent = "Nueva simulación disponible";
     body.innerHTML = [
-      `<div>Simulación actual: <span class="font-semibold text-slate-900">${escapeHtml(currentLabel)}</span></div>`,
-      `<div>Simulación nueva: <span class="font-semibold text-slate-900">${escapeHtml(newestLabel)}</span></div>`,
+      `<div>Actual: <span class="font-semibold text-slate-900">${escapeHtml(currentLabel)}</span></div>`,
+      `<div>Nueva: <span class="font-semibold text-slate-900">${escapeHtml(newestLabel)}</span></div>`,
       `<div>Cambios detectados en eventos.</div>`,
       extraBits.length ? `<div class="text-xs text-slate-500">${extraBits.join(" · ")}</div>` : "",
       `<div class="text-xs text-slate-500">Para actualizar, selecciona el archivo de simulación más reciente.</div>`
@@ -4061,26 +4061,13 @@ function __openBackupVersionCheckModal(compare){
     var updateBtn = document.getElementById("backupVersionCheckUpdateBtn");
     if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
     var hasNewer = !!(compare && compare.hasNewer);
-    function fmt(ts){
-      try{
-        var n = Number(ts || 0);
-        if(!(n > 0)) return "desconocido";
-        return new Date(n).toLocaleString("es-ES", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-      }catch(_){
-        return "desconocido";
-      }
-    }
-    var currentLabel = fmt(compare && compare.currentTs);
-    var newestLabel = fmt(compare && compare.newestTs);
+    var currentMeta = __getCurrentLoadedBackupMeta();
+    var newestMeta = __getNewestAvailableBackupMeta();
+    var currentLabel = __mvNameDateLabel(currentMeta && currentMeta.name, compare && compare.currentTs);
+    var newestLabel = __mvNameDateLabel((newestMeta && newestMeta.name) || (compare && compare.newestName), compare && compare.newestTs);
     title.textContent = t(hasNewer ? "backupCheck.newerTitle" : "backupCheck.upToDateTitle");
     body.innerHTML = hasNewer
-      ? `${escapeHtml(t("backupCheck.newerBody"))}<div class="mt-3 space-y-1 text-xs text-slate-500"><div>Backup actual: ${escapeHtml(currentLabel)}</div><div>Backup más reciente: ${escapeHtml(newestLabel)}</div></div>`
+      ? `${escapeHtml(t("backupCheck.newerBody"))}<div class="mt-3 space-y-1 text-xs text-slate-500"><div>Actual: ${escapeHtml(currentLabel)}</div><div>Nueva: ${escapeHtml(newestLabel)}</div></div>`
       : `Estás en el backup más reciente (${escapeHtml(newestLabel)}).`;
     continueBtn.textContent = t(hasNewer ? "backupCheck.continueOld" : "backupCheck.continue");
     continueBtn.onclick = function(e){
@@ -4089,7 +4076,7 @@ function __openBackupVersionCheckModal(compare){
     };
     var canUpdate = !!(hasNewer && compare && compare.newestCanLoadDirectly);
     updateBtn.classList.toggle("hidden", !hasNewer);
-    updateBtn.textContent = `Actualizar al backup del ${newestLabel}`;
+    updateBtn.textContent = `Actualizar al backup de ${newestLabel}`;
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       __closeBackupVersionCheckModal();
@@ -4550,8 +4537,8 @@ function __exportTripJsonBackup(){
     var slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(customLabel) : "";
     var stamp = `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
     var filename = slug
-      ? `MiViaje_BACKUP_${slug}_${stamp}.json`
-      : `MiViaje_BACKUP_${stamp}.json`;
+      ? `${slug}_B_${stamp}.json`
+      : `BACKUP_B_${stamp}.json`;
     var payload = {
       name: customLabel,
       savedAt: now.toISOString(),
@@ -5375,6 +5362,25 @@ function __mvSafeFileSlug(name) {
   value = value.replace(/-+/g, "-").replace(/^-+|-+$/g, "");
   if (value.length > 48) value = value.slice(0, 48).replace(/-+$/g, "");
   return value;
+}
+
+function __mvNameDateLabel(name, ts) {
+  const safeName = String(name || "").trim() || "(Sin nombre)";
+  let pretty = "desconocido";
+  try {
+    const n = Number(ts || 0);
+    if (n > 0) {
+      pretty = new Date(n).toLocaleString("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      });
+    }
+  } catch {}
+  return `${safeName} · ${pretty}`;
 }
 
 function yyyyMmDdToday() {
@@ -18194,8 +18200,8 @@ async function __mvRunScenarioExportFlow(slotLetter){
   const stamp = `${exportDt.getFullYear()}${pad2(exportDt.getMonth()+1)}${pad2(exportDt.getDate())}_${pad2(exportDt.getHours())}${pad2(exportDt.getMinutes())}`;
   const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(payload.scenarioName || customName || "") : "";
   const filename = slug
-    ? `MiViaje_SIM_${slot}_${slug}_${stamp}.json`
-    : `MiViaje_SIM_${slot}_${stamp}.json`;
+    ? `${slug}_S_${stamp}.json`
+    : `SIMULACION_S_${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   function doDownload() {
     const a = document.createElement("a");
