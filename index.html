@@ -3286,13 +3286,14 @@ function __closeWebBackupReminderModal(){
 function __runManualBackupExportWithMeta(){
   try{
     if(typeof __exportTripJsonBackup !== "function") return false;
-    __exportTripJsonBackup();
-    var now = new Date();
+    var payload = __exportTripJsonBackup();
+    var nowIso = String(payload && payload.savedAt || "");
+    var nowTs = Number(Date.parse(nowIso) || Date.now());
     localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
-      savedAt: now.toISOString(),
-      savedAtTs: now.getTime()
+      savedAt: nowIso || new Date(nowTs).toISOString(),
+      savedAtTs: nowTs
     }));
-    try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){}
+    try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){} 
     return true;
   }catch(_){
     return false;
@@ -3421,6 +3422,7 @@ function __compareCurrentVsNewestBackup(){
     var newest = __getNewestAvailableBackupMeta();
     var currentTs = Number(current && current.referenceTs || 0);
     var newestTs = Number(newest && newest.referenceTs || 0);
+    var toleranceMs = 15000;
     if(!(currentTs > 0) || !(newestTs > 0)){
       return {
         currentTs: currentTs,
@@ -3433,7 +3435,7 @@ function __compareCurrentVsNewestBackup(){
     return {
       currentTs: currentTs,
       newestTs: newestTs,
-      hasNewer: newestTs > currentTs,
+      hasNewer: newestTs > (currentTs + toleranceMs),
       newestSource: newest ? newest.source : "",
       newestCanLoadDirectly: !!(newest && newest.canLoadDirectly)
     };
@@ -4307,8 +4309,10 @@ function __exportTripJsonBackup(){
       state: currentState
     };
     __downloadTripJsonBackup(payload, filename);
+    return payload;
   }catch(e){
     try{ console.log("__exportTripJsonBackup error", e); }catch(_){} 
+    return null;
   }
 }
 
@@ -24339,15 +24343,16 @@ document.addEventListener("DOMContentLoaded", function(){
           try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
           try{
             if(typeof __exportTripJsonBackup === "function"){
-              __exportTripJsonBackup();
-              const now = new Date();
+              const payload = __exportTripJsonBackup();
+              const nowIso = String(payload && payload.savedAt || "");
+              const nowTs = Number(Date.parse(nowIso) || Date.now());
               localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
-                savedAt: now.toISOString(),
-                savedAtTs: now.getTime()
+                savedAt: nowIso || new Date(nowTs).toISOString(),
+                savedAtTs: nowTs
               }));
               __renderLastManualBackupInfo();
             }
-          }catch(_){}
+          }catch(_){} 
         }, true);
       }
       var btnExportICS = document.getElementById("btnExportICS");
