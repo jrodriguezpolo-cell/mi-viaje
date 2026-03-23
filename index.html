@@ -3884,6 +3884,7 @@ function __maybeShowBackupVersionCheckOnOpen(){
     var compare = __compareCurrentVsNewestBackup();
     if(!compare) return false;
     if(!(Number(compare.currentTs || 0) > 0) || !(Number(compare.newestTs || 0) > 0)) return false;
+    if(String(compare.newestSource || "") !== "manual") return false;
     if(!compare.hasNewer) return false;
     window.__mvBackupVersionCheckShown = true;
     return __openBackupVersionCheckModal(compare);
