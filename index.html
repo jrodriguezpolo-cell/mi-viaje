@@ -3757,9 +3757,18 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
     };
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      __closeScenarioVersionCheckModal();
-      if(!__loadNewestAvailableScenario(slot)){
-        try{ toast("No se pudo actualizar la simulación"); }catch(_){}
+      try{
+        var inp = document.getElementById("inputScenarioVersionCheckImport");
+        if(!inp){
+          try{ toast("No se encontró el selector de simulación"); }catch(_){}
+          return;
+        }
+        inp.dataset.targetSlot = slot;
+        inp.dataset.closeScenarioModal = "1";
+        inp.value = "";
+        inp.click();
+      }catch(_){
+        try{ toast("No se pudo abrir el selector de simulación"); }catch(_){}
       }
     };
     ov.classList.remove("hidden");
@@ -17873,13 +17882,24 @@ async function __mvRunScenarioImportFlow(ev){
       try{ toast("Archivo de simulación no válido"); }catch(_){}
       return;
     }
-    const slot = __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
+    const forcedSlot = String((input && input.dataset && input.dataset.targetSlot) || "").trim().toUpperCase();
+    const slot = /^[ABCD]$/.test(forcedSlot)
+      ? forcedSlot
+      : __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
     if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
     __mvScenarioImport(payload, slot);
+    if(input && input.dataset && input.dataset.closeScenarioModal === "1"){
+      try{ __closeScenarioVersionCheckModal(); }catch(_){}
+      try{ toast("Simulación actualizada"); }catch(_){}
+    }
   } catch (_) {
     try{ toast("Archivo de simulación no válido"); }catch(_){}
   } finally {
-    if (input) input.value = "";
+    if (input){
+      input.value = "";
+      try{ delete input.dataset.targetSlot; }catch(_){}
+      try{ delete input.dataset.closeScenarioModal; }catch(_){}
+    }
   }
 }
 
@@ -23130,6 +23150,7 @@ QA checklist (V89D1):
 </div>
 </div>
 </div>
+<input id="inputScenarioVersionCheckImport" type="file" accept=".json,application/json" class="hidden" />
 <div id="resetTripBackdrop" class="hidden fixed inset-0 z-[2600] bg-black/40"></div>
 <div id="resetTripModal" class="hidden fixed inset-0 z-[2601] flex items-center justify-center p-5">
   <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-slate-200 p-5">
@@ -24326,6 +24347,13 @@ document.addEventListener("DOMContentLoaded", function(){
       if(inputToolsScenarioImport && !inputToolsScenarioImport.__mvBound){
         inputToolsScenarioImport.__mvBound = true;
         inputToolsScenarioImport.addEventListener("change", async function(ev){
+          try{ await __mvRunScenarioImportFlow(ev); }catch(_){ try{ toast("Archivo de simulación no válido"); }catch(_){} }
+        });
+      }
+      var inputScenarioVersionCheckImport = document.getElementById("inputScenarioVersionCheckImport");
+      if(inputScenarioVersionCheckImport && !inputScenarioVersionCheckImport.__mvBound){
+        inputScenarioVersionCheckImport.__mvBound = true;
+        inputScenarioVersionCheckImport.addEventListener("change", async function(ev){
           try{ await __mvRunScenarioImportFlow(ev); }catch(_){ try{ toast("Archivo de simulación no válido"); }catch(_){} }
         });
       }
