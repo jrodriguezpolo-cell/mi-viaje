@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A15_LAST_SAVED_MEANS_LATEST_EXISTING_AFTER_DISCARD";
+const APP_BUILD = "V240_A16_EXPORT_IMPORT_BUTTONS_MULTI_SLOT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -18627,7 +18627,206 @@ function __mvScenarioExport(slotLetter, customName){
   };
 }
 
-function __mvScenarioImport(obj, destSlotLetter){
+function __mvScenarioBundleExport(slotLetters, customName){
+  const slots = Array.isArray(slotLetters)
+    ? slotLetters.map(function(it){ return String(it || "").trim().toUpperCase(); }).filter(function(it){ return /^[ABCD]$/.test(it); })
+    : [];
+  if(!slots.length) throw new Error("Selecciona al menos una simulación");
+  const bundleName = String(customName || "").trim();
+  const scenarios = {};
+  const scenarioNames = {};
+  slots.forEach(function(slot){
+    const src = (state && state.scenarios && state.scenarios[slot]) ? state.scenarios[slot] : emptyScenario();
+    scenarios[slot] = __mvNormalizeScenarioForTransfer(deepCloneJSON(src) || {});
+    if(bundleName) scenarioNames[slot] = bundleName;
+  });
+  return {
+    mv_kind: "scenario_bundle",
+    mv_version: 1,
+    exportedAt: new Date().toISOString(),
+    sourceBuild: APP_BUILD,
+    bundleName: bundleName,
+    deviceName: (typeof getDeviceName === "function") ? (getDeviceName(false) || "") : "",
+    scenarios: scenarios,
+    scenarioNames: scenarioNames
+  };
+}
+
+function __mvPromptScenarioExportSelection(){
+  return new Promise(function(resolve){
+    try{
+      var letters = ["A","B","C","D"];
+      var selected = new Set([String((state && state.scenario) || "A").trim().toUpperCase()]);
+      var body = `
+        <div class="space-y-4">
+          <div>
+            <div class="text-sm font-semibold text-slate-700 mb-2">Simulaciones a exportar</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="mvScenarioExportA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+              <button id="mvScenarioExportB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+              <button id="mvScenarioExportC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+              <button id="mvScenarioExportD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+              <button id="mvScenarioExportAll" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Todos</button>
+            </div>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-slate-700" for="mvScenarioExportNameInput">Nombre (opcional)</label>
+            <input id="mvScenarioExportNameInput" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 text-base" type="text" placeholder="Ej: Viaje Roma">
+          </div>
+        </div>
+      `;
+      var btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} resolve(null); };
+      var btnSave = document.createElement("button");
+      btnSave.type = "button";
+      btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnSave.textContent = "Guardar";
+      btnSave.onclick = function(){
+        if(!selected.size){
+          try{ toast("Selecciona al menos una simulación."); }catch(_){}
+          return;
+        }
+        var input = document.getElementById("mvScenarioExportNameInput");
+        var name = String(input && input.value || "").trim();
+        try{ closeModal(); }catch(_){}
+        resolve({
+          slots: letters.filter(function(letter){ return selected.has(letter); }),
+          name: name
+        });
+      };
+      showModal("Exportar simulaciones", body, [btnCancel, btnSave]);
+      function paint(){
+        letters.forEach(function(letter){
+          var btn = document.getElementById(`mvScenarioExport${letter}`);
+          if(!btn) return;
+          var on = selected.has(letter);
+          btn.classList.toggle("bg-slate-900", on);
+          btn.classList.toggle("text-white", on);
+          btn.classList.toggle("border-slate-900", on);
+          btn.classList.toggle("bg-white", !on);
+          btn.classList.toggle("text-slate-700", !on);
+          btn.classList.toggle("border-slate-300", !on);
+        });
+        var allBtn = document.getElementById("mvScenarioExportAll");
+        if(allBtn){
+          var allOn = selected.size === 4;
+          allBtn.classList.toggle("bg-slate-900", allOn);
+          allBtn.classList.toggle("text-white", allOn);
+          allBtn.classList.toggle("border-slate-900", allOn);
+          allBtn.classList.toggle("bg-white", !allOn);
+          allBtn.classList.toggle("text-slate-700", !allOn);
+          allBtn.classList.toggle("border-slate-300", !allOn);
+        }
+      }
+      letters.forEach(function(letter){
+        var btn = document.getElementById(`mvScenarioExport${letter}`);
+        if(!btn) return;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          if(selected.has(letter)) selected.delete(letter);
+          else selected.add(letter);
+          paint();
+        }, true);
+      });
+      var allBtn = document.getElementById("mvScenarioExportAll");
+      if(allBtn){
+        allBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          if(selected.size === 4) selected.clear();
+          else letters.forEach(function(letter){ selected.add(letter); });
+          paint();
+        }, true);
+      }
+      paint();
+      setTimeout(function(){
+        try{
+          var input = document.getElementById("mvScenarioExportNameInput");
+          if(input) input.focus();
+        }catch(_){}
+      }, 0);
+    }catch(_){
+      resolve(null);
+    }
+  });
+}
+
+function __mvPromptScenarioImportDestinations(sourceSlots){
+  return new Promise(function(resolve){
+    try{
+      var letters = ["A","B","C","D"];
+      var sources = Array.isArray(sourceSlots)
+        ? sourceSlots.map(function(it){ return String(it || "").trim().toUpperCase(); }).filter(function(it){ return /^[ABCD]$/.test(it); })
+        : [];
+      if(!sources.length){ resolve(null); return; }
+      var selected = new Set();
+      var body = `
+        <div class="space-y-4">
+          <div class="text-sm text-slate-700">Este archivo contiene: <span class="font-extrabold">${escapeHtml(sources.join(", "))}</span></div>
+          <div>
+            <div class="text-sm font-semibold text-slate-700 mb-2">Selecciona exactamente ${sources.length} destino${sources.length === 1 ? "" : "s"}</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="mvScenarioImportDestA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+              <button id="mvScenarioImportDestB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+              <button id="mvScenarioImportDestC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+              <button id="mvScenarioImportDestD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+            </div>
+          </div>
+        </div>
+      `;
+      var btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} resolve(null); };
+      var btnApply = document.createElement("button");
+      btnApply.type = "button";
+      btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnApply.textContent = "Aplicar";
+      btnApply.onclick = function(){
+        var dests = letters.filter(function(letter){ return selected.has(letter); });
+        if(dests.length !== sources.length){
+          try{ toast(`Selecciona exactamente ${sources.length} destinos`); }catch(_){}
+          return;
+        }
+        try{ closeModal(); }catch(_){}
+        resolve(dests);
+      };
+      showModal("Importar simulaciones", body, [btnCancel, btnApply]);
+      function paint(){
+        letters.forEach(function(letter){
+          var btn = document.getElementById(`mvScenarioImportDest${letter}`);
+          if(!btn) return;
+          var on = selected.has(letter);
+          btn.classList.toggle("bg-slate-900", on);
+          btn.classList.toggle("text-white", on);
+          btn.classList.toggle("border-slate-900", on);
+          btn.classList.toggle("bg-white", !on);
+          btn.classList.toggle("text-slate-700", !on);
+          btn.classList.toggle("border-slate-300", !on);
+        });
+      }
+      letters.forEach(function(letter){
+        var btn = document.getElementById(`mvScenarioImportDest${letter}`);
+        if(!btn) return;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          if(selected.has(letter)) selected.delete(letter);
+          else selected.add(letter);
+          paint();
+        }, true);
+      });
+      paint();
+    }catch(_){
+      resolve(null);
+    }
+  });
+}
+
+function __mvScenarioImport(obj, destSlotLetter, opts){
+  opts = opts || {};
   const slot = String(destSlotLetter || (state && state.scenario) || "A").trim().toUpperCase();
   if (!/^[ABCD]$/.test(slot)) throw new Error("Slot inválido");
   if (!obj || typeof obj !== "object" || obj.mv_kind !== "scenario_export" || Number(obj.mv_version) !== 1) {
@@ -18667,26 +18866,33 @@ function __mvScenarioImport(obj, destSlotLetter){
   try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){} 
   try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
   try { syncStickyTotalsHeightVar(); } catch {}
-  try { toast(`Simulación importada en ${slot}`); } catch {}
+  if(!opts.silent){
+    try { toast(`Simulación importada en ${slot}`); } catch {}
+  }
 }
 
 async function __mvRunScenarioExportFlow(slotLetter){
-  const slot = slotLetter
-    ? String(slotLetter).trim().toUpperCase()
-    : __mvPromptScenarioSlot("¿Qué simulación quieres exportar? (A/B/C/D)", (state && state.scenario) || "A");
-  if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
-  const customName = await __mvPromptExportNameModal({
-    title: `Guardar simulación ${slot}`,
-    label: "Nombre (opcional)",
-    placeholder: "Ej: Roma final",
-    confirmText: "Guardar"
-  });
-  if(customName === null) return false;
-  const payload = __mvScenarioExport(slot, customName);
+  const picked = slotLetter
+    ? { slots: [String(slotLetter).trim().toUpperCase()], name: "" }
+    : await __mvPromptScenarioExportSelection();
+  if(!picked || !Array.isArray(picked.slots) || !picked.slots.length){
+    try{ toast("Selecciona al menos una simulación."); }catch(_){} 
+    return false;
+  }
+  const slots = picked.slots.filter(function(slot){ return /^[ABCD]$/.test(String(slot || "").trim().toUpperCase()); });
+  if(!slots.length){
+    try{ toast("Selecciona al menos una simulación."); }catch(_){} 
+    return false;
+  }
+  const customName = String(picked.name || "").trim();
+  const payload = (slots.length === 1)
+    ? __mvScenarioExport(slots[0], customName)
+    : __mvScenarioBundleExport(slots, customName);
   const exportDt = new Date(String(payload.exportedAt || "") || Date.now());
   const pad2 = (n) => String(n).padStart(2, "0");
   const stamp = `${exportDt.getFullYear()}-${pad2(exportDt.getMonth()+1)}-${pad2(exportDt.getDate())}_${pad2(exportDt.getHours())}-${pad2(exportDt.getMinutes())}`;
-  const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(payload.scenarioName || customName || "") : "";
+  const displayName = String(payload.scenarioName || payload.bundleName || customName || "").trim();
+  const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(displayName) : "";
   const filename = slug
     ? `${slug}_S_${stamp}.json`
     : `SIMULACION_S_${stamp}.json`;
@@ -18706,7 +18912,7 @@ async function __mvRunScenarioExportFlow(slotLetter){
         Promise.resolve(
           navigator.share({
             files: [file],
-            title: `Simulación ${slot}`,
+            title: `Simulación${slots.length > 1 ? "es" : ""} ${slots.join(",")}`,
             text: "Simulación exportada desde Mi Viaje"
           })
         ).catch(() => { doDownload(); });
@@ -18721,44 +18927,60 @@ async function __mvRunScenarioExportFlow(slotLetter){
   }
   try{
     localStorage.setItem(MV_LAST_SCENARIO_EXPORT_META_KEY, JSON.stringify({
-      slot: slot,
-      name: String(payload.scenarioName || "").trim(),
+      slot: slots[0],
+      name: displayName,
       savedAt: payload.exportedAt,
       savedAtTs: Date.parse(payload.exportedAt) || Date.now(),
       deviceName: String(payload.deviceName || ""),
       build: String(payload.sourceBuild || APP_BUILD)
     }));
   }catch(_){}
-  try{ __pushScenarioSnapshot(slot, payload, "scenario-export"); }catch(_){} 
-  try{
-    __mvPushScenarioHistory(slot, {
-      ts: Number(Date.parse(payload.exportedAt) || Date.now()),
-      savedAt: String(payload.exportedAt || ""),
-      name: String(payload.scenarioName || "").trim(),
-      sourceBuild: String(payload.sourceBuild || APP_BUILD),
-      device: String(payload.deviceName || ""),
-      sourceType: "scenario-export",
-      slot: slot
-    });
-  }catch(_){}
-  try{
-    __setCurrentLoadedScenarioMeta(slot, {
-      referenceTs: Number(Date.parse(payload.exportedAt) || Date.now()),
-      savedAt: String(payload.exportedAt || ""),
-      source: "scenario-export",
-      deviceName: String(payload.deviceName || ""),
-      scenarioLetter: slot,
-      name: String(payload.scenarioName || "").trim(),
-      build: String(payload.sourceBuild || APP_BUILD)
-    });
-  }catch(_){}
-  try{ __clearScenarioDirty(slot); }catch(_){} 
+  slots.forEach(function(slot){
+    try{
+      var singlePayload = (payload.mv_kind === "scenario_bundle")
+        ? {
+            mv_kind: "scenario_export",
+            mv_version: 1,
+            exportedAt: payload.exportedAt,
+            sourceBuild: payload.sourceBuild,
+            scenarioSlot: slot,
+            scenarioName: String((payload.scenarioNames && payload.scenarioNames[slot]) || payload.bundleName || "").trim(),
+            deviceName: String(payload.deviceName || ""),
+            scenario: deepCloneJSON(payload.scenarios && payload.scenarios[slot] || {})
+          }
+        : payload;
+      __pushScenarioSnapshot(slot, singlePayload, "scenario-export");
+    }catch(_){}
+    try{
+      __mvPushScenarioHistory(slot, {
+        ts: Number(Date.parse(payload.exportedAt) || Date.now()),
+        savedAt: String(payload.exportedAt || ""),
+        name: displayName,
+        sourceBuild: String(payload.sourceBuild || APP_BUILD),
+        device: String(payload.deviceName || ""),
+        sourceType: "scenario-export",
+        slot: slot
+      });
+    }catch(_){}
+    try{
+      __setCurrentLoadedScenarioMeta(slot, {
+        referenceTs: Number(Date.parse(payload.exportedAt) || Date.now()),
+        savedAt: String(payload.exportedAt || ""),
+        source: "scenario-export",
+        deviceName: String(payload.deviceName || ""),
+        scenarioLetter: slot,
+        name: displayName,
+        build: String(payload.sourceBuild || APP_BUILD)
+      });
+    }catch(_){}
+    try{ __clearScenarioDirty(slot); }catch(_){}
+  });
   try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){} 
   try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){} 
-  try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
+  try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){} 
   try{
     const pretty = new Date(Date.parse(payload.exportedAt) || Date.now()).toLocaleString("es-ES", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
-    toast(payload.scenarioName ? `Guardada: ${payload.scenarioName} · Simulación ${slot} · ${pretty}` : `Guardada: Simulación ${slot} · ${pretty}`);
+    toast(displayName ? `Guardada: ${displayName} · Simulación${slots.length > 1 ? "es" : ""} ${slots.join(",")} · ${pretty}` : `Guardada: Simulación${slots.length > 1 ? "es" : ""} ${slots.join(",")} · ${pretty}`);
   }catch(_){}
   return true;
 }
@@ -18777,39 +18999,96 @@ async function __mvRunScenarioImportFlow(ev){
       }catch(err){ reject(err); }
     });
     const payload = JSON.parse(txt);
-    if (!payload || payload.mv_kind !== "scenario_export" || Number(payload.mv_version) !== 1) {
-      try{ toast("Este archivo no es una simulación válida."); }catch(_){}
+    if (!payload || (payload.mv_kind !== "scenario_export" && payload.mv_kind !== "scenario_bundle") || Number(payload.mv_version) !== 1) {
+      try{ toast("Este archivo no es una simulación válida."); }catch(_){} 
       return;
     }
-    if(!String(payload.scenarioName || "").trim()){
+    if(payload.mv_kind === "scenario_export" && !String(payload.scenarioName || "").trim()){
       payload.scenarioName = __mvInferExportNameFromFilename(file && file.name, "S");
     }
+    if(payload.mv_kind === "scenario_bundle" && !String(payload.bundleName || "").trim()){
+      payload.bundleName = __mvInferExportNameFromFilename(file && file.name, "S");
+    }
     const forcedSlot = String((input && input.dataset && input.dataset.targetSlot) || "").trim().toUpperCase();
-    const slot = /^[ABCD]$/.test(forcedSlot)
-      ? forcedSlot
-      : __mvPromptScenarioSlot("¿En qué simulación quieres importar? (A/B/C/D)", (state && state.scenario) || "A");
-    if (!slot) { try{ toast("Slot inválido"); }catch(_){} return; }
-    const importedTs = Number(Date.parse(String(payload && payload.exportedAt || "")) || 0);
-    const currentMeta = __getCurrentLoadedScenarioMeta(slot);
-    const currentTs = Number((input && input.dataset && input.dataset.currentTs) || (currentMeta && currentMeta.referenceTs) || 0);
-    if(forcedSlot && payload && payload.scenarioSlot && String(payload.scenarioSlot).trim().toUpperCase() !== slot){
-      __mvShowScenarioSelectionWarning(
-        "Simulación no corresponde",
-        `La simulación seleccionada corresponde al slot ${escapeHtml(String(payload.scenarioSlot).trim().toUpperCase())} y no al slot activo ${escapeHtml(slot)}.`
-      );
-      return;
+    if(forcedSlot){
+      const slot = forcedSlot;
+      if(payload.mv_kind !== "scenario_export"){
+        try{ toast("Este archivo no es una simulación válida."); }catch(_){} 
+        return;
+      }
+      const importedTs = Number(Date.parse(String(payload && payload.exportedAt || "")) || 0);
+      const currentMeta = __getCurrentLoadedScenarioMeta(slot);
+      const currentTs = Number((input && input.dataset && input.dataset.currentTs) || (currentMeta && currentMeta.referenceTs) || 0);
+      if(payload && payload.scenarioSlot && String(payload.scenarioSlot).trim().toUpperCase() !== slot){
+        __mvShowScenarioSelectionWarning(
+          "Simulación no corresponde",
+          `La simulación seleccionada corresponde al slot ${escapeHtml(String(payload.scenarioSlot).trim().toUpperCase())} y no al slot activo ${escapeHtml(slot)}.`
+        );
+        return;
+      }
+      if(!(importedTs > 0) || importedTs <= currentTs){
+        __mvShowScenarioSelectionWarning(
+          "No es la más reciente",
+          `Simulación actual: ${escapeHtml(__mvFormatScenarioVersionDate(currentTs))}<br>Seleccionada: ${escapeHtml(__mvFormatScenarioVersionDate(importedTs))}<br><br>Selecciona la simulación más reciente para actualizar.`
+        );
+        return;
+      }
+      __mvScenarioImport(payload, slot);
+    }else{
+      let sourceSlots = [];
+      if(payload.mv_kind === "scenario_export"){
+        const sourceSlot = String(payload.scenarioSlot || "").trim().toUpperCase();
+        sourceSlots = [/^[ABCD]$/.test(sourceSlot) ? sourceSlot : "A"];
+      }else{
+        sourceSlots = ["A","B","C","D"].filter(function(letter){
+          return !!(payload.scenarios && payload.scenarios[letter]);
+        });
+      }
+      if(!sourceSlots.length){
+        try{ toast("Este archivo no es una simulación válida."); }catch(_){} 
+        return;
+      }
+      const destSlots = await __mvPromptScenarioImportDestinations(sourceSlots);
+      if(!destSlots) return;
+      if(destSlots.length !== sourceSlots.length){
+        try{ toast(`Selecciona exactamente ${sourceSlots.length} destinos`); }catch(_){} 
+        return;
+      }
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnImport = document.createElement("button");
+      btnImport.type = "button";
+      btnImport.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnImport.textContent = "Importar";
+      btnImport.onclick = function(){
+        try{ closeModal(); }catch(_){}
+        sourceSlots.forEach(function(srcSlot, idx){
+          const destSlot = destSlots[idx];
+          if(payload.mv_kind === "scenario_export"){
+            __mvScenarioImport(payload, destSlot, { silent: true });
+          }else{
+            __mvScenarioImport({
+              mv_kind: "scenario_export",
+              mv_version: 1,
+              exportedAt: String(payload.exportedAt || new Date().toISOString()),
+              sourceBuild: String(payload.sourceBuild || APP_BUILD),
+              scenarioSlot: srcSlot,
+              scenarioName: String((payload.scenarioNames && payload.scenarioNames[srcSlot]) || payload.bundleName || "").trim(),
+              deviceName: String(payload.deviceName || ""),
+              scenario: deepCloneJSON(payload.scenarios && payload.scenarios[srcSlot] || {})
+            }, destSlot, { silent: true });
+          }
+        });
+        try{ toast("Simulaciones importadas"); }catch(_){}
+      };
+      showModal("Importar simulaciones", `<div class="text-sm text-slate-700">Se reemplazarán las simulaciones: <span class="font-extrabold">${escapeHtml(destSlots.join(" y "))}</span>. ¿Continuar?</div>`, [btnCancel, btnImport]);
     }
-    if(forcedSlot && (!(importedTs > 0) || importedTs <= currentTs)){
-      __mvShowScenarioSelectionWarning(
-        "No es la más reciente",
-        `Simulación actual: ${escapeHtml(__mvFormatScenarioVersionDate(currentTs))}<br>Seleccionada: ${escapeHtml(__mvFormatScenarioVersionDate(importedTs))}<br><br>Selecciona la simulación más reciente para actualizar.`
-      );
-      return;
-    }
-    __mvScenarioImport(payload, slot);
     if(input && input.dataset && input.dataset.closeScenarioModal === "1"){
-      try{ __closeScenarioVersionCheckModal(); }catch(_){}
-      try{ toast("Simulación actualizada"); }catch(_){}
+      try{ __closeScenarioVersionCheckModal(); }catch(_){} 
+      try{ toast("Simulación actualizada"); }catch(_){} 
     }
   } catch (_) {
     try{ toast("Este archivo no es una simulación válida."); }catch(_){}
