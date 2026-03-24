@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A3_PENDING_SAVE_FAB_DELEGATED_FIX";
+const APP_BUILD = "V240_A20_FIRST_CHANGE_PROMPT_THEN_PENDING_FAB";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3068,6 +3068,7 @@ const MV_LAST_SCENARIO_EXPORT_META_KEY = "MV_LAST_SCENARIO_EXPORT_META_V1";
 const MV_CURRENT_LOADED_SCENARIO_META_KEY_PREFIX = "miviaje.scenario.loadedMeta.";
 const MV_SCENARIO_SNAPSHOTS_KEY_PREFIX = "miviaje.scenario.snapshots.";
 const MV_SCENARIO_DIRTY_PREFIX = "miviaje.scenario.dirty.";
+const MV_SCENARIO_PROMPT_SUPPRESS_PREFIX = "mv.scen.promptSuppressedUntilSave.";
 const MV_SCENARIO_VERSION_CHECK_SNOOZE_KEY = "miviaje.scenario.versionCheckSnooze.v1";
 const MV_BACKUP_HISTORY_KEY = "mv.hist.backup";
 const MV_SCENARIO_HISTORY_KEY_PREFIX = "mv.hist.sim.";
@@ -3754,6 +3755,10 @@ function __mvScenarioDirtyKey(slotLetter){
   return `${MV_SCENARIO_DIRTY_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
 }
 
+function __mvScenarioPromptSuppressKey(slotLetter){
+  return `${MV_SCENARIO_PROMPT_SUPPRESS_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
+}
+
 function __getCurrentLoadedScenarioMeta(slotLetter){
   try{
     var raw = localStorage.getItem(__mvScenarioMetaKey(slotLetter));
@@ -3924,8 +3929,43 @@ function __clearScenarioDirty(slotLetter){
   try{
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     localStorage.removeItem(__mvScenarioDirtyKey(slot));
-    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+    localStorage.removeItem(__mvScenarioPromptSuppressKey(slot));
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){} 
     return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __isScenarioPromptSuppressedUntilSave(slotLetter){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    return localStorage.getItem(__mvScenarioPromptSuppressKey(slot)) === "1";
+  }catch(_){
+    return false;
+  }
+}
+
+function __setScenarioPromptSuppressedUntilSave(slotLetter, value){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    if(value) localStorage.setItem(__mvScenarioPromptSuppressKey(slot), "1");
+    else localStorage.removeItem(__mvScenarioPromptSuppressKey(slot));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __onScenarioChanged(slotLetter, reason){
+  try{
+    var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+    __markScenarioDirty(slot);
+    if(__isScenarioPromptSuppressedUntilSave(slot)){
+      try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+      return false;
+    }
+    return __openScenarioSavePromptModal(slot);
   }catch(_){
     return false;
   }
@@ -3995,9 +4035,11 @@ function __openScenarioSavePromptModal(slotLetter){
     continueBtn.textContent = "Ahora no";
     updateBtn.textContent = "Guardar ahora";
     continueBtn.onclick = function(e){
-      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+      try{ __setScenarioPromptSuppressedUntilSave(slot, true); }catch(_){} 
       window.__mvScenarioSavePromptLastDismissTs = Date.now();
       __closeScenarioSavePromptModal();
+      try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){} 
     };
     updateBtn.onclick = async function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
@@ -4021,7 +4063,8 @@ function __maybePromptSaveScenario(slotLetter){
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     if(!__isWebBackupReminderContext()) return false;
     if(!__isScenarioDirty(slot)) return false;
-    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){} 
+    if(__isScenarioPromptSuppressedUntilSave(slot)) return false;
     if(window.__mvScenarioSavePromptOpen) return false;
     var lastDismissTs = Number(window.__mvScenarioSavePromptLastDismissTs || 0);
     if(lastDismissTs && (Date.now() - lastDismissTs) < (2 * 60 * 1000)) return false;
@@ -13884,7 +13927,7 @@ function renderStays() {
     if (!it) return;
     it.notes = inp.value;
     saveState();
-    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+    try{ __onScenarioChanged((state && state.scenario) || "A", "stay-notes"); }catch{}
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-stay-status]").forEach(sel => sel.addEventListener("change", () => {
@@ -15221,7 +15264,7 @@ function renderActivities() {
     if (!it) return;
     it.notes = inp.value;
     saveState();
-    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+    try{ __onScenarioChanged((state && state.scenario) || "A", "act-notes"); }catch{}
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-act-status]").forEach(sel => sel.addEventListener("change", () => {
@@ -15697,7 +15740,7 @@ function openItemNotesModal(item, kindLabel, opts){
         const v = String(ta?.value || "").trim();
         it.notes = v;
         try{ if(typeof saveState==="function") saveState(); }catch{}
-        try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+        try{ __onScenarioChanged((state && state.scenario) || "A", "item-notes-save"); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
@@ -15709,7 +15752,7 @@ function openItemNotesModal(item, kindLabel, opts){
         if (!ok) return;
         it.notes = "";
         try{ if(typeof saveState==="function") saveState(); }catch{}
-        try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+        try{ __onScenarioChanged((state && state.scenario) || "A", "item-notes-delete"); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
@@ -17228,7 +17271,7 @@ function renderDailyNotes() {
       if (!ok) return;
       delete sc.dailyNotes[k];
       saveState();
-      try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+      try{ __onScenarioChanged((state && state.scenario) || "A", "daily-note-delete"); }catch{}
       if (status) status.textContent = "Borrado ✓";
       renderDailyNotes();
       if (typeof renderTimeline === "function") renderTimeline();
@@ -17246,7 +17289,7 @@ function renderDailyNotes() {
       else sc.dailyNotes[k] = v;
 
       saveState();
-      try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
+      try{ __onScenarioChanged((state && state.scenario) || "A", "daily-note-save"); }catch{}
 
       if (status) status.textContent = t("sheet.saved");
 
@@ -25261,7 +25304,7 @@ overlay.classList.remove("hidden");
   function __mvSafeSaveAfterAttachmentChange(){
     try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
     try{ if(typeof saveState === "function") saveState(); }catch(_){}
-    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch(_){}
+    try{ __onScenarioChanged((state && state.scenario) || "A", "attachments"); }catch(_){}
     try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
   }
   function __mvRenderAttachSummaryLine(obj){
