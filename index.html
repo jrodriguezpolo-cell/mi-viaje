@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A19_DIRTY_ATTACHMENTS_NOTES_AND_PENDING_SAVE_FAB";
+const APP_BUILD = "V240_A1_PENDING_SAVE_ALERT_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -4022,11 +4022,10 @@ function __maybePromptSaveScenario(slotLetter){
     if(!__isWebBackupReminderContext()) return false;
     if(!__isScenarioDirty(slot)) return false;
     try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
-    var lastToastTs = Number(window.__mvScenarioDirtyToastTs || 0);
-    if(lastToastTs && (Date.now() - lastToastTs) < 10000) return false;
-    window.__mvScenarioDirtyToastTs = Date.now();
-    try{ toast("Cambios pendientes"); }catch(_){}
-    return true;
+    if(window.__mvScenarioSavePromptOpen) return false;
+    var lastDismissTs = Number(window.__mvScenarioSavePromptLastDismissTs || 0);
+    if(lastDismissTs && (Date.now() - lastDismissTs) < (2 * 60 * 1000)) return false;
+    return __openScenarioSavePromptModal(slot);
   }catch(_){
     return false;
   }
