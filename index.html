@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A24_SCENARIO_BUNDLE_EXPORT_IMPORT_BUTTONS";
+const APP_BUILD = "V240_A25_SAVE_FROM_ALERT_USES_BUNDLE_EXPORT_MODAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3992,6 +3992,36 @@ function __closeScenarioSavePromptModal(){
   }catch(_){}
 }
 
+function __getVisibleScenarioLetters(){
+  try{
+    var count = Math.max(1, Math.min(4, parseInt(state && state.scenarioCount, 10) || 1));
+    return ["A","B","C","D"].slice(0, count);
+  }catch(_){
+    return ["A"];
+  }
+}
+
+async function __openScenarioBundleExportModal(opts){
+  try{
+    var cfg = opts || {};
+    var preselectSlots = Array.isArray(cfg.preselectSlots) ? cfg.preselectSlots : __getVisibleScenarioLetters();
+    var ok = !!(await __mvRunScenarioExportFlow("", {
+      preselectSlots: preselectSlots,
+      initialName: String(cfg.initialName || "").trim()
+    }));
+    try{
+      if(typeof cfg.onDone === "function") cfg.onDone(ok);
+    }catch(_){}
+    return ok;
+  }catch(_){
+    try{
+      var cfg2 = opts || {};
+      if(typeof cfg2.onDone === "function") cfg2.onDone(false);
+    }catch(__){}
+    return false;
+  }
+}
+
 async function __saveCurrentScenarioSnapshot(slotLetter){
   try{
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
@@ -4009,10 +4039,14 @@ async function __saveCurrentScenarioSnapshot(slotLetter){
         }
       }catch(_){}
     }
-    var ok = !!(await __mvRunScenarioExportFlow(slot, { initialName: defaultName, forceNamePrompt: true }));
-    if(!ok) return false;
-    __clearScenarioDirty(slot);
-    return true;
+    var preselect = __getVisibleScenarioLetters();
+    if(!Array.isArray(preselect) || !preselect.length) preselect = [slot];
+    if(preselect.indexOf(slot) === -1) preselect.unshift(slot);
+    var ok = !!(await __openScenarioBundleExportModal({
+      preselectSlots: preselect,
+      initialName: defaultName
+    }));
+    return ok;
   }catch(_){
     return false;
   }
@@ -18939,11 +18973,17 @@ function __mvScenarioBundleExport(slotLetters, customName){
   };
 }
 
-function __mvPromptScenarioExportSelection(){
+function __mvPromptScenarioExportSelection(opts){
   return new Promise(function(resolve){
     try{
       var letters = ["A","B","C","D"];
-      var selected = new Set([String((state && state.scenario) || "A").trim().toUpperCase()]);
+      var cfg = opts || {};
+      var initialSlots = Array.isArray(cfg.preselectSlots)
+        ? cfg.preselectSlots.map(function(it){ return String(it || "").trim().toUpperCase(); }).filter(function(it){ return /^[ABCD]$/.test(it); })
+        : [String((state && state.scenario) || "A").trim().toUpperCase()];
+      if(!initialSlots.length) initialSlots = [String((state && state.scenario) || "A").trim().toUpperCase()];
+      var selected = new Set(initialSlots);
+      var initialName = String(cfg.initialName || "").trim();
       var body = `
         <div class="space-y-4">
           <div class="text-sm text-slate-700">Marca qué simulaciones quieres guardar en un solo fichero.</div>
@@ -18959,7 +18999,7 @@ function __mvPromptScenarioExportSelection(){
           </div>
           <div>
             <label class="text-sm font-semibold text-slate-700" for="mvScenarioExportNameInput">Nombre (opcional)</label>
-            <input id="mvScenarioExportNameInput" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 text-base" type="text" placeholder="Ej: Viaje Roma">
+            <input id="mvScenarioExportNameInput" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 text-base" type="text" placeholder="Ej: Viaje Roma" value="${escapeHtml(initialName)}">
           </div>
         </div>
       `;
@@ -19179,7 +19219,7 @@ async function __mvRunScenarioExportFlow(slotLetter, opts){
     }
     picked = { slots: [fixedSlot], name: initialName };
   }else{
-    picked = await __mvPromptScenarioExportSelection();
+    picked = await __mvPromptScenarioExportSelection(opts);
   }
   if(!picked || !Array.isArray(picked.slots) || !picked.slots.length){
     try{ toast("Selecciona al menos una simulación."); }catch(_){} 
@@ -20428,13 +20468,9 @@ const plus = $("tabPlus");
 async function __mvHandlePendingSaveFabClick(ev){
   try{ ev && (ev.preventDefault(), ev.stopPropagation()); }catch{}
   try{
-    const slot = String((state && state.scenario) || "A").trim().toUpperCase();
-    if(!/^[ABCD]$/.test(slot)){
-      try{ toast("No se pudo guardar la simulación"); }catch(_){}
-      return;
-    }
     let initialName = "";
     try{
+      const slot = String((state && state.scenario) || "A").trim().toUpperCase();
       const currentMeta = __getCurrentLoadedScenarioMeta(slot);
       initialName = String(currentMeta && currentMeta.name || "").trim();
     }catch(_){}
@@ -20446,14 +20482,16 @@ async function __mvHandlePendingSaveFabClick(ev){
         }
       }catch(_){}
     }
-    const ok = await __mvRunScenarioExportFlow(slot, { forceNamePrompt: true, initialName: initialName });
+    const ok = await __openScenarioBundleExportModal({
+      preselectSlots: __getVisibleScenarioLetters(),
+      initialName: initialName
+    });
     if(!ok){
-      try{ toast("Guardado cancelado"); }catch(_){}
+      try{ toast("Guardado cancelado"); }catch(_){} 
       return;
     }
-    try{ __clearScenarioDirty(slot); }catch(_){}
-    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
-    try{ toast("Simulación guardada"); }catch(_){}
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){} 
+    try{ toast("Simulaciones guardadas"); }catch(_){} 
   }catch(_){
     try{ toast("No se pudo guardar la simulación"); }catch(__){}
   }
