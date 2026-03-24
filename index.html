@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A8_HISTORY_ACCORDION_WIRING_ONLY";
+const APP_BUILD = "V240_A9_RESET_SELECT_SCENARIOS_MULTI";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19815,6 +19815,135 @@ $("btnTrips").addEventListener("click", openTripsModal);
     try { return JSON.parse(JSON.stringify(obj)); } catch { return null; }
   };
 
+  function __resetScenario(slotLetter){
+    try{
+      const slot = String(slotLetter || "").trim().toUpperCase();
+      if(!/^[ABCD]$/.test(slot)) return false;
+      if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = { A: emptyScenario(), B: emptyScenario(), C: emptyScenario(), D: emptyScenario() };
+      state.scenarios[slot] = emptyScenario();
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function __resetSelectedScenarios(slotLetters){
+    try{
+      const list = Array.isArray(slotLetters) ? slotLetters.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
+      if(!list.length) return false;
+      list.forEach(slot => { try{ __resetScenario(slot); }catch(_){} });
+      try{ if(typeof saveState === "function") saveState(); }catch(_){}
+      try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
+      try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
+      try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){}
+      try{ toast(`Simulaciones reiniciadas: ${list.join(", ")}`); }catch(_){}
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function __openResetSelectedScenariosConfirm(selected){
+    try{
+      const picked = Array.isArray(selected) ? selected.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
+      if(!picked.length){
+        try{ toast("Selecciona al menos una simulación."); }catch(_){}
+        return;
+      }
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnConfirm = document.createElement("button");
+      btnConfirm.type = "button";
+      btnConfirm.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
+      btnConfirm.textContent = "Reiniciar";
+      btnConfirm.onclick = function(){
+        try{ closeModal(); }catch(_){}
+        __resetSelectedScenarios(picked);
+      };
+      showModal("Confirmar reinicio", `<div class="text-sm text-slate-700">¿Seguro? Esta acción no se puede deshacer.</div>`, [btnCancel, btnConfirm]);
+    }catch(_){}
+  }
+
+  function __openResetScenarioPickerModal(){
+    try{
+      closeTools();
+      const selected = new Set();
+      const letters = ["A","B","C","D"];
+      const render = function(){
+        const allBtn = document.getElementById("mvResetAllBtn");
+        if(allBtn){
+          const allOn = letters.every(letter => selected.has(letter));
+          allBtn.classList.toggle("bg-slate-900", allOn);
+          allBtn.classList.toggle("text-white", allOn);
+          allBtn.classList.toggle("border-slate-900", allOn);
+          allBtn.classList.toggle("bg-white", !allOn);
+          allBtn.classList.toggle("text-slate-700", !allOn);
+          allBtn.classList.toggle("border-slate-300", !allOn);
+        }
+        letters.forEach(function(letter){
+          const btn = document.getElementById(`mvResetSlot${letter}`);
+          if(!btn) return;
+          const on = selected.has(letter);
+          btn.classList.toggle("bg-slate-900", on);
+          btn.classList.toggle("text-white", on);
+          btn.classList.toggle("border-slate-900", on);
+          btn.classList.toggle("bg-white", !on);
+          btn.classList.toggle("text-slate-700", !on);
+          btn.classList.toggle("border-slate-300", !on);
+        });
+      };
+      const body = `
+        <div class="space-y-4">
+          <div class="text-sm text-slate-700">Elige qué simulaciones quieres reiniciar. Esto borrará sus eventos (transporte, alojamiento, actividades, etc.).</div>
+          <div class="flex flex-wrap gap-2">
+            <button id="mvResetAllBtn" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Todas</button>
+            <button id="mvResetSlotA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+            <button id="mvResetSlotB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+            <button id="mvResetSlotC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+            <button id="mvResetSlotD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnReset = document.createElement("button");
+      btnReset.type = "button";
+      btnReset.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
+      btnReset.textContent = "Reiniciar seleccionadas";
+      btnReset.onclick = function(){
+        __openResetSelectedScenariosConfirm(Array.from(selected));
+      };
+      showModal("Reiniciar simulaciones", body, [btnCancel, btnReset]);
+      const allBtn = document.getElementById("mvResetAllBtn");
+      if(allBtn){
+        allBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          const allOn = letters.every(letter => selected.has(letter));
+          selected.clear();
+          if(!allOn) letters.forEach(letter => selected.add(letter));
+          render();
+        }, true);
+      }
+      letters.forEach(function(letter){
+        const btn = document.getElementById(`mvResetSlot${letter}`);
+        if(!btn) return;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          if(selected.has(letter)) selected.delete(letter);
+          else selected.add(letter);
+          render();
+        }, true);
+      });
+      render();
+    }catch(_){}
+  }
+
   if (copyAtoBBtn) copyAtoBBtn.classList.add("hidden");
   if (copyBtoABtn) copyBtoABtn.classList.add("hidden");
 
@@ -19828,11 +19957,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
 
   if (resetBtn) resetBtn.addEventListener("click", () => {
-    closeTools();
-    if (!confirm("¿Reiniciar viaje? Esto borrará los datos guardados en este dispositivo para este viaje.")) return;
-    try { localStorage.removeItem(LS_KEY); } catch {}
-    // No tocar claves/ajustes; solo el estado principal
-    location.reload();
+    __openResetScenarioPickerModal();
   });
 
   // Escape to close
