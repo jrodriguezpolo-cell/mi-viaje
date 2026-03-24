@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A26_HEADER_NO_OVERLAP_SCENARIOS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A27_PARTIAL_RESET_BY_SECTION_AND_SIM</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A26_HEADER_NO_OVERLAP_SCENARIOS";
+const APP_BUILD = "V240_A27_PARTIAL_RESET_BY_SECTION_AND_SIM";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20908,29 +20908,62 @@ $("btnTrips").addEventListener("click", openTripsModal);
     }
   }
 
-  function __resetSelectedScenarios(slotLetters){
+  function __resetScenarioSections(slotLetter, sections){
     try{
-      const list = Array.isArray(slotLetters) ? slotLetters.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
-      if(!list.length) return false;
-      list.forEach(slot => { try{ __resetScenario(slot); }catch(_){} });
-      try{ if(typeof saveState === "function") saveState(); }catch(_){}
-      try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
-      try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
-      try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){}
-      try{ toast(`Simulaciones reiniciadas: ${list.join(", ")}`); }catch(_){}
+      const slot = String(slotLetter || "").trim().toUpperCase();
+      if(!/^[ABCD]$/.test(slot)) return false;
+      if (!state.scenarios || typeof state.scenarios !== "object") state.scenarios = { A: emptyScenario(), B: emptyScenario(), C: emptyScenario(), D: emptyScenario() };
+      const sc = state.scenarios[slot] || emptyScenario();
+      const picked = Array.isArray(sections) ? sections.map(s => String(s || "").trim()) : [];
+      if(picked.includes("legs")) sc.legs = [];
+      if(picked.includes("stays")) sc.stays = [];
+      if(picked.includes("acts")) sc.activities = [];
+      if(picked.includes("meals")){
+        sc.meals = { daily: 0, people: "", days: "", currency: (state.displayCurrency || "EUR") };
+        sc.miscExpenses = [];
+      }
+      state.scenarios[slot] = sc;
       return true;
     }catch(_){
       return false;
     }
   }
 
-  function __openResetSelectedScenariosConfirm(selected){
+  function __resetSelectedScenarios(slotLetters, sections){
+    try{
+      const list = Array.isArray(slotLetters) ? slotLetters.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
+      const pickedSections = Array.isArray(sections) ? sections.map(s => String(s || "").trim()) : [];
+      if(!list.length) return false;
+      if(!pickedSections.length) return false;
+      list.forEach(slot => { try{ __resetScenarioSections(slot, pickedSections); }catch(_){} });
+      try{ if(typeof saveState === "function") saveState(); }catch(_){} 
+      try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){} 
+      try{ if(typeof renderAll === "function") renderAll(); }catch(_){} 
+      try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){} 
+      try{ toast("Reinicio aplicado"); }catch(_){} 
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function __openResetSelectedScenariosConfirm(selected, sections){
     try{
       const picked = Array.isArray(selected) ? selected.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
+      const pickedSections = Array.isArray(sections) ? sections.map(s => String(s || "").trim()) : [];
       if(!picked.length){
-        try{ toast("Selecciona al menos una simulación."); }catch(_){}
+        try{ toast("Selecciona al menos una simulación."); }catch(_){} 
         return;
       }
+      if(!pickedSections.length){
+        try{ toast("Selecciona al menos una sección."); }catch(_){} 
+        return;
+      }
+      const sectionLabels = [];
+      if(pickedSections.includes("legs")) sectionLabels.push("Transporte");
+      if(pickedSections.includes("stays")) sectionLabels.push("Alojamiento");
+      if(pickedSections.includes("acts")) sectionLabels.push("Actividades");
+      if(pickedSections.includes("meals")) sectionLabels.push("Varios");
       const btnCancel = document.createElement("button");
       btnCancel.type = "button";
       btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
@@ -20941,10 +20974,96 @@ $("btnTrips").addEventListener("click", openTripsModal);
       btnConfirm.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
       btnConfirm.textContent = "Reiniciar";
       btnConfirm.onclick = function(){
-        try{ closeModal(); }catch(_){}
-        __resetSelectedScenarios(picked);
+        try{ closeModal(); }catch(_){} 
+        __resetSelectedScenarios(picked, pickedSections);
       };
-      showModal("Confirmar reinicio", `<div class="text-sm text-slate-700">¿Seguro? Esta acción no se puede deshacer.</div>`, [btnCancel, btnConfirm]);
+      showModal("Confirmar reinicio", `<div class="space-y-3 text-sm text-slate-700"><div>Vas a borrar: <span class="font-extrabold">${escapeHtml(sectionLabels.join(", "))}</span> en: <span class="font-extrabold">${escapeHtml(picked.join(", "))}</span>.</div><div>Esta acción no se puede deshacer.</div></div>`, [btnCancel, btnConfirm]);
+    }catch(_){}
+  }
+
+  function __openResetSectionsPickerModal(selectedSlots){
+    try{
+      const pickedSlots = Array.isArray(selectedSlots) ? selectedSlots.map(s => String(s || "").trim().toUpperCase()).filter(s => /^[ABCD]$/.test(s)) : [];
+      if(!pickedSlots.length){
+        try{ toast("Selecciona al menos una simulación."); }catch(_){} 
+        return;
+      }
+      const sections = ["legs","stays","acts","meals"];
+      const selected = new Set();
+      const render = function(){
+        const allBtn = document.getElementById("mvResetSectionsAllBtn");
+        if(allBtn){
+          const allOn = sections.every(section => selected.has(section));
+          allBtn.classList.toggle("bg-slate-900", allOn);
+          allBtn.classList.toggle("text-white", allOn);
+          allBtn.classList.toggle("border-slate-900", allOn);
+          allBtn.classList.toggle("bg-white", !allOn);
+          allBtn.classList.toggle("text-slate-700", !allOn);
+          allBtn.classList.toggle("border-slate-300", !allOn);
+        }
+        sections.forEach(function(section){
+          const btn = document.getElementById(`mvResetSection_${section}`);
+          if(!btn) return;
+          const on = selected.has(section);
+          btn.classList.toggle("bg-slate-900", on);
+          btn.classList.toggle("text-white", on);
+          btn.classList.toggle("border-slate-900", on);
+          btn.classList.toggle("bg-white", !on);
+          btn.classList.toggle("text-slate-700", !on);
+          btn.classList.toggle("border-slate-300", !on);
+        });
+      };
+      const body = `
+        <div class="space-y-4">
+          <div class="text-sm text-slate-700">Elige qué secciones quieres borrar dentro de las simulaciones seleccionadas.</div>
+          <div class="flex flex-wrap gap-2">
+            <button id="mvResetSectionsAllBtn" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Todo</button>
+            <button id="mvResetSection_legs" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Transporte</button>
+            <button id="mvResetSection_stays" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Alojamiento</button>
+            <button id="mvResetSection_acts" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Actividades</button>
+            <button id="mvResetSection_meals" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Varios</button>
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnReset = document.createElement("button");
+      btnReset.type = "button";
+      btnReset.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
+      btnReset.textContent = "Reiniciar seleccionado";
+      btnReset.onclick = function(){
+        const pickedSections = sections.filter(section => selected.has(section));
+        if(!pickedSections.length){
+          try{ toast("Selecciona al menos una sección."); }catch(_){} 
+          return;
+        }
+        __openResetSelectedScenariosConfirm(pickedSlots, pickedSections);
+      };
+      showModal("Qué quieres borrar", body, [btnCancel, btnReset]);
+      const allBtn = document.getElementById("mvResetSectionsAllBtn");
+      if(allBtn){
+        allBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+          const allOn = sections.every(section => selected.has(section));
+          selected.clear();
+          if(!allOn) sections.forEach(section => selected.add(section));
+          render();
+        }, true);
+      }
+      sections.forEach(function(section){
+        const btn = document.getElementById(`mvResetSection_${section}`);
+        if(!btn) return;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+          if(selected.has(section)) selected.delete(section);
+          else selected.add(section);
+          render();
+        }, true);
+      });
+      render();
     }catch(_){}
   }
 
@@ -20996,9 +21115,14 @@ $("btnTrips").addEventListener("click", openTripsModal);
       const btnReset = document.createElement("button");
       btnReset.type = "button";
       btnReset.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
-      btnReset.textContent = "Reiniciar seleccionadas";
+      btnReset.textContent = "Siguiente";
       btnReset.onclick = function(){
-        __openResetSelectedScenariosConfirm(Array.from(selected));
+        const picked = Array.from(selected);
+        if(!picked.length){
+          try{ toast("Selecciona al menos una simulación."); }catch(_){} 
+          return;
+        }
+        __openResetSectionsPickerModal(picked);
       };
       showModal("Reiniciar simulaciones", body, [btnCancel, btnReset]);
       const allBtn = document.getElementById("mvResetAllBtn");
