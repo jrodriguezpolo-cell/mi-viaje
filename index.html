@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A28_TRANSFER_SCENARIOS_COPY_OR_MOVE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A29_RESET_TOTAL_CLEARS_NOTES_TOO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A28_TRANSFER_SCENARIOS_COPY_OR_MOVE";
+const APP_BUILD = "V240_A29_RESET_TOTAL_CLEARS_NOTES_TOO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20971,6 +20971,23 @@ $("btnTrips").addEventListener("click", openTripsModal);
     }
   }
 
+  function __clearScenarioNotes(slotLetter){
+    try{
+      const slot = String(slotLetter || "").trim().toUpperCase();
+      if(!/^[ABCD]$/.test(slot)) return false;
+      if (!state.scenarios || typeof state.scenarios !== "object") return false;
+      const sc = state.scenarios[slot];
+      if(!sc || typeof sc !== "object") return false;
+      if (sc.dailyNotes && typeof sc.dailyNotes === "object") sc.dailyNotes = {};
+      if (sc.dailyNotesByDate && typeof sc.dailyNotesByDate === "object") sc.dailyNotesByDate = {};
+      if (sc.timelineNotesByDate && typeof sc.timelineNotesByDate === "object") sc.timelineNotesByDate = {};
+      if (sc.notes && typeof sc.notes === "object") sc.notes = Array.isArray(sc.notes) ? [] : {};
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
   function __resetScenarioSections(slotLetter, sections){
     try{
       const slot = String(slotLetter || "").trim().toUpperCase();
@@ -20986,6 +21003,10 @@ $("btnTrips").addEventListener("click", openTripsModal);
         sc.miscExpenses = [];
       }
       state.scenarios[slot] = sc;
+      const isTotalReset = ["legs","stays","acts","meals"].every(function(key){ return picked.includes(key); });
+      if(isTotalReset){
+        try{ __clearScenarioNotes(slot); }catch(_){} 
+      }
       return true;
     }catch(_){
       return false;
