@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V227_B37_TL_AI_ICON_UNDER_TICK</title>
+<title>V240_A3_PENDING_SAVE_FAB_DELEGATED_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V227_B37_TL_AI_ICON_UNDER_TICK</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A3_PENDING_SAVE_FAB_DELEGATED_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A2_PENDING_SAVE_FAB_OPENS_SAVE_PROMPT";
+const APP_BUILD = "V240_A3_PENDING_SAVE_FAB_DELEGATED_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20179,43 +20179,62 @@ const plus = $("tabPlus");
 
   }
   const pendingFab = $("fabPendingSave");
-  if(pendingFab && !pendingFab.__mvBound){
-    pendingFab.__mvBound = true;
-    pendingFab.addEventListener("click", async (ev)=>{
-      try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+
+// V240_A3: robust binding even if this script runs before the button exists.
+// Some builds place the FAB buttons after this script tag, so direct binding fails.
+// We bind directly when possible and also add a delegated document handler as fallback.
+async function __mvHandlePendingSaveFabClick(ev){
+  try{ ev && (ev.preventDefault(), ev.stopPropagation()); }catch{}
+  try{
+    const slot = String((state && state.scenario) || "A").trim().toUpperCase();
+    if(!/^[ABCD]$/.test(slot)){
+      try{ toast("No se pudo guardar la simulación"); }catch(_){}
+      return;
+    }
+    let initialName = "";
+    try{
+      const currentMeta = __getCurrentLoadedScenarioMeta(slot);
+      initialName = String(currentMeta && currentMeta.name || "").trim();
+    }catch(_){}
+    if(!initialName){
       try{
-        const slot = String((state && state.scenario) || "A").trim().toUpperCase();
-        if(!/^[ABCD]$/.test(slot)){
-          try{ toast("No se pudo guardar la simulación"); }catch(_){}
-          return;
+        const lastMeta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null");
+        if(lastMeta && String(lastMeta.slot || "").trim().toUpperCase() === slot){
+          initialName = String(lastMeta.name || "").trim();
         }
-        let initialName = "";
-        try{
-          const currentMeta = __getCurrentLoadedScenarioMeta(slot);
-          initialName = String(currentMeta && currentMeta.name || "").trim();
-        }catch(_){}
-        if(!initialName){
-          try{
-            const lastMeta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null");
-            if(lastMeta && String(lastMeta.slot || "").trim().toUpperCase() === slot){
-              initialName = String(lastMeta.name || "").trim();
-            }
-          }catch(_){}
-        }
-        const ok = await __mvRunScenarioExportFlow(slot, { forceNamePrompt: true, initialName: initialName });
-        if(!ok){
-          try{ toast("Guardado cancelado"); }catch(_){} 
-          return;
-        }
-        try{ __clearScenarioDirty(slot); }catch(_){}
-        try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
-        try{ toast("Simulación guardada"); }catch(_){}
-      }catch(_){
-        try{ toast("No se pudo guardar la simulación"); }catch(__){}
-      }
-    });
+      }catch(_){}
+    }
+    const ok = await __mvRunScenarioExportFlow(slot, { forceNamePrompt: true, initialName: initialName });
+    if(!ok){
+      try{ toast("Guardado cancelado"); }catch(_){}
+      return;
+    }
+    try{ __clearScenarioDirty(slot); }catch(_){}
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+    try{ toast("Simulación guardada"); }catch(_){}
+  }catch(_){
+    try{ toast("No se pudo guardar la simulación"); }catch(__){}
   }
-  try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+}
+
+if(pendingFab && !pendingFab.__mvBound){
+  pendingFab.__mvBound = true;
+  pendingFab.addEventListener("click", __mvHandlePendingSaveFabClick);
+}else{
+  // Delegated fallback: works even if the button is added later in the DOM.
+  if(!window.__mvPendingSaveFabDelegated){
+    window.__mvPendingSaveFabDelegated = true;
+    document.addEventListener("click", function(e){
+      const btn = e && e.target && e.target.closest ? e.target.closest("#fabPendingSave") : null;
+      if(!btn) return;
+      // Ignore if disabled/hidden
+      if(btn.classList && btn.classList.contains("hidden")) return;
+      __mvHandlePendingSaveFabClick(e);
+    }, true);
+  }
+}
+
+try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
 })();
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
