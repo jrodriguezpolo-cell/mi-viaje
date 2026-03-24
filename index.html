@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A7_HISTORY_LIST_DELETE_INTERNAL_SIM_AND_BACKUP";
+const APP_BUILD = "V240_A8_HISTORY_ACCORDION_WIRING_ONLY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -25170,6 +25170,25 @@ document.addEventListener("DOMContentLoaded", function(){
       try{ __renderBackupHistoryInternal(); }catch(_){} 
       try{ __renderScenarioHistoryInternal(); }catch(_){} 
       try{ __renderICSExportPrefs(); }catch(_){} 
+
+      [
+        ["toolsScenarioHistoryAcc", "toolsScenarioHistory"],
+        ["toolsBackupHistoryAcc", "toolsBackupHistory"]
+      ].forEach(function(entry){
+        var root = document.getElementById(entry[0]);
+        if(!root) return;
+        var head = root.querySelector(`[data-acc="${entry[1]}"]`);
+        var body = root.querySelector(`[data-acc-body="${entry[1]}"]`);
+        if(head && body && !head.__mvBound){
+          head.__mvBound = true;
+          head.addEventListener("click", function(e){
+            try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+            body.classList.toggle("hidden");
+            var icon = head.querySelector(".accChevron");
+            if(icon) icon.textContent = body.classList.contains("hidden") ? "▾" : "▴";
+          }, true);
+        }
+      });
 
       [
         ["btnStorageEngineAuto", "auto"],
