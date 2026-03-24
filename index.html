@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A22_CITY_DATE_COHERENCE_WARNING_STAYS";
+const APP_BUILD = "V240_A23_UNIFY_CITY_DATE_WARNING_MODAL_LAYOUT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6019,6 +6019,48 @@ function __isDateWithinWindows(city, dateISO, windowsMap) {
   }
 }
 
+function __openCityDateCoherenceWarningModal(opts) {
+  try {
+    const cfg = opts || {};
+    const title = String(cfg.title || "¿Seguro de esta fecha?").trim();
+    const city = String(cfg.city || "").trim();
+    const windowStart = String(cfg.windowStart || "").trim();
+    const windowEnd = String(cfg.windowEnd || "").trim();
+    const fixLabel = String(cfg.fixLabel || "Corregir fecha").trim();
+    const body = `
+      <div class="space-y-4">
+        <div class="space-y-2 text-sm text-slate-700">
+          <div class="font-semibold text-slate-900">No parece que estés en ${escapeHtml(city)} en ${fixLabel === "Corregir fechas" ? "estas fechas" : "esta fecha"}.</div>
+          <div>${windowEnd
+            ? `Según tu itinerario, estarías en ${escapeHtml(city)} del ${escapeHtml(windowStart)} al ${escapeHtml(windowEnd)}.`
+            : `Según tu itinerario, estarías en ${escapeHtml(city)} a partir del ${escapeHtml(windowStart)}.`}</div>
+        </div>
+        <div class="border-t border-slate-200"></div>
+      </div>
+    `;
+    const btnFix = document.createElement("button");
+    btnFix.className = "tap flex-1 px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnFix.type = "button";
+    btnFix.textContent = fixLabel;
+    btnFix.onclick = function () {
+      try { closeModal(); } catch (_) {}
+      try { if (typeof cfg.onFix === "function") cfg.onFix(); } catch (_) {}
+    };
+    const btnSave = document.createElement("button");
+    btnSave.className = "tap flex-1 px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+    btnSave.type = "button";
+    btnSave.textContent = "Guardar igualmente";
+    btnSave.onclick = function () {
+      try { closeModal(); } catch (_) {}
+      try { if (typeof cfg.onProceed === "function") cfg.onProceed(); } catch (_) {}
+    };
+    showModal(title, body, [btnFix, btnSave]);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function __maybeConfirmActivityCityDateCoherence(actObj, onProceed) {
   try {
     const act = actObj || null;
@@ -6031,33 +6073,14 @@ function __maybeConfirmActivityCityDateCoherence(actObj, onProceed) {
     if (!result || result.ok) return false;
     const nearest = result.nearestWindow || null;
     if (!nearest || !nearest.startDate) return false;
-    const startTxt = __mvFmtDateNumericES(nearest.startDate);
-    const endTxt = nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "";
-    const body = `
-      <div class="space-y-3 text-sm text-slate-700">
-        <div class="font-semibold text-slate-900">No parece que estés en ${escapeHtml(city)} en esta fecha.</div>
-        <div>${endTxt
-          ? `Según tu itinerario, estarías en ${escapeHtml(city)} del ${escapeHtml(startTxt)} al ${escapeHtml(endTxt)}.`
-          : `Según tu itinerario, estarías en ${escapeHtml(city)} a partir del ${escapeHtml(startTxt)}.`}</div>
-      </div>
-    `;
-    const btnFix = document.createElement("button");
-    btnFix.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
-    btnFix.type = "button";
-    btnFix.textContent = "Corregir fecha";
-    btnFix.onclick = function () {
-      try { closeModal(); } catch (_) {}
-    };
-    const btnSave = document.createElement("button");
-    btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
-    btnSave.type = "button";
-    btnSave.textContent = "Guardar igualmente";
-    btnSave.onclick = function () {
-      try { closeModal(); } catch (_) {}
-      try { if (typeof onProceed === "function") onProceed(); } catch (_) {}
-    };
-    showModal("¿Seguro de esta fecha?", body, [btnFix, btnSave]);
-    return true;
+    return __openCityDateCoherenceWarningModal({
+      title: "¿Seguro de esta fecha?",
+      city: city,
+      windowStart: __mvFmtDateNumericES(nearest.startDate),
+      windowEnd: nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "",
+      fixLabel: "Corregir fecha",
+      onProceed: onProceed
+    });
   } catch (_) {
     return false;
   }
@@ -6077,33 +6100,14 @@ function __maybeConfirmStayCityDateCoherence(stayObj, onProceed) {
     if ((checkInResult && checkInResult.ok) && (checkOutResult && checkOutResult.ok)) return false;
     const nearest = (checkInResult && checkInResult.nearestWindow) || (checkOutResult && checkOutResult.nearestWindow) || null;
     if (!nearest || !nearest.startDate) return false;
-    const startTxt = __mvFmtDateNumericES(nearest.startDate);
-    const endTxt = nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "";
-    const body = `
-      <div class="space-y-3 text-sm text-slate-700">
-        <div class="font-semibold text-slate-900">No parece que estés en ${escapeHtml(city)} en estas fechas.</div>
-        <div>${endTxt
-          ? `Según tu itinerario, estarías en ${escapeHtml(city)} del ${escapeHtml(startTxt)} al ${escapeHtml(endTxt)}.`
-          : `Según tu itinerario, estarías en ${escapeHtml(city)} a partir del ${escapeHtml(startTxt)}.`}</div>
-      </div>
-    `;
-    const btnFix = document.createElement("button");
-    btnFix.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
-    btnFix.type = "button";
-    btnFix.textContent = "Corregir fechas";
-    btnFix.onclick = function () {
-      try { closeModal(); } catch (_) {}
-    };
-    const btnSave = document.createElement("button");
-    btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
-    btnSave.type = "button";
-    btnSave.textContent = "Guardar igualmente";
-    btnSave.onclick = function () {
-      try { closeModal(); } catch (_) {}
-      try { if (typeof onProceed === "function") onProceed(); } catch (_) {}
-    };
-    showModal("¿Seguro de estas fechas?", body, [btnFix, btnSave]);
-    return true;
+    return __openCityDateCoherenceWarningModal({
+      title: "¿Seguro de estas fechas?",
+      city: city,
+      windowStart: __mvFmtDateNumericES(nearest.startDate),
+      windowEnd: nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "",
+      fixLabel: "Corregir fechas",
+      onProceed: onProceed
+    });
   } catch (_) {
     return false;
   }
