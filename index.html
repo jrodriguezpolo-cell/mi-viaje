@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A29_RESET_TOTAL_CLEARS_NOTES_TOO</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A30_TRANSFER_MOVE_ACTUALLY_CLEARS_ORIGIN</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A29_RESET_TOTAL_CLEARS_NOTES_TOO";
+const APP_BUILD = "V240_A30_TRANSFER_MOVE_ACTUALLY_CLEARS_ORIGIN";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20361,24 +20361,27 @@ Tu iPhone: ${l}
       btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
       btnApply.textContent = "Aplicar traslado";
       btnApply.onclick = function(){
-        const dests = Array.from(destinations);
+        const originSlot = String(origin || "").trim().toUpperCase();
+        const dests = Array.from(destinations).map(function(dest){ return String(dest || "").trim().toUpperCase(); }).filter(function(dest){ return /^[ABCD]$/.test(dest); });
+        const isMove = mode === "move";
         if(!dests.length){
           try{ toast("Selecciona al menos una simulación."); }catch(_){}
           return;
         }
-        if(!state.scenarios || !state.scenarios[origin]) return;
+        if(!/^[ABCD]$/.test(originSlot)) return;
+        if(!state.scenarios || !state.scenarios[originSlot]) return;
         const applyTransfer = function(){
-          const src = __cloneScenario(state.scenarios[origin]);
+          const src = __cloneScenario(state.scenarios[originSlot]);
           dests.forEach(function(dest){ state.scenarios[dest] = __cloneScenario(src); });
-          if(mode === "move"){
-            try{ __resetScenario(origin); }catch(_){}
+          if(isMove){
+            try{ __resetScenario(originSlot); }catch(_){}
           }
           try{ closeModal(); }catch(_){}
           saveState();
           renderAll();
-          try{ toast(mode === "move" ? "Movido aplicado" : "Copiado aplicado"); }catch(_){}
+          try{ toast(isMove ? "Movido aplicado" : "Copiado aplicado"); }catch(_){}
         };
-        if(mode !== "move"){
+        if(!isMove){
           applyTransfer();
           return;
         }
@@ -20392,7 +20395,7 @@ Tu iPhone: ${l}
         btnMoveConfirm.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
         btnMoveConfirm.textContent = "Mover";
         btnMoveConfirm.onclick = function(){ applyTransfer(); };
-        showModal("Confirmar mover", `<div class="text-sm text-slate-700">Se copiará <span class="font-extrabold">${escapeHtml(origin)}</span> a <span class="font-extrabold">${escapeHtml(dests.join(", "))}</span> y se vaciará <span class="font-extrabold">${escapeHtml(origin)}</span>. Esta acción no se puede deshacer.</div>`, [btnMoveCancel, btnMoveConfirm]);
+        showModal("Confirmar mover", `<div class="text-sm text-slate-700">Se copiará <span class="font-extrabold">${escapeHtml(originSlot)}</span> a <span class="font-extrabold">${escapeHtml(dests.join(", "))}</span> y se vaciará <span class="font-extrabold">${escapeHtml(originSlot)}</span>. Esta acción no se puede deshacer.</div>`, [btnMoveCancel, btnMoveConfirm]);
       };
       showModal("Trasladar simulación", body, [btnCancel, btnApply]);
       const copyBtn = document.getElementById("mvTransferModeCopy");
