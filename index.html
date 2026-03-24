@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A27_PARTIAL_RESET_BY_SECTION_AND_SIM</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A28_TRANSFER_SCENARIOS_COPY_OR_MOVE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A27_PARTIAL_RESET_BY_SECTION_AND_SIM";
+const APP_BUILD = "V240_A28_TRANSFER_SCENARIOS_COPY_OR_MOVE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20275,6 +20275,7 @@ Tu iPhone: ${l}
       const letters = ["A","B","C","D"];
       let origin = String((state && state.scenario) || "A").trim().toUpperCase();
       const destinations = new Set();
+      let mode = "copy";
       function render(){
         letters.forEach(function(letter){
           const originBtn = document.getElementById(`mvTransferOrigin${letter}`);
@@ -20298,6 +20299,26 @@ Tu iPhone: ${l}
             destBtn.classList.toggle("border-slate-300", !on);
           }
         });
+        const copyBtn = document.getElementById("mvTransferModeCopy");
+        if(copyBtn){
+          const on = mode === "copy";
+          copyBtn.classList.toggle("bg-slate-900", on);
+          copyBtn.classList.toggle("text-white", on);
+          copyBtn.classList.toggle("border-slate-900", on);
+          copyBtn.classList.toggle("bg-white", !on);
+          copyBtn.classList.toggle("text-slate-700", !on);
+          copyBtn.classList.toggle("border-slate-300", !on);
+        }
+        const moveBtn = document.getElementById("mvTransferModeMove");
+        if(moveBtn){
+          const on = mode === "move";
+          moveBtn.classList.toggle("bg-slate-900", on);
+          moveBtn.classList.toggle("text-white", on);
+          moveBtn.classList.toggle("border-slate-900", on);
+          moveBtn.classList.toggle("bg-white", !on);
+          moveBtn.classList.toggle("text-slate-700", !on);
+          moveBtn.classList.toggle("border-slate-300", !on);
+        }
       }
       const body = `
         <div class="space-y-4">
@@ -20320,7 +20341,13 @@ Tu iPhone: ${l}
             </div>
           </div>
           <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            Modo: <span class="font-extrabold">Copiar</span>
+            <div class="text-xs font-extrabold uppercase tracking-wide text-slate-500 mb-2">Modo</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="mvTransferModeCopy" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Copiar</button>
+              <button id="mvTransferModeMove" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">Mover</button>
+            </div>
+            <div class="mt-3 text-xs text-slate-600">Copiar: Duplica el contenido, no borra el origen.</div>
+            <div class="mt-1 text-xs text-slate-600">Mover: Pasa el contenido y vacía el origen.</div>
           </div>
         </div>
       `;
@@ -20340,14 +20367,50 @@ Tu iPhone: ${l}
           return;
         }
         if(!state.scenarios || !state.scenarios[origin]) return;
-        const src = __cloneScenario(state.scenarios[origin]);
-        dests.forEach(function(dest){ state.scenarios[dest] = __cloneScenario(src); });
-        try{ closeModal(); }catch(_){}
-        saveState();
-        renderAll();
-        try{ toast("Traslado aplicado"); }catch(_){}
+        const applyTransfer = function(){
+          const src = __cloneScenario(state.scenarios[origin]);
+          dests.forEach(function(dest){ state.scenarios[dest] = __cloneScenario(src); });
+          if(mode === "move"){
+            try{ __resetScenario(origin); }catch(_){}
+          }
+          try{ closeModal(); }catch(_){}
+          saveState();
+          renderAll();
+          try{ toast(mode === "move" ? "Movido aplicado" : "Copiado aplicado"); }catch(_){}
+        };
+        if(mode !== "move"){
+          applyTransfer();
+          return;
+        }
+        const btnMoveCancel = document.createElement("button");
+        btnMoveCancel.type = "button";
+        btnMoveCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+        btnMoveCancel.textContent = "Cancelar";
+        btnMoveCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+        const btnMoveConfirm = document.createElement("button");
+        btnMoveConfirm.type = "button";
+        btnMoveConfirm.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
+        btnMoveConfirm.textContent = "Mover";
+        btnMoveConfirm.onclick = function(){ applyTransfer(); };
+        showModal("Confirmar mover", `<div class="text-sm text-slate-700">Se copiará <span class="font-extrabold">${escapeHtml(origin)}</span> a <span class="font-extrabold">${escapeHtml(dests.join(", "))}</span> y se vaciará <span class="font-extrabold">${escapeHtml(origin)}</span>. Esta acción no se puede deshacer.</div>`, [btnMoveCancel, btnMoveConfirm]);
       };
       showModal("Trasladar simulación", body, [btnCancel, btnApply]);
+      const copyBtn = document.getElementById("mvTransferModeCopy");
+      if(copyBtn){
+        copyBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+          mode = "copy";
+          render();
+        }, true);
+      }
+      const moveBtn = document.getElementById("mvTransferModeMove");
+      if(moveBtn){
+        moveBtn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){} 
+          mode = "move";
+          render();
+        }, true);
+      }
       letters.forEach(function(letter){
         const originBtn = document.getElementById(`mvTransferOrigin${letter}`);
         if(originBtn){
