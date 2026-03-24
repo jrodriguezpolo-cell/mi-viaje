@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A16_EXPORT_IMPORT_BUTTONS_MULTI_SLOT";
+const APP_BUILD = "V240_A17_SAVE_PROMPT_ASKS_FILENAME_NAME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3931,11 +3931,24 @@ function __closeScenarioSavePromptModal(){
   }catch(_){}
 }
 
-function __saveCurrentScenarioSnapshot(slotLetter){
+async function __saveCurrentScenarioSnapshot(slotLetter){
   try{
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     if(!/^[ABCD]$/.test(slot)) return false;
-    var ok = !!__mvRunScenarioExportFlow(slot);
+    var defaultName = "";
+    try{
+      var currentMeta = __getCurrentLoadedScenarioMeta(slot);
+      defaultName = String(currentMeta && currentMeta.name || "").trim();
+    }catch(_){}
+    if(!defaultName){
+      try{
+        var lastMeta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null");
+        if(lastMeta && String(lastMeta.slot || "").trim().toUpperCase() === slot){
+          defaultName = String(lastMeta.name || "").trim();
+        }
+      }catch(_){}
+    }
+    var ok = !!(await __mvRunScenarioExportFlow(slot, { initialName: defaultName }));
     if(!ok) return false;
     __clearScenarioDirty(slot);
     return true;
@@ -3965,10 +3978,10 @@ function __openScenarioSavePromptModal(slotLetter){
       window.__mvScenarioSavePromptLastDismissTs = Date.now();
       __closeScenarioSavePromptModal();
     };
-    updateBtn.onclick = function(e){
+    updateBtn.onclick = async function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       __closeScenarioSavePromptModal();
-      var ok = __saveCurrentScenarioSnapshot(slot);
+      var ok = await __saveCurrentScenarioSnapshot(slot);
       if(!ok){
         try{ toast("No se pudo guardar la simulación"); }catch(_){}
       }
@@ -18871,9 +18884,10 @@ function __mvScenarioImport(obj, destSlotLetter, opts){
   }
 }
 
-async function __mvRunScenarioExportFlow(slotLetter){
+async function __mvRunScenarioExportFlow(slotLetter, opts){
+  opts = opts || {};
   const picked = slotLetter
-    ? { slots: [String(slotLetter).trim().toUpperCase()], name: "" }
+    ? { slots: [String(slotLetter).trim().toUpperCase()], name: String(opts.initialName || "").trim() }
     : await __mvPromptScenarioExportSelection();
   if(!picked || !Array.isArray(picked.slots) || !picked.slots.length){
     try{ toast("Selecciona al menos una simulación."); }catch(_){} 
