@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A14_DISCARD_THIS_VERSION_IN_ALERTS";
+const APP_BUILD = "V240_A15_LAST_SAVED_MEANS_LATEST_EXISTING_AFTER_DISCARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3147,6 +3147,58 @@ function __mvFindHistoryEntryByTs(key, ts){
   }
 }
 
+function __mvSyncLastSavedPointersFromHistory(kind, slotLetter){
+  try{
+    if(kind === "scenario"){
+      var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+      var hist = __mvGetScenarioHistory(slot);
+      var top = Array.isArray(hist) && hist.length ? hist[0] : null;
+      if(top){
+        localStorage.setItem(MV_LAST_SCENARIO_EXPORT_META_KEY, JSON.stringify({
+          slot: slot,
+          name: String(top.name || "").trim(),
+          savedAtTs: Number(top.ts || 0),
+          savedAt: String(top.savedAt || ""),
+          deviceName: String(top.device || ""),
+          build: String(top.sourceBuild || APP_BUILD)
+        }));
+      }else{
+        try{
+          var raw = localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "";
+          var parsed = raw ? JSON.parse(raw) : null;
+          if(parsed && String(parsed.slot || "").trim().toUpperCase() === slot){
+            localStorage.removeItem(MV_LAST_SCENARIO_EXPORT_META_KEY);
+          }
+        }catch(_){
+          localStorage.removeItem(MV_LAST_SCENARIO_EXPORT_META_KEY);
+        }
+      }
+      try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){}
+      return true;
+    }
+    if(kind === "backup"){
+      var backupHist = __mvGetBackupHistory();
+      var backupTop = Array.isArray(backupHist) && backupHist.length ? backupHist[0] : null;
+      if(backupTop){
+        localStorage.setItem(MV_LAST_MANUAL_BACKUP_META_KEY, JSON.stringify({
+          savedAtTs: Number(backupTop.ts || 0),
+          savedAt: String(backupTop.savedAt || ""),
+          name: String(backupTop.name || "").trim(),
+          build: String(backupTop.sourceBuild || APP_BUILD),
+          deviceName: String(backupTop.device || "")
+        }));
+      }else{
+        localStorage.removeItem(MV_LAST_MANUAL_BACKUP_META_KEY);
+      }
+      try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){}
+      return true;
+    }
+    return false;
+  }catch(_){
+    return false;
+  }
+}
+
 function __mvGetBackupHistory(){
   try{
     return __mvReadHistory(MV_BACKUP_HISTORY_KEY).sort(function(a,b){ return Number(b && b.ts || 0) - Number(a && a.ts || 0); });
@@ -4064,6 +4116,7 @@ function __mvConfirmDiscardAlertVersion(kind, payload){
           var entry = __mvFindHistoryEntryByTs(__mvScenarioHistoryKey(slot), ts);
           if(entry && entry.id) __mvDeleteHistoryEntry(__mvScenarioHistoryKey(slot), String(entry.id));
           else localStorage.setItem(`miviaje.scenario.ignoredNewestTs.${slot}`, String(ts || 0));
+          __mvSyncLastSavedPointersFromHistory("scenario", slot);
           try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
           try{ window.__mvScenarioVersionCheckShown = false; }catch(_){}
           try{ window.__mvScenarioVersionCheckOpen = false; }catch(_){}
@@ -4072,12 +4125,14 @@ function __mvConfirmDiscardAlertVersion(kind, payload){
           var backupEntry = __mvFindHistoryEntryByTs(MV_BACKUP_HISTORY_KEY, backupTs);
           if(backupEntry && backupEntry.id) __mvDeleteHistoryEntry(MV_BACKUP_HISTORY_KEY, String(backupEntry.id));
           else localStorage.setItem("miViaje.ignoredNewestBackupTs", String(backupTs || 0));
+          __mvSyncLastSavedPointersFromHistory("backup");
           try{ if(typeof __renderBackupHistoryInternal === "function") __renderBackupHistoryInternal(); }catch(_){}
           try{ window.__mvBackupVersionCheckShown = false; }catch(_){}
           try{ window.__mvBackupVersionCheckOpen = false; }catch(_){}
         }else if(kind === "remote-build"){
           var remoteBuild = String(payload && payload.build || "").trim();
           if(remoteBuild) localStorage.setItem(APP_IGNORED_REMOTE_BUILD_KEY, remoteBuild);
+          __mvSyncLastSavedPointersFromHistory("backup");
           try{ window.__mvRemoteBuildCheckShown = false; }catch(_){}
           try{ window.__mvRemoteBuildCheckOpen = false; }catch(_){}
         }
@@ -4459,7 +4514,20 @@ function __renderLastManualBackupInfo(){
   try{
     const el = document.getElementById("toolsLastManualBackupLine");
     if(!el) return;
-    const meta = __readLastManualBackupMeta();
+    let meta = null;
+    const hist = __mvGetBackupHistory();
+    if(hist && hist.length){
+      const top = hist[0];
+      meta = {
+        name: String(top && top.name || "").trim(),
+        savedAtTs: Number(top && top.ts || 0),
+        savedAt: String(top && top.savedAt || ""),
+        build: String(top && top.sourceBuild || ""),
+        deviceName: String(top && top.device || "")
+      };
+    }else{
+      meta = __readLastManualBackupMeta();
+    }
     if(!meta){
       el.textContent = `${t("tools.engines.lastManualBackup")}: ${t("tools.engines.backupUnavailable")}`;
       return;
@@ -4771,19 +4839,33 @@ function __renderLastScenarioExportInfo(){
     const line = document.getElementById("toolsLastScenarioExportLine");
     if(!line) return;
     let meta = null;
-    try{ meta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null"); }catch(_){}
+    const slot = String((state && state.scenario) || "").trim().toUpperCase();
+    const hist = slot ? __mvGetScenarioHistory(slot) : [];
+    if(hist && hist.length){
+      const top = hist[0];
+      meta = {
+        slot: slot,
+        name: String(top && top.name || "").trim(),
+        savedAtTs: Number(top && top.ts || 0),
+        savedAt: String(top && top.savedAt || ""),
+        deviceName: String(top && top.device || ""),
+        build: String(top && top.sourceBuild || "")
+      };
+    }else{
+      try{ meta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null"); }catch(_){} 
+    }
     if(!meta || !meta.savedAtTs){
       line.textContent = getLang()==="en"
         ? "Last saved simulation: not available"
         : "Última simulación guardada: no disponible";
       return;
     }
-    const slot = String(meta.slot || "").trim().toUpperCase();
+    const slotLabel = String(meta.slot || "").trim().toUpperCase();
     const pretty = __mvNameDateLabel(meta && meta.name, Number(meta.savedAtTs || 0));
     line.textContent = getLang()==="en"
-      ? `Last saved${slot ? ` (${slot})` : ""}: ${pretty}`
-      : `Última guardada${slot ? ` (${slot})` : ""}: ${pretty}`;
-  }catch(_){}
+      ? `Last saved${slotLabel ? ` (${slotLabel})` : ""}: ${pretty}`
+      : `Última guardada${slotLabel ? ` (${slotLabel})` : ""}: ${pretty}`;
+  }catch(_){} 
 }
 try{ window.__renderLastScenarioExportInfo = __renderLastScenarioExportInfo; }catch(_){}
 document.addEventListener("DOMContentLoaded", function(){
