@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A17_SAVE_PROMPT_ASKS_FILENAME_NAME";
+const APP_BUILD = "V240_A18_DIRTY_SAVE_OPENS_NAME_MODAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3948,7 +3948,7 @@ async function __saveCurrentScenarioSnapshot(slotLetter){
         }
       }catch(_){}
     }
-    var ok = !!(await __mvRunScenarioExportFlow(slot, { initialName: defaultName }));
+    var ok = !!(await __mvRunScenarioExportFlow(slot, { initialName: defaultName, forceNamePrompt: true }));
     if(!ok) return false;
     __clearScenarioDirty(slot);
     return true;
@@ -18886,9 +18886,25 @@ function __mvScenarioImport(obj, destSlotLetter, opts){
 
 async function __mvRunScenarioExportFlow(slotLetter, opts){
   opts = opts || {};
-  const picked = slotLetter
-    ? { slots: [String(slotLetter).trim().toUpperCase()], name: String(opts.initialName || "").trim() }
-    : await __mvPromptScenarioExportSelection();
+  let picked = null;
+  if(slotLetter){
+    const fixedSlot = String(slotLetter).trim().toUpperCase();
+    let initialName = String(opts.initialName || "").trim();
+    if(opts.forceNamePrompt){
+      const promptedName = await __mvPromptExportNameModal({
+        title: "Guardar simulación",
+        label: "Nombre (opcional)",
+        placeholder: "Ej: Roma final",
+        confirmText: "Guardar",
+        initialValue: initialName
+      });
+      if(promptedName === null) return false;
+      initialName = String(promptedName || "").trim();
+    }
+    picked = { slots: [fixedSlot], name: initialName };
+  }else{
+    picked = await __mvPromptScenarioExportSelection();
+  }
   if(!picked || !Array.isArray(picked.slots) || !picked.slots.length){
     try{ toast("Selecciona al menos una simulación."); }catch(_){} 
     return false;
