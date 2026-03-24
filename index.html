@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A20_FIRST_CHANGE_PROMPT_THEN_PENDING_FAB";
+const APP_BUILD = "V240_A21_CITY_DATE_COHERENCE_WARNING_ACTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5926,6 +5926,140 @@ function fmtDateTimeES(tsISOorMs) {
     return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
   } catch (_) {
     return "desconocido";
+  }
+}
+
+function __mvFmtDateNumericES(iso) {
+  try {
+    const s = String(iso || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return String(iso || "");
+    const [y, m, d] = s.split("-");
+    return `${d}/${m}/${y}`;
+  } catch (_) {
+    return String(iso || "");
+  }
+}
+
+function __mvNormCityKey(value) {
+  try {
+    return String(value || "").trim().toLowerCase();
+  } catch (_) {
+    return "";
+  }
+}
+
+function __buildPresenceWindowsFromLegs(legs) {
+  try {
+    const list = Array.isArray(legs) ? legs : [];
+    const normalized = list.map((leg) => {
+      const from = String(leg && leg.from || "").trim();
+      const to = String(leg && leg.to || "").trim();
+      const date = String(leg && leg.date || "").trim();
+      return { from, to, date };
+    }).filter((leg) => leg.from && leg.to && __isValidISODate(leg.date));
+    normalized.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    const out = {};
+    for (let i = 0; i < normalized.length; i += 1) {
+      const leg = normalized[i];
+      const cityKey = __mvNormCityKey(leg.to);
+      if (!cityKey) continue;
+      let endDate = "";
+      for (let j = i + 1; j < normalized.length; j += 1) {
+        const nextLeg = normalized[j];
+        if (__mvNormCityKey(nextLeg.from) === cityKey) {
+          endDate = String(nextLeg.date || "").trim();
+          break;
+        }
+      }
+      if (!Array.isArray(out[cityKey])) out[cityKey] = [];
+      out[cityKey].push({
+        cityLabel: leg.to,
+        startDate: leg.date,
+        endDate: endDate
+      });
+    }
+    return out;
+  } catch (_) {
+    return {};
+  }
+}
+
+function __isDateWithinWindows(city, dateISO, windowsMap) {
+  try {
+    const cityKey = __mvNormCityKey(city);
+    const day = String(dateISO || "").trim();
+    if (!cityKey || !__isValidISODate(day)) return { ok: true, nearestWindow: null };
+    const windows = Array.isArray(windowsMap && windowsMap[cityKey]) ? windowsMap[cityKey] : [];
+    if (!windows.length) return { ok: true, nearestWindow: null };
+    for (const win of windows) {
+      const start = String(win && win.startDate || "").trim();
+      const end = String(win && win.endDate || "").trim();
+      if (!__isValidISODate(start)) continue;
+      if (day < start) continue;
+      if (end && __isValidISODate(end) && day > end) continue;
+      return { ok: true, nearestWindow: win };
+    }
+    const targetMs = Date.parse(`${day}T12:00:00`);
+    let nearestWindow = windows[0] || null;
+    let nearestDist = Number.POSITIVE_INFINITY;
+    for (const win of windows) {
+      const start = String(win && win.startDate || "").trim();
+      const end = String(win && win.endDate || "").trim();
+      const pivot = (end && __isValidISODate(end)) ? end : start;
+      const ms = Date.parse(`${pivot}T12:00:00`);
+      const dist = Math.abs(ms - targetMs);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestWindow = win;
+      }
+    }
+    return { ok: false, nearestWindow: nearestWindow };
+  } catch (_) {
+    return { ok: true, nearestWindow: null };
+  }
+}
+
+function __maybeConfirmActivityCityDateCoherence(actObj, onProceed) {
+  try {
+    const act = actObj || null;
+    const city = String(act && act.city || "").trim();
+    const dateISO = String(act && act.date || "").trim();
+    if (!city || !__isValidISODate(dateISO)) return false;
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    const windowsMap = __buildPresenceWindowsFromLegs(sc && sc.legs || []);
+    const result = __isDateWithinWindows(city, dateISO, windowsMap);
+    if (!result || result.ok) return false;
+    const nearest = result.nearestWindow || null;
+    if (!nearest || !nearest.startDate) return false;
+    const startTxt = __mvFmtDateNumericES(nearest.startDate);
+    const endTxt = nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "";
+    const body = `
+      <div class="space-y-3 text-sm text-slate-700">
+        <div class="font-semibold text-slate-900">No parece que estés en ${escapeHtml(city)} en esta fecha.</div>
+        <div>${endTxt
+          ? `Según tu itinerario, estarías en ${escapeHtml(city)} del ${escapeHtml(startTxt)} al ${escapeHtml(endTxt)}.`
+          : `Según tu itinerario, estarías en ${escapeHtml(city)} a partir del ${escapeHtml(startTxt)}.`}</div>
+      </div>
+    `;
+    const btnFix = document.createElement("button");
+    btnFix.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnFix.type = "button";
+    btnFix.textContent = "Corregir fecha";
+    btnFix.onclick = function () {
+      try { closeModal(); } catch (_) {}
+    };
+    const btnSave = document.createElement("button");
+    btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+    btnSave.type = "button";
+    btnSave.textContent = "Guardar igualmente";
+    btnSave.onclick = function () {
+      try { closeModal(); } catch (_) {}
+      try { if (typeof onProceed === "function") onProceed(); } catch (_) {}
+    };
+    showModal("¿Seguro de esta fecha?", body, [btnFix, btnSave]);
+    return true;
+  } catch (_) {
+    return false;
   }
 }
 
@@ -21207,6 +21341,58 @@ window.addEventListener('DOMContentLoaded', () => {
     sheetSave.__bound = true;
     sheetSave.addEventListener("click", (e) => {
       try { e.preventDefault(); e.stopPropagation(); } catch {}
+      const __mvCommitEventSheetSave = () => {
+        let __mvReviewedAIFromSave = false;
+        try{ __mvReviewedAIFromSave = !!__aiMarkPendingReviewedFromEventSheet(); }catch{}
+        try{
+          var ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+          var obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
+          if(obj && typeof obj === "object") obj.updatedAt = Date.now();
+        }catch(_){}
+        try { if (typeof saveState === "function") saveState(); } catch {}
+        try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
+        try{ __sheetSetSnapshot(); }catch{}
+
+        try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+
+        try {
+          if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
+            if (typeof renderLegs === "function") renderLegs();
+            if (typeof renderTimeline === "function") renderTimeline();
+            if (typeof calcSummary === "function") calcSummary();
+          } else if (__eventSheetCtx && __eventSheetCtx.kind === "stay") {
+            if (typeof renderStays === "function") renderStays();
+            if (typeof renderTimeline === "function") renderTimeline();
+            if (typeof calcSummary === "function") calcSummary();
+          } else if (__eventSheetCtx && __eventSheetCtx.kind === "act") {
+            if (typeof renderActivities === "function") renderActivities();
+            if (typeof renderTimeline === "function") renderTimeline();
+            if (typeof calcSummary === "function") calcSummary();
+          } else {
+            if (typeof renderAll === "function") renderAll();
+          }
+        } catch {}
+        try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
+        try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
+
+        try {
+          const fb = document.getElementById("eventSheetSaveFeedback");
+          if (fb) {
+            fb.classList.remove("hidden");
+            setTimeout(() => fb.classList.add("hidden"), 900);
+          }
+        } catch {}
+      };
+      const __mvCommitEventSheetSaveWithActivityCheck = () => {
+        try {
+          const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+          const obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
+          if (ctx && String(ctx.kind || "") === "act" && __maybeConfirmActivityCityDateCoherence(obj, __mvCommitEventSheetSave)) {
+            return;
+          }
+        } catch (_) {}
+        __mvCommitEventSheetSave();
+      };
       
       // V226C1A7O: guard de conflicto para actividad y transporte reutilizando la detección ya validada
       try{
@@ -21241,73 +21427,13 @@ window.addEventListener('DOMContentLoaded', () => {
           btnForceSave.textContent = 'Guardar de todas formas';
           btnForceSave.onclick = ()=>{
             try{ closeModal(); }catch{}
-            let __mvReviewedAIFromSave = false;
-            try{ __mvReviewedAIFromSave = !!__aiMarkPendingReviewedFromEventSheet(); }catch{}
-            try{
-              var ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-              var obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
-              if(obj && typeof obj === "object") obj.updatedAt = Date.now();
-            }catch(_){}
-            try { if (typeof saveState === "function") saveState(); } catch {}
-            try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
-            try{ __sheetSetSnapshot(); }catch{}
-            try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
-            try {
-              if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
-                if (typeof renderLegs === "function") renderLegs();
-                if (typeof renderTimeline === "function") renderTimeline();
-                if (typeof calcSummary === "function") calcSummary();
-              } else if (__eventSheetCtx && __eventSheetCtx.kind === "stay") {
-                if (typeof renderStays === "function") renderStays();
-                if (typeof renderTimeline === "function") renderTimeline();
-                if (typeof calcSummary === "function") calcSummary();
-              } else if (__eventSheetCtx && __eventSheetCtx.kind === "act") {
-                if (typeof renderActivities === "function") renderActivities();
-                if (typeof renderTimeline === "function") renderTimeline();
-                if (typeof calcSummary === "function") calcSummary();
-              }
-            } catch {}
-            try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
-            try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
+            __mvCommitEventSheetSaveWithActivityCheck();
           };
           try{ showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]); }catch{}
           return;
         }
       }catch{}
-      let __mvReviewedAIFromSave = false;
-      try{ __mvReviewedAIFromSave = !!__aiMarkPendingReviewedFromEventSheet(); }catch{}
-      try{
-        var ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-        var obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
-        if(obj && typeof obj === "object") obj.updatedAt = Date.now();
-      }catch(_){}
-      try { if (typeof saveState === "function") saveState(); } catch {}
-      try { __markScenarioDirty((state && state.scenario) || "A"); } catch {}
-      try{ __sheetSetSnapshot(); }catch{}
-
-      // Close sheet first (keeps UI consistent)
-      try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
-
-      // Re-render only what is needed
-      try {
-        if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
-          if (typeof renderLegs === "function") renderLegs();
-          if (typeof renderTimeline === "function") renderTimeline();
-          if (typeof calcSummary === "function") calcSummary();
-        } else {
-          if (typeof renderAll === "function") renderAll();
-        }
-      } catch {}
-      try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
-      try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
-
-      try {
-        const fb = document.getElementById("eventSheetSaveFeedback");
-        if (fb) {
-          fb.classList.remove("hidden");
-          setTimeout(() => fb.classList.add("hidden"), 900);
-        }
-      } catch {}
+      __mvCommitEventSheetSaveWithActivityCheck();
     });
   }
 
