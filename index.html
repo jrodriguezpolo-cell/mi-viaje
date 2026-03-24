@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A21_CITY_DATE_COHERENCE_WARNING_ACTS";
+const APP_BUILD = "V240_A22_CITY_DATE_COHERENCE_WARNING_STAYS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6057,6 +6057,52 @@ function __maybeConfirmActivityCityDateCoherence(actObj, onProceed) {
       try { if (typeof onProceed === "function") onProceed(); } catch (_) {}
     };
     showModal("¿Seguro de esta fecha?", body, [btnFix, btnSave]);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function __maybeConfirmStayCityDateCoherence(stayObj, onProceed) {
+  try {
+    const stay = stayObj || null;
+    const city = String(stay && stay.city || "").trim();
+    const checkInISO = String(stay && stay.date || "").trim();
+    const checkOutISO = String((typeof __tlStayCheckoutISO === "function") ? __tlStayCheckoutISO(stay) : (stay && (stay.checkout || stay.checkoutDate || stay.dateOut || stay.endDate) || "")).trim();
+    if (!city || !__isValidISODate(checkInISO)) return false;
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    const windowsMap = __buildPresenceWindowsFromLegs(sc && sc.legs || []);
+    const checkInResult = __isDateWithinWindows(city, checkInISO, windowsMap);
+    const checkOutResult = (checkOutISO && __isValidISODate(checkOutISO)) ? __isDateWithinWindows(city, checkOutISO, windowsMap) : { ok: true, nearestWindow: null };
+    if ((checkInResult && checkInResult.ok) && (checkOutResult && checkOutResult.ok)) return false;
+    const nearest = (checkInResult && checkInResult.nearestWindow) || (checkOutResult && checkOutResult.nearestWindow) || null;
+    if (!nearest || !nearest.startDate) return false;
+    const startTxt = __mvFmtDateNumericES(nearest.startDate);
+    const endTxt = nearest.endDate ? __mvFmtDateNumericES(nearest.endDate) : "";
+    const body = `
+      <div class="space-y-3 text-sm text-slate-700">
+        <div class="font-semibold text-slate-900">No parece que estés en ${escapeHtml(city)} en estas fechas.</div>
+        <div>${endTxt
+          ? `Según tu itinerario, estarías en ${escapeHtml(city)} del ${escapeHtml(startTxt)} al ${escapeHtml(endTxt)}.`
+          : `Según tu itinerario, estarías en ${escapeHtml(city)} a partir del ${escapeHtml(startTxt)}.`}</div>
+      </div>
+    `;
+    const btnFix = document.createElement("button");
+    btnFix.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+    btnFix.type = "button";
+    btnFix.textContent = "Corregir fechas";
+    btnFix.onclick = function () {
+      try { closeModal(); } catch (_) {}
+    };
+    const btnSave = document.createElement("button");
+    btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnSave.type = "button";
+    btnSave.textContent = "Guardar igualmente";
+    btnSave.onclick = function () {
+      try { closeModal(); } catch (_) {}
+      try { if (typeof onProceed === "function") onProceed(); } catch (_) {}
+    };
+    showModal("¿Seguro de estas fechas?", body, [btnFix, btnSave]);
     return true;
   } catch (_) {
     return false;
@@ -21388,6 +21434,9 @@ window.addEventListener('DOMContentLoaded', () => {
           const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
           const obj = (ctx && ctx.objRef) ? ctx.objRef : ((ctx && typeof getItemByTypeAndId === "function") ? getItemByTypeAndId(String(ctx.kind || ""), String(ctx.id || "")) : null);
           if (ctx && String(ctx.kind || "") === "act" && __maybeConfirmActivityCityDateCoherence(obj, __mvCommitEventSheetSave)) {
+            return;
+          }
+          if (ctx && String(ctx.kind || "") === "stay" && __maybeConfirmStayCityDateCoherence(obj, __mvCommitEventSheetSave)) {
             return;
           }
         } catch (_) {}
