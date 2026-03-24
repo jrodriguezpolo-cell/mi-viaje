@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A13_SIM_MENU_BUTTONS_COLUMN_LAYOUT";
+const APP_BUILD = "V240_A14_DISCARD_THIS_VERSION_IN_ALERTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3133,6 +3133,20 @@ function __mvDeleteHistoryEntry(key, entryId){
   }
 }
 
+function __mvFindHistoryEntryByTs(key, ts){
+  try{
+    var targetTs = Number(ts || 0);
+    if(!(targetTs > 0)) return null;
+    var arr = __mvReadHistory(key);
+    for(var i = 0; i < arr.length; i++){
+      if(Number(arr[i] && arr[i].ts || 0) === targetTs) return arr[i];
+    }
+    return null;
+  }catch(_){
+    return null;
+  }
+}
+
 function __mvGetBackupHistory(){
   try{
     return __mvReadHistory(MV_BACKUP_HISTORY_KEY).sort(function(a,b){ return Number(b && b.ts || 0) - Number(a && a.ts || 0); });
@@ -3976,7 +3990,8 @@ function __openRemoteBuildCheckModal(remote){
     var body = document.getElementById("remoteBuildCheckBody");
     var continueBtn = document.getElementById("remoteBuildCheckContinueBtn");
     var updateBtn = document.getElementById("remoteBuildCheckUpdateBtn");
-    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    var discardBtn = document.getElementById("remoteBuildCheckDiscardBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn || !discardBtn) return false;
     var remoteBuild = String(remote && remote.build || "").trim();
     var published = __mvFormatBuildPublishedAt(remote && remote.publishedAt);
     title.textContent = "Nueva versión disponible";
@@ -3989,8 +4004,12 @@ function __openRemoteBuildCheckModal(remote){
     updateBtn.textContent = "Actualizar ahora";
     continueBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-      try{ localStorage.setItem(APP_IGNORED_REMOTE_BUILD_KEY, remoteBuild); }catch(_){}
       __closeRemoteBuildCheckModal();
+    };
+    discardBtn.textContent = "Descartar esta versión";
+    discardBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __mvConfirmDiscardAlertVersion("remote-build", { build: remoteBuild });
     };
     updateBtn.onclick = async function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
@@ -4023,6 +4042,53 @@ async function __maybeShowRemoteBuildCheckOnOpen(){
   }catch(_){
     return false;
   }
+}
+
+function __mvConfirmDiscardAlertVersion(kind, payload){
+  try{
+    var btnCancel = document.createElement("button");
+    btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnCancel.type = "button";
+    btnCancel.textContent = "Cancelar";
+    btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+    var btnDiscard = document.createElement("button");
+    btnDiscard.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-slate-900 bg-white";
+    btnDiscard.type = "button";
+    btnDiscard.textContent = "Descartar";
+    btnDiscard.onclick = function(){
+      try{ closeModal(); }catch(_){}
+      try{
+        if(kind === "scenario"){
+          var slot = String(payload && payload.slot || (state && state.scenario) || "A").trim().toUpperCase();
+          var ts = Number(payload && payload.ts || 0);
+          var entry = __mvFindHistoryEntryByTs(__mvScenarioHistoryKey(slot), ts);
+          if(entry && entry.id) __mvDeleteHistoryEntry(__mvScenarioHistoryKey(slot), String(entry.id));
+          else localStorage.setItem(`miviaje.scenario.ignoredNewestTs.${slot}`, String(ts || 0));
+          try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
+          try{ window.__mvScenarioVersionCheckShown = false; }catch(_){}
+          try{ window.__mvScenarioVersionCheckOpen = false; }catch(_){}
+        }else if(kind === "backup"){
+          var backupTs = Number(payload && payload.ts || 0);
+          var backupEntry = __mvFindHistoryEntryByTs(MV_BACKUP_HISTORY_KEY, backupTs);
+          if(backupEntry && backupEntry.id) __mvDeleteHistoryEntry(MV_BACKUP_HISTORY_KEY, String(backupEntry.id));
+          else localStorage.setItem("miViaje.ignoredNewestBackupTs", String(backupTs || 0));
+          try{ if(typeof __renderBackupHistoryInternal === "function") __renderBackupHistoryInternal(); }catch(_){}
+          try{ window.__mvBackupVersionCheckShown = false; }catch(_){}
+          try{ window.__mvBackupVersionCheckOpen = false; }catch(_){}
+        }else if(kind === "remote-build"){
+          var remoteBuild = String(payload && payload.build || "").trim();
+          if(remoteBuild) localStorage.setItem(APP_IGNORED_REMOTE_BUILD_KEY, remoteBuild);
+          try{ window.__mvRemoteBuildCheckShown = false; }catch(_){}
+          try{ window.__mvRemoteBuildCheckOpen = false; }catch(_){}
+        }
+        try{ toast("Versión descartada."); }catch(_){}
+      }catch(_){}
+    };
+    var body = (kind === "remote-build")
+      ? `<div class="text-sm text-slate-700">No volveremos a avisarte de esta versión. No borra archivos del móvil.</div>`
+      : `<div class="text-sm text-slate-700">No volveremos a avisarte de esta ${kind === "scenario" ? "simulación" : "versión"}. No borra archivos del móvil.</div>`;
+    showModal("Descartar versión", body, [btnCancel, btnDiscard]);
+  }catch(_){}
 }
 
 function __mvFormatScenarioVersionDate(ts){
@@ -4113,7 +4179,8 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
     var continueBtn = document.getElementById("scenarioVersionCheckContinueBtn");
     var updateBtn = document.getElementById("scenarioVersionCheckUpdateBtn");
     var snoozeBtn = document.getElementById("scenarioVersionCheckSnoozeBtn");
-    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    var discardBtn = document.getElementById("scenarioVersionCheckDiscardBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn || !discardBtn) return false;
     var currentMeta = __getCurrentLoadedScenarioMeta(slot);
     var newestMeta = __getNewestAvailableScenarioMeta(slot);
     var currentLabel = __mvNameDateLabel(currentMeta && currentMeta.name, currentMeta && currentMeta.referenceTs);
@@ -4144,6 +4211,15 @@ function __openScenarioVersionCheckModal(slotLetter, compare){
         __closeScenarioVersionCheckModal();
       };
     }
+    discardBtn.classList.remove("hidden");
+    discardBtn.textContent = "Descartar esta versión";
+    discardBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __mvConfirmDiscardAlertVersion("scenario", {
+        slot: slot,
+        ts: Number(compare && compare.newestTs || (newestMeta && newestMeta.referenceTs) || 0)
+      });
+    };
     updateBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       try{
@@ -4178,6 +4254,8 @@ function __maybeShowScenarioVersionCheckOnOpen(){
     if(__mvIsScenarioVersionSnoozedToday(slot)) return false;
     var compare = __compareCurrentVsNewestScenario(slot);
     if(!compare || !compare.hasNewer) return false;
+    var ignoredTs = Number(localStorage.getItem(`miviaje.scenario.ignoredNewestTs.${slot}`) || 0);
+    if(ignoredTs > 0 && Number(compare.newestTs || 0) === ignoredTs) return false;
     window.__mvScenarioVersionCheckShown = true;
     return __openScenarioVersionCheckModal(slot, compare);
   }catch(_){
@@ -4227,7 +4305,8 @@ function __openBackupVersionCheckModal(compare){
     var body = document.getElementById("backupVersionCheckBody");
     var continueBtn = document.getElementById("backupVersionCheckContinueBtn");
     var updateBtn = document.getElementById("backupVersionCheckUpdateBtn");
-    if(!ov || !box || !title || !body || !continueBtn || !updateBtn) return false;
+    var discardBtn = document.getElementById("backupVersionCheckDiscardBtn");
+    if(!ov || !box || !title || !body || !continueBtn || !updateBtn || !discardBtn) return false;
     var hasNewer = !!(compare && compare.hasNewer);
     var currentMeta = __getCurrentLoadedBackupMeta();
     var newestMeta = __getNewestAvailableBackupMeta();
@@ -4241,6 +4320,14 @@ function __openBackupVersionCheckModal(compare){
     continueBtn.onclick = function(e){
       try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
       __closeBackupVersionCheckModal();
+    };
+    discardBtn.classList.toggle("hidden", !hasNewer);
+    discardBtn.textContent = "Descartar esta versión";
+    discardBtn.onclick = function(e){
+      try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      __mvConfirmDiscardAlertVersion("backup", {
+        ts: Number(compare && compare.newestTs || (newestMeta && newestMeta.referenceTs) || 0)
+      });
     };
     var canUpdate = !!(hasNewer && compare && compare.newestCanLoadDirectly);
     updateBtn.classList.toggle("hidden", !hasNewer);
@@ -4272,6 +4359,8 @@ function __maybeShowBackupVersionCheckOnOpen(){
     if(!compare) return false;
     if(!(Number(compare.currentTs || 0) > 0) || !(Number(compare.newestTs || 0) > 0)) return false;
     if(String(compare.newestSource || "") !== "manual") return false;
+    var ignoredTs = Number(localStorage.getItem("miViaje.ignoredNewestBackupTs") || 0);
+    if(ignoredTs > 0 && Number(compare.newestTs || 0) === ignoredTs) return false;
     if(!compare.hasNewer) return false;
     window.__mvBackupVersionCheckShown = true;
     return __openBackupVersionCheckModal(compare);
@@ -24213,6 +24302,7 @@ QA checklist (V89D1):
 <div class="mt-2 text-sm text-slate-600" id="backupVersionCheckBody">Estás usando el backup más reciente disponible.</div>
 <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="backupVersionCheckContinueBtn" type="button">Continuar</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white hidden" id="backupVersionCheckDiscardBtn" type="button">Descartar esta versión</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900 hidden" id="backupVersionCheckUpdateBtn" type="button">Actualizar a la más reciente</button>
 </div>
 </div>
@@ -24236,6 +24326,7 @@ QA checklist (V89D1):
 <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white hidden" id="scenarioVersionCheckSnoozeBtn" type="button">No avisar hoy</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioVersionCheckContinueBtn" type="button">Ahora no</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="scenarioVersionCheckDiscardBtn" type="button">Descartar esta versión</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="scenarioVersionCheckUpdateBtn" type="button">Actualizar</button>
 </div>
 </div>
@@ -24250,6 +24341,7 @@ QA checklist (V89D1):
 </div>
 <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
 <button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="remoteBuildCheckContinueBtn" type="button">Ahora no</button>
+<button class="tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white" id="remoteBuildCheckDiscardBtn" type="button">Descartar esta versión</button>
 <button class="tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900" id="remoteBuildCheckUpdateBtn" type="button">Actualizar ahora</button>
 </div>
 </div>
