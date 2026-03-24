@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1</title>
+<title>V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1";
+const APP_BUILD = "V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -16688,8 +16688,19 @@ function __tlActDurationMinutes(act){
     const mm = Math.max(0, Math.min(59, Math.floor(m || 0)));
     return hh*60 + mm;
   }
+  const dh = (act && Number.isFinite(+act.durH)) ? (+act.durH) : null;
+  const dm2 = (act && Number.isFinite(+act.durM)) ? (+act.durM) : null;
+  if (dh != null || dm2 != null){
+    const hh = Math.max(0, Math.floor(dh || 0));
+    const mm = Math.max(0, Math.min(59, Math.floor(dm2 || 0)));
+    return hh*60 + mm;
+  }
   if (act && Number.isFinite(+act.durationMin)){
     const dm = Math.max(0, Math.floor(+act.durationMin));
+    return dm;
+  }
+  if (act && Number.isFinite(+act.durMin)){
+    const dm = Math.max(0, Math.floor(+act.durMin));
     return dm;
   }
   const legacy = String(act?.duration||"").trim();
@@ -17127,6 +17138,72 @@ function renderTimeline() {
   });
 
   const filteredItems = getFilteredItems(items);
+  filteredItems.forEach(it=>{
+    try{
+      delete it.__mvHasConflictNext;
+      delete it.__mvHasConflictPrev;
+      delete it.__mvConflictNextStart;
+      delete it.__mvConflictPrevStart;
+      delete it.__mvConflictGapMin;
+    }catch(_){}
+  });
+  try{
+    const timedByDay = new Map();
+    const toStartMin = (txt)=>{
+      try{
+        const v = String(txt || "").trim();
+        const n = (typeof timeToMinutes === "function") ? timeToMinutes(v) : NaN;
+        return Number.isFinite(n) ? n : NaN;
+      }catch(_){ return NaN; }
+    };
+    const intervalForTimelineItem = (it)=>{
+      try{
+        const date = String(it?.date || "").trim().slice(0,10);
+        const startMin = toStartMin(it?.time || "");
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(startMin)) return null;
+        if(it?.actId != null){
+          const act = actById.get(String(it.actId));
+          const durMin = Math.max(0, Math.floor(Number(__tlActDurationMinutes(act || {}) || 0)));
+          return { date, startMin, endMin:startMin + durMin, item:it };
+        }
+        if(it?.stayId != null){
+          return { date, startMin, endMin:startMin, item:it };
+        }
+        if(it?.legId != null){
+          const leg = legById.get(String(it.legId));
+          let endMin = startMin;
+          const arrDate = String(leg?.arriveDate || "").trim();
+          const arrTime = String(leg?.arriveTime || "").trim();
+          const arrMin = toStartMin(arrTime);
+          if(arrDate === date && Number.isFinite(arrMin)) endMin = Math.max(startMin, arrMin);
+          return { date, startMin, endMin, item:it };
+        }
+      }catch(_){}
+      return null;
+    };
+    for(const it of filteredItems){
+      const info = intervalForTimelineItem(it);
+      if(!info) continue;
+      if(!timedByDay.has(info.date)) timedByDay.set(info.date, []);
+      timedByDay.get(info.date).push(info);
+    }
+    timedByDay.forEach(dayItems=>{
+      dayItems.sort((a,b)=>a.startMin - b.startMin);
+      for(let i=0;i<dayItems.length-1;i++){
+        const cur = dayItems[i];
+        const next = dayItems[i+1];
+        if(!cur || !next) continue;
+        const curEnd = Math.max(cur.startMin, cur.endMin);
+        if(next.startMin < (curEnd + __MV_TIMELINE_CONFLICT_BUFFER_MIN)){
+          cur.item.__mvHasConflictNext = true;
+          cur.item.__mvConflictNextStart = (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(next.startMin % 1440) : "";
+          cur.item.__mvConflictGapMin = next.startMin - curEnd;
+          next.item.__mvHasConflictPrev = true;
+          next.item.__mvConflictPrevStart = (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(cur.startMin % 1440) : "";
+        }
+      }
+    });
+  }catch(_){}
   __tlLastFilteredItems = filteredItems;
 
   // Days available in current filtered list (used by Day view navigation)
@@ -17331,6 +17408,19 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     if ((kind === "act" || kind === "leg" || kind === "stay") && itemObj && !it.isNote) {
       try{ __tlConflictState = __mvConflictState(kind, itemObj); }catch{}
     }
+    if(!__tlConflictState.hasConflict && (it?.__mvHasConflictNext || it?.__mvHasConflictPrev)){
+      __tlConflictState = {
+        hasConflict:true,
+        count:1,
+        conflicts:[{
+          reason:"buffer",
+          startHHMM:String(it?.__mvConflictNextStart || it?.__mvConflictPrevStart || "").trim()
+        }]
+      };
+    }
+    const __timelineConflictHTML = (it?.__mvHasConflictNext || it?.__mvHasConflictPrev)
+      ? `<div class="mvConflictBlock mvConflictInline"><span class="mvConflictBadge">⚠️ <span>Conflicto</span></span><div class="mvConflictHint">${it?.__mvHasConflictNext ? `Siguiente: ${escapeHtml(String(it.__mvConflictNextStart || ""))}` : `Sin margen suficiente`}</div></div>`
+      : ``;
 
     if (itemObj && !it.isNote) {
       const __notePeek = __hasNotes(itemObj) ? `<button type="button" class="notePeekBtn" data-kind="${kind}" data-id="${itemObj.id}" title="Ver nota">🗒️</button>` : ``;
@@ -17374,6 +17464,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
             <div class="min-w-0">
               ${(jumpType==="act" && __act) ? actSummaryLinesHTML(Object.assign({}, __act, { __mvSummaryDate: it.__mvSummaryDate, __mvSummaryTime: it.__mvSummaryTime }), {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker), tlDayKey: it.date}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
+              ${__timelineConflictHTML}
             </div>
           </div>
 
