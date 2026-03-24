@@ -540,6 +540,25 @@ function confirmDeleteEvent(opts){
 }
 #fabAI:active{ transform: scale(0.98); }
 
+#fabPendingSave{
+  position: fixed;
+  left: 22px;
+  right: auto;
+  bottom: calc(var(--bottom-nav-h, 64px) + 80px);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(180,83,9,.28);
+  font-size: 18px;
+  line-height: 40px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(146,64,14,0.24);
+  z-index: 2501;
+}
+#fabPendingSave:active{ transform: scale(0.98); }
+
 
 #fabAI{ position: fixed; } /* keep positioned ancestor for badge */
 #aiFabBadge{
@@ -1999,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A18_DIRTY_SAVE_OPENS_NAME_MODAL";
+const APP_BUILD = "V240_A19_DIRTY_ATTACHMENTS_NOTES_AND_PENDING_SAVE_FAB";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3894,6 +3913,7 @@ function __markScenarioDirty(slotLetter){
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     if(!/^[ABCD]$/.test(slot)) return false;
     localStorage.setItem(__mvScenarioDirtyKey(slot), "1");
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
     return true;
   }catch(_){
     return false;
@@ -3904,6 +3924,7 @@ function __clearScenarioDirty(slotLetter){
   try{
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     localStorage.removeItem(__mvScenarioDirtyKey(slot));
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
     return true;
   }catch(_){
     return false;
@@ -4000,10 +4021,12 @@ function __maybePromptSaveScenario(slotLetter){
     var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
     if(!__isWebBackupReminderContext()) return false;
     if(!__isScenarioDirty(slot)) return false;
-    if(window.__mvScenarioSavePromptOpen) return false;
-    var lastDismissTs = Number(window.__mvScenarioSavePromptLastDismissTs || 0);
-    if(lastDismissTs && (Date.now() - lastDismissTs) < (2 * 60 * 1000)) return false;
-    return __openScenarioSavePromptModal(slot);
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+    var lastToastTs = Number(window.__mvScenarioDirtyToastTs || 0);
+    if(lastToastTs && (Date.now() - lastToastTs) < 10000) return false;
+    window.__mvScenarioDirtyToastTs = Date.now();
+    try{ toast("Cambios pendientes"); }catch(_){}
+    return true;
   }catch(_){
     return false;
   }
@@ -5692,6 +5715,7 @@ function triggerAddForView(view){
 function updateFabForView(view){
   const fab = document.getElementById("fabAdd");
   const aiFab = document.getElementById("fabAI");
+  const pendingFab = document.getElementById("fabPendingSave");
   if (!fab) return;
 
   // V199: In timeline, FAB opens a type picker. Other views keep legacy behavior.
@@ -5700,6 +5724,7 @@ function updateFabForView(view){
 
   fab.classList.toggle("hidden", !show);
   if (aiFab) aiFab.classList.toggle("hidden", !show);
+  if (pendingFab) pendingFab.classList.toggle("hidden", !show);
 
   if (aiFab) {
     aiFab.onclick = (e) => {
@@ -5721,6 +5746,18 @@ function updateFabForView(view){
   fab.onclick = () => {
     if (!triggerAddForView(view)) alert("No se pudo añadir");
   };
+  try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+}
+
+function updatePendingSaveFabVisibility(){
+  try{
+    const fab = document.getElementById("fabPendingSave");
+    const plus = document.getElementById("fabAdd");
+    if(!fab || !plus) return;
+    const activeSlot = String((state && state.scenario) || "A").trim().toUpperCase();
+    const shouldShow = !plus.classList.contains("hidden") && __isScenarioDirty(activeSlot);
+    fab.classList.toggle("hidden", !shouldShow);
+  }catch(_){}
 }
 
 /* ---------------- Timeline FAB: Add type picker (V199) ---------------- */
@@ -13369,6 +13406,7 @@ function renderAll() {
   calcSummary();
   applyReadOnlyMode();
   try{ if(typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); }catch{}
+  try{ if(typeof updatePendingSaveFabVisibility==='function') updatePendingSaveFabVisibility(); }catch{}
 }
 
 function renderTabs() {
@@ -13847,6 +13885,7 @@ function renderStays() {
     if (!it) return;
     it.notes = inp.value;
     saveState();
+    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-stay-status]").forEach(sel => sel.addEventListener("change", () => {
@@ -15183,6 +15222,7 @@ function renderActivities() {
     if (!it) return;
     it.notes = inp.value;
     saveState();
+    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
     __dirtyTimeline = true;
   }));
   box.querySelectorAll("[data-act-status]").forEach(sel => sel.addEventListener("change", () => {
@@ -15658,6 +15698,7 @@ function openItemNotesModal(item, kindLabel, opts){
         const v = String(ta?.value || "").trim();
         it.notes = v;
         try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
@@ -15669,6 +15710,7 @@ function openItemNotesModal(item, kindLabel, opts){
         if (!ok) return;
         it.notes = "";
         try{ if(typeof saveState==="function") saveState(); }catch{}
+        try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
         try{ __refreshTimelineNotesBadge(); }catch{}
         closeModal();
       };
@@ -17187,6 +17229,7 @@ function renderDailyNotes() {
       if (!ok) return;
       delete sc.dailyNotes[k];
       saveState();
+      try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
       if (status) status.textContent = "Borrado ✓";
       renderDailyNotes();
       if (typeof renderTimeline === "function") renderTimeline();
@@ -17204,6 +17247,7 @@ function renderDailyNotes() {
       else sc.dailyNotes[k] = v;
 
       saveState();
+      try{ __markScenarioDirty((state && state.scenario) || "A"); }catch{}
 
       if (status) status.textContent = t("sheet.saved");
 
@@ -20089,7 +20133,7 @@ Tu iPhone: ${l}
     btn.addEventListener("click", (ev)=>{ try{ ev.stopPropagation(); }catch{} switchScenario(L); });
   });
 
-  const plus = $("tabPlus");
+const plus = $("tabPlus");
   if (plus) {
     plus.addEventListener("click", (ev)=>{
       try{ ev.stopPropagation(); }catch{}
@@ -20135,6 +20179,22 @@ Tu iPhone: ${l}
     }
 
   }
+  const pendingFab = $("fabPendingSave");
+  if(pendingFab && !pendingFab.__mvBound){
+    pendingFab.__mvBound = true;
+    pendingFab.addEventListener("click", async (ev)=>{
+      try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+      try{
+        const ok = await __saveCurrentScenarioSnapshot((state && state.scenario) || "A");
+        if(!ok){
+          try{ toast("No se pudo guardar la simulación"); }catch(_){}
+        }
+      }catch(_){
+        try{ toast("No se pudo guardar la simulación"); }catch(__){}
+      }
+    });
+  }
+  try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
 })();
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
@@ -21171,6 +21231,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
+<button aria-label="Cambios pendientes" class="hidden tap" id="fabPendingSave" title="Cambios pendientes">⚠️</button>
 <button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨<span class="hidden" id="aiFabBadge"></span></button>
 <div aria-hidden="true" class="hidden" id="aiSheetOverlay">
 <div aria-label="IA" aria-modal="true" id="aiSheet" role="dialog">
@@ -25160,6 +25221,7 @@ overlay.classList.remove("hidden");
   function __mvSafeSaveAfterAttachmentChange(){
     try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){}
     try{ if(typeof saveState === "function") saveState(); }catch(_){}
+    try{ __markScenarioDirty((state && state.scenario) || "A"); }catch(_){}
     try{ if(typeof renderAll === "function") renderAll(); }catch(_){}
   }
   function __mvRenderAttachSummaryLine(obj){
