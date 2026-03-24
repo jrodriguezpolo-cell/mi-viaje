@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A5_ALERT_SHOW_NAME_AND_FORMAT_DATETIME";
+const APP_BUILD = "V240_A6_FILENAME_DATE_TIME_SEPARATORS_AND_TOOLS_LABELS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -4137,13 +4137,10 @@ function __renderLastManualBackupInfo(){
       el.textContent = `${t("tools.engines.lastManualBackup")}: ${t("tools.engines.backupUnavailable")}`;
       return;
     }
-    const d = new Date(Number(meta.savedAtTs || 0));
-    const dd = String(d.getDate()).padStart(2,"0");
-    const mm = String(d.getMonth()+1).padStart(2,"0");
-    const yyyy = String(d.getFullYear());
-    const hh = String(d.getHours()).padStart(2,"0");
-    const mi = String(d.getMinutes()).padStart(2,"0");
-    el.textContent = `${t("tools.engines.lastManualBackup")}: ${dd}/${mm}/${yyyy} · ${hh}:${mi}`;
+    const pretty = __mvNameDateLabel(meta && meta.name, Number(meta.savedAtTs || 0));
+    el.textContent = getLang()==="en"
+      ? `Last saved backup: ${pretty}`
+      : `Último backup guardado: ${pretty}`;
   }catch(_){}
 }
 try{ window.__renderLastManualBackupInfo = __renderLastManualBackupInfo; }catch(_){}
@@ -4396,11 +4393,11 @@ function __renderCurrentBackupLoadedInfo(){
         : "Versión de backup en uso: no disponible";
       return;
     }
-    const pretty = fmtDateTimeES(Number(meta.referenceTs || 0));
-    const source = String(meta.source || "").trim();
+    const pretty = __mvNameDateLabel(meta && meta.name, Number(meta.referenceTs || 0));
+    const source = String(meta.deviceName || meta.source || "").trim();
     line.textContent = getLang()==="en"
-      ? `Current backup version: ${pretty}${source ? ` · ${source}` : ""}`
-      : `Versión de backup en uso: ${pretty}${source ? ` · ${source}` : ""}`;
+      ? `Current version: ${pretty}${source ? ` · ${source}` : ""}`
+      : `Versión en uso: ${pretty}${source ? ` · ${source}` : ""}`;
   }catch(_){}  
 }
 try{ window.__renderCurrentBackupLoadedInfo = __renderCurrentBackupLoadedInfo; }catch(_){} 
@@ -4434,11 +4431,11 @@ function __renderCurrentScenarioLoadedInfo(){
       return;
     }
     const d = new Date(Number(meta.referenceTs || 0));
-    const pretty = fmtDateTimeES(Number(meta.referenceTs || 0));
+    const pretty = __mvNameDateLabel(meta && meta.name, Number(meta.referenceTs || 0));
     const dev = String(meta.deviceName || "").trim();
     line.textContent = getLang()==="en"
-      ? `Current simulation version (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`
-      : `Versión de simulación en uso (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`;
+      ? `Current version (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`
+      : `Versión en uso (${slot}): ${pretty}${dev ? ` · ${dev}` : ""}`;
   }catch(_){}  
 }
 try{ window.__renderCurrentScenarioLoadedInfo = __renderCurrentScenarioLoadedInfo; }catch(_){} 
@@ -4454,12 +4451,11 @@ function __renderLastScenarioExportInfo(){
         : "Última simulación guardada: no disponible";
       return;
     }
-    const d = new Date(Number(meta.savedAtTs || 0));
     const slot = String(meta.slot || "").trim().toUpperCase();
-    const pretty = fmtDateTimeES(Number(meta.savedAtTs || 0));
+    const pretty = __mvNameDateLabel(meta && meta.name, Number(meta.savedAtTs || 0));
     line.textContent = getLang()==="en"
-      ? `Last saved simulation${slot ? ` (${slot})` : ""}: ${pretty}`
-      : `Última simulación guardada${slot ? ` (${slot})` : ""}: ${pretty}`;
+      ? `Last saved${slot ? ` (${slot})` : ""}: ${pretty}`
+      : `Última guardada${slot ? ` (${slot})` : ""}: ${pretty}`;
   }catch(_){}
 }
 try{ window.__renderLastScenarioExportInfo = __renderLastScenarioExportInfo; }catch(_){}
@@ -4558,7 +4554,7 @@ function __exportTripJsonBackup(){
     var pad2 = function(n){ return String(n).padStart(2, "0"); };
     var customLabel = String(arguments[0] || "").trim();
     var slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(customLabel) : "";
-    var stamp = `${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}_${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+    var stamp = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}_${pad2(now.getHours())}-${pad2(now.getMinutes())}`;
     var filename = slug
       ? `${slug}_B_${stamp}.json`
       : `BACKUP_B_${stamp}.json`;
@@ -18248,7 +18244,7 @@ async function __mvRunScenarioExportFlow(slotLetter){
   const payload = __mvScenarioExport(slot, customName);
   const exportDt = new Date(String(payload.exportedAt || "") || Date.now());
   const pad2 = (n) => String(n).padStart(2, "0");
-  const stamp = `${exportDt.getFullYear()}${pad2(exportDt.getMonth()+1)}${pad2(exportDt.getDate())}_${pad2(exportDt.getHours())}${pad2(exportDt.getMinutes())}`;
+  const stamp = `${exportDt.getFullYear()}-${pad2(exportDt.getMonth()+1)}-${pad2(exportDt.getDate())}_${pad2(exportDt.getHours())}-${pad2(exportDt.getMinutes())}`;
   const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(payload.scenarioName || customName || "") : "";
   const filename = slug
     ? `${slug}_S_${stamp}.json`
