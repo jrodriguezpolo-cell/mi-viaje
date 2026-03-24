@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A1_PENDING_SAVE_ALERT_FIX";
+const APP_BUILD = "V240_A2_PENDING_SAVE_FAB_OPENS_SAVE_PROMPT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20184,10 +20184,32 @@ const plus = $("tabPlus");
     pendingFab.addEventListener("click", async (ev)=>{
       try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
       try{
-        const ok = await __saveCurrentScenarioSnapshot((state && state.scenario) || "A");
-        if(!ok){
+        const slot = String((state && state.scenario) || "A").trim().toUpperCase();
+        if(!/^[ABCD]$/.test(slot)){
           try{ toast("No se pudo guardar la simulación"); }catch(_){}
+          return;
         }
+        let initialName = "";
+        try{
+          const currentMeta = __getCurrentLoadedScenarioMeta(slot);
+          initialName = String(currentMeta && currentMeta.name || "").trim();
+        }catch(_){}
+        if(!initialName){
+          try{
+            const lastMeta = JSON.parse(localStorage.getItem(MV_LAST_SCENARIO_EXPORT_META_KEY) || "null");
+            if(lastMeta && String(lastMeta.slot || "").trim().toUpperCase() === slot){
+              initialName = String(lastMeta.name || "").trim();
+            }
+          }catch(_){}
+        }
+        const ok = await __mvRunScenarioExportFlow(slot, { forceNamePrompt: true, initialName: initialName });
+        if(!ok){
+          try{ toast("Guardado cancelado"); }catch(_){} 
+          return;
+        }
+        try{ __clearScenarioDirty(slot); }catch(_){}
+        try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+        try{ toast("Simulación guardada"); }catch(_){}
       }catch(_){
         try{ toast("No se pudo guardar la simulación"); }catch(__){}
       }
