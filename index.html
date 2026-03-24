@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A23_UNIFY_CITY_DATE_WARNING_MODAL_LAYOUT";
+const APP_BUILD = "V240_A24_SCENARIO_BUNDLE_EXPORT_IMPORT_BUTTONS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -18921,7 +18921,11 @@ function __mvScenarioBundleExport(slotLetters, customName){
   slots.forEach(function(slot){
     const src = (state && state.scenarios && state.scenarios[slot]) ? state.scenarios[slot] : emptyScenario();
     scenarios[slot] = __mvNormalizeScenarioForTransfer(deepCloneJSON(src) || {});
-    if(bundleName) scenarioNames[slot] = bundleName;
+    try{
+      var meta = __getCurrentLoadedScenarioMeta(slot);
+      var slotName = String(meta && meta.name || "").trim();
+      if(slotName) scenarioNames[slot] = slotName;
+    }catch(_){}
   });
   return {
     mv_kind: "scenario_bundle",
@@ -18942,8 +18946,9 @@ function __mvPromptScenarioExportSelection(){
       var selected = new Set([String((state && state.scenario) || "A").trim().toUpperCase()]);
       var body = `
         <div class="space-y-4">
+          <div class="text-sm text-slate-700">Marca qué simulaciones quieres guardar en un solo fichero.</div>
           <div>
-            <div class="text-sm font-semibold text-slate-700 mb-2">Simulaciones a exportar</div>
+            <div class="text-sm font-semibold text-slate-700 mb-2">Simulaciones</div>
             <div class="flex flex-wrap gap-2">
               <button id="mvScenarioExportA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
               <button id="mvScenarioExportB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
@@ -18966,7 +18971,7 @@ function __mvPromptScenarioExportSelection(){
       var btnSave = document.createElement("button");
       btnSave.type = "button";
       btnSave.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
-      btnSave.textContent = "Guardar";
+      btnSave.textContent = "Exportar";
       btnSave.onclick = function(){
         if(!selected.size){
           try{ toast("Selecciona al menos una simulación."); }catch(_){}
@@ -19048,6 +19053,7 @@ function __mvPromptScenarioImportDestinations(sourceSlots){
       var body = `
         <div class="space-y-4">
           <div class="text-sm text-slate-700">Este archivo contiene: <span class="font-extrabold">${escapeHtml(sources.join(", "))}</span></div>
+          <div class="text-sm text-slate-700">Selecciona destino(s) (mismo número).</div>
           <div>
             <div class="text-sm font-semibold text-slate-700 mb-2">Selecciona exactamente ${sources.length} destino${sources.length === 1 ? "" : "s"}</div>
             <div class="flex flex-wrap gap-2">
@@ -19067,7 +19073,7 @@ function __mvPromptScenarioImportDestinations(sourceSlots){
       var btnApply = document.createElement("button");
       btnApply.type = "button";
       btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
-      btnApply.textContent = "Aplicar";
+      btnApply.textContent = "Continuar";
       btnApply.onclick = function(){
         var dests = letters.filter(function(letter){ return selected.has(letter); });
         if(dests.length !== sources.length){
@@ -19195,7 +19201,7 @@ async function __mvRunScenarioExportFlow(slotLetter, opts){
   const slug = (typeof __mvSafeFileSlug === "function") ? __mvSafeFileSlug(displayName) : "";
   const filename = slug
     ? `${slug}_S_${stamp}.json`
-    : `SIMULACION_S_${stamp}.json`;
+    : `SIMULACIONES_S_${stamp}.json`;
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   function doDownload() {
     const a = document.createElement("a");
@@ -19384,7 +19390,16 @@ async function __mvRunScenarioImportFlow(ev){
         });
         try{ toast("Simulaciones importadas"); }catch(_){}
       };
-      showModal("Importar simulaciones", `<div class="text-sm text-slate-700">Se reemplazarán las simulaciones: <span class="font-extrabold">${escapeHtml(destSlots.join(" y "))}</span>. ¿Continuar?</div>`, [btnCancel, btnImport]);
+      var mappingHtml = sourceSlots.map(function(srcSlot, idx){
+        return `<div class="font-mono text-sm text-slate-700">${escapeHtml(srcSlot)} → ${escapeHtml(destSlots[idx] || "")}</div>`;
+      }).join("");
+      var confirmBody = `
+        <div class="space-y-3 text-sm text-slate-700">
+          <div>Se reemplazarán las simulaciones destino: <span class="font-extrabold">${escapeHtml(destSlots.join(", "))}</span>.</div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 space-y-1">${mappingHtml}</div>
+        </div>
+      `;
+      showModal("Confirmar importación", confirmBody, [btnCancel, btnImport]);
     }
     if(input && input.dataset && input.dataset.closeScenarioModal === "1"){
       try{ __closeScenarioVersionCheckModal(); }catch(_){} 
