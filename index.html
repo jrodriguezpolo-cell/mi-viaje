@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER</title>
+<title>V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER";
+const APP_BUILD = "V240_A36_TIME_CONFLICT_ALERTS_TIMELINE_PHASE1";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13224,6 +13224,56 @@ function __mvFmtHHMM(dt){
     return String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
   }catch{ return '—'; }
 }
+const __MV_TIMELINE_CONFLICT_BUFFER_MIN = 30;
+function __mvTimelineItemInterval(kind, item){
+  try{
+    const k = String(kind || '').trim();
+    if(!item) return null;
+    if(k === 'act'){
+      const dateStr = String(item.date || '').trim();
+      const timeStr = String(item.time || '').trim();
+      const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
+      if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
+      const durMin = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)), 10) || 0);
+      return { date:dateStr, startMin, endMin:startMin + durMin };
+    }
+    if(k === 'leg'){
+      const dateStr = String(item.date || '').trim();
+      const timeStr = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+      const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
+      if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
+      let endMin = startMin;
+      const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+      const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+      const arrMin = (typeof timeToMinutes === 'function') ? timeToMinutes(arrTime) : NaN;
+      if(arrDate && arrTime && Number.isFinite(arrMin)){
+        endMin = (arrDate === dateStr) ? Math.max(startMin, arrMin) : Math.max(startMin, 1440 + arrMin);
+      }
+      return { date:dateStr, startMin, endMin };
+    }
+    if(k === 'stay'){
+      const dateStr = String(item.date || item.checkinDate || item.checkInDate || item.inDate || item.startDate || '').trim();
+      const timeStr = String(item.time || item.checkinTime || item.checkInTime || '').trim();
+      const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
+      if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
+      return { date:dateStr, startMin, endMin:startMin };
+    }
+  }catch{}
+  return null;
+}
+function __mvConflictTitle(kind, item){
+  try{
+    const k = String(kind || '').trim();
+    if(k === 'leg') return `${String(item?.from || '—').trim() || '—'} → ${String(item?.to || '—').trim() || '—'}`;
+    if(k === 'stay'){
+      const name = String(item?.name || '').trim();
+      const city = String(item?.city || '').trim();
+      return name && city ? `${name} · ${city}` : (name || city || 'Alojamiento');
+    }
+    if(k === 'act') return String(item?.title || item?.name || 'Actividad').trim() || 'Actividad';
+  }catch{}
+  return 'Evento';
+}
 function __mvSheetActInterval(item){
   try{
     if(!item) return null;
@@ -13257,35 +13307,41 @@ function __mvTimedConflictSnapshot(kind, item){
   const out = { kind:String(kind||''), id:String(item && item.id || ''), conflicts:[], count:0 };
   try{
     const k = String(kind||'');
-    if(!item || (k!=='act' && k!=='leg')) return out;
-    const own = (k==='act') ? __mvSheetActInterval(item) : __mvSheetLegInterval(item);
+    if(!item || (k!=='act' && k!=='leg' && k!=='stay')) return out;
+    const own = __mvTimelineItemInterval(k, item);
     if(!own) return out;
     const ownId = String(item.id || '');
     const sc = (typeof curScenario === 'function') ? curScenario() : null;
     if(!sc) return out;
-    (Array.isArray(sc.activities) ? sc.activities : []).forEach((otherItem)=>{
+    const compareOne = (type, typeLabel, otherItem)=>{
       try{
         if(!otherItem) return;
-        if(k==='act' && String(otherItem.id || '') === ownId) return;
-        const other = __mvSheetActInterval(otherItem);
+        if(type===k && String(otherItem.id || '') === ownId) return;
+        const other = __mvTimelineItemInterval(type, otherItem);
         if(!other) return;
-        if(own.start < other.end && other.start < own.end){
-          out.conflicts.push({ type:'act', typeLabel:'Actividad', id:String(otherItem.id || ''), title:String(otherItem.title || otherItem.name || 'Actividad'), start:other.start, end:other.end });
-        }
+        if(String(other.date || '') !== String(own.date || '')) return;
+        const ownThreshold = Math.min(1440, Math.max(own.startMin, own.endMin) + __MV_TIMELINE_CONFLICT_BUFFER_MIN);
+        const otherThreshold = Math.min(1440, Math.max(other.startMin, other.endMin) + __MV_TIMELINE_CONFLICT_BUFFER_MIN);
+        const conflict = (own.startMin <= other.startMin)
+          ? (other.startMin < ownThreshold)
+          : (own.startMin < otherThreshold);
+        if(!conflict) return;
+        out.conflicts.push({
+          type,
+          typeLabel,
+          id:String(otherItem.id || ''),
+          title:__mvConflictTitle(type, otherItem),
+          start: new Date(`${other.date}T${String(__fmtHHMM_fromMinutes ? __fmtHHMM_fromMinutes(other.startMin % 1440) : '00:00')}:00`),
+          end: new Date(`${other.date}T${String(__fmtHHMM_fromMinutes ? __fmtHHMM_fromMinutes((Math.max(other.startMin, other.endMin)) % 1440) : '00:00')}:00`),
+          startHHMM: (typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(other.startMin % 1440) : '',
+          reason: 'buffer',
+          gapMin: other.startMin - own.endMin
+        });
       }catch{}
-    });
-    (Array.isArray(sc.legs) ? sc.legs : []).forEach((otherItem)=>{
-      try{
-        if(!otherItem) return;
-        if(k==='leg' && String(otherItem.id || '') === ownId) return;
-        const other = __mvSheetLegInterval(otherItem);
-        if(!other) return;
-        if(own.start < other.end && other.start < own.end){
-          const title = `${String(otherItem.from || '—').trim() || '—'} → ${String(otherItem.to || '—').trim() || '—'}`;
-          out.conflicts.push({ type:'leg', typeLabel:'Transporte', id:String(otherItem.id || ''), title, start:other.start, end:other.end });
-        }
-      }catch{}
-    });
+    };
+    (Array.isArray(sc.activities) ? sc.activities : []).forEach((otherItem)=>compareOne('act','Actividad',otherItem));
+    (Array.isArray(sc.legs) ? sc.legs : []).forEach((otherItem)=>compareOne('leg','Transporte',otherItem));
+    (Array.isArray(sc.stays) ? sc.stays : []).forEach((otherItem)=>compareOne('stay','Alojamiento',otherItem));
   }catch{}
   out.count = out.conflicts.length;
   return out;
@@ -13302,7 +13358,11 @@ function __mvConflictMarkerHTML(kind, item, opts){
     const count = Math.max(0, parseInt(state.count || 0, 10) || 0);
     const noun = count===1 ? 'evento' : 'eventos';
     const extraCls = String(opts.className || '').trim();
-    return `<div class="mvConflictBlock ${escapeHtml(extraCls)}"><span class="mvConflictBadge">⚠️ <span>Conflicto horario</span></span><div class="mvConflictHint">Conflicta con ${count} ${noun}</div></div>`;
+    const first = Array.isArray(state.conflicts) && state.conflicts[0] ? state.conflicts[0] : null;
+    const hint = (first && first.reason === 'buffer' && first.startHHMM)
+      ? `No hay margen suficiente · siguiente ${escapeHtml(String(first.startHHMM))}`
+      : `Conflicta con ${count} ${noun}`;
+    return `<div class="mvConflictBlock ${escapeHtml(extraCls)}"><span class="mvConflictBadge">⚠️ <span>Conflicto horario</span></span><div class="mvConflictHint">${hint}</div></div>`;
   }catch{ return ''; }
 }
 function __mvCollectLegSaveConflictsFromSheet(){
@@ -13959,6 +14019,7 @@ function staySummaryLinesHTML(stay, opts){
       (opts.context==="section" && opts.secCompact)
     )
   );
+  const __conflictHTML = __mvConflictMarkerHTML('stay', stay, { className: (opts.context==='timeline' ? 'mvConflictInline' : '') });
   if (__compact) {
     const __contentHTML = `
       <div class="mvSecMicroLine text-sm font-semibold flex items-center gap-1">
@@ -13966,6 +14027,7 @@ function staySummaryLinesHTML(stay, opts){
         ${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : __secHowToBtnHTML(__navDest, "transit")}
         ${(__stayProgressText && ((opts.context==="timeline" && opts.tlCompact && !opts.tlMarker) || (opts.context==="section" && opts.secCompact && !opts.secMarker))) ? `<span class="text-xs font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__stayProgressText)}</span>` : ``}
       </div>
+      ${__conflictHTML}
     `;
     return (opts.context==="section")
       ? __contentHTML
@@ -13981,6 +14043,7 @@ function staySummaryLinesHTML(stay, opts){
     <div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
     <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
+    ${__conflictHTML}
   `;
   return (opts.context==="section")
     ? __sectionSummaryWithNavHTML(__contentHTML, __navDest, "transit")
@@ -17265,7 +17328,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     else if (it.stayId != null) { kind = "stay"; itemObj = stayById.get(String(it.stayId)); }
 
     let __tlConflictState = { hasConflict:false, count:0, conflicts:[] };
-    if ((kind === "act" || kind === "leg") && itemObj && !it.isNote) {
+    if ((kind === "act" || kind === "leg" || kind === "stay") && itemObj && !it.isNote) {
       try{ __tlConflictState = __mvConflictState(kind, itemObj); }catch{}
     }
 
