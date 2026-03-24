@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A34_WEEK_TO_TIMELINE_ALWAYS_FULL_CARDS</title>
+<title>V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A34_WEEK_TO_TIMELINE_ALWAYS_FULL_CARDS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A34_WEEK_TO_TIMELINE_ALWAYS_FULL_CARDS";
+const APP_BUILD = "V240_A35_NOTES_BADGE_COUNTS_AND_TAB_ORDER";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12970,13 +12970,10 @@ function __updateTimelineNotesBadge(){
     const fab = document.getElementById("timelineNotesFab");
     const badge = document.getElementById("timelineNotesBadge");
     if(!fab || !badge) return;
-    const k = __getActiveDateKey();
-    const note = k ? __getTimelineNote(k) : "";
-    if(note && String(note).trim()){
-      badge.classList.remove("hidden");
-    }else{
-      badge.classList.add("hidden");
-    }
+    const counts = __getNotesCountsForCurrentScenario();
+    const total = Math.max(0, Number(counts.all || 0));
+    badge.classList.toggle("hidden", total <= 0);
+    badge.textContent = total > 0 ? String(total) : "";
   }catch{}
 }
 
@@ -16016,17 +16013,44 @@ function __getActiveDailyNoteKey(){
   }
 }
 
+function __getNotesCountsForCurrentScenario(){
+  const out = { all:0, day:0, leg:0, stay:0, act:0 };
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return out;
+    __ensureDailyNotes(sc);
+    out.day = Object.keys(sc.dailyNotes || {}).filter(k => String((sc.dailyNotes || {})[k] || "").trim()).length;
+    const countEventNotes = function(list, key){
+      if(!Array.isArray(list)) return;
+      list.forEach(function(item){
+        const txt = String((item && (item.notes || item.note)) || "").trim();
+        if(txt) out[key] += 1;
+      });
+    };
+    countEventNotes(sc.legs, "leg");
+    countEventNotes(sc.stays, "stay");
+    countEventNotes(sc.activities, "act");
+    out.all = out.day + out.leg + out.stay + out.act;
+  }catch(_){}
+  return out;
+}
+
+function __mvNotesCountBadgeHTML(n){
+  const count = Math.max(0, Number(n || 0));
+  if(!count) return "";
+  return `<span class="inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full bg-slate-900 text-white text-[11px] font-extrabold px-1.5 leading-none">${count}</span>`;
+}
+
 function __refreshTimelineNotesBadge(){
   try{
     const badge = document.getElementById("timelineNotesBadge");
     const fab = document.getElementById("timelineNotesFab");
     if(!badge || !fab) return;
-        const key = __getActiveDailyNoteKey();
-    const sc = (typeof curScenario === "function") ? curScenario() : null;
-    __ensureDailyNotes(sc);
-    const has = !!String((sc && sc.dailyNotes && sc.dailyNotes[key]) || "").trim();
-    badge.style.display = has ? "inline-flex" : "none";
-    badge.textContent = has ? "1" : "";
+    const counts = __getNotesCountsForCurrentScenario();
+    const total = Math.max(0, Number(counts.all || 0));
+    badge.classList.toggle("hidden", total <= 0);
+    badge.style.display = total > 0 ? "inline-flex" : "none";
+    badge.textContent = total > 0 ? String(total) : "";
   }catch{}
 }
 
@@ -16198,6 +16222,7 @@ function openDailyNotesIndexModal(){
   const sc = (typeof curScenario === "function") ? curScenario() : null;
   if(!sc) return;
   __ensureDailyNotes(sc);
+  const counts = __getNotesCountsForCurrentScenario();
 
   const dayItems = Object.keys(sc.dailyNotes || {})
     .filter(k => String(sc.dailyNotes[k] || "").trim())
@@ -16243,11 +16268,11 @@ function openDailyNotesIndexModal(){
   const html = `
     <div class="text-[12px] text-slate-600 mb-2">Notas guardadas por fecha y evento</div>
     <div class="mb-3 flex flex-wrap gap-2">
-      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-slate-900 text-white text-xs font-semibold" data-notes-filter="all">Todo</button>
-      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="day">Día</button>
-      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="act">Actividades</button>
-      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="leg">Transporte</button>
-      <button type="button" class="tap px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="stay">Alojamiento</button>
+      <button type="button" class="tap inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-slate-900 text-white text-xs font-semibold" data-notes-filter="all">Todo ${__mvNotesCountBadgeHTML(counts.all)}</button>
+      <button type="button" class="tap inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="day">Día ${__mvNotesCountBadgeHTML(counts.day)}</button>
+      <button type="button" class="tap inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="leg">Transporte ${__mvNotesCountBadgeHTML(counts.leg)}</button>
+      <button type="button" class="tap inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="stay">Alojamiento ${__mvNotesCountBadgeHTML(counts.stay)}</button>
+      <button type="button" class="tap inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-700 text-xs font-semibold" data-notes-filter="act">Actividades ${__mvNotesCountBadgeHTML(counts.act)}</button>
     </div>
     <div class="max-h-[55vh] overflow-auto ios-scroll rounded-2xl border border-slate-200">
       ${items.length ? items.map(it => `
