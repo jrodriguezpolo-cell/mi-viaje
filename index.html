@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A9_RESET_SELECT_SCENARIOS_MULTI";
+const APP_BUILD = "V240_A12_TRANSFER_SCENARIOS_COPY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13216,7 +13216,13 @@ function renderTabs() {
   });
 
   const plusBtn = $("tabPlus");
-  if (plusBtn) plusBtn.style.display = "";
+  if (plusBtn){
+    plusBtn.style.display = "";
+    const plusLabel = visibleCount <= 1 ? "+" : (visibleCount >= 4 ? "−" : "+/−");
+    plusBtn.textContent = plusLabel;
+    plusBtn.setAttribute("aria-label", plusLabel);
+    plusBtn.setAttribute("title", plusLabel);
+  }
 
   const dc = document.getElementById("displayCurrency");
   if (dc) dc.value = state.displayCurrency;
@@ -19381,6 +19387,219 @@ Tu iPhone: ${l}
     clearExpanded();
     renderAll();
   }
+  function __openManageActiveScenariosModal(){
+    try{
+      const letters = ["A","B","C","D"];
+      let selectedCount = Math.max(1, Math.min(4, parseInt(state && state.scenarioCount, 10) || 1));
+      function isOn(letter){
+        return letters.indexOf(letter) < selectedCount;
+      }
+      function render(){
+        letters.forEach(function(letter, idx){
+          const btn = document.getElementById(`mvActiveScenario${letter}`);
+          if(!btn) return;
+          const on = idx < selectedCount;
+          btn.classList.toggle("bg-slate-900", on);
+          btn.classList.toggle("text-white", on);
+          btn.classList.toggle("border-slate-900", on);
+          btn.classList.toggle("bg-white", !on);
+          btn.classList.toggle("text-slate-700", !on);
+          btn.classList.toggle("border-slate-300", !on);
+        });
+      }
+      const body = `
+        <div class="space-y-4">
+          <div class="text-sm text-slate-700">Selecciona las simulaciones activas.</div>
+          <div class="flex flex-wrap gap-2">
+            <button id="mvActiveScenarioA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+            <button id="mvActiveScenarioB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+            <button id="mvActiveScenarioC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+            <button id="mvActiveScenarioD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnApply = document.createElement("button");
+      btnApply.type = "button";
+      btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnApply.textContent = "Aplicar";
+      btnApply.onclick = function(){
+        if(selectedCount < 1){
+          try{ toast("Selecciona al menos una simulación."); }catch(_){}
+          return;
+        }
+        try{ closeModal(); }catch(_){}
+        setScenarioCount(selectedCount);
+      };
+      showModal("Simulaciones activas", body, [btnCancel, btnApply]);
+      letters.forEach(function(letter, idx){
+        const btn = document.getElementById(`mvActiveScenario${letter}`);
+        if(!btn) return;
+        btn.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          const currentOn = isOn(letter);
+          if(currentOn){
+            selectedCount = Math.max(0, idx);
+          }else{
+            selectedCount = idx + 1;
+          }
+          if(selectedCount < 1){
+            selectedCount = 1;
+            try{ toast("Selecciona al menos una simulación."); }catch(_){}
+          }
+          render();
+        }, true);
+      });
+      render();
+    }catch(_){}
+  }
+  function __cloneScenario(sc){
+    try{
+      return JSON.parse(JSON.stringify(sc || emptyScenario()));
+    }catch(_){
+      return emptyScenario();
+    }
+  }
+  function __openTransferScenariosModal(){
+    try{
+      const letters = ["A","B","C","D"];
+      let origin = String((state && state.scenario) || "A").trim().toUpperCase();
+      const destinations = new Set();
+      function render(){
+        letters.forEach(function(letter){
+          const originBtn = document.getElementById(`mvTransferOrigin${letter}`);
+          if(originBtn){
+            const on = origin === letter;
+            originBtn.classList.toggle("bg-slate-900", on);
+            originBtn.classList.toggle("text-white", on);
+            originBtn.classList.toggle("border-slate-900", on);
+            originBtn.classList.toggle("bg-white", !on);
+            originBtn.classList.toggle("text-slate-700", !on);
+            originBtn.classList.toggle("border-slate-300", !on);
+          }
+          const destBtn = document.getElementById(`mvTransferDest${letter}`);
+          if(destBtn){
+            const on = destinations.has(letter);
+            destBtn.classList.toggle("bg-slate-900", on);
+            destBtn.classList.toggle("text-white", on);
+            destBtn.classList.toggle("border-slate-900", on);
+            destBtn.classList.toggle("bg-white", !on);
+            destBtn.classList.toggle("text-slate-700", !on);
+            destBtn.classList.toggle("border-slate-300", !on);
+          }
+        });
+      }
+      const body = `
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs font-extrabold uppercase tracking-wide text-slate-500 mb-2">Origen</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="mvTransferOriginA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+              <button id="mvTransferOriginB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+              <button id="mvTransferOriginC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+              <button id="mvTransferOriginD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs font-extrabold uppercase tracking-wide text-slate-500 mb-2">Destino</div>
+            <div class="flex flex-wrap gap-2">
+              <button id="mvTransferDestA" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">A</button>
+              <button id="mvTransferDestB" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">B</button>
+              <button id="mvTransferDestC" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">C</button>
+              <button id="mvTransferDestD" type="button" class="tap px-4 py-2 rounded-2xl border border-slate-300 bg-white text-slate-700 font-extrabold">D</button>
+            </div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            Modo: <span class="font-extrabold">Copiar</span>
+          </div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnApply = document.createElement("button");
+      btnApply.type = "button";
+      btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnApply.textContent = "Aplicar traslado";
+      btnApply.onclick = function(){
+        const dests = Array.from(destinations);
+        if(!dests.length){
+          try{ toast("Selecciona al menos una simulación."); }catch(_){}
+          return;
+        }
+        if(!state.scenarios || !state.scenarios[origin]) return;
+        const src = __cloneScenario(state.scenarios[origin]);
+        dests.forEach(function(dest){ state.scenarios[dest] = __cloneScenario(src); });
+        try{ closeModal(); }catch(_){}
+        saveState();
+        renderAll();
+        try{ toast("Traslado aplicado"); }catch(_){}
+      };
+      showModal("Trasladar simulación", body, [btnCancel, btnApply]);
+      letters.forEach(function(letter){
+        const originBtn = document.getElementById(`mvTransferOrigin${letter}`);
+        if(originBtn){
+          originBtn.addEventListener("click", function(e){
+            try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+            origin = letter;
+            if(destinations.has(letter)){
+              destinations.delete(letter);
+              try{ toast("El origen no puede ser destino."); }catch(_){}
+            }
+            render();
+          }, true);
+        }
+        const destBtn = document.getElementById(`mvTransferDest${letter}`);
+        if(destBtn){
+          destBtn.addEventListener("click", function(e){
+            try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+            if(letter === origin){
+              destinations.delete(letter);
+              try{ toast("El origen no puede ser destino."); }catch(_){}
+              render();
+              return;
+            }
+            if(destinations.has(letter)) destinations.delete(letter);
+            else destinations.add(letter);
+            render();
+          }, true);
+        }
+      });
+      render();
+    }catch(_){}
+  }
+  function __openPlusMenuModal(){
+    try{
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+      const btnManage = document.createElement("button");
+      btnManage.type = "button";
+      btnManage.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnManage.textContent = "Añadir o quitar simulaciones en curso";
+      btnManage.onclick = function(){
+        try{ closeModal(); }catch(_){}
+        __openManageActiveScenariosModal();
+      };
+      const btnTransfer = document.createElement("button");
+      btnTransfer.type = "button";
+      btnTransfer.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-slate-900 bg-white";
+      btnTransfer.textContent = "Trasladar simulaciones";
+      btnTransfer.onclick = function(){
+        try{ closeModal(); }catch(_){}
+        __openTransferScenariosModal();
+      };
+      showModal("Simulaciones", `<div class="text-sm text-slate-700">Elige una acción.</div>`, [btnCancel, btnTransfer, btnManage]);
+    }catch(_){}
+  }
   letters.forEach(L=>{
     const btn = $("tab"+L);
     if (!btn) return;
@@ -19391,8 +19610,7 @@ Tu iPhone: ${l}
   if (plus) {
     plus.addEventListener("click", (ev)=>{
       try{ ev.stopPropagation(); }catch{}
-      // Open a small dropdown to choose how many scenarios are visible (1–4)
-      toggleScenarioPicker();
+      __openPlusMenuModal();
     });
     const picker = document.getElementById("scenarioPicker");
     if (picker && !picker.__wired) {
