@@ -1999,7 +1999,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A6_FILENAME_DATE_TIME_SEPARATORS_AND_TOOLS_LABELS";
+const APP_BUILD = "V240_A7_HISTORY_LIST_DELETE_INTERNAL_SIM_AND_BACKUP";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3050,8 +3050,113 @@ const MV_CURRENT_LOADED_SCENARIO_META_KEY_PREFIX = "miviaje.scenario.loadedMeta.
 const MV_SCENARIO_SNAPSHOTS_KEY_PREFIX = "miviaje.scenario.snapshots.";
 const MV_SCENARIO_DIRTY_PREFIX = "miviaje.scenario.dirty.";
 const MV_SCENARIO_VERSION_CHECK_SNOOZE_KEY = "miviaje.scenario.versionCheckSnooze.v1";
+const MV_BACKUP_HISTORY_KEY = "mv.hist.backup";
+const MV_SCENARIO_HISTORY_KEY_PREFIX = "mv.hist.sim.";
 const MV_ICS_ALERT_MINUTES_KEY = "MV_ICS_ALERT_MINUTES_V1";
 const MV_ICS_INCLUDE_TYPES_KEY = "MV_ICS_INCLUDE_TYPES_V1";
+
+function __mvHistoryId(meta){
+  try{
+    var ts = Number(meta && (meta.ts || meta.referenceTs || meta.savedAtTs) || 0);
+    var slot = String(meta && (meta.slot || meta.scenarioLetter) || "").trim().toUpperCase();
+    var name = String(meta && meta.name || "").trim();
+    var sourceType = String(meta && (meta.sourceType || meta.source) || "").trim();
+    return `${ts}|${slot}|${name}|${sourceType}`;
+  }catch(_){
+    return `${Date.now()}|`;
+  }
+}
+
+function __mvScenarioHistoryKey(slotLetter){
+  return `${MV_SCENARIO_HISTORY_KEY_PREFIX}${String(slotLetter || "A").trim().toUpperCase()}`;
+}
+
+function __mvReadHistory(key){
+  try{
+    var raw = localStorage.getItem(String(key || ""));
+    var arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  }catch(_){
+    return [];
+  }
+}
+
+function __mvWriteHistory(key, arr){
+  try{
+    localStorage.setItem(String(key || ""), JSON.stringify(Array.isArray(arr) ? arr : []));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvNormalizeHistoryEntry(meta){
+  try{
+    var ts = Number(meta && (meta.ts || meta.referenceTs || meta.savedAtTs) || 0);
+    if(!(ts > 0)) return null;
+    return {
+      id: String(meta && meta.id || __mvHistoryId(meta)),
+      name: String(meta && meta.name || "").trim(),
+      ts: ts,
+      savedAt: String(meta && meta.savedAt || ""),
+      slot: String(meta && (meta.slot || meta.scenarioLetter) || "").trim().toUpperCase(),
+      sourceBuild: String(meta && (meta.sourceBuild || meta.build) || "").trim(),
+      device: String(meta && (meta.device || meta.deviceName) || "").trim(),
+      sourceType: String(meta && (meta.sourceType || meta.source) || "").trim()
+    };
+  }catch(_){
+    return null;
+  }
+}
+
+function __mvPushHistoryEntry(key, meta){
+  try{
+    var entry = __mvNormalizeHistoryEntry(meta);
+    if(!entry) return false;
+    var arr = __mvReadHistory(key).filter(function(it){ return String(it && it.id || "") !== entry.id; });
+    arr.unshift(entry);
+    arr.sort(function(a,b){ return Number(b && b.ts || 0) - Number(a && a.ts || 0); });
+    if(arr.length > 20) arr = arr.slice(0, 20);
+    return __mvWriteHistory(key, arr);
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvDeleteHistoryEntry(key, entryId){
+  try{
+    var id = String(entryId || "");
+    var arr = __mvReadHistory(key).filter(function(it){ return String(it && it.id || "") !== id; });
+    return __mvWriteHistory(key, arr);
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvGetBackupHistory(){
+  try{
+    return __mvReadHistory(MV_BACKUP_HISTORY_KEY).sort(function(a,b){ return Number(b && b.ts || 0) - Number(a && a.ts || 0); });
+  }catch(_){
+    return [];
+  }
+}
+
+function __mvGetScenarioHistory(slotLetter){
+  try{
+    return __mvReadHistory(__mvScenarioHistoryKey(slotLetter)).sort(function(a,b){ return Number(b && b.ts || 0) - Number(a && a.ts || 0); });
+  }catch(_){
+    return [];
+  }
+}
+
+function __mvPushBackupHistory(meta){
+  return __mvPushHistoryEntry(MV_BACKUP_HISTORY_KEY, meta);
+}
+
+function __mvPushScenarioHistory(slotLetter, meta){
+  var slot = String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase();
+  return __mvPushHistoryEntry(__mvScenarioHistoryKey(slot), Object.assign({}, meta || {}, { slot: slot }));
+}
 
 function __getStorageEnginePref(){
   try{
@@ -3351,8 +3456,19 @@ async function __runManualBackupExportWithMeta(){
         build: String(payload && payload.sourceBuild || APP_BUILD)
       });
     }catch(_){}
+    try{
+      __mvPushBackupHistory({
+        ts: nowTs,
+        savedAt: nowIso || new Date(nowTs).toISOString(),
+        name: String(payload && payload.name || "").trim(),
+        sourceBuild: String(payload && payload.sourceBuild || APP_BUILD),
+        device: (typeof getDeviceName === "function") ? (getDeviceName(false) || "") : "",
+        sourceType: "manual"
+      });
+    }catch(_){}
     try{ if(typeof __renderCurrentBackupLoadedInfo === "function") __renderCurrentBackupLoadedInfo(); }catch(_){} 
     try{ if(typeof __renderLastManualBackupInfo === "function") __renderLastManualBackupInfo(); }catch(_){} 
+    try{ if(typeof __renderBackupHistoryInternal === "function") __renderBackupHistoryInternal(); }catch(_){}
     try{
       var pretty = new Date(nowTs).toLocaleString("es-ES", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
       toast(customName ? `Backup guardado: ${customName} · ${pretty}` : `Backup guardado: ${pretty}`);
@@ -3458,6 +3574,24 @@ function __setCurrentLoadedBackupMeta(meta){
 
 function __getNewestAvailableBackupMeta(){
   try{
+    try{
+      if(localStorage.getItem(MV_BACKUP_HISTORY_KEY) !== null){
+        var explicitHist = __mvGetBackupHistory();
+        if(!explicitHist.length) return null;
+      }
+    }catch(_){}
+    var hist = __mvGetBackupHistory();
+    if(hist.length){
+      return {
+        referenceTs: Number(hist[0] && hist[0].ts || 0),
+        savedAt: String(hist[0] && hist[0].savedAt || ""),
+        source: String(hist[0] && hist[0].sourceType || "manual"),
+        canLoadDirectly: false,
+        name: String(hist[0] && hist[0].name || "").trim(),
+        build: String(hist[0] && hist[0].sourceBuild || "").trim(),
+        deviceName: String(hist[0] && hist[0].device || "").trim()
+      };
+    }
     var candidates = [];
     try{
       var manualMeta = __readLastManualBackupMeta();
@@ -3615,6 +3749,24 @@ function __pushScenarioSnapshot(slotLetter, payload, source){
 
 function __getNewestAvailableScenarioMeta(slotLetter){
   try{
+    try{
+      if(localStorage.getItem(__mvScenarioHistoryKey(slotLetter)) !== null){
+        var explicitHist = __mvGetScenarioHistory(slotLetter);
+        if(!explicitHist.length) return null;
+      }
+    }catch(_){}
+    var hist = __mvGetScenarioHistory(slotLetter);
+    if(hist.length){
+      return {
+        referenceTs: Number(hist[0] && hist[0].ts || 0),
+        savedAt: String(hist[0] && hist[0].savedAt || ""),
+        source: String(hist[0] && hist[0].sourceType || "scenario-export"),
+        deviceName: String(hist[0] && hist[0].device || ""),
+        scenarioLetter: String(slotLetter || (state && state.scenario) || "A").trim().toUpperCase(),
+        name: String(hist[0] && hist[0].name || "").trim(),
+        build: String(hist[0] && hist[0].sourceBuild || "")
+      };
+    }
     var arr = __getScenarioSnapshots(slotLetter);
     if(!arr.length) return null;
     arr.sort(function(a,b){ return Number(b && b.savedAtTs || 0) - Number(a && a.savedAtTs || 0); });
@@ -4128,6 +4280,92 @@ function __maybeShowBackupVersionCheckOnOpen(){
   }
 }
 
+function __mvConfirmDeleteInternalHistory(kind, slotLetter, entryId){
+  try{
+    var safeEntryId = "";
+    try{ safeEntryId = decodeURIComponent(String(entryId || "")); }catch(_){ safeEntryId = String(entryId || ""); }
+    var btnCancel = document.createElement("button");
+    btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnCancel.type = "button";
+    btnCancel.textContent = "Cancelar";
+    btnCancel.onclick = function(){ try{ closeModal(); }catch(_){} };
+    var btnDelete = document.createElement("button");
+    btnDelete.className = "tap px-4 py-3 rounded-2xl border border-rose-700 font-extrabold text-white bg-rose-700";
+    btnDelete.type = "button";
+    btnDelete.textContent = "Eliminar";
+    btnDelete.onclick = function(){
+      try{ closeModal(); }catch(_){}
+      try{
+        if(kind === "scenario"){
+          __mvDeleteHistoryEntry(__mvScenarioHistoryKey(slotLetter), safeEntryId);
+          if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal();
+        }else{
+          __mvDeleteHistoryEntry(MV_BACKUP_HISTORY_KEY, safeEntryId);
+          if(typeof __renderBackupHistoryInternal === "function") __renderBackupHistoryInternal();
+        }
+        try{ if(typeof __maybeShowScenarioVersionCheckOnOpen === "function") window.__mvScenarioVersionCheckShown = false; }catch(_){}
+        try{ if(typeof __maybeShowBackupVersionCheckOnOpen === "function") window.__mvBackupVersionCheckShown = false; }catch(_){}
+        try{ toast("Registro interno eliminado"); }catch(_){}
+      }catch(_){}
+    };
+    showModal("Eliminar del histórico", `<div class="text-sm text-slate-700">Esto solo borra el registro interno. No borra archivos del móvil.</div>`, [btnCancel, btnDelete]);
+  }catch(_){}
+}
+
+function __mvHistoryRowHTML(entry, subtitle, onclickCode){
+  var title = escapeHtml(String(entry && entry.name || "").trim() || "(Sin nombre)");
+  var metaBits = [];
+  if(entry && entry.device) metaBits.push(`Origen: ${escapeHtml(String(entry.device || ""))}`);
+  if(entry && entry.sourceBuild) metaBits.push(`Build: ${escapeHtml(String(entry.sourceBuild || ""))}`);
+  return `
+    <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3 flex items-start gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="text-sm font-semibold text-slate-900 truncate">${title}</div>
+        <div class="text-xs text-slate-500 mt-1">${subtitle}</div>
+        ${metaBits.length ? `<div class="text-[11px] text-slate-400 mt-1">${metaBits.join(" · ")}</div>` : ``}
+      </div>
+      <button class="tap w-9 h-9 rounded-xl border border-rose-200 text-rose-700 font-bold shrink-0" type="button" onclick="${onclickCode}">🗑️</button>
+    </div>
+  `;
+}
+
+function __renderScenarioHistoryInternal(){
+  try{
+    var box = document.getElementById("toolsScenarioHistoryList");
+    if(!box) return;
+    var slot = String((state && state.scenario) || "A").trim().toUpperCase();
+    var arr = __mvGetScenarioHistory(slot).slice(0, 15);
+    if(!arr.length){
+      box.innerHTML = `<div class="text-xs text-slate-500">Sin registros internos.</div>`;
+      return;
+    }
+    box.innerHTML = arr.map(function(entry){
+      var subtitle = `${escapeHtml(slot)} · ${escapeHtml(fmtDateTimeES(entry && entry.ts))}`;
+      var onclickCode = `__mvConfirmDeleteInternalHistory('scenario','${escapeHtml(slot)}','${encodeURIComponent(String(entry && entry.id || ""))}'); return false;`;
+      return __mvHistoryRowHTML(entry, subtitle, onclickCode);
+    }).join("");
+  }catch(_){}
+}
+try{ window.__renderScenarioHistoryInternal = __renderScenarioHistoryInternal; }catch(_){}
+
+function __renderBackupHistoryInternal(){
+  try{
+    var box = document.getElementById("toolsBackupHistoryList");
+    if(!box) return;
+    var arr = __mvGetBackupHistory().slice(0, 15);
+    if(!arr.length){
+      box.innerHTML = `<div class="text-xs text-slate-500">Sin registros internos.</div>`;
+      return;
+    }
+    box.innerHTML = arr.map(function(entry){
+      var subtitle = escapeHtml(fmtDateTimeES(entry && entry.ts));
+      var onclickCode = `__mvConfirmDeleteInternalHistory('backup','','${encodeURIComponent(String(entry && entry.id || ""))}'); return false;`;
+      return __mvHistoryRowHTML(entry, subtitle, onclickCode);
+    }).join("");
+  }catch(_){}
+}
+try{ window.__renderBackupHistoryInternal = __renderBackupHistoryInternal; }catch(_){}
+
 function __renderLastManualBackupInfo(){
   try{
     const el = document.getElementById("toolsLastManualBackupLine");
@@ -4463,11 +4701,13 @@ document.addEventListener("DOMContentLoaded", function(){
   try{ __renderCurrentBackupLoadedInfo(); }catch(_){}  
   try{ __renderLastManualBackupInfo(); }catch(_){} 
   try{ __renderLastAutoBackupInfo(); }catch(_){} 
-  try{ __renderBackupFolderInfo(); }catch(_){}
-  try{ __renderAttachmentsFolderPathSetting(); }catch(_){}
-  try{ __renderCurrentScenarioLoadedInfo(); }catch(_){}
-  try{ __renderLastScenarioExportInfo(); }catch(_){}
-  try{ __renderWebBackupReminderSetting(); }catch(_){}
+  try{ __renderBackupFolderInfo(); }catch(_){} 
+  try{ __renderAttachmentsFolderPathSetting(); }catch(_){} 
+  try{ __renderCurrentScenarioLoadedInfo(); }catch(_){} 
+  try{ __renderLastScenarioExportInfo(); }catch(_){} 
+  try{ __renderBackupHistoryInternal(); }catch(_){} 
+  try{ __renderScenarioHistoryInternal(); }catch(_){} 
+  try{ __renderWebBackupReminderSetting(); }catch(_){} 
 }, { passive: true });
 
 window.addEventListener("mvBackupWriteResult", function(ev){
@@ -4614,12 +4854,23 @@ async function __importTripJsonBackup(file){
         name: backupName,
         build: String(parsed && parsed.sourceBuild || "")
       });
+      try{
+        __mvPushBackupHistory({
+          ts: importedTs,
+          savedAt: String(parsed && parsed.savedAt || ""),
+          name: backupName,
+          sourceBuild: String(parsed && parsed.sourceBuild || ""),
+          device: "",
+          sourceType: "manual-import"
+        });
+      }catch(_){}
     }catch(_){}
     try{ if(typeof loadState === "function") loadState(); else state = nextState; }catch(_){ state = nextState; }
     try{ if(typeof saveState === "function") saveState(); }catch(_){} 
     try{ if(typeof saveAppState === "function") saveAppState(); }catch(_){} 
     try{ if(typeof renderAll === "function") renderAll(); }catch(_){} 
     try{ if(typeof __renderCurrentBackupLoadedInfo === "function") __renderCurrentBackupLoadedInfo(); }catch(_){} 
+    try{ if(typeof __renderBackupHistoryInternal === "function") __renderBackupHistoryInternal(); }catch(_){}
     try{ __refreshToolsStatus(); }catch(_){}
     try{ toast(t("toast.backupImported")); }catch(_){} 
     return true;
@@ -18220,11 +18471,23 @@ function __mvScenarioImport(obj, destSlotLetter){
       build: String(obj.sourceBuild || "")
     });
   }catch(_){}
+  try{
+    __mvPushScenarioHistory(slot, {
+      ts: Number(Date.parse(String(obj.exportedAt || "")) || Date.now()),
+      savedAt: String(obj.exportedAt || ""),
+      name: String(obj.scenarioName || "").trim(),
+      sourceBuild: String(obj.sourceBuild || ""),
+      device: String(obj.deviceName || ""),
+      sourceType: "scenario-import",
+      slot: slot
+    });
+  }catch(_){}
   try{ __pushScenarioSnapshot(slot, obj, "scenario-import"); }catch(_){}
   try{ __clearScenarioDirty(slot); }catch(_){}
   saveState();
   renderAll();
-  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){}
+  try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){} 
+  try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
   try { syncStickyTotalsHeightVar(); } catch {}
   try { toast(`Simulación importada en ${slot}`); } catch {}
 }
@@ -18288,7 +18551,18 @@ async function __mvRunScenarioExportFlow(slotLetter){
       build: String(payload.sourceBuild || APP_BUILD)
     }));
   }catch(_){}
-  try{ __pushScenarioSnapshot(slot, payload, "scenario-export"); }catch(_){}
+  try{ __pushScenarioSnapshot(slot, payload, "scenario-export"); }catch(_){} 
+  try{
+    __mvPushScenarioHistory(slot, {
+      ts: Number(Date.parse(payload.exportedAt) || Date.now()),
+      savedAt: String(payload.exportedAt || ""),
+      name: String(payload.scenarioName || "").trim(),
+      sourceBuild: String(payload.sourceBuild || APP_BUILD),
+      device: String(payload.deviceName || ""),
+      sourceType: "scenario-export",
+      slot: slot
+    });
+  }catch(_){}
   try{
     __setCurrentLoadedScenarioMeta(slot, {
       referenceTs: Number(Date.parse(payload.exportedAt) || Date.now()),
@@ -18300,9 +18574,10 @@ async function __mvRunScenarioExportFlow(slotLetter){
       build: String(payload.sourceBuild || APP_BUILD)
     });
   }catch(_){}
-  try{ __clearScenarioDirty(slot); }catch(_){}
+  try{ __clearScenarioDirty(slot); }catch(_){} 
   try{ if(typeof __renderCurrentScenarioLoadedInfo === "function") __renderCurrentScenarioLoadedInfo(); }catch(_){} 
   try{ if(typeof __renderLastScenarioExportInfo === "function") __renderLastScenarioExportInfo(); }catch(_){} 
+  try{ if(typeof __renderScenarioHistoryInternal === "function") __renderScenarioHistoryInternal(); }catch(_){}
   try{
     const pretty = new Date(Date.parse(payload.exportedAt) || Date.now()).toLocaleString("es-ES", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:false });
     toast(payload.scenarioName ? `Guardada: ${payload.scenarioName} · Simulación ${slot} · ${pretty}` : `Guardada: Simulación ${slot} · ${pretty}`);
@@ -24631,6 +24906,15 @@ document.addEventListener("DOMContentLoaded", function(){
           </label>
           <div class="text-xs text-slate-500" id="toolsCurrentScenarioLoadedLine">Versión de simulación en uso: no disponible</div>
           <div class="text-xs text-slate-500" id="toolsLastScenarioExportLine">Última simulación guardada: no disponible</div>
+          <div class="accItem" id="toolsScenarioHistoryAcc">
+            <button class="accHead tap w-full" type="button" data-acc="toolsScenarioHistory" onclick="return __toggleToolsAdvancedSubAcc('toolsScenarioHistoryAcc','toolsScenarioHistory');">
+              <div class="accTitle">Histórico (memoria interna)</div>
+              <div class="accChevron">▾</div>
+            </button>
+            <div class="accBody hidden" data-acc-body="toolsScenarioHistory">
+              <div class="flex flex-col gap-2" id="toolsScenarioHistoryList"></div>
+            </div>
+          </div>
         `;
       }
 
@@ -24653,6 +24937,15 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnImportTripJson" type="button" data-i18n="tools.engines.import">Importar backup JSON</button>
               <div class="text-xs text-slate-500" id="toolsLastManualBackupLine">Último backup manual: no disponible</div>
               <div class="text-xs text-slate-500" id="toolsCurrentBackupLoadedLine">Versión de backup en uso: no disponible</div>
+              <div class="accItem" id="toolsBackupHistoryAcc">
+                <button class="accHead tap w-full" type="button" data-acc="toolsBackupHistory" onclick="return __toggleToolsAdvancedSubAcc('toolsBackupHistoryAcc','toolsBackupHistory');">
+                  <div class="accTitle">Histórico (memoria interna)</div>
+                  <div class="accChevron">▾</div>
+                </button>
+                <div class="accBody hidden" data-acc-body="toolsBackupHistory">
+                  <div class="flex flex-col gap-2" id="toolsBackupHistoryList"></div>
+                </div>
+              </div>
               <div class="text-xs text-slate-500 hidden" id="toolsLastAutoBackupLine">Último backup automático: no disponible</div>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold hidden" id="btnCreateAutoBackupNow" type="button" data-i18n="tools.engines.createAutoBackupNow">Crear backup automático ahora</button>
               <input id="inputImportTripJson" type="file" accept=".json,application/json" class="hidden" />
@@ -24874,6 +25167,8 @@ document.addEventListener("DOMContentLoaded", function(){
       try{ __renderBackupFolderInfo(); }catch(_){} 
       try{ __renderCurrentScenarioLoadedInfo(); }catch(_){} 
       try{ __renderLastScenarioExportInfo(); }catch(_){} 
+      try{ __renderBackupHistoryInternal(); }catch(_){} 
+      try{ __renderScenarioHistoryInternal(); }catch(_){} 
       try{ __renderICSExportPrefs(); }catch(_){} 
 
       [
