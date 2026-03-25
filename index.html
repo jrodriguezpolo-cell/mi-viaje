@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE</title>
+<title>V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -558,6 +558,42 @@ function confirmDeleteEvent(opts){
   z-index: 2501;
 }
 #fabPendingSave:active{ transform: scale(0.98); }
+
+#fabConflicts{
+  position: fixed;
+  right: 22px;
+  left: auto;
+  bottom: calc(var(--bottom-nav-h, 64px) + 84px);
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(185,28,28,.22);
+  font-size: 18px;
+  line-height: 40px;
+  font-weight: 900;
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(127,29,29,0.24);
+  z-index: 2501;
+}
+#fabConflicts:active{ transform: scale(0.98); }
+#fabConflicts{ position: fixed; }
+#fabConflictsBadge{
+  position:absolute;
+  top:-5px;
+  right:-5px;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:999px;
+  background: rgb(15 23 42);
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 4px 10px rgba(15,23,42,.2);
+}
 
 
 #fabAI{ position: fixed; } /* keep positioned ancestor for badge */
@@ -1650,7 +1686,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2054,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE";
+const APP_BUILD = "V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5792,6 +5828,7 @@ function updateFabForView(view){
   const fab = document.getElementById("fabAdd");
   const aiFab = document.getElementById("fabAI");
   const pendingFab = document.getElementById("fabPendingSave");
+  const conflictsFab = document.getElementById("fabConflicts");
   if (!fab) return;
 
   // V199: In timeline, FAB opens a type picker. Other views keep legacy behavior.
@@ -5801,11 +5838,18 @@ function updateFabForView(view){
   fab.classList.toggle("hidden", !show);
   if (aiFab) aiFab.classList.toggle("hidden", !show);
   if (pendingFab) pendingFab.classList.toggle("hidden", !show);
+  if (conflictsFab) conflictsFab.classList.toggle("hidden", !show);
 
   if (aiFab) {
     aiFab.onclick = (e) => {
       try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
       try{ openAISheet(view); }catch{}
+    };
+  }
+  if (conflictsFab) {
+    conflictsFab.onclick = (e) => {
+      try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
+      try{ openConflictsPanelModal(); }catch{}
     };
   }
 
@@ -5823,6 +5867,7 @@ function updateFabForView(view){
     if (!triggerAddForView(view)) alert("No se pudo añadir");
   };
   try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+  try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
 }
 
 function updatePendingSaveFabVisibility(){
@@ -5833,6 +5878,116 @@ function updatePendingSaveFabVisibility(){
     const activeSlot = String((state && state.scenario) || "A").trim().toUpperCase();
     const shouldShow = !plus.classList.contains("hidden") && __isScenarioDirty(activeSlot);
     fab.classList.toggle("hidden", !shouldShow);
+  }catch(_){}
+}
+
+function __mvBuildConflictEntriesForCurrentScenario(){
+  const entries = [];
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : null;
+    if(!sc) return entries;
+    const pushEntry = (kind, item, typeLabel, titleBuilder)=>{
+      try{
+        if(!item) return;
+        const interval = __mvTimelineItemInterval(kind, item);
+        if(!interval) return;
+        const snap = __mvTimedConflictSnapshot(kind, item);
+        if(!snap || !(snap.count > 0)) return;
+        entries.push({
+          key: `${kind}:${String(item.id || "")}`,
+          kind,
+          id: String(item.id || ""),
+          title: String(titleBuilder(item) || typeLabel).trim() || typeLabel,
+          typeLabel,
+          date: String(interval.date || "").trim(),
+          startMin: Number(interval.startMin || 0),
+          endMin: Number(interval.endMin || 0),
+          count: Number(snap.count || 0),
+          conflicts: Array.isArray(snap.conflicts) ? snap.conflicts : [],
+          recommendedHHMM: String(__mvRecommendedStartHHMMFromConflicts((snap && snap.conflicts) || [], 30) || "").trim()
+        });
+      }catch(_){}
+    };
+    (Array.isArray(sc.activities) ? sc.activities : []).forEach((it)=>pushEntry("act", it, "Actividad", (x)=>String(x?.title || x?.name || "Actividad")));
+    (Array.isArray(sc.legs) ? sc.legs : []).forEach((it)=>pushEntry("leg", it, "Transporte", (x)=>`${String(x?.from || "—").trim() || "—"} → ${String(x?.to || "—").trim() || "—"}`));
+    (Array.isArray(sc.stays) ? sc.stays : []).forEach((it)=>pushEntry("stay", it, "Alojamiento", (x)=>`${String(x?.city || "—").trim() || "—"} • ${String(x?.name || "Hotel").trim() || "Hotel"}`));
+    entries.sort((a,b)=>{
+      if(String(a.date || "") !== String(b.date || "")) return String(a.date || "").localeCompare(String(b.date || ""));
+      if(Number(a.startMin || 0) !== Number(b.startMin || 0)) return Number(a.startMin || 0) - Number(b.startMin || 0);
+      return String(a.key || "").localeCompare(String(b.key || ""));
+    });
+  }catch(_){}
+  return entries;
+}
+
+function updateConflictFabVisibility(){
+  try{
+    const fab = document.getElementById("fabConflicts");
+    const badge = document.getElementById("fabConflictsBadge");
+    const plus = document.getElementById("fabAdd");
+    if(!fab || !badge || !plus) return;
+    const entries = __mvBuildConflictEntriesForCurrentScenario();
+    const count = entries.length;
+    const shouldShow = !plus.classList.contains("hidden") && count > 0;
+    fab.classList.toggle("hidden", !shouldShow);
+    badge.classList.toggle("hidden", !(count > 0));
+    if(count > 0) badge.textContent = String(count);
+  }catch(_){}
+}
+
+function __mvGoToConflictEntry(entry){
+  try{ closeModal(); }catch(_){}
+  try{ if(typeof setView === "function") setView("timeline"); }catch(_){}
+  try{ timelineViewMode = "global"; }catch(_){}
+  try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      try{
+        const row = document.querySelector(`#timelineList .timelineItem[data-tl-jump-type="${CSS.escape(String(entry.kind || ""))}"][data-tl-jump-id="${CSS.escape(String(entry.id || ""))}"]`);
+        const key = row ? String(row.getAttribute("data-tl-key") || "") : "";
+        if(key && typeof __applyTimelinePersistentFoundHighlight === "function") __applyTimelinePersistentFoundHighlight(key);
+        if(row && typeof __scrollTimelineFoundItemToTopAnchor === "function") __scrollTimelineFoundItemToTopAnchor(row);
+        if(row && typeof __msFlashEl === "function") __msFlashEl(row);
+      }catch(_){}
+    });
+  });
+}
+
+function openConflictsPanelModal(){
+  try{
+    const entries = __mvBuildConflictEntriesForCurrentScenario();
+    const count = entries.length;
+    if(!(count > 0)){
+      try{ updateConflictFabVisibility(); }catch(_){}
+      return;
+    }
+    const body = `
+      <div class="space-y-3">
+        ${entries.map((entry, idx)=>`
+          <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+            <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
+            <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__fmtHHMM_fromMinutes(entry.startMin % 1440))}</div>
+            ${entry.recommendedHHMM ? `<div class="mt-2 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>Recomendado:</span><span class="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">${escapeHtml(entry.recommendedHHMM)}</span></div>` : ``}
+            <div class="mt-3 flex justify-end">
+              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-go="${idx}">Ir</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    const btnClose = document.createElement("button");
+    btnClose.type = "button";
+    btnClose.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
+    btnClose.textContent = "Cerrar";
+    showModal(`Conflictos (${count})`, body, [btnClose]);
+    btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
+    document.querySelectorAll("[data-conflict-go]").forEach((btn)=>{
+      btn.addEventListener("click", ()=>{
+        const idx = Number(btn.getAttribute("data-conflict-go") || -1);
+        const entry = Number.isInteger(idx) ? entries[idx] : null;
+        if(entry) __mvGoToConflictEntry(entry);
+      });
+    });
   }catch(_){}
 }
 
@@ -14017,6 +14172,7 @@ function renderAll() {
   applyReadOnlyMode();
   try{ if(typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); }catch{}
   try{ if(typeof updatePendingSaveFabVisibility==='function') updatePendingSaveFabVisibility(); }catch{}
+  try{ if(typeof updateConflictFabVisibility==='function') updateConflictFabVisibility(); }catch{}
 }
 
 function renderTabs() {
@@ -22300,6 +22456,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 <button aria-label="Añadir" class="hidden" id="fabAdd" title="Añadir">+</button>
 <button aria-label="Cambios pendientes" class="hidden tap" id="fabPendingSave" title="Cambios pendientes">⚠️</button>
+<button aria-label="Conflictos" class="hidden tap" id="fabConflicts" title="Conflictos">⚠️<span class="hidden" id="fabConflictsBadge"></span></button>
 <button aria-label="IA" class="hidden tap" id="fabAI" title="IA">✨<span class="hidden" id="aiFabBadge"></span></button>
 <div aria-hidden="true" class="hidden" id="aiSheetOverlay">
 <div aria-label="IA" aria-modal="true" id="aiSheet" role="dialog">
