@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO</title>
+  <title>V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO";
+const APP_BUILD = "V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5844,7 +5844,6 @@ function updateFabForView(view){
 
   fab.classList.toggle("hidden", !show);
   if (aiFab) aiFab.classList.toggle("hidden", !show);
-  if (pendingFab) pendingFab.classList.toggle("hidden", !show);
   if (conflictsFab) conflictsFab.classList.toggle("hidden", !show);
 
   if (aiFab) {
@@ -5875,6 +5874,9 @@ function updateFabForView(view){
       try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
       try{ openTimelineAddTypePicker(); }catch{}
     };
+    try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+    try{ if(typeof __updateTimelineNotesFabVisibility === "function") __updateTimelineNotesFabVisibility(); }catch(_){}
+    try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(_){}
     return;
   }
 
@@ -28538,7 +28540,7 @@ function __mvICS_BuildEventsFromState(){
   };
 })();
 
-window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } });
+window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} });
 
 const MV_WEBAPP_URL = "https://jrodriguezpolo-cell.github.io/mi-viaje/";
 
