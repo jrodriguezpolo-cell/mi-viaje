@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE</title>
+<title>V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE";
+const APP_BUILD = "V240_A51_RECOMMENDED_PILL_ENTERS_EDIT_MODE_AND_ENABLES_SAVE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -11273,6 +11273,27 @@ function setEventSheetMode(mode){
   __eventSheetCtx.mode = m;
   applyEventSheetMode();
 }
+window.__mvEnsureEventSheetEditMode = function(){
+  try{
+    const overlay = document.getElementById("eventSheetOverlay");
+    if(!overlay || overlay.classList.contains("hidden")) return false;
+    if(typeof getEventSheetMode === "function" && getEventSheetMode() === "edit") return true;
+    const editBtn = document.querySelector('#eventSheetHeader #eventSheetEdit, #eventSheetHeader button[title*="Editar"], #eventSheetHeader .esIconBtn[data-action="edit"]');
+    if(editBtn && typeof editBtn.click === "function"){
+      try{ editBtn.click(); }catch(_){}
+    }else if(typeof setEventSheetMode === "function"){
+      try{ setEventSheetMode("edit"); }catch(_){}
+    }
+    if(typeof getEventSheetMode === "function" && getEventSheetMode() !== "edit") return false;
+    try{
+      const saveBtn = document.getElementById("eventSheetSave");
+      if(saveBtn) saveBtn.disabled = false;
+    }catch(_){}
+    return true;
+  }catch(_){
+    return false;
+  }
+}
 
 // Capture-phase guards: block ONLY mutators in view, never block structural tools.
 function __ensureEventSheetViewGuards(){
@@ -12445,6 +12466,10 @@ qs("currency").value = v(actObj.currency || "EUR");
         try{ toast('No se pudo ajustar la hora'); }catch(_){}
         return false;
       }
+      if(window.__mvEnsureEventSheetEditMode && !window.__mvEnsureEventSheetEditMode()){
+        try{ toast('No se pudo activar la edición'); }catch(_){}
+        return false;
+      }
       const sheetBody = document.getElementById('eventSheetBody');
       const overlay = document.getElementById('eventSheetOverlay');
       let timeInput = null;
@@ -12471,6 +12496,10 @@ qs("currency").value = v(actObj.currency || "EUR");
           actObj.time = safeHHMM;
           try{ __renderSheetActInspector(); }catch(_){}
         }
+      }catch(_){}
+      try{
+        const saveBtn = document.getElementById('eventSheetSave');
+        if(saveBtn) saveBtn.disabled = false;
       }catch(_){}
       try{ timeInput.focus(); }catch(_){}
       return true;
