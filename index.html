@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY</title>
+  <title>V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY";
+const APP_BUILD = "V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6032,13 +6032,13 @@ function __mvOpenConflictSectionDetail(kind){
     const title = titleMap[kindKey] || "Conflictos";
     const body = `
       <div class="space-y-3">
-        ${entries.length ? entries.map((entry, idx)=>{ const c = (window.__mvConflictById && window.__mvConflictById[entry.key]) || null; let recSrc = "none"; let rec = c && (c.recommendedHHMM || c.recommended || c.recommendedStartHHMM || c.recommendedTime) || entry.recommendedHHMM || ""; if(rec){ recSrc = (c && (c.recommendedHHMM && "recommendedHHMM" || c.recommended && "recommended" || c.recommendedStartHHMM && "recommendedStartHHMM" || c.recommendedTime && "recommendedTime")) || "entry.recommendedHHMM"; } else if(c && Number.isFinite(Number(c.recommendedMin))){ rec = __mvFmtHHMM(Number(c.recommendedMin)); recSrc = "recommendedMin"; } else if(c && Number.isFinite(Number(c.recommendedStartMin))){ rec = __mvFmtHHMM(Number(c.recommendedStartMin)); recSrc = "recommendedStartMin"; } rec = String(rec || "").trim(); return `
+        ${entries.length ? entries.map((entry, idx)=>{ return `
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
-            <div class="mt-2 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>${rec ? `Recomendado: ${escapeHtml(rec)}` : `Recomendado: — <span class="text-slate-400">(Evento base)</span>`} ${recSrc ? `<span class="text-xs text-slate-400">(src: ${escapeHtml(recSrc)})</span>` : ``}</span>${rec ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-conflict-detail-pill="${idx}">${escapeHtml(rec)}</button>` : ``}</div>
+            <div class="mt-2 text-sm text-slate-600">La correccion usa el boton real de “Hora recomendada (minima)” dentro del editor.</div>
             <div class="mt-3 flex justify-end gap-2">
-              ${rec ? `<button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-conflict-detail-fix="${idx}">Corregir hora (${escapeHtml(rec)})</button>` : ``}
+              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-conflict-detail-fix="${idx}">Corregir hora</button>
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
             </div>
           </div>
@@ -6056,37 +6056,11 @@ function __mvOpenConflictSectionDetail(kind){
     showModal(`${title} (${entries.length})`, body, [btnBack, btnClose]);
     btnBack.onclick = ()=>{ try{ window.__mvOpenConflictsHubModal(); }catch(_){ try{ closeModal(); }catch(__){} } };
     btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-    document.querySelectorAll("[data-conflict-detail-pill]").forEach((btn)=>{
-      btn.addEventListener("click", ()=>{
-        const idx = Number(btn.getAttribute("data-conflict-detail-pill") || -1);
-        const entry = Number.isInteger(idx) ? entries[idx] : null;
-        const c = (window.__mvConflictById && entry && window.__mvConflictById[entry.key]) || null;
-        const hhmm = String((c && (c.recommendedHHMM || c.recommended || c.recommendedStartHHMM || c.recommendedTime)) || (c && Number.isFinite(Number(c.recommendedMin)) && __mvFmtHHMM(Number(c.recommendedMin))) || (c && Number.isFinite(Number(c.recommendedStartMin)) && __mvFmtHHMM(Number(c.recommendedStartMin))) || (entry && entry.recommendedHHMM) || "").trim();
-        if(!hhmm) return;
-        try{
-          const ok = (window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm));
-          if(ok){
-            try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){}
-          }else{
-            try{ toast("Abre el evento para aplicar la hora"); }catch(_){}
-          }
-        }catch(err){
-          try{
-            window.__mvDiag = window.__mvDiag || {};
-            window.__mvDiag.lastConflictFabError = String(err && err.message || err);
-            toast("Error aplicando hora recomendada");
-          }catch(_){}
-        }
-      });
-    });
     document.querySelectorAll("[data-conflict-detail-fix]").forEach((btn)=>{
       btn.addEventListener("click", ()=>{
         const idx = Number(btn.getAttribute("data-conflict-detail-fix") || -1);
         const entry = Number.isInteger(idx) ? entries[idx] : null;
         if(!entry) return;
-        const c = (window.__mvConflictById && window.__mvConflictById[entry.key]) || null;
-        const hhmm = String((c && (c.recommendedHHMM || c.recommended || c.recommendedStartHHMM || c.recommendedTime)) || (c && Number.isFinite(Number(c.recommendedMin)) && __mvFmtHHMM(Number(c.recommendedMin))) || (c && Number.isFinite(Number(c.recommendedStartMin)) && __mvFmtHHMM(Number(c.recommendedStartMin))) || entry.recommendedHHMM || "").trim();
-        if(!hhmm) return;
         try{
           closeModal();
         }catch(_){}
@@ -6099,15 +6073,33 @@ function __mvOpenConflictSectionDetail(kind){
             requestAnimationFrame(()=>{
               try{
                 if(window.__mvEnsureEventSheetEditMode) window.__mvEnsureEventSheetEditMode();
-                const ok = (window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm));
-                const timeInput = document.querySelector('#eventSheetBody input[data-sheet-act="time"], #eventSheetBody input[data-sheet-leg="time"], #eventSheetBody input[data-sheet-stay="time"], #eventSheetBody input[type="time"]');
-                if(timeInput){
-                  try{ timeInput.focus(); }catch(_){}
-                  try{ timeInput.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(_){}
-                }
-                if(ok){
-                  try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){}
-                }
+                setTimeout(()=>{
+                  try{
+                    const root = document.getElementById("eventSheetBody") || document;
+                    const btnRec =
+                      root.querySelector('[data-action="applyRecommended"]') ||
+                      root.querySelector('.mvRecPill') ||
+                      Array.from(root.querySelectorAll("button, .pill, span")).find((el)=>String(el && el.textContent || "").includes("Hora recomendada")) ||
+                      Array.from(root.querySelectorAll("button")).find((el)=>/^\d{2}:\d{2}$/.test(String(el && el.textContent || "").trim()));
+                    if(btnRec && typeof btnRec.click === "function"){
+                      btnRec.click();
+                      try{ toast("Hora recomendada aplicada"); }catch(_){}
+                    }else{
+                      try{ toast("No se encontro el boton de hora recomendada en el editor"); }catch(_){}
+                    }
+                    const timeInput = document.querySelector('#eventSheetBody input[data-sheet-act="time"], #eventSheetBody input[data-sheet-leg="time"], #eventSheetBody input[data-sheet-stay="time"], #eventSheetBody input[type="time"]');
+                    if(timeInput){
+                      try{ timeInput.focus(); }catch(_){}
+                      try{ timeInput.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(_){}
+                    }
+                  }catch(err2){
+                    try{
+                      window.__mvDiag = window.__mvDiag || {};
+                      window.__mvDiag.lastConflictFabError = String(err2 && err2.message || err2);
+                      toast("No se encontro el boton de hora recomendada en el editor");
+                    }catch(_){}
+                  }
+                }, 80);
               }catch(_){}
             });
           });
