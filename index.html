@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES</title>
+<title>V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES";
+const APP_BUILD = "V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12419,6 +12419,7 @@ qs("currency").value = v(actObj.currency || "EUR");
         }catch{}
       });
     }catch{}
+    try{ out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts); }catch(_){}
     return out;
   };
 
@@ -12434,13 +12435,15 @@ qs("currency").value = v(actObj.currency || "EUR");
     if(!host) return;
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
+    const recommendedHHMM = String(data.recommendedStartHHMM || "").trim();
     const conflictHtml = data.conflicts.length
-      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}]</span></li>`).join('')}</ul>`
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}] · Recomendado: ≥ ${escapeHtml(__mvRecommendedStartHHMMFromConflicts([c]) || '—')}</span></li>`).join('')}</ul>`
       : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
     host.innerHTML = `
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
       <div><span class="font-medium text-slate-800">Fin calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.end))}</div>
       <div><span class="font-medium text-slate-800">Eventos comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
+      ${recommendedHHMM ? `<div><span class="font-medium text-slate-800">Hora recomendada (mínima):</span> ${escapeHtml(recommendedHHMM)}</div>` : ``}
       ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
       <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
     `;
@@ -13332,6 +13335,24 @@ function __mvMergeConflictMaps(targetMap, sourceMap){
     });
   }catch(_){}
   return targetMap;
+}
+function __mvRecommendedStartHHMMFromConflicts(conflicts){
+  try{
+    const list = Array.isArray(conflicts) ? conflicts : [];
+    let best = null;
+    list.forEach((c)=>{
+      try{
+        const end = (c && c.end instanceof Date && !Number.isNaN(c.end.getTime())) ? c.end : null;
+        if(!end) return;
+        const candidate = end.getHours()*60 + end.getMinutes() + __MV_TIMELINE_CONFLICT_BUFFER_MIN;
+        if(best == null || candidate > best) best = candidate;
+      }catch(_){}
+    });
+    if(best == null) return "";
+    return (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(best % 1440) : "";
+  }catch(_){
+    return "";
+  }
 }
 function __getEventDurationMin(item, kind){
   try{
@@ -22093,12 +22114,14 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
         if(conflicts.length > 0){
+          const recommendedHHMM = String((data && data.recommendedStartHHMM) || __mvRecommendedStartHHMMFromConflicts(conflicts) || "").trim();
           const body = `
             <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'} considerando desplazamiento (+30 min).</div>
             <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
               <div class="font-semibold text-slate-900">Eventos conflictivos</div>
               <ul class="mt-2 space-y-1">${conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(__mvFmtHHMM(c.start))} → ${escapeHtml(__mvFmtHHMM(c.end))}]</span></li>`).join('')}</ul>
             </div>
+            ${recommendedHHMM ? `<div class="mt-3 text-sm text-slate-700">Hora recomendada para empezar: <span class="font-semibold">${escapeHtml(recommendedHHMM)}</span></div>` : ``}
             <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
           `;
           const btnCancel = document.createElement('button');
@@ -22661,6 +22684,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
             }catch{}
           });
         }catch{}
+        try{ out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts); }catch(_){}
         return out;
       },
       __insertActivities(sc, acts){
