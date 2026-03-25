@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A49_RECOMMENDED_PILL_UPDATES_MODEL_SO_SAVE_WORKS</title>
+<title>V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A49_RECOMMENDED_PILL_UPDATES_MODEL_SO_SAVE_WORKS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A49_RECOMMENDED_PILL_UPDATES_MODEL_SO_SAVE_WORKS";
+const APP_BUILD = "V240_A50_SAVE_BUTTON_ALWAYS_CLOSES_SHEET_AND_RETURN_TIMELINE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -22160,6 +22160,7 @@ window.addEventListener('DOMContentLoaded', () => {
         try{ __sheetSetSnapshot(); }catch{}
 
         try { if (typeof closeEventSheet === "function") closeEventSheet(); } catch {}
+        try { if (typeof setView === "function") setView("timeline"); } catch {}
 
         try {
           if (__eventSheetCtx && __eventSheetCtx.kind === "leg") {
@@ -22180,6 +22181,7 @@ window.addEventListener('DOMContentLoaded', () => {
         } catch {}
         try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
         try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
+        try{ if(typeof toast==="function") toast("Guardado"); }catch{}
 
         try {
           const fb = document.getElementById("eventSheetSaveFeedback");
