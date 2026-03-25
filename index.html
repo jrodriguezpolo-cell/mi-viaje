@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A70_CONFLICT_JUMP_TO_EVENTS_IN_TIMELINE</title>
+  <title>V240_A67_CONFLICT_JUMP_TO_EVENTS_NOT_TODAY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A70_CONFLICT_JUMP_TO_EVENTS_IN_TIMELINE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A67_CONFLICT_JUMP_TO_EVENTS_NOT_TODAY</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A70_CONFLICT_JUMP_TO_EVENTS_IN_TIMELINE";
+const APP_BUILD = "V240_A67_CONFLICT_JUMP_TO_EVENTS_NOT_TODAY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6093,9 +6093,10 @@ function __mvJumpToTimelineConflict(conflictEventIds){
       return Number(a.startMin || 9999) - Number(b.startMin || 9999);
     });
     const first = wanted[0] || null;
+    const targetDate = String(first && first.date || '').trim();
     try{ if(typeof setView === "function") setView("timeline"); }catch(_){}
-    try{ timelineViewMode = "global"; }catch(_){}
-    try{ if(first && first.date) activeDayISO = String(first.date || ''); }catch(_){}
+    try{ timelineViewMode = targetDate ? "day" : "global"; }catch(_){}
+    try{ if(targetDate) activeDayISO = targetDate; }catch(_){}
     try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
