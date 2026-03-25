@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A37_TRAVEL_BUFFER_CONFLICTS_FIX</title>
+<title>V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A37_TRAVEL_BUFFER_CONFLICTS_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A37_TRAVEL_BUFFER_CONFLICTS_FIX";
+const APP_BUILD = "V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13237,6 +13237,34 @@ function __mvConflictWithTravelBuffer(aStart, aEnd, bStart, bEnd, bufferMin){
     return false;
   }
 }
+function __mvResetConflictFlags(sc){
+  try{
+    const resetOne = (item)=>{
+      try{
+        if(!item || typeof item !== "object") return;
+        item.hasConflict = false;
+        item.conflictCount = 0;
+        item.conflictWith = [];
+        delete item.hasConflictNext;
+        delete item.hasConflictPrev;
+        delete item.conflictNextStart;
+        delete item.conflictPrevEnd;
+        delete item.__mvHasConflictNext;
+        delete item.__mvHasConflictPrev;
+        delete item.__mvConflictNextStart;
+        delete item.__mvConflictPrevStart;
+        delete item.__mvConflictGapMin;
+        delete item.__mvConflictCount;
+        delete item.__mvConflictWith;
+      }catch(_){}
+    };
+    const scope = sc || ((typeof curScenario === "function") ? curScenario() : null);
+    if(!scope) return;
+    (Array.isArray(scope.activities) ? scope.activities : []).forEach(resetOne);
+    (Array.isArray(scope.legs) ? scope.legs : []).forEach(resetOne);
+    (Array.isArray(scope.stays) ? scope.stays : []).forEach(resetOne);
+  }catch(_){}
+}
 function __getEventDurationMin(item, kind){
   try{
     const k = String(kind || '').trim();
@@ -13344,6 +13372,7 @@ function __mvTimedConflictSnapshot(kind, item){
     const ownId = String(item.id || '');
     const sc = (typeof curScenario === 'function') ? curScenario() : null;
     if(!sc) return out;
+    __mvResetConflictFlags(sc);
     const compareOne = (type, typeLabel, otherItem)=>{
       try{
         if(!otherItem) return;
@@ -17042,6 +17071,7 @@ function renderTimeline() {
   const today = todayYMD();
   const box = $("timelineList");
   const sc = curScenario();
+  try{ __mvResetConflictFlags(sc); }catch(_){}
   const ro = (localStorage.getItem("miviaje.readonly") === "1");
   const actById = new Map((sc.activities || []).map(a => [String(a.id), a]));
   const legById = new Map((sc.legs || []).map(l => [String(l.id), l]));
