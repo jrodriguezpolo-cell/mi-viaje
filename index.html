@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A43_CONFLICT_MODAL_APPLY_RECOMMENDED_TIME</title>
+<title>V240_A44_RECOMMENDED_TIME_AS_PILL_BUTTON_NO_THIRD_FOOTER_BTN</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A43_CONFLICT_MODAL_APPLY_RECOMMENDED_TIME</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A44_RECOMMENDED_TIME_AS_PILL_BUTTON_NO_THIRD_FOOTER_BTN</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A43_CONFLICT_MODAL_APPLY_RECOMMENDED_TIME";
+const APP_BUILD = "V240_A44_RECOMMENDED_TIME_AS_PILL_BUTTON_NO_THIRD_FOOTER_BTN";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12434,6 +12434,21 @@ qs("currency").value = v(actObj.currency || "EUR");
     };
   }catch{}
 
+  const __applyRecommendedTimeToActiveActSheet = (hhmm)=>{
+    try{
+      const safeHHMM = String(hhmm || '').trim();
+      if(!/^\d{2}:\d{2}$/.test(safeHHMM)) return false;
+      const actTimeInput = document.querySelector('#eventSheetBody [data-sheet-act="time"]');
+      if(!actTimeInput || typeof actTimeInput.value === 'undefined') return false;
+      actTimeInput.value = safeHHMM;
+      try{ actTimeInput.dispatchEvent(new Event('input', { bubbles:true })); }catch(_){}
+      try{ actTimeInput.dispatchEvent(new Event('change', { bubbles:true })); }catch(_){}
+      return true;
+    }catch(_){
+      return false;
+    }
+  };
+
   const __renderSheetActInspector = ()=>{
     const host = __sheetActInspector.querySelector('[data-act-overlap-inspector-body]');
     if(!host) return;
@@ -12447,10 +12462,18 @@ qs("currency").value = v(actObj.currency || "EUR");
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
       <div><span class="font-medium text-slate-800">Fin calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.end))}</div>
       <div><span class="font-medium text-slate-800">Eventos comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
-      ${recommendedHHMM ? `<div><span class="font-medium text-slate-800">Hora recomendada (mínima):</span> ${escapeHtml(recommendedHHMM)}</div>` : ``}
+      ${recommendedHHMM ? `<div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-slate-800">Hora recomendada (mínima):</span><button type="button" data-act-recommended-pill="${escapeHtml(recommendedHHMM)}" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
       ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
       <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
     `;
+    try{
+      const pill = host.querySelector('[data-act-recommended-pill]');
+      if(pill){
+        pill.onclick = ()=>{
+          try{ __applyRecommendedTimeToActiveActSheet(String(pill.getAttribute('data-act-recommended-pill') || '')); }catch(_){}
+        };
+      }
+    }catch(_){}
   };
 
   bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} __renderSheetActInspector(); });
@@ -22155,7 +22178,7 @@ window.addEventListener('DOMContentLoaded', () => {
               <div class="font-semibold text-slate-900">Eventos conflictivos</div>
               <ul class="mt-2 space-y-1">${conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(String(c.title || 'Evento'))}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(String(c.id || ''))} · ${escapeHtml(__mvFmtHHMM(c.start))} → ${escapeHtml(__mvFmtHHMM(c.end))}]</span></li>`).join('')}</ul>
             </div>
-            ${recommendedHHMM ? `<div class="mt-3 text-sm text-slate-700">Hora recomendada para empezar: <span class="font-semibold">${escapeHtml(recommendedHHMM)}</span></div><div class="mt-1 text-sm text-slate-600">Recomendado: empezar a las ${escapeHtml(recommendedHHMM)}</div>` : ``}
+            ${recommendedHHMM ? `<div class="mt-3 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>Recomendado empezar a:</span><button type="button" data-conflict-recommended-pill="${escapeHtml(recommendedHHMM)}" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
             <div class="mt-3 text-sm text-slate-600">Puedes cancelar para volver a editar o guardar de todas formas.</div>
           `;
           const btnCancel = document.createElement('button');
@@ -22163,23 +22186,6 @@ window.addEventListener('DOMContentLoaded', () => {
           btnCancel.type = 'button';
           btnCancel.textContent = 'Cancelar';
           btnCancel.onclick = ()=>{ try{ closeModal(); }catch{} };
-          const btnAdjust = recommendedHHMM ? document.createElement('button') : null;
-          if(btnAdjust){
-            btnAdjust.className = 'tap h-10 px-4 rounded-2xl border border-amber-300 bg-amber-50 text-amber-800 font-semibold';
-            btnAdjust.type = 'button';
-            btnAdjust.textContent = `Ajustar a ${recommendedHHMM}`;
-            btnAdjust.onclick = ()=>{
-              try{
-                const actTimeInput = document.querySelector('#eventSheetBody [data-sheet-act="time"]');
-                if(actTimeInput && typeof actTimeInput.value !== 'undefined'){
-                  actTimeInput.value = recommendedHHMM;
-                  try{ actTimeInput.dispatchEvent(new Event('input', { bubbles:true })); }catch(_){}
-                  try{ actTimeInput.dispatchEvent(new Event('change', { bubbles:true })); }catch(_){}
-                }
-              }catch(_){}
-              try{ closeModal(); }catch{}
-            };
-          }
           const btnForceSave = document.createElement('button');
           btnForceSave.className = 'tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold';
           btnForceSave.type = 'button';
@@ -22188,7 +22194,16 @@ window.addEventListener('DOMContentLoaded', () => {
             try{ closeModal(); }catch{}
             __mvCommitEventSheetSaveWithActivityCheck();
           };
-          try{ showModal('Conflicto horario detectado', body, btnAdjust ? [btnCancel, btnAdjust, btnForceSave] : [btnCancel, btnForceSave]); }catch{}
+          try{
+            showModal('Conflicto horario detectado', body, [btnCancel, btnForceSave]);
+            const pill = document.querySelector('[data-conflict-recommended-pill]');
+            if(pill){
+              pill.onclick = ()=>{
+                try{ __applyRecommendedTimeToActiveActSheet(String(pill.getAttribute('data-conflict-recommended-pill') || '')); }catch(_){}
+                try{ closeModal(); }catch{}
+              };
+            }
+          }catch{}
           return;
         }
       }catch{}
