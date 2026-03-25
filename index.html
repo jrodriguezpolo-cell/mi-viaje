@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE</title>
+<title>V240_A58_FABS_GLOBAL_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1682,7 +1682,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A58_FABS_GLOBAL_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2050,7 +2050,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE";
+const APP_BUILD = "V240_A58_FABS_GLOBAL_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5766,6 +5766,7 @@ function setView(viewName){
 
   // Fixed subsection title under Totales (and under timeline controls in timeline)
   updateSubSectionHeader(viewName);
+  try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch{}
 
   // Ensure required accordions are open (keep listeners intact) + render view content
   if (viewName === "timeline") {
@@ -5871,6 +5872,40 @@ function updateFabForView(view){
   };
   try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
   try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
+  try{ if(typeof __updateTimelineNotesFabVisibility === "function") __updateTimelineNotesFabVisibility(); }catch(_){}
+  try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(_){}
+}
+
+function __mvUpdateGlobalFabs(){
+  try{
+    const aiFab = document.getElementById("fabAI");
+    const notesFab = document.getElementById("timelineNotesFab");
+    const pendingFab = document.getElementById("fabPendingSave");
+    const conflictsFab = document.getElementById("fabConflicts");
+    const auxBase = "calc(var(--bottom-nav-h, 64px) + 16px + 56px + 12px)";
+    if(aiFab){
+      aiFab.style.right = "14px";
+      aiFab.style.bottom = "calc(var(--bottom-nav-h, 64px) + 16px)";
+      aiFab.style.zIndex = "2500";
+    }
+    if(notesFab){
+      notesFab.style.right = "16px";
+      notesFab.style.bottom = auxBase;
+      notesFab.style.zIndex = "2502";
+      notesFab.classList.remove("hidden");
+    }
+    if(conflictsFab){
+      conflictsFab.style.right = "22px";
+      conflictsFab.style.bottom = `calc(${auxBase} + 52px + 10px)`;
+      conflictsFab.style.zIndex = "2503";
+    }
+    if(pendingFab){
+      pendingFab.style.left = "22px";
+      pendingFab.style.right = "auto";
+      pendingFab.style.bottom = auxBase;
+      pendingFab.style.zIndex = "2503";
+    }
+  }catch(_){}
 }
 
 function updatePendingSaveFabVisibility(){
@@ -5880,6 +5915,7 @@ function updatePendingSaveFabVisibility(){
     const activeSlot = String((state && state.scenario) || "A").trim().toUpperCase();
     const shouldShow = __isScenarioDirty(activeSlot);
     fab.classList.toggle("hidden", !shouldShow);
+    try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(__){}
   }catch(_){}
 }
 
@@ -5933,6 +5969,7 @@ function updateConflictFabVisibility(){
     fab.classList.toggle("hidden", !shouldShow);
     badge.classList.toggle("hidden", !(count > 0));
     if(count > 0) badge.textContent = String(count);
+    try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(__){}
   }catch(_){}
 }
 
@@ -13233,6 +13270,7 @@ function __updateTimelineNotesFabVisibility(){
     if(!fab) return;
     fab.classList.remove("hidden");
     __updateTimelineNotesBadge();
+    try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(__){}
   }catch{}
 }
 
@@ -21282,6 +21320,24 @@ try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveF
       __mvHandleConflictsFabClick(e);
     }, true);
   }
+})();
+
+// V240_A58: delegated fallback for notes FAB so it works from any view/repaint timing.
+(function(){
+  if(window.__mvNotesFabDelegated) return;
+  window.__mvNotesFabDelegated = true;
+  document.addEventListener("click", function(e){
+    const btn = e && e.target && e.target.closest ? e.target.closest("#timelineNotesFab") : null;
+    if(!btn) return;
+    try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+    try{
+      if(typeof openDailyNoteModal === "function"){
+        openDailyNoteModal(__getActiveDailyNoteKey());
+      }else if(typeof __openTimelineNotesModal === "function"){
+        __openTimelineNotesModal();
+      }
+    }catch(_){}
+  }, true);
 })();
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
