@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX</title>
+<title>V240_A42_CONFLICTS_RECOMMENDED_TIME_WIRED_REAL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A42_CONFLICTS_RECOMMENDED_TIME_WIRED_REAL</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX";
+const APP_BUILD = "V240_A42_CONFLICTS_RECOMMENDED_TIME_WIRED_REAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12439,9 +12439,9 @@ qs("currency").value = v(actObj.currency || "EUR");
     if(!host) return;
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
-    const recommendedHHMM = String(data.recommendedStartHHMM || "").trim();
+    const recommendedHHMM = String(data.recommendedStartHHMM || __mvRecommendedStartHHMMFromConflicts(data.conflicts, 30) || "").trim();
     const conflictHtml = data.conflicts.length
-      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>`<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}] · Recomendado: ≥ ${escapeHtml(__mvRecommendedStartHHMMFromConflicts([c]) || '—')}</span></li>`).join('')}</ul>`
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>{ const recLine = String(__mvRecommendedStartHHMMFromConflicts([c], 30) || '').trim(); return `<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) [#${escapeHtml(c.id)} · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}]${recLine ? ` · Recomendado: ≥ ${escapeHtml(recLine)}` : ``}</span></li>`; }).join('')}</ul>`
       : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
     host.innerHTML = `
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
@@ -13227,8 +13227,22 @@ function __initEventSheetBindings(){
 
 function __mvFmtHHMM(dt){
   try{
-    if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return '—';
-    return String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+    if(dt instanceof Date && !Number.isNaN(dt.getTime())){
+      return String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+    }
+    if(Number.isFinite(Number(dt))){
+      const min = Math.max(0, Math.floor(Number(dt) || 0));
+      const hh = Math.floor((min % 1440) / 60);
+      const mm = min % 60;
+      return String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+    }
+    const s = String(dt || '').trim();
+    if(/^\d{1,2}:\d{2}$/.test(s)) return s.padStart(5,'0');
+    if(s && typeof timeToMinutes === 'function'){
+      const min = timeToMinutes(s);
+      if(Number.isFinite(min)) return __mvFmtHHMM(min);
+    }
+    return '—';
   }catch{ return '—'; }
 }
 const __MV_TIMELINE_CONFLICT_BUFFER_MIN = 30;
@@ -13340,18 +13354,23 @@ function __mvMergeConflictMaps(targetMap, sourceMap){
   }catch(_){}
   return targetMap;
 }
-function __mvRecommendedStartHHMMFromConflicts(conflicts){
+function __mvRecommendedStartHHMMFromConflicts(conflicts, bufferMin=30){
   try{
     const list = Array.isArray(conflicts) ? conflicts : [];
     let best = null;
     list.forEach((c)=>{
       try{
         let endMin = NaN;
-        const end = (c && c.end instanceof Date && !Number.isNaN(c.end.getTime())) ? c.end : null;
+        const rawEnd = c ? c.end : null;
+        const end = (rawEnd instanceof Date && !Number.isNaN(rawEnd.getTime())) ? rawEnd : null;
         if(end){
           endMin = end.getHours()*60 + end.getMinutes();
         }else if(c && Number.isFinite(Number(c.endMin))){
           endMin = Number(c.endMin);
+        }else if(typeof rawEnd === "number" && Number.isFinite(rawEnd)){
+          endMin = rawEnd;
+        }else if(typeof rawEnd === "string" && String(rawEnd).trim()){
+          endMin = (typeof timeToMinutes === "function") ? timeToMinutes(String(rawEnd).trim()) : NaN;
         }else{
           const endHHMM = String((c && c.endHHMM) || "").trim();
           if(endHHMM){
@@ -13359,14 +13378,14 @@ function __mvRecommendedStartHHMMFromConflicts(conflicts){
           }
         }
         if(!Number.isFinite(endMin)) return;
-        const candidate = endMin + __MV_TIMELINE_CONFLICT_BUFFER_MIN;
+        const candidate = endMin + Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
         if(best == null || candidate > best) best = candidate;
       }catch(_){}
     });
-    if(best == null) return "";
-    return (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(best % 1440) : "";
+    if(best == null) return null;
+    return __mvFmtHHMM(best % 1440);
   }catch(_){
-    return "";
+    return null;
   }
 }
 function __getEventDurationMin(item, kind){
@@ -22129,7 +22148,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
         if(conflicts.length > 0){
-          const recommendedHHMM = String((data && data.recommendedStartHHMM) || __mvRecommendedStartHHMMFromConflicts(conflicts) || "").trim();
+          const recommendedHHMM = String((data && data.recommendedStartHHMM) || __mvRecommendedStartHHMMFromConflicts(conflicts, 30) || "").trim();
           const body = `
             <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'} considerando desplazamiento (+30 min).</div>
             <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
