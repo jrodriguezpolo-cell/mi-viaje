@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME</title>
+  <title>V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME";
+const APP_BUILD = "V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12756,16 +12756,14 @@ qs("currency").value = v(actObj.currency || "EUR");
   const __sheetActExistingLegInterval = (item)=>{
     try{
       if(!item) return null;
-      const depDate = String(item.date || '').trim();
-      const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
-      const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
-      const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
-      if(!depDate || !depTime || !arrDate || !arrTime) return null;
-      const start = new Date(`${depDate}T${depTime}:00`);
-      const end = new Date(`${arrDate}T${arrTime}:00`);
-      if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-      if(!(start < end)) return null;
-      return { start, end, item, type:'leg', typeLabel:'Transporte' };
+      const windows = __mvLegConflictWindows(item);
+      return windows.map((win)=>({
+        start: new Date(`${win.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, win.startMin) % 1440) : '00:00')}:00`),
+        end: new Date(`${win.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, win.endMin) % 1440) : '00:00')}:00`),
+        item,
+        type:'leg',
+        typeLabel:'Transporte'
+      })).filter((w)=>w.start instanceof Date && w.end instanceof Date && !Number.isNaN(w.start.getTime()) && !Number.isNaN(w.end.getTime()) && (w.start < w.end));
     }catch{ return null; }
   };
 
@@ -12809,31 +12807,33 @@ qs("currency").value = v(actObj.currency || "EUR");
       legs.forEach((item)=>{
         try{
           if(!item) return;
-          const interval = __sheetActExistingLegInterval(item);
-          if(!interval) return;
+          const intervals = __sheetActExistingLegInterval(item);
+          if(!Array.isArray(intervals) || !intervals.length) return;
           const title = `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`;
-          out.compared.push({
-            type: 'leg',
-            typeLabel: 'Transporte',
-            id: String(item.id || ''),
-            title,
-            start: interval.start,
-            end: interval.end
-          });
-          const overlap = draft.ok && (draft.start < interval.end) && (interval.start < draft.end);
-          if(draft.ok && __mvConflictWithTravelBuffer(draft.start, draft.end, interval.start, interval.end, __MV_TIMELINE_CONFLICT_BUFFER_MIN)){
-            out.conflicts.push({
+          intervals.forEach((interval)=>{
+            out.compared.push({
               type: 'leg',
               typeLabel: 'Transporte',
               id: String(item.id || ''),
               title,
               start: interval.start,
-              end: interval.end,
-              endMin: interval.end.getHours()*60 + interval.end.getMinutes(),
-              endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(interval.end) : '',
-              reason: overlap ? 'overlap' : 'buffer'
+              end: interval.end
             });
-          }
+            const overlap = draft.ok && (draft.start < interval.end) && (interval.start < draft.end);
+            if(draft.ok && overlap){
+              out.conflicts.push({
+                type: 'leg',
+                typeLabel: 'Transporte',
+                id: String(item.id || ''),
+                title,
+                start: interval.start,
+                end: interval.end,
+                endMin: interval.end.getHours()*60 + interval.end.getMinutes(),
+                endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(interval.end) : '',
+                reason: 'overlap'
+              });
+            }
+          });
         }catch{}
       });
     }catch{}
@@ -13708,6 +13708,8 @@ function __mvFmtHHMM(dt){
   }catch{ return '—'; }
 }
 const __MV_TIMELINE_CONFLICT_BUFFER_MIN = 30;
+const __MV_TRANSPORT_PRE_BUFFER_MIN = 90;
+const __MV_TRANSPORT_POST_BUFFER_MIN = 90;
 function __mvConflictWithTravelBuffer(aStart, aEnd, bStart, bEnd, bufferMin){
   try{
     const extra = Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
@@ -13719,6 +13721,35 @@ function __mvConflictWithTravelBuffer(aStart, aEnd, bStart, bEnd, bufferMin){
   }catch{
     return false;
   }
+}
+function __mvLegConflictWindows(item){
+  const windows = [];
+  try{
+    if(!item) return windows;
+    const depDate = String(item.date || '').trim();
+    const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
+    const depMin = (typeof timeToMinutes === 'function') ? timeToMinutes(depTime) : NaN;
+    if(depDate && depTime && Number.isFinite(depMin)){
+      windows.push({
+        date: depDate,
+        startMin: Math.max(0, depMin - __MV_TRANSPORT_PRE_BUFFER_MIN),
+        endMin: depMin,
+        phase: 'pre'
+      });
+    }
+    const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+    const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+    const arrMin = (typeof timeToMinutes === 'function') ? timeToMinutes(arrTime) : NaN;
+    if(arrDate && arrTime && Number.isFinite(arrMin)){
+      windows.push({
+        date: arrDate,
+        startMin: arrMin,
+        endMin: Math.min(1440, arrMin + __MV_TRANSPORT_POST_BUFFER_MIN),
+        phase: 'post'
+      });
+    }
+  }catch(_){}
+  return windows;
 }
 function __mvResetConflictFlags(sc){
   try{
@@ -13985,8 +14016,10 @@ function __mvTimedConflictSnapshot(kind, item){
   try{
     const k = String(kind||'');
     if(!item || (k!=='act' && k!=='leg' && k!=='stay')) return out;
-    const own = __mvTimelineItemInterval(k, item);
-    if(!own) return out;
+    const ownWindows = (k === 'leg')
+      ? __mvLegConflictWindows(item)
+      : [__mvTimelineItemInterval(k, item)].filter(Boolean);
+    if(!ownWindows.length) return out;
     const ownId = String(item.id || '');
     const sc = (typeof curScenario === 'function') ? curScenario() : null;
     if(!sc) return out;
@@ -13995,27 +14028,39 @@ function __mvTimedConflictSnapshot(kind, item){
       try{
         if(!otherItem) return;
         if(type===k && String(otherItem.id || '') === ownId) return;
-        const other = __mvTimelineItemInterval(type, otherItem);
-        if(!other) return;
-        if(String(other.date || '') !== String(own.date || '')) return;
-        const ownStart = new Date(`${own.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(own.startMin % 1440) : '00:00')}:00`);
-        const ownEnd = new Date(`${own.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes((Math.max(own.startMin, own.endMin)) % 1440) : '00:00')}:00`);
-        const otherStart = new Date(`${other.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(other.startMin % 1440) : '00:00')}:00`);
-        const otherEnd = new Date(`${other.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes((Math.max(other.startMin, other.endMin)) % 1440) : '00:00')}:00`);
-        const overlap = (ownStart < otherEnd) && (otherStart < ownEnd);
-        const conflict = __mvConflictWithTravelBuffer(ownStart, ownEnd, otherStart, otherEnd, __MV_TIMELINE_CONFLICT_BUFFER_MIN);
-        if(!conflict) return;
-        out.conflicts.push({
-          type,
-          typeLabel,
-          id:String(otherItem.id || ''),
-          title:__mvConflictTitle(type, otherItem),
-          start: otherStart,
-          end: otherEnd,
-          startHHMM: (typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(other.startMin % 1440) : '',
-          reason: overlap ? 'overlap' : 'buffer',
-          gapMin: other.startMin - own.endMin
-        });
+        const otherWindows = (type === 'leg')
+          ? __mvLegConflictWindows(otherItem)
+          : [__mvTimelineItemInterval(type, otherItem)].filter(Boolean);
+        if(!otherWindows.length) return;
+        let matched = false;
+        for(const own of ownWindows){
+          if(matched) break;
+          for(const other of otherWindows){
+            if(String(other.date || '') !== String(own.date || '')) continue;
+            const ownStart = new Date(`${own.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, own.startMin) % 1440) : '00:00')}:00`);
+            const ownEnd = new Date(`${own.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, own.endMin) % 1440) : '00:00')}:00`);
+            const otherStart = new Date(`${other.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, other.startMin) % 1440) : '00:00')}:00`);
+            const otherEnd = new Date(`${other.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, other.endMin) % 1440) : '00:00')}:00`);
+            const overlap = (ownStart < otherEnd) && (otherStart < ownEnd);
+            const conflict = (k === 'leg' || type === 'leg')
+              ? overlap
+              : __mvConflictWithTravelBuffer(ownStart, ownEnd, otherStart, otherEnd, __MV_TIMELINE_CONFLICT_BUFFER_MIN);
+            if(!conflict) continue;
+            out.conflicts.push({
+              type,
+              typeLabel,
+              id:String(otherItem.id || ''),
+              title:__mvConflictTitle(type, otherItem),
+              start: otherStart,
+              end: otherEnd,
+              startHHMM: (typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, other.startMin) % 1440) : '',
+              reason: 'overlap',
+              gapMin: other.startMin - own.endMin
+            });
+            matched = true;
+            break;
+          }
+        }
       }catch{}
     };
     (Array.isArray(sc.activities) ? sc.activities : []).forEach((otherItem)=>compareOne('act','Actividad',otherItem));
@@ -17877,7 +17922,10 @@ function renderTimeline() {
           pushDayItem(dayKey, { key:`act:${String(it.actId)}`, startMin, endMin:startMin + __getEventDurationMin(act, 'act') });
         }else if(it?.legId != null){
           const leg = legById.get(String(it.legId));
-          pushDayItem(dayKey, { key:`leg:${String(it.legId)}`, startMin, endMin:startMin + __getEventDurationMin(leg, 'leg') });
+          const windows = __mvLegConflictWindows(leg);
+          if(windows.length){
+            windows.forEach((win)=>pushDayItem(String(win.date || '').trim().slice(0,10), { key:`leg:${String(it.legId)}`, startMin:win.startMin, endMin:win.endMin }));
+          }
         }else if(it?.stayId != null){
           const stay = stayById.get(String(it.stayId));
           pushDayItem(dayKey, { key:`stay:${String(it.stayId)}`, startMin, endMin:startMin + __getEventDurationMin(stay, 'stay') });
@@ -18633,10 +18681,13 @@ function applySummaryFold() {
               ints.push({start:new Date(Math.max(iv.start.getTime(),winStart.getTime())), end:new Date(Math.min(iv.end.getTime(),winEnd.getTime()))});
             });
             (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{
-              const iv=bridge.__legInterval(leg);
-              if(!iv) return;
-              if(iv.end<=winStart || iv.start>=winEnd) return;
-              ints.push({start:new Date(Math.max(iv.start.getTime(),winStart.getTime())), end:new Date(Math.min(iv.end.getTime(),winEnd.getTime()))});
+              const ivs=bridge.__legInterval(leg);
+              const arr = Array.isArray(ivs) ? ivs : (ivs ? [ivs] : []);
+              arr.forEach((iv)=>{
+                if(!iv) return;
+                if(iv.end<=winStart || iv.start>=winEnd) return;
+                ints.push({start:new Date(Math.max(iv.start.getTime(),winStart.getTime())), end:new Date(Math.min(iv.end.getTime(),winEnd.getTime()))});
+              });
             });
           }catch(_){}
           ints.sort((a,b)=>a.start-b.start);
@@ -22363,10 +22414,13 @@ $("btnCompare").addEventListener("click", ()=>{
         ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
       });
       (Array.isArray(sc.legs)?sc.legs:[]).forEach((leg)=>{
-        const iv = bridge.__legInterval(leg);
-        if(!iv) return;
-        if(iv.end <= winStart || iv.start >= winEnd) return;
-        ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+        const ivs = bridge.__legInterval(leg);
+        const arr = Array.isArray(ivs) ? ivs : (ivs ? [ivs] : []);
+        arr.forEach((iv)=>{
+          if(!iv) return;
+          if(iv.end <= winStart || iv.start >= winEnd) return;
+          ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+        });
       });
 
       ints.sort((a,b)=>a.start-b.start);
@@ -23281,16 +23335,12 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       __legInterval(item){
         try{
           if(!item) return null;
-          const depDate = String(item.date || '').trim();
-          const depTime = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
-          const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
-          const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
-          if(!depDate || !depTime || !arrDate || !arrTime) return null;
-          const start = new Date(`${depDate}T${depTime}:00`);
-          const end = new Date(`${arrDate}T${arrTime}:00`);
-          if(Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-          if(!(start < end)) return null;
-          return { start, end };
+          const windows = __mvLegConflictWindows(item);
+          if(!windows.length) return null;
+          return windows.map((win)=>({
+            start: new Date(`${win.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, win.startMin) % 1440) : '00:00')}:00`),
+            end: new Date(`${win.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, win.endMin) % 1440) : '00:00')}:00`)
+          })).filter((w)=>w.start instanceof Date && w.end instanceof Date && !Number.isNaN(w.start.getTime()) && !Number.isNaN(w.end.getTime()) && (w.start < w.end));
         }catch{ return null; }
       },
       __collectTimedConflictsForActivity(sc, draftAct){
@@ -23323,22 +23373,24 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           (Array.isArray(sc.legs) ? sc.legs : []).forEach((item)=>{
             try{
               if(!item) return;
-              const other = this.__legInterval(item);
-              if(!other) return;
-              const overlap = (interval.start < other.end) && (other.start < interval.end);
-              if(__mvConflictWithTravelBuffer(interval.start, interval.end, other.start, other.end, __MV_TIMELINE_CONFLICT_BUFFER_MIN)){
-                out.conflicts.push({
-                  type: 'leg',
-                  typeLabel: 'Transporte',
-                  id: String(item.id || ''),
-                  title: `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`,
-                  start: other.start,
-                  end: other.end,
-                  endMin: other.end.getHours()*60 + other.end.getMinutes(),
-                  endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(other.end) : '',
-                  reason: overlap ? 'overlap' : 'buffer'
-                });
-              }
+              const others = this.__legInterval(item);
+              if(!Array.isArray(others) || !others.length) return;
+              others.forEach((other)=>{
+                const overlap = (interval.start < other.end) && (other.start < interval.end);
+                if(overlap){
+                  out.conflicts.push({
+                    type: 'leg',
+                    typeLabel: 'Transporte',
+                    id: String(item.id || ''),
+                    title: `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`,
+                    start: other.start,
+                    end: other.end,
+                    endMin: other.end.getHours()*60 + other.end.getMinutes(),
+                    endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(other.end) : '',
+                    reason: 'overlap'
+                  });
+                }
+              });
             }catch{}
           });
         }catch{}
@@ -24799,10 +24851,13 @@ __aiBuildDayBuckets(trip){
           ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
         }
         for(const leg of (trip.legs||[])){
-          const iv = this.bridge.__legInterval(leg);
-          if(!iv) continue;
-          if(iv.end <= winStart || iv.start >= winEnd) continue;
-          ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+          const ivs = this.bridge.__legInterval(leg);
+          const arr = Array.isArray(ivs) ? ivs : (ivs ? [ivs] : []);
+          for(const iv of arr){
+            if(!iv) continue;
+            if(iv.end <= winStart || iv.start >= winEnd) continue;
+            ints.push({ start: new Date(Math.max(iv.start.getTime(), winStart.getTime())), end: new Date(Math.min(iv.end.getTime(), winEnd.getTime())) });
+          }
         }
         ints.sort((a,b)=>a.start-b.start);
         // merge
