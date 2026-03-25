@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON</title>
+  <title>V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A63M_CONFLICTS_PANEL_REUSE_EXISTING_EDITOR_RECOMMENDED_BUTTON";
+const APP_BUILD = "V240_Axx_CONFLICT_FAB_HIDE_WHEN_ZERO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5777,6 +5777,7 @@ function setView(viewName){
   // Fixed subsection title under Totales (and under timeline controls in timeline)
   updateSubSectionHeader(viewName);
   try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch{}
+  try{ if(typeof __mvRecomputeConflictsAndRefreshUI==="function") __mvRecomputeConflictsAndRefreshUI(); }catch{}
 
   // Ensure required accordions are open (keep listeners intact) + render view content
   if (viewName === "timeline") {
@@ -5998,8 +5999,25 @@ function updateConflictFabVisibility(){
     const shouldShow = !plus.classList.contains("hidden") && count > 0;
     fab.classList.toggle("hidden", !shouldShow);
     badge.classList.toggle("hidden", !(count > 0));
-    if(count > 0) badge.textContent = String(count);
+    badge.textContent = count > 0 ? String(count) : "";
     try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(__){}
+  }catch(_){}
+}
+
+function __mvRecomputeConflictsAndRefreshUI(options){
+  try{
+    const opts = options && typeof options === "object" ? options : {};
+    if(!opts.skipRender && typeof renderTimeline === "function"){
+      try{ renderTimeline(); }catch(_){}
+    }
+    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
+    if(count <= 0){
+      try{ window.__mvConflictCount = 0; }catch(_){}
+      try{ window.__mvConflictById = {}; }catch(_){}
+      try{ window.__mvActiveConflictMap = null; }catch(_){}
+    }
+    try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
+    try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(_){}
   }catch(_){}
 }
 
@@ -12852,6 +12870,7 @@ qs("currency").value = v(actObj.currency || "EUR");
         const saveBtn = document.getElementById('eventSheetSave');
         if(saveBtn) saveBtn.disabled = false;
       }catch(_){}
+      try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
       try{ timeInput.focus(); }catch(_){}
       return true;
     }catch(_){
@@ -13307,6 +13326,7 @@ function closeEventSheet({ silent } = {}) {
     if (ctx?.kind === "stay" && typeof renderStays === "function") renderStays();
     if (ctx?.kind === "act" && typeof renderActivities === "function") renderActivities();
   } catch {}
+  try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI({ skipRender:true }); }catch(_){}
 
   // Restore view context (only if changed while sheet open)
   try {
@@ -14368,7 +14388,7 @@ function renderAll() {
   applyReadOnlyMode();
   try{ if(typeof __aiUpdatePendingBadge==='function') __aiUpdatePendingBadge(); }catch{}
   try{ if(typeof updatePendingSaveFabVisibility==='function') updatePendingSaveFabVisibility(); }catch{}
-  try{ if(typeof updateConflictFabVisibility==='function') updateConflictFabVisibility(); }catch{}
+  try{ if(typeof __mvRecomputeConflictsAndRefreshUI==='function') __mvRecomputeConflictsAndRefreshUI({ skipRender:true }); }catch{}
 }
 
 function renderTabs() {
@@ -18161,7 +18181,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
   try{ __mvActiveConflictMap = null; }catch(_){}
-  try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
+  try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI({ skipRender:true }); }catch(_){}
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
@@ -22657,6 +22677,7 @@ window.addEventListener('DOMContentLoaded', () => {
             if (typeof renderAll === "function") renderAll();
           }
         } catch {}
+        try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI({ skipRender:true }); }catch{}
         try { __maybePromptSaveScenario((state && state.scenario) || "A"); } catch {}
         try{ if(__mvReviewedAIFromSave && typeof toast==="function") toast("Propuesta IA revisada al guardar."); }catch{}
         try{ if(typeof toast==="function") toast("Guardado"); }catch{}
