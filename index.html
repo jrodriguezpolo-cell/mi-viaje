@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC</title>
+<title>V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A38_CONFLICT_FLAGS_RESET_BEFORE_RECALC";
+const APP_BUILD = "V240_A39_CONFLICTS_COMPUTE_ON_RENDER_NO_STICKY_BADGES";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13265,6 +13265,74 @@ function __mvResetConflictFlags(sc){
     (Array.isArray(scope.stays) ? scope.stays : []).forEach(resetOne);
   }catch(_){}
 }
+let __mvActiveConflictMap = null;
+function __mvConflictMapKeys(kind, item){
+  try{
+    const k = String(kind || '').trim();
+    const obj = (item && typeof item === 'object') ? item : null;
+    const id = obj ? String(obj.id || '') : String(item || '');
+    const day = obj ? String(obj.__mvDayKey || obj.__mvSummaryDate || obj.date || '').trim() : '';
+    const time = obj ? String(obj.__mvSummaryTime || obj.time || '').trim() : '';
+    const inst = obj ? String(obj.__mvCardInstanceId || '').trim() : '';
+    const keys = [];
+    if(k && id) keys.push(`${k}:${id}`);
+    if(k && id && day) keys.push(`${k}:${id}:${day}`);
+    if(k && id && day && time) keys.push(`${k}:${id}:${day}:${time}`);
+    if(k && id && inst) keys.push(`${k}:${id}:${inst}`);
+    if(k && id && inst && day) keys.push(`${k}:${id}:${inst}:${day}`);
+    return keys;
+  }catch(_){
+    return [];
+  }
+}
+function __computeConflictMapForDayItems(dayItems, bufferMin){
+  const map = new Map();
+  try{
+    const list = Array.isArray(dayItems) ? dayItems.filter(Boolean).slice() : [];
+    list.sort((a,b)=>{
+      const da = Number(a?.startMin);
+      const db = Number(b?.startMin);
+      if(da !== db) return da - db;
+      return String(a?.key || '').localeCompare(String(b?.key || ''));
+    });
+    const addConflict = (entry, otherStartMin)=>{
+      if(!entry || !entry.key) return;
+      const prev = map.get(entry.key) || { count:0, conflicts:[] };
+      prev.count += 1;
+      if(Number.isFinite(otherStartMin)){
+        prev.conflicts.push({
+          reason:'buffer',
+          startHHMM: (typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(otherStartMin % 1440) : ''
+        });
+      }
+      map.set(entry.key, prev);
+    };
+    for(let i=0;i<list.length-1;i++){
+      const cur = list[i];
+      const next = list[i+1];
+      if(!cur || !next) continue;
+      if(!Number.isFinite(cur.startMin) || !Number.isFinite(cur.endMin) || !Number.isFinite(next.startMin)) continue;
+      if(next.startMin < (cur.endMin + Math.max(0, Math.floor(Number(bufferMin || 0) || 0)))){
+        addConflict(cur, next.startMin);
+        addConflict(next, cur.startMin);
+      }
+    }
+  }catch(_){}
+  return map;
+}
+function __mvMergeConflictMaps(targetMap, sourceMap){
+  try{
+    if(!(targetMap instanceof Map) || !(sourceMap instanceof Map)) return targetMap;
+    sourceMap.forEach((value,key)=>{
+      if(!key || !value) return;
+      const prev = targetMap.get(key) || { count:0, conflicts:[] };
+      prev.count += Math.max(0, Number(value.count || 0) || 0);
+      prev.conflicts = (prev.conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
+      targetMap.set(key, prev);
+    });
+  }catch(_){}
+  return targetMap;
+}
 function __getEventDurationMin(item, kind){
   try{
     const k = String(kind || '').trim();
@@ -13407,6 +13475,18 @@ function __mvTimedConflictSnapshot(kind, item){
   return out;
 }
 function __mvConflictState(kind, item){
+  try{
+    if(__mvActiveConflictMap instanceof Map){
+      const keys = __mvConflictMapKeys(kind, item);
+      for(const key of keys){
+        const hit = __mvActiveConflictMap.get(key);
+        if(hit){
+          return { hasConflict: !!(hit.count > 0), count: hit.count || 0, conflicts: Array.isArray(hit.conflicts) ? hit.conflicts : [] };
+        }
+      }
+      return { hasConflict:false, count:0, conflicts:[] };
+    }
+  }catch(_){}
   const snap = __mvTimedConflictSnapshot(kind, item);
   return { hasConflict: !!(snap && snap.count>0), count: (snap && snap.count) || 0, conflicts: (snap && snap.conflicts) || [] };
 }
@@ -15522,6 +15602,31 @@ function renderActivities() {
     for(const card of cards) sectionCards.push(card);
   }
 
+  let __activitiesConflictMap = new Map();
+  try{
+    const byDay = new Map();
+    const pushDayItem = (dayKey, payload)=>{
+      if(!dayKey || !payload || !payload.key || !Number.isFinite(payload.startMin) || !Number.isFinite(payload.endMin)) return;
+      if(!byDay.has(dayKey)) byDay.set(dayKey, []);
+      byDay.get(dayKey).push(payload);
+    };
+    sectionCards.forEach((card)=>{
+      try{
+        const dayKey = String(card?.__mvDayKey || card?.date || '').trim().slice(0,10);
+        const time = String(card?.__mvSummaryTime || card?.time || '').trim();
+        const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(time) : NaN;
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !Number.isFinite(startMin)) return;
+        const key = `act:${String(card?.id || '')}`;
+        const endMin = startMin + __getEventDurationMin(card, 'act');
+        pushDayItem(dayKey, { key, startMin, endMin });
+      }catch(_){}
+    });
+    byDay.forEach((dayItems)=>{
+      __mvMergeConflictMaps(__activitiesConflictMap, __computeConflictMapForDayItems(dayItems, __MV_TIMELINE_CONFLICT_BUFFER_MIN));
+    });
+  }catch(_){}
+
+  try{ __mvActiveConflictMap = __activitiesConflictMap; }catch(_){}
   box.innerHTML = sectionCards.length
     ? __renderGroupedByDate(
         sectionCards,
@@ -15529,6 +15634,7 @@ function renderActivities() {
         actCard
       )
     : `<div class="text-sm text-slate-500">Añade actividades o incorpora sugerencias desde la IA.</div>`;
+  try{ __mvActiveConflictMap = null; }catch(_){}
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
   box.querySelectorAll("[data-act-open]").forEach(btn => btn.addEventListener("click", (e) => {
@@ -15560,7 +15666,7 @@ function renderActivities() {
     const it = sc.activities.find(x => x.id === id);
     if (!it) return;
     it.title = inp.value.trim();
-    saveState(); renderTimeline();
+    saveState(); renderActivities(); renderTimeline();
     try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-city]").forEach(inp => inp.addEventListener("change", () => {
@@ -15568,7 +15674,7 @@ function renderActivities() {
     const it = sc.activities.find(x => x.id === id);
     if (!it) return;
     it.city = cap1(inp.value); inp.value = it.city;
-    saveState(); renderTimeline();
+    saveState(); renderActivities(); renderTimeline();
     try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-date]").forEach(inp => inp.addEventListener("change", () => {
@@ -15577,7 +15683,7 @@ function renderActivities() {
     if (!it) return;
     it.date = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
-    saveState(); renderTimeline();
+    saveState(); renderActivities(); renderTimeline();
     try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-time]").forEach(inp => inp.addEventListener("change", () => {
@@ -15586,7 +15692,7 @@ function renderActivities() {
     if (!it) return;
     it.time = inp.value;
     sortByDateTimeEmptyFirst(sc.activities);
-    saveState(); renderTimeline();
+    saveState(); renderActivities(); renderTimeline();
     try{ if(typeof __mvUpdateActivitiesCountUI === "function") __mvUpdateActivitiesCountUI(); }catch{}
   }));
   box.querySelectorAll("[data-act-cost]").forEach(inp => inp.addEventListener("input", () => {
@@ -17199,6 +17305,36 @@ function renderTimeline() {
   });
 
   const filteredItems = getFilteredItems(items);
+  let __timelineConflictMap = new Map();
+  try{
+    const byDay = new Map();
+    const pushDayItem = (dayKey, payload)=>{
+      if(!dayKey || !payload || !payload.key || !Number.isFinite(payload.startMin) || !Number.isFinite(payload.endMin)) return;
+      if(!byDay.has(dayKey)) byDay.set(dayKey, []);
+      byDay.get(dayKey).push(payload);
+    };
+    filteredItems.forEach((it)=>{
+      try{
+        const dayKey = String(it?.date || '').trim().slice(0,10);
+        const time = String(it?.time || '').trim();
+        const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(time) : NaN;
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !Number.isFinite(startMin)) return;
+        if(it?.actId != null){
+          const act = actById.get(String(it.actId));
+          pushDayItem(dayKey, { key:`act:${String(it.actId)}`, startMin, endMin:startMin + __getEventDurationMin(act, 'act') });
+        }else if(it?.legId != null){
+          const leg = legById.get(String(it.legId));
+          pushDayItem(dayKey, { key:`leg:${String(it.legId)}`, startMin, endMin:startMin + __getEventDurationMin(leg, 'leg') });
+        }else if(it?.stayId != null){
+          const stay = stayById.get(String(it.stayId));
+          pushDayItem(dayKey, { key:`stay:${String(it.stayId)}`, startMin, endMin:startMin + __getEventDurationMin(stay, 'stay') });
+        }
+      }catch(_){}
+    });
+    byDay.forEach((dayItems)=>{
+      __mvMergeConflictMaps(__timelineConflictMap, __computeConflictMapForDayItems(dayItems, __MV_TIMELINE_CONFLICT_BUFFER_MIN));
+    });
+  }catch(_){}
   __tlLastFilteredItems = filteredItems;
 
   // Days available in current filtered list (used by Day view navigation)
@@ -17479,9 +17615,11 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     `;
 };
 
+  try{ __mvActiveConflictMap = __timelineConflictMap; }catch(_){}
   box.innerHTML = (timelineViewMode === "global")
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
+  try{ __mvActiveConflictMap = null; }catch(_){}
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
