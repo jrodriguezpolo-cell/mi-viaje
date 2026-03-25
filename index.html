@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A54_CONFLICT_FAB_VISIBLE_IN_TIMELINE_AND_CLICK_WORKS</title>
+<title>V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1161,10 +1161,6 @@ div[data-acc-body="acts"]{
   border: 2px solid white;
 }
 
-/* Force-hide Daily Notes FAB outside timeline (safety) */
-body[data-view]:not([data-view="timeline"]) #timelineNotesFab{ display:none !important; }
-
-
 /* Note quick-view button (lists) */
 .notePeekBtn{
   border:none;
@@ -1686,7 +1682,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A54_CONFLICT_FAB_VISIBLE_IN_TIMELINE_AND_CLICK_WORKS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2054,7 +2050,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A54_CONFLICT_FAB_VISIBLE_IN_TIMELINE_AND_CLICK_WORKS";
+const APP_BUILD = "V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5831,9 +5827,8 @@ function updateFabForView(view){
   const conflictsFab = document.getElementById("fabConflicts");
   if (!fab) return;
 
-  // V199: In timeline, FAB opens a type picker. Other views keep legacy behavior.
   const isTimeline = (String(view||"") === "timeline");
-  const show = isTimeline || (view === "legs" || view === "stays" || view === "acts" || (view === "meals" && document.getElementById("addMeal")));
+  const show = true;
 
   fab.classList.toggle("hidden", !show);
   if (aiFab) aiFab.classList.toggle("hidden", !show);
@@ -13237,25 +13232,8 @@ function __updateTimelineNotesFabVisibility(){
   try{
     const fab = document.getElementById("timelineNotesFab");
     if(!fab) return;
-
-    // Prefer the view we control (setView sets activeView). Avoid relying on helper functions
-    // that may return stale values.
-    let v = String(activeView || "");
-    if(!v){
-      try{ v = (typeof getActiveViewName==="function") ? String(getActiveViewName("")||"") : ""; }catch{}
-    }
-
-    // Final source of truth: whether the timeline container is actually visible.
-    const tl = document.getElementById("view-timeline");
-    const isTimelineVisible = !!(tl && !tl.classList.contains("hidden"));
-
-    const show = isTimelineVisible && (v === "timeline" || v === "cronograma" || v === "schedule");
-    if(show){
-      fab.classList.remove("hidden");
-      __updateTimelineNotesBadge();
-    }else{
-      fab.classList.add("hidden");
-    }
+    fab.classList.remove("hidden");
+    __updateTimelineNotesBadge();
   }catch{}
 }
 
