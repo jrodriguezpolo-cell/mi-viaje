@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A72_TRANSPORT_CONFLICT_MODAL_DETAILS_AND_BUTTON</title>
+  <title>V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A72_TRANSPORT_CONFLICT_MODAL_DETAILS_AND_BUTTON</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A72_TRANSPORT_CONFLICT_MODAL_DETAILS_AND_BUTTON";
+const APP_BUILD = "V240_A70_CONFLICT_CARD_PREV_USE_PREV_END";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -11745,7 +11745,6 @@ function applyEventSheetMode(){
     if(nb) nb.removeAttribute("disabled");
     if(ab) ab.removeAttribute("disabled");
   }catch{}
-  try{ __mvRefreshLegConflictInspectorButton(); }catch(_){}
 }
 
 function setEventSheetMode(mode){
@@ -11782,11 +11781,11 @@ function __ensureEventSheetViewGuards(){
   if (!body || body.__esGuardsBound) return;
   body.__esGuardsBound = true;
 
-  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach","eventSheetTrash","eventSheetConflict"]);
+  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach","eventSheetTrash"]);
   const isAllowed = (t) => {
     if (!t) return false;
     if (t.id && allowIds.has(t.id)) return true;
-    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,#eventSheetTrash,#eventSheetConflict")) return true;
+    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,#eventSheetTrash")) return true;
     if (t.closest && t.closest("a")) return true; // navigation/links are consult
     if (t.closest && t.closest("[data-es-allow]")) return true;
     return false;
@@ -12053,25 +12052,11 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
             <option value="CHF">CHF</option>
           </select>
         </div>
-        <div class="mt-2 flex justify-end">
-          <button aria-label="Conflicto horario" class="hidden tap inline-flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800" id="eventSheetConflict" title="Conflicto horario" type="button">
-            <span aria-hidden="true">⚠️</span>
-            <span>Conflicto</span>
-          </button>
-        </div>
       </div>
     </div>
   `;
 
   const chips = chipsHost.querySelectorAll(".legModeChip");
-  const legConflictBtn = wrap.querySelector("#eventSheetConflict");
-  if (legConflictBtn && !legConflictBtn.__bound) {
-    legConflictBtn.__bound = true;
-    legConflictBtn.addEventListener("click", (e) => {
-      try { e.preventDefault(); e.stopPropagation(); } catch {}
-      try { __mvOpenLegConflictInspectorModal(); } catch {}
-    }, true);
-  }
 
   function updateChipUI(selected){
     chips.forEach(c => {
@@ -12954,11 +12939,9 @@ qs("currency").value = v(actObj.currency || "EUR");
     };
   }catch{}
 
-  window.__mvApplyRecommendedTimeToActiveEditor = (hhmm, options)=>{
+  window.__mvApplyRecommendedTimeToActiveEditor = (hhmm)=>{
     try{
       const safeHHMM = String(hhmm || '').trim();
-      const opts = (options && typeof options === "object") ? options : {};
-      const preferredField = String(opts.targetField || "").trim();
       if(!/^\d{2}:\d{2}$/.test(safeHHMM)){
         try{ toast('No se pudo ajustar la hora'); }catch(_){}
         return false;
@@ -12971,22 +12954,12 @@ qs("currency").value = v(actObj.currency || "EUR");
       const overlay = document.getElementById('eventSheetOverlay');
       let timeInput = null;
       if(sheetBody){
-        if(preferredField){
-          timeInput =
-            sheetBody.querySelector(`input[data-sheet-leg="${CSS.escape(preferredField)}"]`) ||
-            sheetBody.querySelector(`input[data-sheet-stay="${CSS.escape(preferredField)}"]`) ||
-            sheetBody.querySelector(`input[data-sheet-act="${CSS.escape(preferredField)}"]`);
-        }
-        if(!timeInput){
-          timeInput =
-            sheetBody.querySelector('input[data-sheet-act="time"]') ||
-            sheetBody.querySelector('input[data-sheet-act="hour"]') ||
-            sheetBody.querySelector('input[data-sheet-leg="time"]') ||
-            sheetBody.querySelector('input[data-sheet-leg="timeOut"]') ||
-            sheetBody.querySelector('input[data-sheet-leg="timeIn"]') ||
-            sheetBody.querySelector('input[data-sheet-stay="time"]') ||
-            sheetBody.querySelector('input[type="time"]');
-        }
+        timeInput =
+          sheetBody.querySelector('input[data-sheet-act="time"]') ||
+          sheetBody.querySelector('input[data-sheet-act="hour"]') ||
+          sheetBody.querySelector('input[data-sheet-leg="time"]') ||
+          sheetBody.querySelector('input[data-sheet-stay="time"]') ||
+          sheetBody.querySelector('input[type="time"]');
       }
       if((!timeInput || typeof timeInput.value === 'undefined') && overlay && !overlay.classList.contains('hidden')){
         timeInput = overlay.querySelector('input[type="time"]');
@@ -13394,7 +13367,6 @@ function renderLegModeChips(container, leg, onSelect){
   overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
     try { applyEventSheetMode(); } catch {}
-    try { __mvRefreshLegConflictInspectorButton(); } catch {}
     // In view mode we avoid focusing fields automatically
     try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
   // sheetSummaryLine hidden for leg
@@ -13691,7 +13663,6 @@ function __initEventSheetBindings(){
   const overlay = document.getElementById("eventSheetOverlay");
   const closeBtn = document.getElementById("eventSheetClose");
   const notesBtn = document.getElementById("eventSheetNotes");
-  const conflictBtn = document.getElementById("eventSheetConflict");
   if (notesBtn && !notesBtn.__boundNotes) {
     notesBtn.__boundNotes = true;
 
@@ -13737,14 +13708,6 @@ function __initEventSheetBindings(){
       }
       return;
     });
-  }
-
-  if (conflictBtn && !conflictBtn.__bound) {
-    conflictBtn.__bound = true;
-    conflictBtn.addEventListener("click", (e) => {
-      try { e.preventDefault(); e.stopPropagation(); } catch {}
-      try { __mvOpenLegConflictInspectorModal(); } catch {}
-    }, true);
   }
 
   
@@ -14298,142 +14261,6 @@ function __mvCollectLegSaveConflictsFromSheet(){
   }catch{}
   try{ out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts); }catch(_){}
   return out;
-}
-
-function __mvRefreshLegConflictInspectorButton(){
-  try{
-    const btn = document.getElementById("eventSheetConflict");
-    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-    if(!btn){
-      return;
-    }
-    if(!ctx || String(ctx.kind || "") !== "leg" || !String(ctx.id || "").trim()){
-      btn.classList.add("hidden");
-      btn.disabled = true;
-      return;
-    }
-    const key = `leg:${String(ctx.id || "").trim()}`;
-    const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
-    const count = Math.max(0, Number(hit && hit.count || 0) || 0);
-    btn.classList.toggle("hidden", !(count > 0));
-    btn.disabled = !(count > 0);
-    btn.setAttribute("title", count > 0 ? `Conflicto horario (${count})` : "Conflicto horario");
-  }catch(_){}
-}
-
-function __mvOpenLegConflictInspectorModal(){
-  try{
-    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
-    if(!ctx || String(ctx.kind || "") !== "leg") return;
-    const ownLeg = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", String(ctx.id || "").trim()) : null;
-    const key = `leg:${String(ctx.id || "").trim()}`;
-    const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
-    const conflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
-    const recommendedHHMM = String((hit && hit.recommendedHHMM) || "").trim();
-    const ownDepDate = String((ownLeg && (ownLeg.date || ownLeg.depDate)) || "").trim();
-    const ownArrDate = String((ownLeg && (ownLeg.arriveDate || ownLeg.dateIn)) || "").trim();
-    const ownDepTime = String((ownLeg && (ownLeg.time || ownLeg.depTime)) || "").trim();
-    const ownArrTime = String((ownLeg && (ownLeg.arriveTime || ownLeg.timeIn)) || "").trim();
-    const ownDepIso = (ownDepDate && ownDepTime) ? `${ownDepDate}T${ownDepTime}:00` : "";
-    const ownArrIso = (ownArrDate && ownArrTime) ? `${ownArrDate}T${ownArrTime}:00` : "";
-    const ownDep = ownDepIso ? new Date(ownDepIso) : null;
-    const ownArr = ownArrIso ? new Date(ownArrIso) : null;
-    const related = [key];
-    let recommendedTargetField = "timeOut";
-    const fmtConflictDate = (dt)=>{
-      try{
-        if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "—";
-        const iso = dt.toISOString().slice(0,10);
-        const day = (typeof __mvFmtDateNumericES === "function") ? __mvFmtDateNumericES(iso) : ((typeof __fmtDateES === "function") ? __fmtDateES(iso) : iso);
-        const hhmm = (typeof __mvFmtHHMM === "function") ? __mvFmtHHMM(dt) : "";
-        return `${escapeHtml(String(day || iso))} · ${escapeHtml(String(hhmm || "—"))}`;
-      }catch(_){
-        return "—";
-      }
-    };
-    const resolveConflictMeta = (c)=>{
-      try{
-        const kind = String(c && c.type || "").trim();
-        const id = String(c && c.id || "").trim();
-        const item = (typeof getItemByTypeAndId === "function" && kind && id) ? getItemByTypeAndId(kind, id) : null;
-        const typeLabel = kind === "act" ? "Actividad" : (kind === "leg" ? "Transporte" : (kind === "stay" ? "Alojamiento" : String(c && c.typeLabel || "Evento")));
-        let title = "Evento sin título";
-        if(kind === "act") title = String(item && (item.title || item.name) || c && c.title || "Actividad").trim() || "Actividad";
-        else if(kind === "leg") title = `${String(item && item.from || "—").trim() || "—"} → ${String(item && item.to || "—").trim() || "—"}`;
-        else if(kind === "stay") title = `${String(item && item.city || "—").trim() || "—"} · ${String(item && (item.name || item.place) || "Alojamiento").trim() || "Alojamiento"}`;
-        else title = String(c && c.title || "Evento sin título").trim() || "Evento sin título";
-        const interval = (typeof __mvTimelineItemInterval === "function" && kind && item) ? __mvTimelineItemInterval(kind, item) : null;
-        const start = (interval && interval.start instanceof Date && !Number.isNaN(interval.start.getTime())) ? interval.start : ((c && c.start instanceof Date && !Number.isNaN(c.start.getTime())) ? c.start : null);
-        const end = (interval && interval.end instanceof Date && !Number.isNaN(interval.end.getTime())) ? interval.end : ((c && c.end instanceof Date && !Number.isNaN(c.end.getTime())) ? c.end : null);
-        return { kind, id, typeLabel, title, start, end };
-      }catch(_){
-        return { kind:"", id:"", typeLabel:"Evento", title:"Evento sin título", start:null, end:null };
-      }
-    };
-    const detailCards = conflicts.map((c)=>{
-      const meta = resolveConflictMeta(c);
-      const startTxt = fmtConflictDate(meta.start);
-      const endTxt = (meta.end instanceof Date && !Number.isNaN(meta.end.getTime()) && typeof __mvFmtHHMM === "function")
-        ? escapeHtml(__mvFmtHHMM(meta.end))
-        : "—";
-      try{
-        if(meta.start instanceof Date && !Number.isNaN(meta.start.getTime())){
-          if(ownDep instanceof Date && !Number.isNaN(ownDep.getTime()) && meta.start <= ownDep){
-            recommendedTargetField = "timeOut";
-          }else if(ownArr instanceof Date && !Number.isNaN(ownArr.getTime()) && meta.start >= ownArr){
-            recommendedTargetField = "timeIn";
-          }
-        }
-      }catch(_){}
-      return `<div class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm">
-        <div class="font-semibold text-slate-900">${escapeHtml(meta.title)} · ${escapeHtml(meta.typeLabel)}</div>
-        <div class="mt-1 text-slate-500">${startTxt} → ${endTxt}</div>
-      </div>`;
-    });
-    conflicts.forEach((c)=>{
-      const type = String(c && c.type || "").trim();
-      const id = String(c && c.id || "").trim();
-      const pairKey = type && id ? `${type}:${id}` : "";
-      if(pairKey && !related.includes(pairKey)) related.push(pairKey);
-    });
-    const body = `
-      <div class="space-y-3">
-        <div class="text-sm text-slate-700">Este transporte tiene ${conflicts.length} conflicto${conflicts.length===1 ? "" : "s"}.</div>
-        <div class="space-y-2">
-          ${conflicts.length ? detailCards.join("") : `<div class="text-sm text-slate-500">No hay conflictos activos.</div>`}
-        </div>
-        ${recommendedHHMM ? `<div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span><button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
-      </div>
-    `;
-    const btnJump = document.createElement("button");
-    btnJump.type = "button";
-    btnJump.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
-    btnJump.textContent = "Ir a cronograma";
-    btnJump.onclick = ()=>{ try{ __mvJumpToTimelineConflict(related); }catch(_){} };
-    const btnClose = document.createElement("button");
-    btnClose.type = "button";
-    btnClose.className = "tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold";
-    btnClose.textContent = "Cerrar";
-    btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-    showModal("Conflicto horario", body, [btnJump, btnClose]);
-    const pill = document.querySelector("[data-leg-conflict-recommended]");
-    if(pill){
-      pill.onclick = ()=>{
-        try{
-          const hhmm = String(pill.getAttribute("data-leg-conflict-recommended") || "").trim();
-          const targetField = String(pill.getAttribute("data-leg-conflict-target") || "").trim();
-          const ok = window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm, { targetField });
-          if(ok){
-            try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){}
-            try{ closeModal(); }catch(_){}
-            try{ __mvRefreshLegConflictInspectorButton(); }catch(_){}
-          }else{
-            try{ toast("No se pudo ajustar la hora"); }catch(_){}
-          }
-        }catch(_){}
-      };
-    }
-  }catch(_){}
 }
 
 try{
