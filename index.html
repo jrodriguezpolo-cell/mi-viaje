@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</title>
+  <title>V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -603,12 +603,6 @@ function confirmDeleteEvent(opts){
   line-height:18px;
   text-align:center;
   box-shadow:0 4px 10px rgba(15,23,42,.2);
-}
-.mvConflictTargetFlash{
-  box-shadow: 0 0 0 3px rgba(239,68,68,.28), 0 14px 34px rgba(239,68,68,.18) !important;
-  border-color: rgba(239,68,68,.52) !important;
-  background: linear-gradient(180deg, rgba(254,242,242,.98) 0%, rgba(255,255,255,.98) 100%) !important;
-  transition: box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
 
 
@@ -1698,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A70_CONFLICT_CARD_PREV_USE_PREV_END";
+const APP_BUILD = "V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6059,72 +6053,10 @@ function __mvRecomputeConflictsAndRefreshUI(options){
 }
 
 function __mvGoToConflictEntry(entry){
-  try{
-    const key = String(entry && entry.key || `${String(entry && entry.kind || '')}:${String(entry && entry.id || '')}`).trim();
-    return __mvJumpToTimelineConflict([key]);
-  }catch(_){}
   try{ closeModal(); }catch(_){}
-}
-
-function __mvJumpToTimelineConflict(conflictEventIds){
-  try{ closeModal(); }catch(_){}
-  try{
-    const keys = (Array.isArray(conflictEventIds) ? conflictEventIds : [conflictEventIds])
-      .map((raw)=>String(raw || '').trim())
-      .filter(Boolean);
-    const allEntries = __mvBuildConflictEntriesForCurrentScenario();
-    const wanted = [];
-    const wantedSet = new Set();
-    const pushEntry = (entry)=>{
-      if(!entry || !entry.key || wantedSet.has(entry.key)) return;
-      wantedSet.add(entry.key);
-      wanted.push(entry);
-    };
-    keys.forEach((key)=>{
-      const direct = allEntries.find((entry)=>String(entry.key || '') === key);
-      if(direct) pushEntry(direct);
-      else{
-        const fallback = allEntries.find((entry)=>String(entry.id || '') === key);
-        if(fallback) pushEntry(fallback);
-      }
-    });
-    wanted.sort((a,b)=>{
-      if(String(a.date || '') !== String(b.date || '')) return String(a.date || '').localeCompare(String(b.date || ''));
-      return Number(a.startMin || 9999) - Number(b.startMin || 9999);
-    });
-    const first = wanted[0] || null;
-    const targetDate = String(first && first.date || '').trim();
-    try{ if(typeof setView === "function") setView("timeline"); }catch(_){}
-    try{ timelineViewMode = targetDate ? "day" : "global"; }catch(_){}
-    try{ if(targetDate) activeDayISO = targetDate; }catch(_){}
-    try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        try{
-          const rows = wanted.map((entry)=>{
-            const byDate = document.querySelector(`#timelineList .timelineItem[data-tl-jump-type="${CSS.escape(String(entry.kind || ""))}"][data-tl-jump-id="${CSS.escape(String(entry.id || ""))}"][data-date="${CSS.escape(String(entry.date || ""))}"]`);
-            return byDate || document.querySelector(`#timelineList .timelineItem[data-tl-jump-type="${CSS.escape(String(entry.kind || ""))}"][data-tl-jump-id="${CSS.escape(String(entry.id || ""))}"]`);
-          }).filter(Boolean);
-          const firstRow = rows[0] || null;
-          if(firstRow){
-            const key = String(firstRow.getAttribute("data-tl-key") || "");
-            if(key && typeof __applyTimelinePersistentFoundHighlight === "function") __applyTimelinePersistentFoundHighlight(key);
-            if(typeof __scrollTimelineFoundItemToTopAnchor === "function") __scrollTimelineFoundItemToTopAnchor(firstRow);
-          }
-          rows.forEach((row)=>{
-            try{ row.classList.add("mvConflictTargetFlash"); }catch(_){}
-            try{ if(typeof __msFlashEl === "function") __msFlashEl(row); }catch(_){}
-            setTimeout(()=>{ try{ row.classList.remove("mvConflictTargetFlash"); }catch(_){} }, 4500);
-          });
-        }catch(_){}
-      });
-    });
-  }catch(_){
-    try{ closeModal(); }catch(__){}
-  }
-}
-
-function __mvGoToConflictEntryLegacy(entry){
+  try{ if(typeof setView === "function") setView("timeline"); }catch(_){}
+  try{ timelineViewMode = "global"; }catch(_){}
+  try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
       try{
@@ -6233,19 +6165,7 @@ function __mvOpenConflictSectionDetail(kind){
       btn.addEventListener("click", ()=>{
         const idx = Number(btn.getAttribute("data-conflict-detail-go") || -1);
         const entry = Number.isInteger(idx) ? entries[idx] : null;
-        if(!entry) return;
-        const related = [String(entry.key || `${entry.kind}:${entry.id}`)];
-        try{
-          const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null;
-          const linked = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
-          linked.forEach((c)=>{
-            const type = String(c && c.type || '').trim();
-            const id = String(c && c.id || '').trim();
-            const key = type && id ? `${type}:${id}` : "";
-            if(key && !related.includes(key)) related.push(key);
-          });
-        }catch(_){}
-        __mvJumpToTimelineConflict(related);
+        if(entry) __mvGoToConflictEntry(entry);
       });
     });
   }catch(err){
@@ -14186,26 +14106,9 @@ function __mvConflictMarkerHTML(kind, item, opts){
     const noun = count===1 ? 'evento' : 'eventos';
     const extraCls = String(opts.className || '').trim();
     const first = Array.isArray(state.conflicts) && state.conflicts[0] ? state.conflicts[0] : null;
-    const bufferMin = Math.max(0, Math.floor(Number(__MV_TIMELINE_CONFLICT_BUFFER_MIN || 0) || 0));
-    let hint = `Conflicta con ${count} ${noun}`;
-    if(first){
-      const own = __mvTimelineItemInterval(kind, item);
-      const ownStartMin = Number(own && own.startMin);
-      const ownEndMin = Number(own && own.endMin);
-      const otherStartMin = (first.start instanceof Date && !Number.isNaN(first.start.getTime()))
-        ? (first.start.getHours()*60 + first.start.getMinutes())
-        : ((typeof timeToMinutes === 'function' && first.startHHMM) ? timeToMinutes(String(first.startHHMM)) : NaN);
-      const otherStartHHMM = String(first.startHHMM || ((typeof __mvFmtHHMM === "function" && first.start instanceof Date) ? __mvFmtHHMM(first.start) : "") || "").trim();
-      const otherEndHHMM = String(first.endHHMM || ((typeof __mvFmtHHMM === "function" && first.end instanceof Date) ? __mvFmtHHMM(first.end) : "") || otherStartHHMM || "").trim();
-      const ownEndHHMM = Number.isFinite(ownEndMin) && typeof __mvFmtHHMM === "function" ? __mvFmtHHMM(ownEndMin % 1440) : "";
-      const isCurrentPrevious = Number.isFinite(ownStartMin) && Number.isFinite(otherStartMin) ? ownStartMin < otherStartMin : false;
-      // V240_A69: Conflict card text uses FIN for previous event and PREVIO for next event (buffer-aware)
-      if(isCurrentPrevious && ownEndHHMM){
-        hint = `No hay margen suficiente · fin ${escapeHtml(String(ownEndHHMM))}${first.reason === 'buffer' && bufferMin > 0 ? ` + ${bufferMin} min` : ``}`;
-      }else if(otherEndHHMM){
-        hint = `No hay margen suficiente · previo fin ${escapeHtml(String(otherEndHHMM))}${first.reason === 'buffer' && bufferMin > 0 ? ` + ${bufferMin} min` : ``}`;
-      }
-    }
+    const hint = (first && first.reason === 'buffer' && first.startHHMM)
+      ? `No hay margen suficiente · siguiente ${escapeHtml(String(first.startHHMM))}`
+      : `Conflicta con ${count} ${noun}`;
     return `<div class="mvConflictBlock ${escapeHtml(extraCls)}"><span class="mvConflictBadge">⚠️ <span>Conflicto horario</span></span><div class="mvConflictHint">${hint}</div></div>`;
   }catch{ return ''; }
 }
