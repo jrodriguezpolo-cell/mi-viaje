@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A63K_CONFLICT_BY_ID_STORE_RECOMMENDED_TIME</title>
+  <title>V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63K_CONFLICT_BY_ID_STORE_RECOMMENDED_TIME</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A63K_CONFLICT_BY_ID_STORE_RECOMMENDED_TIME";
+const APP_BUILD = "V240_A63L_FIX_RECOMMENDED_TIME_CALC_NO_ZERO_AND_TARGET_EVENT_ONLY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5975,7 +5975,7 @@ function __mvBuildConflictEntriesForCurrentScenario(){
           endMin: Number(interval.endMin || 0),
           count: Number(hit.count || 0),
           conflicts: Array.isArray(hit.conflicts) ? hit.conflicts : [],
-          recommendedHHMM: String(__mvRecommendedStartHHMMFromConflicts((hit && hit.conflicts) || [], 30) || "").trim()
+          recommendedHHMM: String((hit && hit.recommendedHHMM) || "").trim()
         });
       }catch(_){}
     });
@@ -6036,7 +6036,7 @@ function __mvOpenConflictSectionDetail(kind){
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
-            <div class="mt-2 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>Recomendado: ${escapeHtml(rec || "—")} ${recSrc ? `<span class="text-xs text-slate-400">(src: ${escapeHtml(recSrc)})</span>` : ``}</span>${rec ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-conflict-detail-pill="${idx}">${escapeHtml(rec)}</button>` : ``}</div>
+            <div class="mt-2 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>${rec ? `Recomendado: ${escapeHtml(rec)}` : `Recomendado: — <span class="text-slate-400">(Evento base)</span>`} ${recSrc ? `<span class="text-xs text-slate-400">(src: ${escapeHtml(recSrc)})</span>` : ``}</span>${rec ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-conflict-detail-pill="${idx}">${escapeHtml(rec)}</button>` : ``}</div>
             <div class="mt-3 flex justify-end gap-2">
               ${rec ? `<button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-conflict-detail-fix="${idx}">Corregir hora (${escapeHtml(rec)})</button>` : ``}
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
@@ -13746,15 +13746,28 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
       if(da !== db) return da - db;
       return String(a?.key || '').localeCompare(String(b?.key || ''));
     });
-    const addConflict = (entry, otherStartMin)=>{
+    const addConflict = (entry, detail)=>{
       if(!entry || !entry.key) return;
-      const prev = map.get(entry.key) || { count:0, conflicts:[] };
+      const prev = map.get(entry.key) || { count:0, conflicts:[], recommendedMin:null, recommendedHHMM:null };
       prev.count += 1;
-      if(Number.isFinite(otherStartMin)){
+      if(detail && typeof detail === "object"){
         prev.conflicts.push({
-          reason:'buffer',
-          startHHMM: (typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(otherStartMin % 1440) : ''
+          reason: String(detail.reason || 'buffer'),
+          startMin: Number.isFinite(Number(detail.startMin)) ? Number(detail.startMin) : null,
+          startHHMM: Number.isFinite(Number(detail.startMin)) ? __mvFmtHHMM(Number(detail.startMin) % 1440) : '',
+          endMin: Number.isFinite(Number(detail.endMin)) ? Number(detail.endMin) : null,
+          endHHMM: Number.isFinite(Number(detail.endMin)) ? __mvFmtHHMM(Number(detail.endMin) % 1440) : '',
+          recommendedMin: Number.isFinite(Number(detail.recommendedMin)) ? Number(detail.recommendedMin) : null,
+          recommendedHHMM: Number.isFinite(Number(detail.recommendedMin)) ? __mvFmtHHMM(Number(detail.recommendedMin) % 1440) : ''
         });
+        const nextRecommendedMin = Number(detail.recommendedMin);
+        if(Number.isFinite(nextRecommendedMin) && nextRecommendedMin >= 0 && nextRecommendedMin <= 2880){
+          const prevRecommendedMin = Number(prev.recommendedMin);
+          if(!Number.isFinite(prevRecommendedMin) || nextRecommendedMin > prevRecommendedMin){
+            prev.recommendedMin = nextRecommendedMin;
+            prev.recommendedHHMM = __mvFmtHHMM(nextRecommendedMin % 1440);
+          }
+        }
       }
       map.set(entry.key, prev);
     };
@@ -13763,9 +13776,12 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
       const next = list[i+1];
       if(!cur || !next) continue;
       if(!Number.isFinite(cur.startMin) || !Number.isFinite(cur.endMin) || !Number.isFinite(next.startMin)) continue;
-      if(next.startMin < (cur.endMin + Math.max(0, Math.floor(Number(bufferMin || 0) || 0)))){
-        addConflict(cur, next.startMin);
-        addConflict(next, cur.startMin);
+      const safeBuffer = Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
+      const overlap = next.startMin < cur.endMin;
+      const recommendedMin = cur.endMin + (overlap ? 0 : safeBuffer);
+      if(next.startMin < (cur.endMin + safeBuffer)){
+        addConflict(cur, { reason: overlap ? 'overlap' : 'buffer', startMin: next.startMin, endMin: next.endMin, recommendedMin:null });
+        addConflict(next, { reason: overlap ? 'overlap' : 'buffer', startMin: cur.startMin, endMin: cur.endMin, recommendedMin });
       }
     }
   }catch(_){}
@@ -18122,24 +18138,25 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
         const m = String(key || "").match(/^(act|leg|stay):([^:]+)$/);
         if(!m) return;
         const normKey = `${m[1]}:${m[2]}`;
-        const recommended = __mvComputeRecommendedStartFromConflicts(Array.isArray(value.conflicts) ? value.conflicts : [], 30);
+        const recommendedMinFromValue = Number(value && value.recommendedMin);
+        const recommendedHHMMFromValue = String(value && value.recommendedHHMM || "").trim();
         if(!__mvConflictById[normKey]){
           __mvConflictById[normKey] = {
             count: Number(value.count || 0) || 0,
             conflicts: Array.isArray(value.conflicts) ? value.conflicts.slice() : [],
-            recommendedMin: Number.isFinite(Number(recommended && recommended.recommendedMin)) ? Number(recommended.recommendedMin) : null,
-            recommendedHHMM: String(recommended && recommended.recommendedHHMM || "").trim() || null,
-            recommendedSrc: (recommended && recommended.recommendedHHMM) ? "computed" : null
+            recommendedMin: Number.isFinite(recommendedMinFromValue) ? recommendedMinFromValue : null,
+            recommendedHHMM: recommendedHHMMFromValue || (Number.isFinite(recommendedMinFromValue) ? __mvFmtHHMM(recommendedMinFromValue % 1440) : null),
+            recommendedSrc: (recommendedHHMMFromValue || Number.isFinite(recommendedMinFromValue)) ? "computed" : null
           };
           __mvConflictCount += 1;
         }else{
           __mvConflictById[normKey].count += Number(value.count || 0) || 0;
           __mvConflictById[normKey].conflicts = (__mvConflictById[normKey].conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
           const prevRecMin = Number(__mvConflictById[normKey].recommendedMin);
-          const nextRecMin = Number(recommended && recommended.recommendedMin);
+          const nextRecMin = recommendedMinFromValue;
           if(Number.isFinite(nextRecMin) && (!Number.isFinite(prevRecMin) || nextRecMin > prevRecMin)){
             __mvConflictById[normKey].recommendedMin = nextRecMin;
-            __mvConflictById[normKey].recommendedHHMM = String(recommended && recommended.recommendedHHMM || "").trim() || __mvFmtHHMM(nextRecMin % 1440);
+            __mvConflictById[normKey].recommendedHHMM = recommendedHHMMFromValue || __mvFmtHHMM(nextRecMin % 1440);
             __mvConflictById[normKey].recommendedSrc = "computed";
           }
         }
