@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX</title>
+  <title>V240_A66_CONFLICT_FAB_PERSISTENCE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A66_CONFLICT_FAB_PERSISTENCE_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A64_SAVE_FAB_VISIBILITY_DIRTY_FIX";
+const APP_BUILD = "V240_A66_CONFLICT_FAB_PERSISTENCE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5778,6 +5778,7 @@ function setView(viewName){
   updateSubSectionHeader(viewName);
   try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch{}
   try{ if(typeof __mvRecomputeConflictsAndRefreshUI==="function") __mvRecomputeConflictsAndRefreshUI(); }catch{}
+  try{ if(typeof __mvUpdateConflictFabVisibility==="function") __mvUpdateConflictFabVisibility(); }catch{}
 
   // Ensure required accordions are open (keep listeners intact) + render view content
   if (viewName === "timeline") {
@@ -5991,19 +5992,42 @@ function __mvBuildConflictEntriesForCurrentScenario(){
   return entries;
 }
 
-function updateConflictFabVisibility(){
+function __mvUpdateConflictFabVisibility(){
   try{
     const fab = document.getElementById("fabConflicts");
     const badge = document.getElementById("fabConflictsBadge");
     const plus = document.getElementById("fabAdd");
     if(!fab || !badge || !plus) return;
-    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
+    let count = 0;
+    try{
+      if(window.__mvConflictById && typeof window.__mvConflictById === "object"){
+        count = Object.keys(window.__mvConflictById || {}).length;
+      }else{
+        count = Number(window.__mvConflictCount || 0) || 0;
+      }
+    }catch(_){
+      count = Number(window.__mvConflictCount || 0) || 0;
+    }
+    count = Math.max(0, Number(count || 0) || 0);
+    if(count <= 0){
+      try{ window.__mvConflictCount = 0; }catch(_){}
+      try{ window.__mvConflictById = {}; }catch(_){}
+      try{ window.__mvConflictSnapshot = null; }catch(_){}
+    }else{
+      try{ window.__mvConflictCount = count; }catch(_){}
+    }
     const shouldShow = !plus.classList.contains("hidden") && count > 0;
     fab.classList.toggle("hidden", !shouldShow);
     badge.classList.toggle("hidden", !(count > 0));
     badge.textContent = count > 0 ? String(count) : "";
+    try{ fab.style.pointerEvents = shouldShow ? "auto" : "none"; }catch(_){}
+    try{ fab.style.zIndex = "2503"; }catch(_){}
     try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(__){}
   }catch(_){}
+}
+
+function updateConflictFabVisibility(){
+  return __mvUpdateConflictFabVisibility();
 }
 
 function __mvRecomputeConflictsAndRefreshUI(options){
@@ -6012,13 +6036,7 @@ function __mvRecomputeConflictsAndRefreshUI(options){
     if(!opts.skipRender && typeof renderTimeline === "function"){
       try{ renderTimeline(); }catch(_){}
     }
-    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
-    if(count <= 0){
-      try{ window.__mvConflictCount = 0; }catch(_){}
-      try{ window.__mvConflictById = {}; }catch(_){}
-      try{ window.__mvActiveConflictMap = null; }catch(_){}
-    }
-    try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
+    try{ if(typeof __mvUpdateConflictFabVisibility === "function") __mvUpdateConflictFabVisibility(); }catch(_){}
     try{ if(typeof __mvUpdateGlobalFabs === "function") __mvUpdateGlobalFabs(); }catch(_){}
   }catch(_){}
 }
@@ -28540,7 +28558,7 @@ function __mvICS_BuildEventsFromState(){
   };
 })();
 
-window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} });
+window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateConflictFabVisibility==="function") __mvUpdateConflictFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} });
 
 const MV_WEBAPP_URL = "https://jrodriguezpolo-cell.github.io/mi-viaje/";
 
