@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL</title>
+<title>V240_A63E_CONFLICTS_PANEL_COUNTS_MATCH_REAL_BADGES_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63E_CONFLICTS_PANEL_COUNTS_MATCH_REAL_BADGES_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL";
+const APP_BUILD = "V240_A63E_CONFLICTS_PANEL_COUNTS_MATCH_REAL_BADGES_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5934,31 +5934,51 @@ function __mvBuildConflictEntriesForCurrentScenario(){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : null;
     if(!sc) return entries;
-    const pushEntry = (kind, item, typeLabel, titleBuilder)=>{
+    const conflictById = (window && window.__mvConflictById && typeof window.__mvConflictById === "object") ? window.__mvConflictById : {};
+    Object.keys(conflictById).forEach((rawKey)=>{
       try{
-        if(!item) return;
+        const hit = conflictById[rawKey];
+        if(!hit || !(Number(hit.count || 0) > 0)) return;
+        const m = String(rawKey || "").match(/^(act|leg|stay):(.+)$/);
+        if(!m) return;
+        const kind = String(m[1] || "");
+        const id = String(m[2] || "");
+        let item = null;
+        let typeLabel = "Evento";
+        let title = "Evento";
+        if(kind === "act"){
+          item = (Array.isArray(sc.activities) ? sc.activities : []).find((x)=>String(x && x.id || "") === id) || null;
+          if(!item) return;
+          typeLabel = "Actividad";
+          title = String(item.title || item.name || "Actividad").trim() || "Actividad";
+        }else if(kind === "leg"){
+          item = (Array.isArray(sc.legs) ? sc.legs : []).find((x)=>String(x && x.id || "") === id) || null;
+          if(!item) return;
+          typeLabel = "Transporte";
+          title = `${String(item.from || "—").trim() || "—"} → ${String(item.to || "—").trim() || "—"}`;
+        }else if(kind === "stay"){
+          item = (Array.isArray(sc.stays) ? sc.stays : []).find((x)=>String(x && x.id || "") === id) || null;
+          if(!item) return;
+          typeLabel = "Alojamiento";
+          title = `${String(item.city || "—").trim() || "—"} • ${String(item.name || "Hotel").trim() || "Hotel"}`;
+        }
         const interval = __mvTimelineItemInterval(kind, item);
         if(!interval) return;
-        const snap = __mvTimedConflictSnapshot(kind, item);
-        if(!snap || !(snap.count > 0)) return;
         entries.push({
-          key: `${kind}:${String(item.id || "")}`,
+          key: rawKey,
           kind,
-          id: String(item.id || ""),
-          title: String(titleBuilder(item) || typeLabel).trim() || typeLabel,
+          id,
+          title,
           typeLabel,
           date: String(interval.date || "").trim(),
           startMin: Number(interval.startMin || 0),
           endMin: Number(interval.endMin || 0),
-          count: Number(snap.count || 0),
-          conflicts: Array.isArray(snap.conflicts) ? snap.conflicts : [],
-          recommendedHHMM: String(__mvRecommendedStartHHMMFromConflicts((snap && snap.conflicts) || [], 30) || "").trim()
+          count: Number(hit.count || 0),
+          conflicts: Array.isArray(hit.conflicts) ? hit.conflicts : [],
+          recommendedHHMM: String(__mvRecommendedStartHHMMFromConflicts((hit && hit.conflicts) || [], 30) || "").trim()
         });
       }catch(_){}
-    };
-    (Array.isArray(sc.activities) ? sc.activities : []).forEach((it)=>pushEntry("act", it, "Actividad", (x)=>String(x?.title || x?.name || "Actividad")));
-    (Array.isArray(sc.legs) ? sc.legs : []).forEach((it)=>pushEntry("leg", it, "Transporte", (x)=>`${String(x?.from || "—").trim() || "—"} → ${String(x?.to || "—").trim() || "—"}`));
-    (Array.isArray(sc.stays) ? sc.stays : []).forEach((it)=>pushEntry("stay", it, "Alojamiento", (x)=>`${String(x?.city || "—").trim() || "—"} • ${String(x?.name || "Hotel").trim() || "Hotel"}`));
+    });
     entries.sort((a,b)=>{
       if(String(a.date || "") !== String(b.date || "")) return String(a.date || "").localeCompare(String(b.date || ""));
       if(Number(a.startMin || 0) !== Number(b.startMin || 0)) return Number(a.startMin || 0) - Number(b.startMin || 0);
@@ -18028,13 +18048,28 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
   try{ __mvActiveConflictMap = __timelineConflictMap; }catch(_){}
   try{
     let __mvConflictCount = 0;
+    let __mvConflictById = {};
     if(__timelineConflictMap instanceof Map){
-      __timelineConflictMap.forEach((value)=>{
-        if(value && Number(value.count || 0) > 0) __mvConflictCount += 1;
+      __timelineConflictMap.forEach((value, key)=>{
+        if(!value || !(Number(value.count || 0) > 0)) return;
+        const m = String(key || "").match(/^(act|leg|stay):([^:]+)$/);
+        if(!m) return;
+        const normKey = `${m[1]}:${m[2]}`;
+        if(!__mvConflictById[normKey]){
+          __mvConflictById[normKey] = {
+            count: Number(value.count || 0) || 0,
+            conflicts: Array.isArray(value.conflicts) ? value.conflicts.slice() : []
+          };
+          __mvConflictCount += 1;
+        }else{
+          __mvConflictById[normKey].count += Number(value.count || 0) || 0;
+          __mvConflictById[normKey].conflicts = (__mvConflictById[normKey].conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
+        }
       });
     }
+    window.__mvConflictById = __mvConflictById;
     window.__mvConflictCount = __mvConflictCount;
-  }catch(_){ try{ window.__mvConflictCount = 0; }catch(__){} }
+  }catch(_){ try{ window.__mvConflictCount = 0; window.__mvConflictById = {}; }catch(__){} }
   box.innerHTML = (timelineViewMode === "global")
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
@@ -26347,7 +26382,7 @@ overlay.classList.remove("hidden");
   }
   function __mvNormalizeWebTripRelPath(p){
     try{
-      return String(p || "").replace(/\/g, "/").replace(/^\/+/, "").trim();
+      return String(p || "").replace(/\\/g, "/").replace(/^\/+/, "").trim();
     }catch(_){
       return "";
     }
@@ -26359,7 +26394,7 @@ overlay.classList.remove("hidden");
       map.clear();
       var folderName = "";
       arr.forEach(function(file){
-        var raw = String((file && file.webkitRelativePath) || (file && file.name) || "").replace(/\/g, "/");
+        var raw = String((file && file.webkitRelativePath) || (file && file.name) || "").replace(/\\/g, "/");
         var parts = raw.split("/").filter(Boolean);
         var rel = raw;
         if(parts.length > 1){
