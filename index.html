@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME</title>
+<title>V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A40_CONFLICTS_SHOW_RECOMMENDED_START_TIME";
+const APP_BUILD = "V240_A41_CONFLICTS_RECOMMENDED_TIME_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12386,7 +12386,9 @@ qs("currency").value = v(actObj.currency || "EUR");
               id: String(item.id || ''),
               title: String(item.title || item.name || 'Actividad'),
               start: interval.start,
-              end: interval.end
+              end: interval.end,
+              endMin: interval.end.getHours()*60 + interval.end.getMinutes(),
+              endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(interval.end) : ''
             });
           }
         }catch{}
@@ -12413,7 +12415,9 @@ qs("currency").value = v(actObj.currency || "EUR");
               id: String(item.id || ''),
               title,
               start: interval.start,
-              end: interval.end
+              end: interval.end,
+              endMin: interval.end.getHours()*60 + interval.end.getMinutes(),
+              endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(interval.end) : ''
             });
           }
         }catch{}
@@ -13342,9 +13346,20 @@ function __mvRecommendedStartHHMMFromConflicts(conflicts){
     let best = null;
     list.forEach((c)=>{
       try{
+        let endMin = NaN;
         const end = (c && c.end instanceof Date && !Number.isNaN(c.end.getTime())) ? c.end : null;
-        if(!end) return;
-        const candidate = end.getHours()*60 + end.getMinutes() + __MV_TIMELINE_CONFLICT_BUFFER_MIN;
+        if(end){
+          endMin = end.getHours()*60 + end.getMinutes();
+        }else if(c && Number.isFinite(Number(c.endMin))){
+          endMin = Number(c.endMin);
+        }else{
+          const endHHMM = String((c && c.endHHMM) || "").trim();
+          if(endHHMM){
+            endMin = (typeof timeToMinutes === "function") ? timeToMinutes(endHHMM) : NaN;
+          }
+        }
+        if(!Number.isFinite(endMin)) return;
+        const candidate = endMin + __MV_TIMELINE_CONFLICT_BUFFER_MIN;
         if(best == null || candidate > best) best = candidate;
       }catch(_){}
     });
@@ -22661,7 +22676,9 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
                   id: String(item.id || ''),
                   title: String(item.title || item.name || 'Actividad'),
                   start: other.start,
-                  end: other.end
+                  end: other.end,
+                  endMin: other.end.getHours()*60 + other.end.getMinutes(),
+                  endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(other.end) : ''
                 });
               }
             }catch{}
@@ -22678,7 +22695,9 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
                   id: String(item.id || ''),
                   title: `${String(item.from || '—').trim() || '—'} → ${String(item.to || '—').trim() || '—'}`,
                   start: other.start,
-                  end: other.end
+                  end: other.end,
+                  endMin: other.end.getHours()*60 + other.end.getMinutes(),
+                  endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(other.end) : ''
                 });
               }
             }catch{}
