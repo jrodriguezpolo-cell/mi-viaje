@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL</title>
+<title>V240_A53_CONFLICTS_FAB_USES_SAME_SOURCE_AS_CARD_BADGES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1686,7 +1686,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A53_CONFLICTS_FAB_USES_SAME_SOURCE_AS_CARD_BADGES</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2054,7 +2054,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A52_CONFLICTS_FLOATING_FAB_WITH_BADGE_AND_PANEL";
+const APP_BUILD = "V240_A53_CONFLICTS_FAB_USES_SAME_SOURCE_AS_CARD_BADGES";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5926,8 +5926,7 @@ function updateConflictFabVisibility(){
     const badge = document.getElementById("fabConflictsBadge");
     const plus = document.getElementById("fabAdd");
     if(!fab || !badge || !plus) return;
-    const entries = __mvBuildConflictEntriesForCurrentScenario();
-    const count = entries.length;
+    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
     const shouldShow = !plus.classList.contains("hidden") && count > 0;
     fab.classList.toggle("hidden", !shouldShow);
     badge.classList.toggle("hidden", !(count > 0));
@@ -17925,10 +17924,20 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 };
 
   try{ __mvActiveConflictMap = __timelineConflictMap; }catch(_){}
+  try{
+    let __mvConflictCount = 0;
+    if(__timelineConflictMap instanceof Map){
+      __timelineConflictMap.forEach((value)=>{
+        if(value && Number(value.count || 0) > 0) __mvConflictCount += 1;
+      });
+    }
+    window.__mvConflictCount = __mvConflictCount;
+  }catch(_){ try{ window.__mvConflictCount = 0; }catch(__){} }
   box.innerHTML = (timelineViewMode === "global")
     ? __renderGroupedByDate(visibleItems, (x)=> (x.date && x.date !== "9999-99-99" ? x.date : ""), __tlRenderItem)
     : (__dateSeparatorHTML(__fmtDateES(activeDayISO), activeDayISO) + visibleItems.map(__tlRenderItem).join(""));
   try{ __mvActiveConflictMap = null; }catch(_){}
+  try{ if(typeof updateConflictFabVisibility === "function") updateConflictFabVisibility(); }catch(_){}
 
   // Listeners scoped: checkbox "Hecho" en cronograma (transporte/alojamiento/actividades)
   box.querySelectorAll("[data-tl-act-done]").forEach(cb => {
