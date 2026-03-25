@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A45_RECOMMENDED_TIME_BUTTON_WIRING_FIX</title>
+<title>V240_A46_CONFLICT_MODAL_RECO_TIME_GLOBAL_WIRING</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A45_RECOMMENDED_TIME_BUTTON_WIRING_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A46_CONFLICT_MODAL_RECO_TIME_GLOBAL_WIRING</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A45_RECOMMENDED_TIME_BUTTON_WIRING_FIX";
+const APP_BUILD = "V240_A46_CONFLICT_MODAL_RECO_TIME_GLOBAL_WIRING";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12434,7 +12434,7 @@ qs("currency").value = v(actObj.currency || "EUR");
     };
   }catch{}
 
-  const __mvApplyRecommendedTimeToActiveEditor = (hhmm)=>{
+  window.__mvApplyRecommendedTimeToActiveEditor = (hhmm)=>{
     try{
       const safeHHMM = String(hhmm || '').trim();
       if(!/^\d{2}:\d{2}$/.test(safeHHMM)){
@@ -12493,7 +12493,7 @@ qs("currency").value = v(actObj.currency || "EUR");
         pill.onclick = ()=>{
           try{
             const hhmm = String(pill.getAttribute('data-act-recommended-pill') || '');
-            const ok = __mvApplyRecommendedTimeToActiveEditor(hhmm);
+            const ok = (window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm));
             if(ok){ try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){} }
           }catch(_){}
         };
@@ -22226,10 +22226,12 @@ window.addEventListener('DOMContentLoaded', () => {
               pill.onclick = ()=>{
                 try{
                   const hhmm = String(pill.getAttribute('data-conflict-recommended-pill') || '');
-                  const ok = __mvApplyRecommendedTimeToActiveEditor(hhmm);
+                  const ok = (window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm));
                   if(ok){
                     try{ closeModal(); }catch(_){}
                     try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){}
+                  }else{
+                    try{ toast('No se pudo ajustar la hora'); }catch(_){}
                   }
                 }catch(_){}
               };
