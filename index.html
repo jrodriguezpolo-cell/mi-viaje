@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX</title>
+<title>V240_A38_CONFLICTS_REUSE_EXISTING_LOGIC_PLUS_30MIN_BUFFER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1650,7 +1650,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A38_CONFLICTS_REUSE_EXISTING_LOGIC_PLUS_30MIN_BUFFER</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2018,7 +2018,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A37_CONFLICT_ALERTS_ACTS_DURATION_AND_BADGE_FIX";
+const APP_BUILD = "V240_A38_CONFLICTS_REUSE_EXISTING_LOGIC_PLUS_30MIN_BUFFER";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13225,6 +13225,31 @@ function __mvFmtHHMM(dt){
   }catch{ return '—'; }
 }
 const __MV_TIMELINE_CONFLICT_BUFFER_MIN = 30;
+function __getEventDurationMin(item, kind){
+  try{
+    const k = String(kind || '').trim();
+    if(k === 'act'){
+      if(typeof __tlActDurationMinutes === 'function') return Math.max(0, Math.floor(Number(__tlActDurationMinutes(item || {}) || 0)));
+      if(item && Number.isFinite(+item.durationMin)) return Math.max(0, Math.floor(+item.durationMin));
+      if(item && Number.isFinite(+item.durMin)) return Math.max(0, Math.floor(+item.durMin));
+      const h = Math.max(0, Math.floor(Number(item?.durH || 0) || 0));
+      const m = Math.max(0, Math.min(59, Math.floor(Number(item?.durM || 0) || 0)));
+      return h*60 + m;
+    }
+    if(k === 'leg'){
+      const depDate = String(item?.date || '').trim();
+      const depTime = String(item?.time || item?.depTime || item?.departTime || item?.departureTime || '').trim();
+      const arrDate = String(item?.arriveDate || item?.dateIn || item?.arrivalDate || item?.endDate || '').trim();
+      const arrTime = String(item?.arriveTime || item?.arrivalTime || item?.arrTime || item?.timeIn || item?.endTime || '').trim();
+      const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(depTime) : NaN;
+      const endMin = (typeof timeToMinutes === 'function') ? timeToMinutes(arrTime) : NaN;
+      if(depDate && depTime && arrDate && arrTime && Number.isFinite(startMin) && Number.isFinite(endMin)){
+        return (arrDate === depDate) ? Math.max(0, endMin - startMin) : Math.max(0, (1440 - startMin) + endMin);
+      }
+    }
+  }catch{}
+  return 0;
+}
 function __mvTimelineItemInterval(kind, item){
   try{
     const k = String(kind || '').trim();
@@ -13234,7 +13259,7 @@ function __mvTimelineItemInterval(kind, item){
       const timeStr = String(item.time || '').trim();
       const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
       if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
-      const durMin = Math.max(0, parseInt(String((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(item) : (item.durationMin || 0)), 10) || 0);
+      const durMin = __getEventDurationMin(item, k);
       return { date:dateStr, startMin, endMin:startMin + durMin };
     }
     if(k === 'leg'){
@@ -13242,13 +13267,7 @@ function __mvTimelineItemInterval(kind, item){
       const timeStr = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
       const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
       if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
-      let endMin = startMin;
-      const arrDate = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
-      const arrTime = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
-      const arrMin = (typeof timeToMinutes === 'function') ? timeToMinutes(arrTime) : NaN;
-      if(arrDate && arrTime && Number.isFinite(arrMin)){
-        endMin = (arrDate === dateStr) ? Math.max(startMin, arrMin) : Math.max(startMin, 1440 + arrMin);
-      }
+      let endMin = startMin + __getEventDurationMin(item, k);
       return { date:dateStr, startMin, endMin };
     }
     if(k === 'stay'){
@@ -17138,72 +17157,6 @@ function renderTimeline() {
   });
 
   const filteredItems = getFilteredItems(items);
-  filteredItems.forEach(it=>{
-    try{
-      delete it.__mvHasConflictNext;
-      delete it.__mvHasConflictPrev;
-      delete it.__mvConflictNextStart;
-      delete it.__mvConflictPrevStart;
-      delete it.__mvConflictGapMin;
-    }catch(_){}
-  });
-  try{
-    const timedByDay = new Map();
-    const toStartMin = (txt)=>{
-      try{
-        const v = String(txt || "").trim();
-        const n = (typeof timeToMinutes === "function") ? timeToMinutes(v) : NaN;
-        return Number.isFinite(n) ? n : NaN;
-      }catch(_){ return NaN; }
-    };
-    const intervalForTimelineItem = (it)=>{
-      try{
-        const date = String(it?.date || "").trim().slice(0,10);
-        const startMin = toStartMin(it?.time || "");
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(startMin)) return null;
-        if(it?.actId != null){
-          const act = actById.get(String(it.actId));
-          const durMin = Math.max(0, Math.floor(Number(__tlActDurationMinutes(act || {}) || 0)));
-          return { date, startMin, endMin:startMin + durMin, item:it };
-        }
-        if(it?.stayId != null){
-          return { date, startMin, endMin:startMin, item:it };
-        }
-        if(it?.legId != null){
-          const leg = legById.get(String(it.legId));
-          let endMin = startMin;
-          const arrDate = String(leg?.arriveDate || "").trim();
-          const arrTime = String(leg?.arriveTime || "").trim();
-          const arrMin = toStartMin(arrTime);
-          if(arrDate === date && Number.isFinite(arrMin)) endMin = Math.max(startMin, arrMin);
-          return { date, startMin, endMin, item:it };
-        }
-      }catch(_){}
-      return null;
-    };
-    for(const it of filteredItems){
-      const info = intervalForTimelineItem(it);
-      if(!info) continue;
-      if(!timedByDay.has(info.date)) timedByDay.set(info.date, []);
-      timedByDay.get(info.date).push(info);
-    }
-    timedByDay.forEach(dayItems=>{
-      dayItems.sort((a,b)=>a.startMin - b.startMin);
-      for(let i=0;i<dayItems.length-1;i++){
-        const cur = dayItems[i];
-        const next = dayItems[i+1];
-        if(!cur || !next) continue;
-        const curEnd = Math.max(cur.startMin, cur.endMin);
-        if(next.startMin < (curEnd + __MV_TIMELINE_CONFLICT_BUFFER_MIN)){
-          cur.item.__mvHasConflictNext = true;
-          cur.item.__mvConflictNextStart = (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(next.startMin % 1440) : "";
-          cur.item.__mvConflictGapMin = next.startMin - curEnd;
-          next.item.__mvHasConflictPrev = true;
-          next.item.__mvConflictPrevStart = (typeof __fmtHHMM_fromMinutes === "function") ? __fmtHHMM_fromMinutes(cur.startMin % 1440) : "";
-        }
-      }
-    });
-  }catch(_){}
   __tlLastFilteredItems = filteredItems;
 
   // Days available in current filtered list (used by Day view navigation)
@@ -17408,19 +17361,6 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
     if ((kind === "act" || kind === "leg" || kind === "stay") && itemObj && !it.isNote) {
       try{ __tlConflictState = __mvConflictState(kind, itemObj); }catch{}
     }
-    if(!__tlConflictState.hasConflict && (it?.__mvHasConflictNext || it?.__mvHasConflictPrev)){
-      __tlConflictState = {
-        hasConflict:true,
-        count:1,
-        conflicts:[{
-          reason:"buffer",
-          startHHMM:String(it?.__mvConflictNextStart || it?.__mvConflictPrevStart || "").trim()
-        }]
-      };
-    }
-    const __timelineConflictHTML = (it?.__mvHasConflictNext || it?.__mvHasConflictPrev)
-      ? `<div class="mvConflictBlock mvConflictInline"><span class="mvConflictBadge">⚠️ <span>Conflicto</span></span><div class="mvConflictHint">${it?.__mvHasConflictNext ? `Siguiente: ${escapeHtml(String(it.__mvConflictNextStart || ""))}` : `Sin margen suficiente`}</div></div>`
-      : ``;
 
     if (itemObj && !it.isNote) {
       const __notePeek = __hasNotes(itemObj) ? `<button type="button" class="notePeekBtn" data-kind="${kind}" data-id="${itemObj.id}" title="Ver nota">🗒️</button>` : ``;
@@ -17464,7 +17404,6 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
 
             <div class="min-w-0">
               ${(jumpType==="act" && __act) ? actSummaryLinesHTML(Object.assign({}, __act, { __mvSummaryDate: it.__mvSummaryDate, __mvSummaryTime: it.__mvSummaryTime }), {context:"timeline"}) : (jumpType==="stay" && __stay) ? staySummaryLinesHTML(__stay, {context:"timeline", tlMarker: (it && it.tlMarker) ? it.tlMarker : "", tlCompact: !(it && it.tlMarker), tlDayKey: it.date}) : (jumpType==="leg" && __leg) ? legSummaryLinesHTML(__leg, {context:"timeline"}) : `<div class="font-semibold text-sm truncate">${escapeHtml(__title)}</div><div class="${__metaClass}">${__dateLineHTML}</div>${__placeLineHTML || ""}`}
-              ${__timelineConflictHTML}
             </div>
           </div>
 
