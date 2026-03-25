@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS</title>
+<title>V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1682,7 +1682,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2050,7 +2050,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A56_GLOBAL_FABS_PLUS_AI_NOTES_ALL_VIEWS";
+const APP_BUILD = "V240_A57_GLOBAL_ALERT_FABS_CONFLICTS_AND_PENDING_SAVE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5876,10 +5876,9 @@ function updateFabForView(view){
 function updatePendingSaveFabVisibility(){
   try{
     const fab = document.getElementById("fabPendingSave");
-    const plus = document.getElementById("fabAdd");
-    if(!fab || !plus) return;
+    if(!fab) return;
     const activeSlot = String((state && state.scenario) || "A").trim().toUpperCase();
-    const shouldShow = !plus.classList.contains("hidden") && __isScenarioDirty(activeSlot);
+    const shouldShow = __isScenarioDirty(activeSlot);
     fab.classList.toggle("hidden", !shouldShow);
   }catch(_){}
 }
@@ -21253,6 +21252,36 @@ if(pendingFab && !pendingFab.__mvBound){
 }
 
 try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveFabVisibility(); }catch(_){}
+})();
+
+// V240_A57: robust global binding for conflicts FAB even if DOM timing changes.
+(function(){
+  async function __mvHandleConflictsFabClick(ev){
+    try{ ev && (ev.preventDefault(), ev.stopPropagation()); }catch{}
+    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
+    try{
+      if(typeof openConflictsPanelModal === "function"){
+        openConflictsPanelModal();
+      }else if(typeof toast === "function"){
+        toast(`Conflictos: ${count}`);
+      }
+    }catch(_){
+      try{ if(typeof toast === "function") toast(`Conflictos: ${count}`); }catch(__){}
+    }
+  }
+  const fab = $("fabConflicts");
+  if(fab && !fab.__mvBound){
+    fab.__mvBound = true;
+    fab.addEventListener("click", __mvHandleConflictsFabClick);
+  }else if(!window.__mvConflictsFabDelegated){
+    window.__mvConflictsFabDelegated = true;
+    document.addEventListener("click", function(e){
+      const btn = e && e.target && e.target.closest ? e.target.closest("#fabConflicts") : null;
+      if(!btn) return;
+      if(btn.classList && btn.classList.contains("hidden")) return;
+      __mvHandleConflictsFabClick(e);
+    }, true);
+  }
 })();
 
 $("displayCurrency").addEventListener("change", (e)=> setDisplayCurrency(e.target.value));
