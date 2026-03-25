@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS</title>
+  <title>V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A68_TRANSPORT_CONFLICTS_IGNORE_DURATION_USE_PRE_POST_BUFFERS";
+const APP_BUILD = "V240_A69_CONFLICT_FAB_HIDE_AND_DISABLE_WHEN_ZERO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5845,7 +5845,6 @@ function updateFabForView(view){
 
   fab.classList.toggle("hidden", !show);
   if (aiFab) aiFab.classList.toggle("hidden", !show);
-  if (conflictsFab) conflictsFab.classList.toggle("hidden", !show);
 
   if (aiFab) {
     aiFab.onclick = (e) => {
@@ -5856,14 +5855,25 @@ function updateFabForView(view){
   if (conflictsFab) {
     conflictsFab.onclick = (e) => {
       try{ e && e.preventDefault(); e && e.stopPropagation(); }catch{}
+      try{ if(typeof __mvUpdateConflictFabVisibility === "function") __mvUpdateConflictFabVisibility(); }catch(_){}
+      let liveCount = 0;
+      try{
+        liveCount = window.__mvConflictById && typeof window.__mvConflictById === "object"
+          ? Object.keys(window.__mvConflictById || {}).length
+          : (Number(window.__mvConflictCount || 0) || 0);
+      }catch(_){
+        liveCount = Number(window.__mvConflictCount || 0) || 0;
+      }
+      liveCount = Math.max(0, Number(liveCount || 0) || 0);
+      if(liveCount <= 0) return;
       try{
         if(typeof openConflictsPanelModal === "function"){
           openConflictsPanelModal();
         }else if(typeof toast === "function"){
-          toast(`Conflictos: ${Math.max(0, Number(window.__mvConflictCount || 0) || 0)}`);
+          toast(`Conflictos: ${liveCount}`);
         }
       }catch(_){
-        try{ if(typeof toast === "function") toast(`Conflictos: ${Math.max(0, Number(window.__mvConflictCount || 0) || 0) || 0}`); }catch(__){}
+        try{ if(typeof toast === "function") toast(`Conflictos: ${liveCount}`); }catch(__){}
       }
     };
   }
@@ -6018,6 +6028,7 @@ function __mvUpdateConflictFabVisibility(){
     }
     const shouldShow = !plus.classList.contains("hidden") && count > 0;
     fab.classList.toggle("hidden", !shouldShow);
+    try{ fab.disabled = !shouldShow; }catch(_){}
     badge.classList.toggle("hidden", !(count > 0));
     badge.textContent = count > 0 ? String(count) : "";
     try{ fab.style.pointerEvents = shouldShow ? "auto" : "none"; }catch(_){}
@@ -21596,6 +21607,17 @@ try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveF
 (function(){
   function __mvHandleConflictsFabClick(ev){
     try{ ev && (ev.preventDefault(), ev.stopPropagation()); }catch{}
+    try{ if(typeof __mvUpdateConflictFabVisibility === "function") __mvUpdateConflictFabVisibility(); }catch(_){}
+    let count = 0;
+    try{
+      count = window.__mvConflictById && typeof window.__mvConflictById === "object"
+        ? Object.keys(window.__mvConflictById || {}).length
+        : (Number(window.__mvConflictCount || 0) || 0);
+    }catch(_){
+      count = Number(window.__mvConflictCount || 0) || 0;
+    }
+    count = Math.max(0, Number(count || 0) || 0);
+    if(count <= 0) return;
     try{
       window.__mvDiag = window.__mvDiag || {};
       window.__mvDiag.lastConflictFabClickAt = new Date().toISOString();
@@ -21603,7 +21625,6 @@ try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveF
       window.__mvDiag.lastConflictFabId = "fabConflicts";
       window.__mvDiag.lastConflictFabError = "";
     }catch(_){}
-    const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
     try{
       if(typeof window.__mvOpenConflictsHubModal === "function"){
         window.__mvOpenConflictsHubModal();
