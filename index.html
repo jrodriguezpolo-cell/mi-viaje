@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A66_CONFLICT_FAB_PERSISTENCE_FIX</title>
+  <title>V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1692,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A66_CONFLICT_FAB_PERSISTENCE_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2060,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A66_CONFLICT_FAB_PERSISTENCE_FIX";
+const APP_BUILD = "V240_A67_LEG_CONFLICTS_USE_ARRIVAL_TIME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13917,7 +13917,15 @@ function __mvTimelineItemInterval(kind, item){
       const timeStr = String(item.time || item.depTime || item.departTime || item.departureTime || '').trim();
       const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(timeStr) : NaN;
       if(!dateStr || !timeStr || !Number.isFinite(startMin)) return null;
-      let endMin = startMin + __getEventDurationMin(item, k);
+      const arrTimeStr = String(item.arriveTime || item.arrivalTime || item.arrTime || item.timeIn || item.endTime || '').trim();
+      const arrDateStr = String(item.arriveDate || item.dateIn || item.arrivalDate || item.endDate || '').trim();
+      let endMin = NaN;
+      if(arrDateStr && arrTimeStr){
+        endMin = (typeof timeToMinutes === 'function') ? timeToMinutes(arrTimeStr) : NaN;
+      }
+      if(!Number.isFinite(endMin)){
+        endMin = startMin + __getEventDurationMin(item, k);
+      }
       return { date:dateStr, startMin, endMin };
     }
     if(k === 'stay'){
