@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-<title>V240_A63_CONFLICT_FAB_CLICK_WIRING_FIX</title>
+<title>V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -19,10 +19,18 @@
 (function(){
   // Guardrails: no cambian la app, pero ayudan a detectar "pantalla en blanco"
   window.addEventListener("error", function(ev){
-    try{ console.error("[mi-viaje] error", ev.error || ev.message || ev); }catch{}
+    try{
+      window.__mvDiag = window.__mvDiag || {};
+      window.__mvDiag.lastError = String((ev && (ev.message || ev.error)) || ev || "");
+      console.error("[mi-viaje] error", ev.error || ev.message || ev);
+    }catch{}
   });
   window.addEventListener("unhandledrejection", function(ev){
-    try{ console.error("[mi-viaje] unhandledrejection", ev.reason || ev); }catch{}
+    try{
+      window.__mvDiag = window.__mvDiag || {};
+      window.__mvDiag.lastRejection = String((ev && ev.reason) || ev || "");
+      console.error("[mi-viaje] unhandledrejection", ev.reason || ev);
+    }catch{}
   });
 })();
 // Data-based delete (global)
@@ -1684,7 +1692,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63_CONFLICT_FAB_CLICK_WIRING_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2052,7 +2060,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A63_CONFLICT_FAB_CLICK_WIRING_FIX";
+const APP_BUILD = "V240_A63D_CONFLICT_FAB_DIAG_AND_MODAL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -5993,26 +6001,92 @@ function __mvGoToConflictEntry(entry){
   });
 }
 
-function openConflictsPanelModal(){
+function __mvOpenConflictSectionDetail(kind){
   try{
-    const entries = __mvBuildConflictEntriesForCurrentScenario();
-    const count = entries.length;
-    if(!(count > 0)){
-      try{ updateConflictFabVisibility(); }catch(_){}
-      return;
-    }
+    const kindKey = String(kind || "").trim();
+    const all = __mvBuildConflictEntriesForCurrentScenario();
+    const entries = all.filter((it)=>String(it.kind || "") === kindKey);
+    const titleMap = { leg:"Transporte", stay:"Alojamiento", act:"Actividades" };
+    const title = titleMap[kindKey] || "Conflictos";
     const body = `
       <div class="space-y-3">
-        ${entries.map((entry, idx)=>`
+        ${entries.length ? entries.map((entry, idx)=>`
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__fmtHHMM_fromMinutes(entry.startMin % 1440))}</div>
             ${entry.recommendedHHMM ? `<div class="mt-2 text-sm text-slate-700 flex items-center gap-2 flex-wrap"><span>Recomendado:</span><span class="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">${escapeHtml(entry.recommendedHHMM)}</span></div>` : ``}
-            <div class="mt-3 flex justify-end">
-              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-go="${idx}">Ir</button>
+            <div class="mt-3 flex justify-end gap-2">
+              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir</button>
             </div>
           </div>
-        `).join("")}
+        `).join("") : `<div class="text-sm text-slate-500">No hay conflictos en esta sección.</div>`}
+      </div>
+    `;
+    const btnBack = document.createElement("button");
+    btnBack.type = "button";
+    btnBack.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
+    btnBack.textContent = "Volver";
+    const btnClose = document.createElement("button");
+    btnClose.type = "button";
+    btnClose.className = "tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold";
+    btnClose.textContent = "Cerrar";
+    showModal(`${title} (${entries.length})`, body, [btnBack, btnClose]);
+    btnBack.onclick = ()=>{ try{ window.__mvOpenConflictsHubModal(); }catch(_){ try{ closeModal(); }catch(__){} } };
+    btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
+    document.querySelectorAll("[data-conflict-detail-go]").forEach((btn)=>{
+      btn.addEventListener("click", ()=>{
+        const idx = Number(btn.getAttribute("data-conflict-detail-go") || -1);
+        const entry = Number.isInteger(idx) ? entries[idx] : null;
+        if(entry) __mvGoToConflictEntry(entry);
+      });
+    });
+  }catch(err){
+    try{
+      window.__mvDiag = window.__mvDiag || {};
+      window.__mvDiag.lastConflictFabError = String(err && err.message || err);
+      toast("Error abriendo detalle de conflictos");
+    }catch(_){}
+  }
+}
+
+function openConflictsPanelModal(){
+  try{
+    const entries = __mvBuildConflictEntriesForCurrentScenario();
+    const count = entries.length;
+    const byKind = {
+      leg: entries.filter((it)=>String(it.kind||"")==="leg"),
+      stay: entries.filter((it)=>String(it.kind||"")==="stay"),
+      act: entries.filter((it)=>String(it.kind||"")==="act")
+    };
+    const diag = window.__mvDiag || {};
+    const body = `
+      <div class="space-y-3">
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">
+          <div class="font-semibold text-slate-900">Diagnóstico</div>
+          <div class="mt-2 space-y-1">
+            <div>CLICK RECIBIDO: <span class="font-semibold">${diag.lastConflictFabClickAt ? "sí" : "no"}</span>${diag.lastConflictFabClickAt ? ` · ${escapeHtml(String(diag.lastConflictFabClickAt))}` : ``}</div>
+            <div>ID del botón detectado: <span class="font-semibold">${escapeHtml(String(diag.lastConflictFabId || "fabConflicts"))}</span></div>
+            <div>Target: <span class="font-semibold">${escapeHtml(String(diag.lastConflictFabTarget || "—"))}</span></div>
+            <div>ConflictCount detectado: <span class="font-semibold">${escapeHtml(String(count))}</span></div>
+            <div>Último error JS: <span class="font-semibold">${escapeHtml(String(diag.lastConflictFabError || diag.lastError || diag.lastRejection || "—"))}</span></div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-3">
+              <div class="font-semibold text-slate-900">Transporte (${byKind.leg.length})</div>
+              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-section="leg">Ver</button>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="font-semibold text-slate-900">Alojamiento (${byKind.stay.length})</div>
+              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-section="stay">Ver</button>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <div class="font-semibold text-slate-900">Actividades (${byKind.act.length})</div>
+              <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-section="act">Ver</button>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     const btnClose = document.createElement("button");
@@ -6021,16 +6095,18 @@ function openConflictsPanelModal(){
     btnClose.textContent = "Cerrar";
     showModal(`Conflictos (${count})`, body, [btnClose]);
     btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-    document.querySelectorAll("[data-conflict-go]").forEach((btn)=>{
+    document.querySelectorAll("[data-conflict-section]").forEach((btn)=>{
       btn.addEventListener("click", ()=>{
-        const idx = Number(btn.getAttribute("data-conflict-go") || -1);
-        const entry = Number.isInteger(idx) ? entries[idx] : null;
-        if(entry) __mvGoToConflictEntry(entry);
+        const kind = String(btn.getAttribute("data-conflict-section") || "").trim();
+        __mvOpenConflictSectionDetail(kind);
       });
     });
   }catch(_){}
 }
-try{ window.__mvOpenConflictsPanel = openConflictsPanelModal; }catch(_){}
+try{
+  window.__mvOpenConflictsPanel = openConflictsPanelModal;
+  window.__mvOpenConflictsHubModal = openConflictsPanelModal;
+}catch(_){}
 
 /* ---------------- Timeline FAB: Add type picker (V199) ---------------- */
 function openTimelineAddTypePicker(){
@@ -21299,15 +21375,31 @@ try{ if(typeof updatePendingSaveFabVisibility === "function") updatePendingSaveF
 (function(){
   function __mvHandleConflictsFabClick(ev){
     try{ ev && (ev.preventDefault(), ev.stopPropagation()); }catch{}
+    try{
+      window.__mvDiag = window.__mvDiag || {};
+      window.__mvDiag.lastConflictFabClickAt = new Date().toISOString();
+      window.__mvDiag.lastConflictFabTarget = (ev && ev.target && ev.target.tagName) ? String(ev.target.tagName) : "unknown";
+      window.__mvDiag.lastConflictFabId = "fabConflicts";
+      window.__mvDiag.lastConflictFabError = "";
+    }catch(_){}
     const count = Math.max(0, Number(window.__mvConflictCount || 0) || 0);
     try{
-      if(typeof window.__mvOpenConflictsPanel === "function"){
-        window.__mvOpenConflictsPanel();
+      if(typeof window.__mvOpenConflictsHubModal === "function"){
+        window.__mvOpenConflictsHubModal();
       }else if(typeof toast === "function"){
         toast(`Conflictos: ${count}`);
       }
     }catch(_){
-      try{ if(typeof toast === "function") toast(`Conflictos: ${count}`); }catch(__){}
+      try{
+        window.__mvDiag = window.__mvDiag || {};
+        window.__mvDiag.lastConflictFabError = String(_ && _.message || _);
+      }catch(__){}
+      try{
+        if(typeof toast === "function") toast("Error abriendo Conflictos (ver modal)");
+      }catch(__){}
+      try{
+        if(typeof window.__mvOpenConflictsHubModal === "function") window.__mvOpenConflictsHubModal();
+      }catch(__){}
     }
   }
   if(!window.__mvConflictsFabDelegated){
