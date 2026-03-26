@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A95_TRIP_SUMMARY_FULL_LISTS</title>
+  <title>V240_A96_TRIP_SUMMARY_TITLE_COUNTS_DETAILS_PRINT_ALL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1193,24 +1193,17 @@ div[data-acc-body="acts"]{
 /* Notes UI polish: ensure global modal above Event Sheet */
 #modalBackdrop{ z-index: 9000 !important; }
 #modalBox{ z-index: 9100 !important; }
-body.mvExecPrintMode #modalBackdrop{ background: white !important; }
-body.mvExecPrintMode #modalBox{ inset: 0 !important; padding: 0 !important; align-items: flex-start !important; justify-content: center !important; background: white !important; }
-body.mvExecPrintMode #modalBox > div{ width: 210mm !important; max-width: 210mm !important; min-height: 297mm !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; }
-body.mvExecPrintMode #modalTitle,
-body.mvExecPrintMode #modalClose,
-body.mvExecPrintMode #modalFooter{ display: none !important; }
-body.mvExecPrintMode #modalBody{ padding: 0 !important; }
+body.mvExecPrintMode #mvExecutivePrintRoot{ display:block !important; }
 @media print{
   body *{ visibility:hidden !important; }
-  body.mvExecPrintMode #modalBackdrop,
-  body.mvExecPrintMode #modalBox,
-  body.mvExecPrintMode #modalBox *{ visibility:visible !important; }
-  body.mvExecPrintMode #modalBackdrop{ display:block !important; background:white !important; }
-  body.mvExecPrintMode #modalBox{ display:flex !important; position:fixed !important; inset:0 !important; padding:0 !important; background:white !important; }
-  body.mvExecPrintMode #modalBox > div{ width:210mm !important; max-width:210mm !important; min-height:297mm !important; margin:0 auto !important; border:none !important; box-shadow:none !important; border-radius:0 !important; }
-  body.mvExecPrintMode #modalTitle,
-  body.mvExecPrintMode #modalClose,
-  body.mvExecPrintMode #modalFooter{ display:none !important; }
+  body.mvExecPrintMode #mvExecutivePrintRoot,
+  body.mvExecPrintMode #mvExecutivePrintRoot *{ visibility:visible !important; }
+  body.mvExecPrintMode #mvExecutivePrintRoot{
+    display:block !important;
+    position:static !important;
+    inset:auto !important;
+    background:white !important;
+  }
   .mvExecPrintSheet{ padding: 14mm 16mm !important; color:#0f172a !important; }
   .mvExecPrintAvoid{ break-inside: avoid; page-break-inside: avoid; }
 }
@@ -1719,7 +1712,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A95_TRIP_SUMMARY_FULL_LISTS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A96_TRIP_SUMMARY_TITLE_COUNTS_DETAILS_PRINT_ALL</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -1927,6 +1920,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 <div class="font-extrabold" id="modalTitle" data-i18n="app.modalTitle">Ventana</div>
 <button aria-label="Close" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="modalClose" style="position:relative; z-index:6200;" data-i18n-aria="sheet.close" title="Close" data-i18n-title="sheet.close">✕</button>
 </div>
+<div class="hidden" id="mvExecutivePrintRoot" aria-hidden="true"></div>
 <div class="p-5" id="modalBody"></div>
 <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
 </div>
@@ -2090,7 +2084,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A95_TRIP_SUMMARY_FULL_LISTS";
+const APP_BUILD = "V240_A96_TRIP_SUMMARY_TITLE_COUNTS_DETAILS_PRINT_ALL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19961,6 +19955,25 @@ function __mvExecutiveSummaryData(){
   const mealsFromCur = (sc && sc.meals && sc.meals.currency) ? String(sc.meals.currency) : (state.displayCurrency || targetCur);
   const mealsPlus = convertMoney(mealsRaw, mealsFromCur, targetCur) + misc;
   const totals = { transport, stay, acts, mealsPlus, total: transport + stay + acts + mealsPlus, currency: targetCur };
+  const trimSummary = (text)=>{
+    const raw = String(text || "").replace(/\s+/g, " ").trim();
+    if(!raw) return "";
+    return raw.length > 160 ? `${raw.slice(0, 157).trim()}...` : raw;
+  };
+  const safeDate = (date)=> /^\d{4}-\d{2}-\d{2}$/.test(String(date || "").trim()) ? String(date || "").trim() : "";
+  const dayDiffInclusive = (startIso, endIso)=>{
+    if(!startIso || !endIso) return null;
+    const start = new Date(`${startIso}T00:00:00`);
+    const end = new Date(`${endIso}T00:00:00`);
+    const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
+    return Number.isFinite(diff) ? (diff + 1) : null;
+  };
+  const cityCounts = new Map();
+  const bumpCity = (city)=>{
+    const key = String(city || "").trim();
+    if(!key) return;
+    cityCounts.set(key, (cityCounts.get(key) || 0) + 1);
+  };
 
   const transportItems = (Array.isArray(sc && sc.legs) ? sc.legs : [])
     .map((leg)=>{
@@ -19971,8 +19984,10 @@ function __mvExecutiveSummaryData(){
       const arrDate = String(leg && (leg.arriveDate || leg.dateIn) || "").trim();
       const arrTime = String(leg && (leg.arriveTime || leg.timeIn) || "").trim();
       if(!from || !to || !depDate || !depTime) return null;
+      bumpCity(to);
       return {
         from, to, depDate, depTime, arrDate, arrTime,
+        mode: String(leg && leg.mode || "").trim().toLowerCase(),
         tripType: String(leg && leg.tripType || "").trim(),
         durationLabel: String(leg && leg.duration || "").trim() || (typeof legDurationText === "function" ? String(legDurationText(leg) || "").trim() : ""),
         sortKey: `${depDate}T${depTime}`
@@ -19985,6 +20000,7 @@ function __mvExecutiveSummaryData(){
     .map((stayItem)=>{
       const name = String(stayItem && stayItem.name || "").trim() || "Alojamiento";
       const city = String(stayItem && stayItem.city || "").trim();
+      bumpCity(city);
       const checkInDate = String(stayItem && stayItem.date || "").trim();
       const checkInTime = String(stayItem && stayItem.time || "").trim();
       const checkOutDate = String((stayItem && (stayItem.checkoutDate || stayItem.checkout || stayItem.dateOut || stayItem.endDate)) || "").trim();
@@ -19999,23 +20015,68 @@ function __mvExecutiveSummaryData(){
     .map((act)=>{
       const title = String(act && (act.title || act.name) || "").trim() || "Actividad";
       const city = String(act && act.city || "").trim();
+      bumpCity(city);
       const date = String(act && act.date || "").trim();
       const time = String(act && act.time || "").trim();
       const durationLabel = String(act && act.duration || "").trim() || (typeof actDurationText === "function" ? String(actDurationText(act) || "").trim() : "");
+      const summaryLine =
+        trimSummary(
+          (act && (act.summary || act.description || act.notes || act.note || act.desc)) || ""
+        ) || (city ? `Actividad en ${city}.` : "Actividad del viaje.");
       const sortKey = `${date || "9999-99-99"}T${time || "23:59"}`;
-      return { title, city, date, time, durationLabel, sortKey };
+      return { title, city, date, time, durationLabel, summaryLine, sortKey };
     })
     .sort((a,b)=> a.sortKey.localeCompare(b.sortKey));
 
-  return { totals, transportItems, stayItems, activityItems };
+  const allDates = [];
+  transportItems.forEach((item)=>{ if(safeDate(item.depDate)) allDates.push(item.depDate); if(safeDate(item.arrDate)) allDates.push(item.arrDate); });
+  stayItems.forEach((item)=>{ if(safeDate(item.checkInDate)) allDates.push(item.checkInDate); if(safeDate(item.checkOutDate)) allDates.push(item.checkOutDate); });
+  activityItems.forEach((item)=>{ if(safeDate(item.date)) allDates.push(item.date); });
+  allDates.sort();
+  const dateStart = allDates[0] || "";
+  const dateEnd = allDates[allDates.length - 1] || "";
+  const dayCount = dayDiffInclusive(dateStart, dateEnd);
+  const firstTransportDestination = transportItems[0] ? String(transportItems[0].to || "").trim() : "";
+  const mostFrequentCity = Array.from(cityCounts.entries()).sort((a,b)=> (b[1] - a[1]) || a[0].localeCompare(b[0]))[0]?.[0] || "";
+  const destination = firstTransportDestination || mostFrequentCity || "";
+  const title = destination ? `Viaje ${destination}` : "Viaje";
+  const flightCount = transportItems.filter((item)=> item.mode === "plane" || item.mode === "flight").length;
+
+  return {
+    title,
+    totals,
+    transportItems,
+    stayItems,
+    activityItems,
+    overview: {
+      dateStart,
+      dateEnd,
+      dayCount,
+      transportCount: transportItems.length,
+      stayCount: stayItems.length,
+      activityCount: activityItems.length,
+      flightCount
+    }
+  };
 }
 
 function __mvExecutiveSummaryHTML(){
   const data = __mvExecutiveSummaryData();
   const totals = data.totals;
+  const overview = data.overview || {};
   const fmt = (n)=> fmtNum2(Number(n || 0));
   const fmtDate = (iso)=> iso ? (typeof formatDateShortES === "function" ? formatDateShortES(iso) : iso) : "—";
   const lineDateTime = (date, time)=> date ? `${fmtDate(date)}${time ? ` ${time}` : ""}` : "—";
+  const tripDatesLine = ()=>{
+    if(overview.dateStart && overview.dateEnd){
+      if(overview.dateStart === overview.dateEnd){
+        return `${fmtDate(overview.dateStart)}${overview.dayCount ? ` (${overview.dayCount} día${overview.dayCount === 1 ? "" : "s"})` : ""}`;
+      }
+      return `${fmtDate(overview.dateStart)} → ${fmtDate(overview.dateEnd)}${overview.dayCount ? ` (${overview.dayCount} días)` : ""}`;
+    }
+    if(overview.dateStart) return fmtDate(overview.dateStart);
+    return "No hay datos aún";
+  };
   const tripTypeLabel = (raw)=>{
     const key = String(raw || "").trim().toLowerCase();
     return key === "return" ? "Vuelta" : (key === "outbound" || key === "oneway" ? "Ida" : "");
@@ -20044,11 +20105,22 @@ function __mvExecutiveSummaryHTML(){
           <div class="font-semibold text-slate-900">Actividad: ${escapeHtml(item.title)}${item.city ? ` (${escapeHtml(item.city)})` : ""}</div>
           <div class="mt-2 text-sm text-slate-700">Fecha: ${escapeHtml(lineDateTime(item.date, item.time))}</div>
           ${item.durationLabel ? `<div class="mt-1 text-sm text-slate-700">Duración: ${escapeHtml(item.durationLabel)}</div>` : ``}
+          <div class="mt-1 text-sm text-slate-700">Resumen: ${escapeHtml(item.summaryLine || "Actividad del viaje.")}</div>
         </div>`).join("")
     : `<div class="text-sm text-slate-500">No hay actividades.</div>`;
   return `
     <div id="mvExecutiveSummaryPrintable" class="mvExecPrintSheet text-slate-900">
       <div class="space-y-6">
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Previo</div>
+          <div class="mt-2 text-sm text-slate-700">Fechas del viaje: ${escapeHtml(tripDatesLine())}</div>
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-slate-700">
+            <div>Transportes: ${escapeHtml(String(overview.transportCount || 0))}</div>
+            <div>Alojamientos: ${escapeHtml(String(overview.stayCount || 0))}</div>
+            <div>Actividades: ${escapeHtml(String(overview.activityCount || 0))}</div>
+          </div>
+          ${overview.flightCount ? `<div class="mt-2 text-sm text-slate-700">Vuelos: ${escapeHtml(String(overview.flightCount))}</div>` : ``}
+        </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
           <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Totales</div>
           <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3">
@@ -20078,6 +20150,12 @@ function __mvExecutiveSummaryHTML(){
 
 function __mvPrintExecutiveSummary(){
   try{
+    const root = document.getElementById("mvExecutivePrintRoot");
+    if(root){
+      root.innerHTML = __mvExecutiveSummaryHTML();
+      root.classList.remove("hidden");
+      root.setAttribute("aria-hidden", "false");
+    }
     document.body.classList.add("mvExecPrintMode");
     setTimeout(()=>{ try{ window.print(); }catch(_){} }, 60);
   }catch(_){}
@@ -20085,10 +20163,21 @@ function __mvPrintExecutiveSummary(){
 
 if(!window.__mvExecAfterPrintBound){
   window.__mvExecAfterPrintBound = true;
-  window.addEventListener("afterprint", ()=>{ try{ document.body.classList.remove("mvExecPrintMode"); }catch(_){} });
+  window.addEventListener("afterprint", ()=>{
+    try{
+      document.body.classList.remove("mvExecPrintMode");
+      const root = document.getElementById("mvExecutivePrintRoot");
+      if(root){
+        root.innerHTML = "";
+        root.classList.add("hidden");
+        root.setAttribute("aria-hidden", "true");
+      }
+    }catch(_){}
+  });
 }
 
 function openExecutiveSummaryModal(){
+  const data = __mvExecutiveSummaryData();
   const body = __mvExecutiveSummaryHTML();
   const btnPrint = document.createElement("button");
   btnPrint.type = "button";
@@ -20100,7 +20189,7 @@ function openExecutiveSummaryModal(){
   btnClose.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
   btnClose.textContent = "Cerrar";
   btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-  showModal("Resumen del viaje", body, [btnClose, btnPrint]);
+  showModal(data.title || "Viaje", body, [btnClose, btnPrint]);
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
