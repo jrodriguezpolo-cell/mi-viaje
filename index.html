@@ -14093,6 +14093,9 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
             nextRecommendedMin = safeRecommended(cur.startMin - __MV_TRANSPORT_POST_BUFFER_MIN - safeBuffer);
             nextRecommendedTargetField = 'timeIn';
           }
+        }else if(curKind === 'act' && nextKind === 'act'){
+          curRecommendedMin = safeRecommended(next.startMin - entryDuration(cur) - safeBuffer);
+          nextRecommendedMin = safeRecommended(cur.endMin + (overlap ? 0 : safeBuffer));
         }else{
           curRecommendedMin = safeRecommended(next.startMin - entryDuration(cur) - (overlap ? 0 : safeBuffer));
           nextRecommendedMin = safeRecommended(cur.endMin + (overlap ? 0 : safeBuffer));
