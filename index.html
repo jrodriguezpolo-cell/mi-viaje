@@ -14128,7 +14128,7 @@ function __mvMergeConflictMaps(targetMap, sourceMap){
       prev.conflicts = (prev.conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
       const prevRecommendedMin = Number(prev.recommendedMin);
       const nextRecommendedMin = Number(value.recommendedMin);
-      if(Number.isFinite(nextRecommendedMin) && (!Number.isFinite(prevRecommendedMin) || nextRecommendedMin > prevRecommendedMin)){
+      if(Number.isFinite(nextRecommendedMin) && nextRecommendedMin > 0 && (!Number.isFinite(prevRecommendedMin) || prevRecommendedMin <= 0 || nextRecommendedMin > prevRecommendedMin)){
         prev.recommendedMin = nextRecommendedMin;
         prev.recommendedHHMM = String(value.recommendedHHMM || '').trim() || __mvFmtHHMM(nextRecommendedMin % 1440);
         prev.recommendedTargetField = String(value.recommendedTargetField || '').trim() || null;
@@ -14358,7 +14358,7 @@ function __mvConflictRecommendedFromHit(hit){
   try{
     const recommendedMin = Number(hit && hit.recommendedMin);
     const recommendedTargetField = String(hit && hit.recommendedTargetField || '').trim() || null;
-    if(!Number.isFinite(recommendedMin) || recommendedMin < 0) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
+    if(!Number.isFinite(recommendedMin) || recommendedMin <= 0) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
     const recommendedHHMM = (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(recommendedMin % 1440) : String(hit && hit.recommendedHHMM || '').trim();
     if(!/^\d{2}:\d{2}$/.test(String(recommendedHHMM || '').trim())) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
     return { recommendedMin, recommendedHHMM:String(recommendedHHMM).trim(), recommendedTargetField };
@@ -18855,10 +18855,10 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
           __mvConflictById[normKey] = {
             count: Number(value.count || 0) || 0,
             conflicts: Array.isArray(value.conflicts) ? value.conflicts.slice() : [],
-            recommendedMin: Number.isFinite(recommendedMinFromValue) ? recommendedMinFromValue : null,
-            recommendedHHMM: recommendedHHMMFromValue || (Number.isFinite(recommendedMinFromValue) ? __mvFmtHHMM(recommendedMinFromValue % 1440) : null),
+            recommendedMin: (Number.isFinite(recommendedMinFromValue) && recommendedMinFromValue > 0) ? recommendedMinFromValue : null,
+            recommendedHHMM: recommendedHHMMFromValue || ((Number.isFinite(recommendedMinFromValue) && recommendedMinFromValue > 0) ? __mvFmtHHMM(recommendedMinFromValue % 1440) : null),
             recommendedTargetField: String(value && value.recommendedTargetField || '').trim() || null,
-            recommendedSrc: (recommendedHHMMFromValue || Number.isFinite(recommendedMinFromValue)) ? "computed" : null
+            recommendedSrc: (recommendedHHMMFromValue || (Number.isFinite(recommendedMinFromValue) && recommendedMinFromValue > 0)) ? "computed" : null
           };
           __mvConflictCount += 1;
         }else{
@@ -18866,7 +18866,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
           __mvConflictById[normKey].conflicts = (__mvConflictById[normKey].conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
           const prevRecMin = Number(__mvConflictById[normKey].recommendedMin);
           const nextRecMin = recommendedMinFromValue;
-          if(Number.isFinite(nextRecMin) && (!Number.isFinite(prevRecMin) || nextRecMin > prevRecMin)){
+          if(Number.isFinite(nextRecMin) && nextRecMin > 0 && (!Number.isFinite(prevRecMin) || prevRecMin <= 0 || nextRecMin > prevRecMin)){
             __mvConflictById[normKey].recommendedMin = nextRecMin;
             __mvConflictById[normKey].recommendedHHMM = recommendedHHMMFromValue || __mvFmtHHMM(nextRecMin % 1440);
             __mvConflictById[normKey].recommendedTargetField = String(value && value.recommendedTargetField || '').trim() || null;
