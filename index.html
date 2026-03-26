@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</title>
+  <title>V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A70_CONFLICT_CARD_PREV_USE_PREV_END</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A70_CONFLICT_CARD_PREV_USE_PREV_END";
+const APP_BUILD = "V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6178,6 +6178,9 @@ function __mvOpenConflictSectionDetail(kind){
         const idx = Number(btn.getAttribute("data-conflict-detail-fix") || -1);
         const entry = Number.isInteger(idx) ? entries[idx] : null;
         if(!entry) return;
+        const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null;
+        const recommendedHHMM = String(hit && hit.recommendedHHMM || entry.recommendedHHMM || "").trim();
+        const recommendedTargetField = String(hit && hit.recommendedTargetField || "").trim();
         try{
           closeModal();
         }catch(_){}
@@ -6192,19 +6195,23 @@ function __mvOpenConflictSectionDetail(kind){
                 if(window.__mvEnsureEventSheetEditMode) window.__mvEnsureEventSheetEditMode();
                 setTimeout(()=>{
                   try{
-                    const root = document.getElementById("eventSheetBody") || document;
-                    const btnRec =
-                      root.querySelector('[data-action="applyRecommended"]') ||
-                      root.querySelector('.mvRecPill') ||
-                      Array.from(root.querySelectorAll("button, .pill, span")).find((el)=>String(el && el.textContent || "").includes("Hora recomendada")) ||
-                      Array.from(root.querySelectorAll("button")).find((el)=>/^\d{2}:\d{2}$/.test(String(el && el.textContent || "").trim()));
-                    if(btnRec && typeof btnRec.click === "function"){
-                      btnRec.click();
+                    if(recommendedHHMM && window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(recommendedHHMM, { targetField: recommendedTargetField })){
                       try{ toast("Hora recomendada aplicada"); }catch(_){}
                     }else{
-                      try{ toast("No se encontro el boton de hora recomendada en el editor"); }catch(_){}
+                      const root = document.getElementById("eventSheetBody") || document;
+                      const btnRec =
+                        root.querySelector('[data-action="applyRecommended"]') ||
+                        root.querySelector('.mvRecPill') ||
+                        Array.from(root.querySelectorAll("button, .pill, span")).find((el)=>String(el && el.textContent || "").includes("Hora recomendada")) ||
+                        Array.from(root.querySelectorAll("button")).find((el)=>/^\d{2}:\d{2}$/.test(String(el && el.textContent || "").trim()));
+                      if(btnRec && typeof btnRec.click === "function"){
+                        btnRec.click();
+                        try{ toast("Hora recomendada aplicada"); }catch(_){}
+                      }else{
+                        try{ toast("No se encontro el boton de hora recomendada en el editor"); }catch(_){}
+                      }
                     }
-                    const timeInput = document.querySelector('#eventSheetBody input[data-sheet-act="time"], #eventSheetBody input[data-sheet-leg="time"], #eventSheetBody input[data-sheet-stay="time"], #eventSheetBody input[type="time"]');
+                    const timeInput = document.querySelector('#eventSheetBody input[data-sheet-act="time"], #eventSheetBody input[data-sheet-leg="time"], #eventSheetBody input[data-sheet-leg="timeOut"], #eventSheetBody input[data-sheet-leg="timeIn"], #eventSheetBody input[data-sheet-stay="time"], #eventSheetBody input[type="time"]');
                     if(timeInput){
                       try{ timeInput.focus(); }catch(_){}
                       try{ timeInput.scrollIntoView({ block:"center", behavior:"smooth" }); }catch(_){}
@@ -11745,6 +11752,7 @@ function applyEventSheetMode(){
     if(nb) nb.removeAttribute("disabled");
     if(ab) ab.removeAttribute("disabled");
   }catch{}
+  try{ __mvRefreshLegConflictInspectorButton(); }catch(_){}
 }
 
 function setEventSheetMode(mode){
@@ -11781,11 +11789,11 @@ function __ensureEventSheetViewGuards(){
   if (!body || body.__esGuardsBound) return;
   body.__esGuardsBound = true;
 
-  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach","eventSheetTrash"]);
+  const allowIds = new Set(["eventSheetClose","eventSheetEdit","eventSheetNotes","eventSheetAttach","eventSheetTrash","eventSheetConflict"]);
   const isAllowed = (t) => {
     if (!t) return false;
     if (t.id && allowIds.has(t.id)) return true;
-    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,#eventSheetTrash")) return true;
+    if (t.closest && t.closest("#eventSheetClose,#eventSheetEdit,#eventSheetNotes,#eventSheetAttach,#eventSheetTrash,#eventSheetConflict")) return true;
     if (t.closest && t.closest("a")) return true; // navigation/links are consult
     if (t.closest && t.closest("[data-es-allow]")) return true;
     return false;
@@ -12052,11 +12060,25 @@ function __renderLegEditorInSheet(body, legObj, itemId, isNew){
             <option value="CHF">CHF</option>
           </select>
         </div>
+        <div class="mt-2 flex justify-end">
+          <button aria-label="Conflicto horario" class="hidden tap inline-flex items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800" id="eventSheetConflict" title="Conflicto horario" type="button">
+            <span aria-hidden="true">⚠️</span>
+            <span>Conflicto</span>
+          </button>
+        </div>
       </div>
     </div>
   `;
 
   const chips = chipsHost.querySelectorAll(".legModeChip");
+  const legConflictBtn = wrap.querySelector("#eventSheetConflict");
+  if (legConflictBtn && !legConflictBtn.__bound) {
+    legConflictBtn.__bound = true;
+    legConflictBtn.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      try { __mvOpenLegConflictInspectorModal(); } catch {}
+    }, true);
+  }
 
   function updateChipUI(selected){
     chips.forEach(c => {
@@ -12939,9 +12961,11 @@ qs("currency").value = v(actObj.currency || "EUR");
     };
   }catch{}
 
-  window.__mvApplyRecommendedTimeToActiveEditor = (hhmm)=>{
+  window.__mvApplyRecommendedTimeToActiveEditor = (hhmm, options)=>{
     try{
       const safeHHMM = String(hhmm || '').trim();
+      const opts = (options && typeof options === "object") ? options : {};
+      const preferredField = String(opts.targetField || "").trim();
       if(!/^\d{2}:\d{2}$/.test(safeHHMM)){
         try{ toast('No se pudo ajustar la hora'); }catch(_){}
         return false;
@@ -12954,12 +12978,22 @@ qs("currency").value = v(actObj.currency || "EUR");
       const overlay = document.getElementById('eventSheetOverlay');
       let timeInput = null;
       if(sheetBody){
-        timeInput =
-          sheetBody.querySelector('input[data-sheet-act="time"]') ||
-          sheetBody.querySelector('input[data-sheet-act="hour"]') ||
-          sheetBody.querySelector('input[data-sheet-leg="time"]') ||
-          sheetBody.querySelector('input[data-sheet-stay="time"]') ||
-          sheetBody.querySelector('input[type="time"]');
+        if(preferredField){
+          timeInput =
+            sheetBody.querySelector(`input[data-sheet-leg="${CSS.escape(preferredField)}"]`) ||
+            sheetBody.querySelector(`input[data-sheet-stay="${CSS.escape(preferredField)}"]`) ||
+            sheetBody.querySelector(`input[data-sheet-act="${CSS.escape(preferredField)}"]`);
+        }
+        if(!timeInput){
+          timeInput =
+            sheetBody.querySelector('input[data-sheet-act="time"]') ||
+            sheetBody.querySelector('input[data-sheet-act="hour"]') ||
+            sheetBody.querySelector('input[data-sheet-leg="time"]') ||
+            sheetBody.querySelector('input[data-sheet-leg="timeOut"]') ||
+            sheetBody.querySelector('input[data-sheet-leg="timeIn"]') ||
+            sheetBody.querySelector('input[data-sheet-stay="time"]') ||
+            sheetBody.querySelector('input[type="time"]');
+        }
       }
       if((!timeInput || typeof timeInput.value === 'undefined') && overlay && !overlay.classList.contains('hidden')){
         timeInput = overlay.querySelector('input[type="time"]');
@@ -13367,6 +13401,7 @@ function renderLegModeChips(container, leg, onSelect){
   overlay.classList.remove("hidden");
     document.body.classList.add("sheet-open");
     try { applyEventSheetMode(); } catch {}
+    try { __mvRefreshLegConflictInspectorButton(); } catch {}
     // In view mode we avoid focusing fields automatically
     try { if (getEventSheetMode() === "edit") { const f = sheet.querySelector("input,textarea,select"); if (f) f.focus({preventScroll:true}); } } catch {}
   // sheetSummaryLine hidden for leg
@@ -13663,6 +13698,7 @@ function __initEventSheetBindings(){
   const overlay = document.getElementById("eventSheetOverlay");
   const closeBtn = document.getElementById("eventSheetClose");
   const notesBtn = document.getElementById("eventSheetNotes");
+  const conflictBtn = document.getElementById("eventSheetConflict");
   if (notesBtn && !notesBtn.__boundNotes) {
     notesBtn.__boundNotes = true;
 
@@ -13708,6 +13744,14 @@ function __initEventSheetBindings(){
       }
       return;
     });
+  }
+
+  if (conflictBtn && !conflictBtn.__bound) {
+    conflictBtn.__bound = true;
+    conflictBtn.addEventListener("click", (e) => {
+      try { e.preventDefault(); e.stopPropagation(); } catch {}
+      try { __mvOpenLegConflictInspectorModal(); } catch {}
+    }, true);
   }
 
   
@@ -13894,6 +13938,18 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
   const map = new Map();
   try{
     const list = Array.isArray(dayItems) ? dayItems.filter(Boolean).slice() : [];
+    const kindFromKey = (key)=>{
+      const m = String(key || '').match(/^(act|leg|stay):/);
+      return m ? String(m[1] || '') : '';
+    };
+    const safeRecommended = (min)=>{
+      const n = Number(min);
+      return Number.isFinite(n) && n >= 0 && n <= 2880 ? n : null;
+    };
+    const entryDuration = (entry)=>{
+      const n = Number(entry && entry.durationMin);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    };
     list.sort((a,b)=>{
       const da = Number(a?.startMin);
       const db = Number(b?.startMin);
@@ -13902,24 +13958,32 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
     });
     const addConflict = (entry, detail)=>{
       if(!entry || !entry.key) return;
-      const prev = map.get(entry.key) || { count:0, conflicts:[], recommendedMin:null, recommendedHHMM:null };
+      const prev = map.get(entry.key) || { count:0, conflicts:[], recommendedMin:null, recommendedHHMM:null, recommendedTargetField:null };
       prev.count += 1;
       if(detail && typeof detail === "object"){
+        const recMin = safeRecommended(detail.recommendedMin);
+        const otherKey = String(detail.otherKey || '').trim();
+        const otherMatch = otherKey.match(/^(act|leg|stay):(.+)$/);
         prev.conflicts.push({
           reason: String(detail.reason || 'buffer'),
+          otherKey,
+          type: otherMatch ? String(otherMatch[1] || '') : '',
+          id: otherMatch ? String(otherMatch[2] || '') : '',
           startMin: Number.isFinite(Number(detail.startMin)) ? Number(detail.startMin) : null,
           startHHMM: Number.isFinite(Number(detail.startMin)) ? __mvFmtHHMM(Number(detail.startMin) % 1440) : '',
           endMin: Number.isFinite(Number(detail.endMin)) ? Number(detail.endMin) : null,
           endHHMM: Number.isFinite(Number(detail.endMin)) ? __mvFmtHHMM(Number(detail.endMin) % 1440) : '',
-          recommendedMin: Number.isFinite(Number(detail.recommendedMin)) ? Number(detail.recommendedMin) : null,
-          recommendedHHMM: Number.isFinite(Number(detail.recommendedMin)) ? __mvFmtHHMM(Number(detail.recommendedMin) % 1440) : ''
+          recommendedMin: recMin,
+          recommendedHHMM: Number.isFinite(recMin) ? __mvFmtHHMM(recMin % 1440) : '',
+          recommendedTargetField: String(detail.recommendedTargetField || '').trim()
         });
-        const nextRecommendedMin = Number(detail.recommendedMin);
-        if(Number.isFinite(nextRecommendedMin) && nextRecommendedMin >= 0 && nextRecommendedMin <= 2880){
+        const nextRecommendedMin = recMin;
+        if(Number.isFinite(nextRecommendedMin)){
           const prevRecommendedMin = Number(prev.recommendedMin);
           if(!Number.isFinite(prevRecommendedMin) || nextRecommendedMin > prevRecommendedMin){
             prev.recommendedMin = nextRecommendedMin;
             prev.recommendedHHMM = __mvFmtHHMM(nextRecommendedMin % 1440);
+            prev.recommendedTargetField = String(detail.recommendedTargetField || '').trim() || null;
           }
         }
       }
@@ -13931,11 +13995,54 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
       if(!cur || !next) continue;
       if(!Number.isFinite(cur.startMin) || !Number.isFinite(cur.endMin) || !Number.isFinite(next.startMin)) continue;
       const safeBuffer = Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
+      const curKind = String(cur.kind || kindFromKey(cur.key)).trim();
+      const nextKind = String(next.kind || kindFromKey(next.key)).trim();
       const overlap = next.startMin < cur.endMin;
-      const recommendedMin = cur.endMin + (overlap ? 0 : safeBuffer);
       if(next.startMin < (cur.endMin + safeBuffer)){
-        addConflict(cur, { reason: overlap ? 'overlap' : 'buffer', startMin: next.startMin, endMin: next.endMin, recommendedMin:null });
-        addConflict(next, { reason: overlap ? 'overlap' : 'buffer', startMin: cur.startMin, endMin: cur.endMin, recommendedMin });
+        let curRecommendedMin = null;
+        let nextRecommendedMin = null;
+        let curRecommendedTargetField = '';
+        let nextRecommendedTargetField = '';
+
+        if(curKind === 'leg' && nextKind !== 'leg'){
+          if(String(cur.phase || '') === 'post'){
+            nextRecommendedMin = safeRecommended(cur.endMin);
+            curRecommendedMin = safeRecommended(next.startMin - __MV_TRANSPORT_POST_BUFFER_MIN);
+            curRecommendedTargetField = 'timeIn';
+          }else if(String(cur.phase || '') === 'pre'){
+            nextRecommendedMin = safeRecommended(cur.startMin - entryDuration(next) - safeBuffer);
+            curRecommendedMin = safeRecommended(next.endMin + __MV_TRANSPORT_PRE_BUFFER_MIN);
+            curRecommendedTargetField = 'timeOut';
+          }
+        }else if(curKind !== 'leg' && nextKind === 'leg'){
+          if(String(next.phase || '') === 'pre'){
+            curRecommendedMin = safeRecommended(next.startMin - entryDuration(cur) - safeBuffer);
+            nextRecommendedMin = safeRecommended(cur.endMin + __MV_TRANSPORT_PRE_BUFFER_MIN);
+            nextRecommendedTargetField = 'timeOut';
+          }else if(String(next.phase || '') === 'post'){
+            nextRecommendedMin = safeRecommended(cur.startMin - __MV_TRANSPORT_POST_BUFFER_MIN);
+            nextRecommendedTargetField = 'timeIn';
+          }
+        }else{
+          nextRecommendedMin = safeRecommended(cur.endMin + (overlap ? 0 : safeBuffer));
+        }
+
+        addConflict(cur, {
+          reason: overlap ? 'overlap' : 'buffer',
+          otherKey: next.key,
+          startMin: next.startMin,
+          endMin: next.endMin,
+          recommendedMin: curRecommendedMin,
+          recommendedTargetField: curRecommendedTargetField
+        });
+        addConflict(next, {
+          reason: overlap ? 'overlap' : 'buffer',
+          otherKey: cur.key,
+          startMin: cur.startMin,
+          endMin: cur.endMin,
+          recommendedMin: nextRecommendedMin,
+          recommendedTargetField: nextRecommendedTargetField
+        });
       }
     }
   }catch(_){}
@@ -13949,10 +14056,74 @@ function __mvMergeConflictMaps(targetMap, sourceMap){
       const prev = targetMap.get(key) || { count:0, conflicts:[] };
       prev.count += Math.max(0, Number(value.count || 0) || 0);
       prev.conflicts = (prev.conflicts || []).concat(Array.isArray(value.conflicts) ? value.conflicts : []);
+      const prevRecommendedMin = Number(prev.recommendedMin);
+      const nextRecommendedMin = Number(value.recommendedMin);
+      if(Number.isFinite(nextRecommendedMin) && (!Number.isFinite(prevRecommendedMin) || nextRecommendedMin > prevRecommendedMin)){
+        prev.recommendedMin = nextRecommendedMin;
+        prev.recommendedHHMM = String(value.recommendedHHMM || '').trim() || __mvFmtHHMM(nextRecommendedMin % 1440);
+        prev.recommendedTargetField = String(value.recommendedTargetField || '').trim() || null;
+      }
       targetMap.set(key, prev);
     });
   }catch(_){}
   return targetMap;
+}
+function __mvBuildScenarioConflictMap(sc){
+  const map = new Map();
+  try{
+    const scope = sc || ((typeof curScenario === 'function') ? curScenario() : null);
+    if(!scope) return map;
+    const byDay = new Map();
+    const pushDayItem = (dayKey, payload)=>{
+      if(!dayKey || !payload || !payload.key || !Number.isFinite(payload.startMin) || !Number.isFinite(payload.endMin)) return;
+      if(!byDay.has(dayKey)) byDay.set(dayKey, []);
+      byDay.get(dayKey).push(payload);
+    };
+    (Array.isArray(scope.activities) ? scope.activities : []).forEach((item)=>{
+      try{
+        const interval = __mvTimelineItemInterval('act', item);
+        if(!interval) return;
+        pushDayItem(String(interval.date || '').trim().slice(0,10), {
+          key:`act:${String(item && item.id || '')}`,
+          kind:'act',
+          startMin: interval.startMin,
+          endMin: interval.endMin,
+          durationMin: __getEventDurationMin(item, 'act')
+        });
+      }catch(_){}
+    });
+    (Array.isArray(scope.stays) ? scope.stays : []).forEach((item)=>{
+      try{
+        const interval = __mvTimelineItemInterval('stay', item);
+        if(!interval) return;
+        pushDayItem(String(interval.date || '').trim().slice(0,10), {
+          key:`stay:${String(item && item.id || '')}`,
+          kind:'stay',
+          startMin: interval.startMin,
+          endMin: interval.endMin,
+          durationMin: __getEventDurationMin(item, 'stay')
+        });
+      }catch(_){}
+    });
+    (Array.isArray(scope.legs) ? scope.legs : []).forEach((item)=>{
+      try{
+        const windows = __mvLegConflictWindows(item);
+        windows.forEach((win)=>{
+          pushDayItem(String(win.date || '').trim().slice(0,10), {
+            key:`leg:${String(item && item.id || '')}`,
+            kind:'leg',
+            phase: String(win.phase || '').trim(),
+            startMin: win.startMin,
+            endMin: win.endMin
+          });
+        });
+      }catch(_){}
+    });
+    byDay.forEach((dayItems)=>{
+      __mvMergeConflictMaps(map, __computeConflictMapForDayItems(dayItems, __MV_TIMELINE_CONFLICT_BUFFER_MIN));
+    });
+  }catch(_){}
+  return map;
 }
 function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
   try{
@@ -14261,6 +14432,142 @@ function __mvCollectLegSaveConflictsFromSheet(){
   }catch{}
   try{ out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts); }catch(_){}
   return out;
+}
+
+function __mvRefreshLegConflictInspectorButton(){
+  try{
+    const btn = document.getElementById("eventSheetConflict");
+    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+    if(!btn){
+      return;
+    }
+    if(!ctx || String(ctx.kind || "") !== "leg" || !String(ctx.id || "").trim()){
+      btn.classList.add("hidden");
+      btn.disabled = true;
+      return;
+    }
+    const key = `leg:${String(ctx.id || "").trim()}`;
+    const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
+    const count = Math.max(0, Number(hit && hit.count || 0) || 0);
+    btn.classList.toggle("hidden", !(count > 0));
+    btn.disabled = !(count > 0);
+    btn.setAttribute("title", count > 0 ? `Conflicto horario (${count})` : "Conflicto horario");
+  }catch(_){}
+}
+
+function __mvOpenLegConflictInspectorModal(){
+  try{
+    const ctx = (typeof __eventSheetCtx !== "undefined" && __eventSheetCtx) ? __eventSheetCtx : null;
+    if(!ctx || String(ctx.kind || "") !== "leg") return;
+    const ownLeg = (typeof getItemByTypeAndId === "function") ? getItemByTypeAndId("leg", String(ctx.id || "").trim()) : null;
+    const key = `leg:${String(ctx.id || "").trim()}`;
+    const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
+    const conflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
+    const recommendedHHMM = String((hit && hit.recommendedHHMM) || "").trim();
+    const ownDepDate = String((ownLeg && (ownLeg.date || ownLeg.depDate)) || "").trim();
+    const ownArrDate = String((ownLeg && (ownLeg.arriveDate || ownLeg.dateIn)) || "").trim();
+    const ownDepTime = String((ownLeg && (ownLeg.time || ownLeg.depTime)) || "").trim();
+    const ownArrTime = String((ownLeg && (ownLeg.arriveTime || ownLeg.timeIn)) || "").trim();
+    const ownDepIso = (ownDepDate && ownDepTime) ? `${ownDepDate}T${ownDepTime}:00` : "";
+    const ownArrIso = (ownArrDate && ownArrTime) ? `${ownArrDate}T${ownArrTime}:00` : "";
+    const ownDep = ownDepIso ? new Date(ownDepIso) : null;
+    const ownArr = ownArrIso ? new Date(ownArrIso) : null;
+    const related = [key];
+    let recommendedTargetField = "timeOut";
+    const fmtConflictDate = (dt)=>{
+      try{
+        if(!(dt instanceof Date) || Number.isNaN(dt.getTime())) return "—";
+        const iso = dt.toISOString().slice(0,10);
+        const day = (typeof __mvFmtDateNumericES === "function") ? __mvFmtDateNumericES(iso) : ((typeof __fmtDateES === "function") ? __fmtDateES(iso) : iso);
+        const hhmm = (typeof __mvFmtHHMM === "function") ? __mvFmtHHMM(dt) : "";
+        return `${escapeHtml(String(day || iso))} · ${escapeHtml(String(hhmm || "—"))}`;
+      }catch(_){
+        return "—";
+      }
+    };
+    const resolveConflictMeta = (c)=>{
+      try{
+        const kind = String(c && c.type || "").trim();
+        const id = String(c && c.id || "").trim();
+        const item = (typeof getItemByTypeAndId === "function" && kind && id) ? getItemByTypeAndId(kind, id) : null;
+        const typeLabel = kind === "act" ? "Actividad" : (kind === "leg" ? "Transporte" : (kind === "stay" ? "Alojamiento" : String(c && c.typeLabel || "Evento")));
+        let title = "Evento sin título";
+        if(kind === "act") title = String(item && (item.title || item.name) || c && c.title || "Actividad").trim() || "Actividad";
+        else if(kind === "leg") title = `${String(item && item.from || "—").trim() || "—"} → ${String(item && item.to || "—").trim() || "—"}`;
+        else if(kind === "stay") title = `${String(item && item.city || "—").trim() || "—"} · ${String(item && (item.name || item.place) || "Alojamiento").trim() || "Alojamiento"}`;
+        else title = String(c && c.title || "Evento sin título").trim() || "Evento sin título";
+        const interval = (typeof __mvTimelineItemInterval === "function" && kind && item) ? __mvTimelineItemInterval(kind, item) : null;
+        const start = (interval && interval.start instanceof Date && !Number.isNaN(interval.start.getTime())) ? interval.start : ((c && c.start instanceof Date && !Number.isNaN(c.start.getTime())) ? c.start : null);
+        const end = (interval && interval.end instanceof Date && !Number.isNaN(interval.end.getTime())) ? interval.end : ((c && c.end instanceof Date && !Number.isNaN(c.end.getTime())) ? c.end : null);
+        return { kind, id, typeLabel, title, start, end };
+      }catch(_){
+        return { kind:"", id:"", typeLabel:"Evento", title:"Evento sin título", start:null, end:null };
+      }
+    };
+    const detailCards = conflicts.map((c)=>{
+      const meta = resolveConflictMeta(c);
+      const startTxt = fmtConflictDate(meta.start);
+      const endTxt = (meta.end instanceof Date && !Number.isNaN(meta.end.getTime()) && typeof __mvFmtHHMM === "function")
+        ? escapeHtml(__mvFmtHHMM(meta.end))
+        : "—";
+      try{
+        if(meta.start instanceof Date && !Number.isNaN(meta.start.getTime())){
+          if(ownDep instanceof Date && !Number.isNaN(ownDep.getTime()) && meta.start <= ownDep){
+            recommendedTargetField = "timeOut";
+          }else if(ownArr instanceof Date && !Number.isNaN(ownArr.getTime()) && meta.start >= ownArr){
+            recommendedTargetField = "timeIn";
+          }
+        }
+      }catch(_){}
+      return `<div class="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm">
+        <div class="font-semibold text-slate-900">${escapeHtml(meta.title)} · ${escapeHtml(meta.typeLabel)}</div>
+        <div class="mt-1 text-slate-500">${startTxt} → ${endTxt}</div>
+      </div>`;
+    });
+    conflicts.forEach((c)=>{
+      const type = String(c && c.type || "").trim();
+      const id = String(c && c.id || "").trim();
+      const pairKey = type && id ? `${type}:${id}` : "";
+      if(pairKey && !related.includes(pairKey)) related.push(pairKey);
+    });
+    const body = `
+      <div class="space-y-3">
+        <div class="text-sm text-slate-700">Este transporte tiene ${conflicts.length} conflicto${conflicts.length===1 ? "" : "s"}.</div>
+        <div class="space-y-2">
+          ${conflicts.length ? detailCards.join("") : `<div class="text-sm text-slate-500">No hay conflictos activos.</div>`}
+        </div>
+        ${recommendedHHMM ? `<div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span><button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
+      </div>
+    `;
+    const btnJump = document.createElement("button");
+    btnJump.type = "button";
+    btnJump.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
+    btnJump.textContent = "Ir a cronograma";
+    btnJump.onclick = ()=>{ try{ __mvJumpToTimelineConflict(related); }catch(_){} };
+    const btnClose = document.createElement("button");
+    btnClose.type = "button";
+    btnClose.className = "tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold";
+    btnClose.textContent = "Cerrar";
+    btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
+    showModal("Conflicto horario", body, [btnJump, btnClose]);
+    const pill = document.querySelector("[data-leg-conflict-recommended]");
+    if(pill){
+      pill.onclick = ()=>{
+        try{
+          const hhmm = String(pill.getAttribute("data-leg-conflict-recommended") || "").trim();
+          const targetField = String(pill.getAttribute("data-leg-conflict-target") || "").trim();
+          const ok = window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm, { targetField });
+          if(ok){
+            try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){}
+            try{ closeModal(); }catch(_){}
+            try{ __mvRefreshLegConflictInspectorButton(); }catch(_){}
+          }else{
+            try{ toast("No se pudo ajustar la hora"); }catch(_){}
+          }
+        }catch(_){}
+      };
+    }
+  }catch(_){}
 }
 
 try{
@@ -14752,11 +15059,15 @@ function __renderScenarioCopyTargets(count){
 function renderLegs() {
   const box = $("legsList");
   const sc = curScenario();
+  let __legsConflictMap = new Map();
+  try{ __legsConflictMap = __mvBuildScenarioConflictMap(sc); }catch(_){}
 
   sortByDateTimeEmptyFirst(sc.legs);
+  try{ __mvActiveConflictMap = __legsConflictMap; }catch(_){}
   box.innerHTML = sc.legs.length
     ? __renderGroupedByDate(__mvExpandForSection(sc.legs, __tlLegCoveredDays, (it)=>it.date), (it)=>it.__mvDayKey || it.date, legCard)
     : `<div class="text-sm text-slate-500">Añade trayectos para construir tu ruta.</div>`;
+  try{ __mvActiveConflictMap = null; }catch(_){}
 
   // UX 2.1: tap on summary opens sheet in view mode
   box.querySelectorAll("[data-leg-open]").forEach(btn => btn.addEventListener("click", (e) => {
@@ -14977,11 +15288,15 @@ function stayCard(stay) {
 function renderStays() {
   const box = $("staysList");
   const sc = curScenario();
+  let __staysConflictMap = new Map();
+  try{ __staysConflictMap = __mvBuildScenarioConflictMap(sc); }catch(_){}
   sortByDateTimeEmptyFirst(sc.stays);
 
+  try{ __mvActiveConflictMap = __staysConflictMap; }catch(_){}
   box.innerHTML = sc.stays.length
     ? __renderGroupedByDate(__mvExpandForSection(sc.stays, __mvStayDaysForSection, (it)=>it.date), (it)=>it.__mvDayKey || it.date, stayCard)
     : `<div class="text-sm text-slate-500">Añade alojamientos para organizar tus noches.</div>`;
+  try{ __mvActiveConflictMap = null; }catch(_){}
 
   // Tap on summary opens premium sheet in view mode (Transport-like)
   box.querySelectorAll("[data-stay-open]").forEach(btn => btn.addEventListener("click", (e) => {
@@ -16309,28 +16624,7 @@ function renderActivities() {
   }
 
   let __activitiesConflictMap = new Map();
-  try{
-    const byDay = new Map();
-    const pushDayItem = (dayKey, payload)=>{
-      if(!dayKey || !payload || !payload.key || !Number.isFinite(payload.startMin) || !Number.isFinite(payload.endMin)) return;
-      if(!byDay.has(dayKey)) byDay.set(dayKey, []);
-      byDay.get(dayKey).push(payload);
-    };
-    sectionCards.forEach((card)=>{
-      try{
-        const dayKey = String(card?.__mvDayKey || card?.date || '').trim().slice(0,10);
-        const time = String(card?.__mvSummaryTime || card?.time || '').trim();
-        const startMin = (typeof timeToMinutes === 'function') ? timeToMinutes(time) : NaN;
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !Number.isFinite(startMin)) return;
-        const key = `act:${String(card?.id || '')}`;
-        const endMin = startMin + __getEventDurationMin(card, 'act');
-        pushDayItem(dayKey, { key, startMin, endMin });
-      }catch(_){}
-    });
-    byDay.forEach((dayItems)=>{
-      __mvMergeConflictMaps(__activitiesConflictMap, __computeConflictMapForDayItems(dayItems, __MV_TIMELINE_CONFLICT_BUFFER_MIN));
-    });
-  }catch(_){}
+  try{ __activitiesConflictMap = __mvBuildScenarioConflictMap(sc); }catch(_){}
 
   try{ __mvActiveConflictMap = __activitiesConflictMap; }catch(_){}
   box.innerHTML = sectionCards.length
@@ -18342,6 +18636,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
             conflicts: Array.isArray(value.conflicts) ? value.conflicts.slice() : [],
             recommendedMin: Number.isFinite(recommendedMinFromValue) ? recommendedMinFromValue : null,
             recommendedHHMM: recommendedHHMMFromValue || (Number.isFinite(recommendedMinFromValue) ? __mvFmtHHMM(recommendedMinFromValue % 1440) : null),
+            recommendedTargetField: String(value && value.recommendedTargetField || '').trim() || null,
             recommendedSrc: (recommendedHHMMFromValue || Number.isFinite(recommendedMinFromValue)) ? "computed" : null
           };
           __mvConflictCount += 1;
@@ -18353,6 +18648,7 @@ const __peer = (__leg && __leg.rtPeerId) ? String(__leg.rtPeerId) : "";
           if(Number.isFinite(nextRecMin) && (!Number.isFinite(prevRecMin) || nextRecMin > prevRecMin)){
             __mvConflictById[normKey].recommendedMin = nextRecMin;
             __mvConflictById[normKey].recommendedHHMM = recommendedHHMMFromValue || __mvFmtHHMM(nextRecMin % 1440);
+            __mvConflictById[normKey].recommendedTargetField = String(value && value.recommendedTargetField || '').trim() || null;
             __mvConflictById[normKey].recommendedSrc = "computed";
           }
         }
