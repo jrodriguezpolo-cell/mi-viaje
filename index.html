@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A77_FIX_RECOMMENDED_0000_DIAG</title>
+  <title>V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A77_FIX_RECOMMENDED_0000_DIAG</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A77_FIX_RECOMMENDED_0000_DIAG";
+const APP_BUILD = "V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -18557,16 +18557,28 @@ function renderTimeline() {
         if(!/^\d{4}-\d{2}-\d{2}$/.test(dayKey) || !Number.isFinite(startMin)) return;
         if(it?.actId != null){
           const act = actById.get(String(it.actId));
-          pushDayItem(dayKey, { key:`act:${String(it.actId)}`, startMin, endMin:startMin + __getEventDurationMin(act, 'act') });
+          pushDayItem(dayKey, {
+            key:`act:${String(it.actId)}`,
+            kind:'act',
+            startMin,
+            endMin:startMin + __getEventDurationMin(act, 'act'),
+            durationMin: __getEventDurationMin(act, 'act')
+          });
         }else if(it?.legId != null){
           const leg = legById.get(String(it.legId));
           const windows = __mvLegConflictWindows(leg);
           if(windows.length){
-            windows.forEach((win)=>pushDayItem(String(win.date || '').trim().slice(0,10), { key:`leg:${String(it.legId)}`, startMin:win.startMin, endMin:win.endMin }));
+            windows.forEach((win)=>pushDayItem(String(win.date || '').trim().slice(0,10), { key:`leg:${String(it.legId)}`, kind:'leg', phase:String(win.phase || '').trim(), startMin:win.startMin, endMin:win.endMin }));
           }
         }else if(it?.stayId != null){
           const stay = stayById.get(String(it.stayId));
-          pushDayItem(dayKey, { key:`stay:${String(it.stayId)}`, startMin, endMin:startMin + __getEventDurationMin(stay, 'stay') });
+          pushDayItem(dayKey, {
+            key:`stay:${String(it.stayId)}`,
+            kind:'stay',
+            startMin,
+            endMin:startMin + __getEventDurationMin(stay, 'stay'),
+            durationMin: __getEventDurationMin(stay, 'stay')
+          });
         }
       }catch(_){}
     });
