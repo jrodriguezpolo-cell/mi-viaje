@@ -14094,6 +14094,7 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
             nextRecommendedTargetField = 'timeIn';
           }
         }else{
+          curRecommendedMin = safeRecommended(next.startMin - entryDuration(cur) - (overlap ? 0 : safeBuffer));
           nextRecommendedMin = safeRecommended(cur.endMin + (overlap ? 0 : safeBuffer));
         }
 
@@ -14356,12 +14357,23 @@ function __mvRecommendedStartHHMMFromConflicts(conflicts, bufferMin=30){
 }
 function __mvConflictRecommendedFromHit(hit){
   try{
-    const recommendedMin = Number(hit && hit.recommendedMin);
     const recommendedTargetField = String(hit && hit.recommendedTargetField || '').trim() || null;
-    if(!Number.isFinite(recommendedMin) || recommendedMin <= 0) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
-    const recommendedHHMM = (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(recommendedMin % 1440) : String(hit && hit.recommendedHHMM || '').trim();
-    if(!/^\d{2}:\d{2}$/.test(String(recommendedHHMM || '').trim())) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
-    return { recommendedMin, recommendedHHMM:String(recommendedHHMM).trim(), recommendedTargetField };
+    const directRecommendedMin = Number(hit && hit.recommendedMin);
+    if(Number.isFinite(directRecommendedMin) && directRecommendedMin > 0){
+      const directRecommendedHHMM = (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(directRecommendedMin % 1440) : String(hit && hit.recommendedHHMM || '').trim();
+      if(/^\d{2}:\d{2}$/.test(String(directRecommendedHHMM || '').trim())){
+        return { recommendedMin:directRecommendedMin, recommendedHHMM:String(directRecommendedHHMM).trim(), recommendedTargetField };
+      }
+    }
+    const computed = (typeof __mvComputeRecommendedStartFromConflicts === 'function')
+      ? __mvComputeRecommendedStartFromConflicts(Array.isArray(hit && hit.conflicts) ? hit.conflicts : [], __MV_TIMELINE_CONFLICT_BUFFER_MIN)
+      : null;
+    const computedRecommendedMin = Number(computed && computed.recommendedMin);
+    const computedRecommendedHHMM = String(computed && computed.recommendedHHMM || '').trim();
+    if(Number.isFinite(computedRecommendedMin) && computedRecommendedMin > 0 && /^\d{2}:\d{2}$/.test(computedRecommendedHHMM)){
+      return { recommendedMin:computedRecommendedMin, recommendedHHMM:computedRecommendedHHMM, recommendedTargetField };
+    }
+    return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
   }catch(_){
     return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField:null };
   }
