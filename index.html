@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A87_LEG_CONFLICT_BUTTON_CURRENCY_ROW</title>
+  <title>V240_A88_CONFLICT_PRECEDENCE_DOCUMENTED</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A87_LEG_CONFLICT_BUTTON_CURRENCY_ROW</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A88_CONFLICT_PRECEDENCE_DOCUMENTED</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A87_LEG_CONFLICT_BUTTON_CURRENCY_ROW";
+const APP_BUILD = "V240_A88_CONFLICT_PRECEDENCE_DOCUMENTED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -14206,6 +14206,10 @@ function __mvFmtHHMM(dt){
 const __MV_TIMELINE_CONFLICT_BUFFER_MIN = 30;
 const __MV_TRANSPORT_PRE_BUFFER_MIN = 90;
 const __MV_TRANSPORT_POST_BUFFER_MIN = 90;
+// Conflict precedence is intentional:
+// 1) leg over stay/act
+// 2) stay over act
+// 3) act vs act offers recommended time using the available gap on that day, respecting duration and buffer
 function __mvConflictWithTravelBuffer(aStart, aEnd, bStart, bEnd, bufferMin){
   try{
     const extra = Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
