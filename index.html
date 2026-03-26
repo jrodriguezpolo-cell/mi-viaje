@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A91_LEG_CONFLICT_JUMP_CLOSES_EDITOR</title>
+  <title>V240_A77_LODGING_ADDRESS_FIELD_FOR_GO_TO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A91_LEG_CONFLICT_JUMP_CLOSES_EDITOR</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A77_LODGING_ADDRESS_FIELD_FOR_GO_TO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A91_LEG_CONFLICT_JUMP_CLOSES_EDITOR";
+const APP_BUILD = "V240_A77_LODGING_ADDRESS_FIELD_FOR_GO_TO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12608,6 +12608,12 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
     </div>
 
     <div>
+      <label class="text-xs text-slate-600">Dirección</label>
+      <input data-sheet-stay="address"
+        class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-200" placeholder="Calle, número, ciudad">
+    </div>
+
+    <div>
       <label class="text-xs text-slate-600"><span data-i18n="fld.checkOut">${t("fld.checkOut")}</span> (<span data-i18n="fld.date">${t("fld.date")}</span>)</label>
       <input data-sheet-stay="checkout" type="date"
         class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
@@ -12646,7 +12652,16 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   qs("city").value = v(stayObj.city);
   try{ __wireStayAutocomplete(wrap); }catch{}
   qs("name").value = v(stayObj.name);
-  try{ const _n=qs("name"); const _c=qs("city"); __installPinBtn(_n, ()=>__mapsDestWithCity(_n.value, _c && _c.value), ()=>"transit"); }catch{}
+  qs("address").value = v(stayObj.address || "");
+  try{
+    const _n=qs("name");
+    const _c=qs("city");
+    const _a=qs("address");
+    __installPinBtn(_n, ()=>{
+      const address = String(_a && _a.value || "").trim();
+      return address || __mapsDestWithCity(_n.value, _c && _c.value);
+    }, ()=>"transit");
+  }catch{}
   qs("date").value = v(stayObj.date || "");
   qs("time").value = v(stayObj.time || "");
   qs("nights").value = v(stayObj.nights ?? 1);
@@ -12905,6 +12920,7 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
 
   bind("city", (val)=>{ stayObj.city = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
   bind("name", (val)=>{ stayObj.name = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
+  bind("address", (val)=>{ stayObj.address = String(val || "").trim(); try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
 
   bind("date", (val)=>{
     stayObj.date = val;
@@ -22694,7 +22710,7 @@ $("addLeg").addEventListener("click", ()=>{
 $("addStay").addEventListener("click", ()=>{
   const sc = curScenario();
   const id = nowId();
-  sc.stays.unshift({ id, city:"", name:"", date:"", time:"", nights:1, cost:null, currency:(state.displayCurrency||"EUR"), checkoutDate:"", checkoutTime:"" });
+  sc.stays.unshift({ id, city:"", name:"", address:"", date:"", time:"", nights:1, cost:null, currency:(state.displayCurrency||"EUR"), checkoutDate:"", checkoutTime:"" });
   __sectionExpanded.stays.add(id);
   saveState(); renderStays(); renderTimeline(); calcSummary();
   requestAnimationFrame(() => requestAnimationFrame(() => openEventSheet({ kind: "stay", id, mode: "edit", isNew: true })));
@@ -29551,7 +29567,7 @@ function __mvICS_BuildEventsFromState(){
         if(!end || end <= start) end = __mvICS_AddMinutes(start, 60);
         const name = String((stay && (stay.name || stay.hotel)) || "").trim();
         const city = String((stay && stay.city) || "").trim();
-        const mapsDest = __mapsDestWithCity(name, city) || city;
+        const mapsDest = String((stay && stay.address) || "").trim() || __mapsDestWithCity(name, city) || city;
         const stableId = String((stay && stay.id) || fallbackUidPart("stay", stay));
         events.push({
           kind: "stay",
