@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A82_EDITOR_CONFLICT_LIVE_WITH_SAFE_FALLBACK</title>
+  <title>V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A82_EDITOR_CONFLICT_LIVE_WITH_SAFE_FALLBACK</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A82_EDITOR_CONFLICT_LIVE_WITH_SAFE_FALLBACK";
+const APP_BUILD = "V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12651,6 +12651,10 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
   qs("checkoutTime").value = v(stayObj.checkoutTime || stayObj.checkout_time || "");
   qs("currency").value = v(stayObj.currency || "EUR");
   qs("cost").value = (stayObj.cost == null ? "" : String(stayObj.cost));
+  const __stayInitialSheetValues = {
+    date: v(stayObj.date || ""),
+    time: v(stayObj.time || "")
+  };
 
   try { __updateStaySheetTitle(stayObj.city, stayObj.name); } catch {}
 
@@ -12716,8 +12720,8 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
     const draft = __sheetStayReadDraftInterval();
     const out = { draft, compared:[], conflicts:[] };
     const draftMatchesSaved = (
-      String(qs('date')?.value || '').trim() === String(stayObj?.date || '').trim() &&
-      String(qs('time')?.value || '').trim() === String(stayObj?.time || '').trim()
+      String(qs('date')?.value || '').trim() === String(__stayInitialSheetValues.date || '').trim() &&
+      String(qs('time')?.value || '').trim() === String(__stayInitialSheetValues.time || '').trim()
     );
     try{
       const sc = (typeof curScenario === 'function') ? curScenario() : null;
@@ -13016,6 +13020,11 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
 
 qs("currency").value = v(actObj.currency || "EUR");
   qs("cost").value = (actObj.cost == null ? "" : String(actObj.cost));
+  const __actInitialSheetValues = {
+    date: v(actObj.date || ""),
+    time: v(actObj.time || ""),
+    durationMin: Math.max(0, Number((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(actObj) : (actObj?.durationMin || 0)) || 0)
+  };
 
   try { __updateActSheetTitle(actObj.city, actObj.title); } catch {}
 
@@ -13102,9 +13111,9 @@ qs("currency").value = v(actObj.currency || "EUR");
     const draft = __sheetActReadDraftInterval();
     const out = { draft, compared: [], conflicts: [] };
     const draftMatchesSaved = (
-      String(qs('date')?.value || '').trim() === String(actObj?.date || '').trim() &&
-      String(qs('time')?.value || '').trim() === String(actObj?.time || '').trim() &&
-      (Math.max(0, parseInt(String(qs('durH')?.value || '0'), 10) || 0) * 60 + Math.max(0, Math.min(59, parseInt(String(qs('durM')?.value || '0'), 10) || 0))) === Math.max(0, Number((typeof __tlActDurationMinutes === 'function') ? __tlActDurationMinutes(actObj) : (actObj?.durationMin || 0)) || 0)
+      String(qs('date')?.value || '').trim() === String(__actInitialSheetValues.date || '').trim() &&
+      String(qs('time')?.value || '').trim() === String(__actInitialSheetValues.time || '').trim() &&
+      (Math.max(0, parseInt(String(qs('durH')?.value || '0'), 10) || 0) * 60 + Math.max(0, Math.min(59, parseInt(String(qs('durM')?.value || '0'), 10) || 0))) === Math.max(0, Number(__actInitialSheetValues.durationMin || 0) || 0)
     );
     try{
       const sc = (typeof curScenario === 'function') ? curScenario() : null;
