@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX</title>
+  <title>V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A83_EDITOR_CONFLICT_FALLBACK_BASELINE_FIX";
+const APP_BUILD = "V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12880,38 +12880,42 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
     el.addEventListener("change", () => { try { fn(el.value); } catch {} });
   };
 
-  bind("city", (val)=>{ stayObj.city = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} __renderSheetStayInspector(); });
-  bind("name", (val)=>{ stayObj.name = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} __renderSheetStayInspector(); });
+  bind("city", (val)=>{ stayObj.city = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
+  bind("name", (val)=>{ stayObj.name = val; try{ __updateStaySheetTitle(stayObj.city, stayObj.name); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
 
   bind("date", (val)=>{
     stayObj.date = val;
     // keep checkout aligned when possible
     __syncFromCheckinAndNights();
+    try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
     __renderSheetStayInspector();
   });
 
-  bind("time", (val)=>{ stayObj.time = val; __renderSheetStayInspector(); });
+  bind("time", (val)=>{ stayObj.time = val; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
 
   bind("nights", (val)=>{
     const n = Math.max(1, parseInt(String(val||"1"),10) || 1);
     stayObj.nights = n;
     __syncFromCheckinAndNights();
+    try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
     __renderSheetStayInspector();
   });
 
   bind("checkout", (val)=>{
     stayObj.checkout = val;
     __syncFromCheckout();
+    try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
     __renderSheetStayInspector();
   });
 
-  bind("checkoutTime", (val)=>{ stayObj.checkoutTime = val; __renderSheetStayInspector(); });
+  bind("checkoutTime", (val)=>{ stayObj.checkoutTime = val; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
 
-  bind("currency", (val)=>{ stayObj.currency = val; __renderSheetStayInspector(); });
+  bind("currency", (val)=>{ stayObj.currency = val; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetStayInspector(); });
 
   bind("cost", (val)=>{
     const s = String(val||"").trim();
     stayObj.cost = (s === "") ? null : parseMoney(s);
+    try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
     __renderSheetStayInspector();
   });
 
@@ -13347,10 +13351,10 @@ qs("currency").value = v(actObj.currency || "EUR");
     }catch(_){}
   };
 
-  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} __renderSheetActInspector(); });
-  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} __renderSheetActInspector(); });
-  bind("date", (val)=>{ actObj.date = val; __renderSheetActInspector(); });
-  bind("time", (val)=>{ actObj.time = val; __renderSheetActInspector(); });
+  bind("title", (val)=>{ actObj.title = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
+  bind("city", (val)=>{ actObj.city = val; try{ __updateActSheetTitle(actObj.city, actObj.title); }catch{} try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
+  bind("date", (val)=>{ actObj.date = val; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
+  bind("time", (val)=>{ actObj.time = val; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
 
   const __actRecalcDuration = ()=>{
     const h = Math.max(0, Math.floor(parseInt(qs("durH")?.value || "0",10) || 0));
@@ -13361,14 +13365,15 @@ qs("currency").value = v(actObj.currency || "EUR");
     actObj.durationMin = h*60 + m;
     // Keep legacy string for backwards compatibility / older renders
     actObj.duration = __tlFormatDurationHM(actObj.durationMin);
+    try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){}
     __renderSheetActInspector();
   };
 
   bind("durH", ()=>{ __actRecalcDuration(); });
   bind("durM", ()=>{ __actRecalcDuration(); });
 
-  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; __renderSheetActInspector(); });
-  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); __renderSheetActInspector(); });
+  bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
+  bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
 
   try{ __renderSheetActInspector(); }catch{}
 
