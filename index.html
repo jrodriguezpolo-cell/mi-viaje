@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A80_STAY_LIVE_CONFLICT_INSPECTOR_WITH_TRANSPORT</title>
+  <title>V240_A81_LIVE_EDITOR_CONFLICT_INSPECTOR_LOCAL_ONLY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A80_STAY_LIVE_CONFLICT_INSPECTOR_WITH_TRANSPORT</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A81_LIVE_EDITOR_CONFLICT_INSPECTOR_LOCAL_ONLY</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A80_STAY_LIVE_CONFLICT_INSPECTOR_WITH_TRANSPORT";
+const APP_BUILD = "V240_A81_LIVE_EDITOR_CONFLICT_INSPECTOR_LOCAL_ONLY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12797,15 +12797,6 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
       });
     }catch(_){}
     try{
-      const hit = window.__mvConflictById && window.__mvConflictById[`stay:${String(itemId)}`];
-      if(hit && Number(hit.count || 0) > 0){
-        const safeHitRecommended = __mvConflictRecommendedFromHit(hit);
-        if(safeHitRecommended.recommendedHHMM){
-          out.recommendedStartHHMM = safeHitRecommended.recommendedHHMM;
-        }
-      }
-    }catch(_){}
-    try{
       if(!String(out.recommendedStartHHMM || '').trim()){
         out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts);
       }
@@ -13172,42 +13163,6 @@ qs("currency").value = v(actObj.currency || "EUR");
       });
     }catch{}
     try{
-      const hit = window.__mvConflictById && window.__mvConflictById[`act:${String(itemId)}`];
-      if(hit && Number(hit.count || 0) > 0){
-        const globalConflicts = Array.isArray(hit.conflicts) ? hit.conflicts : [];
-        globalConflicts.forEach((c)=>{
-          const type = String(c && c.type || '').trim();
-          const refId = String(c && c.id || '').trim();
-          if(!type || !refId) return;
-          if(out.conflicts.some((x)=>String(x && x.type || '') === type && String(x && x.id || '') === refId)) return;
-          const item = (typeof getItemByTypeAndId === 'function') ? getItemByTypeAndId(type, refId) : null;
-          const interval = (typeof __mvTimelineItemInterval === 'function' && item) ? __mvTimelineItemInterval(type, item) : null;
-          const title = type === 'act'
-            ? (String(item && (item.title || item.name) || c && c.title || 'Actividad').trim() || 'Actividad')
-            : (type === 'leg'
-                ? `${String(item && item.from || '—').trim() || '—'} → ${String(item && item.to || '—').trim() || '—'}`
-                : `${String(item && item.city || '—').trim() || '—'} · ${String(item && (item.name || item.place) || 'Alojamiento').trim() || 'Alojamiento'}`);
-          out.conflicts.push({
-            type,
-            typeLabel: type === 'leg' ? 'Transporte' : (type === 'stay' ? 'Alojamiento' : 'Actividad'),
-            id: refId,
-            title,
-            start: interval && interval.start instanceof Date ? interval.start : (c && c.start instanceof Date ? c.start : null),
-            end: interval && interval.end instanceof Date ? interval.end : (c && c.end instanceof Date ? c.end : null),
-            endMin: Number.isFinite(Number(c && c.endMin)) ? Number(c.endMin) : (interval ? Number(interval.endMin) : null),
-            endHHMM: String(c && c.endHHMM || '').trim(),
-            recommendedMin: Number.isFinite(Number(c && c.recommendedMin)) ? Number(c.recommendedMin) : null,
-            recommendedHHMM: String(c && c.recommendedHHMM || '').trim(),
-            reason: String(c && c.reason || 'buffer')
-          });
-        });
-        const safeHitRecommended = __mvConflictRecommendedFromHit(hit);
-        if(safeHitRecommended.recommendedHHMM){
-          out.recommendedStartHHMM = safeHitRecommended.recommendedHHMM;
-        }
-      }
-    }catch(_){}
-    try{
       if(!String(out.recommendedStartHHMM || '').trim()){
         out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts);
       }
@@ -13290,7 +13245,6 @@ qs("currency").value = v(actObj.currency || "EUR");
     if(!host) return;
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
-    const hit = window.__mvConflictById && window.__mvConflictById[`act:${String(itemId)}`];
     const computedRecommended = (typeof __mvComputeRecommendedStartFromConflicts === "function") ? __mvComputeRecommendedStartFromConflicts(data.conflicts) : null;
     const recommendedHHMM = String(
       (/^\d{2}:\d{2}$/.test(String(data.recommendedStartHHMM || "").trim()) ? data.recommendedStartHHMM : "") ||
@@ -13309,7 +13263,7 @@ qs("currency").value = v(actObj.currency || "EUR");
       ${Array.isArray(data.conflicts) ? data.conflicts.filter((c)=>String(c && c.type || "") === "leg").map((c)=>`<div class="mt-1 text-[11px] text-amber-800">DIAG LEG: phase=${escapeHtml(String(c && c.phase || c && c.legPhase || "—"))} win.startMin=${escapeHtml(Number.isFinite(Number(c && c.startMin)) ? String(Number(c.startMin)) : "null")} win.endMin=${escapeHtml(Number.isFinite(Number(c && c.endMin)) ? String(Number(c.endMin)) : "null")} arrival/departure=${escapeHtml(String(c && c.reason || "—"))}</div>`).join("") : ``}
       ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
       <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
-      ${__mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:`act:${String(itemId)}`, kind:"act", id:String(itemId), startMin:(draft.start instanceof Date && !Number.isNaN(draft.start.getTime())) ? (draft.start.getHours()*60 + draft.start.getMinutes()) : null, endMin:(draft.end instanceof Date && !Number.isNaN(draft.end.getTime())) ? (draft.end.getHours()*60 + draft.end.getMinutes()) : null, conflictCount:Number(hit && hit.count || data.conflicts.length || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:Array.isArray(data.conflicts) ? data.conflicts : [] })}
+      ${__mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:`act:${String(itemId)}`, kind:"act", id:String(itemId), startMin:(draft.start instanceof Date && !Number.isNaN(draft.start.getTime())) ? (draft.start.getHours()*60 + draft.start.getMinutes()) : null, endMin:(draft.end instanceof Date && !Number.isNaN(draft.end.getTime())) ? (draft.end.getHours()*60 + draft.end.getMinutes()) : null, conflictCount:Number(data.conflicts.length || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:Array.isArray(data.conflicts) ? data.conflicts : [] })}
     `;
     try{
       const pill = host.querySelector('[data-act-recommended-pill]');
