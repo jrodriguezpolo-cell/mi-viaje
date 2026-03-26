@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME</title>
+  <title>V240_A74_LEG_EVENT_RECOMMENDED_MIN_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A74_LEG_EVENT_RECOMMENDED_MIN_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A73_TRANSPORT_EVENT_CONFLICTS_RECOMMENDED_TIME";
+const APP_BUILD = "V240_A74_LEG_EVENT_RECOMMENDED_MIN_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6155,7 +6155,7 @@ function __mvOpenConflictSectionDetail(kind){
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
             <div class="mt-2 text-sm text-slate-600">La correccion usa el boton real de “Hora recomendada (minima)” dentro del editor.</div>
             <div class="mt-3 flex justify-end gap-2">
-              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold" data-conflict-detail-fix="${idx}">Corregir hora</button>
+              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${String(entry.recommendedHHMM || '').trim() ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${String(entry.recommendedHHMM || '').trim() ? '' : 'disabled'}>Corregir hora (${escapeHtml(String(entry.recommendedHHMM || '—'))})</button>
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
             </div>
           </div>
@@ -6181,6 +6181,10 @@ function __mvOpenConflictSectionDetail(kind){
         const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null;
         const recommendedHHMM = String(hit && hit.recommendedHHMM || entry.recommendedHHMM || "").trim();
         const recommendedTargetField = String(hit && hit.recommendedTargetField || "").trim();
+        if(!/^\d{2}:\d{2}$/.test(recommendedHHMM)){
+          try{ toast("No hay hora recomendada disponible"); }catch(_){}
+          return;
+        }
         try{
           closeModal();
         }catch(_){}
@@ -12875,7 +12879,10 @@ qs("currency").value = v(actObj.currency || "EUR");
         end: new Date(`${win.date}T${String((typeof __fmtHHMM_fromMinutes === 'function') ? __fmtHHMM_fromMinutes(Math.max(0, win.endMin) % 1440) : '00:00')}:00`),
         item,
         type:'leg',
-        typeLabel:'Transporte'
+        typeLabel:'Transporte',
+        phase: String(win.phase || '').trim(),
+        startMin: Number(win.startMin),
+        endMin: Number(win.endMin)
       })).filter((w)=>w.start instanceof Date && w.end instanceof Date && !Number.isNaN(w.start.getTime()) && !Number.isNaN(w.end.getTime()) && (w.start < w.end));
     }catch{ return null; }
   };
@@ -12934,6 +12941,11 @@ qs("currency").value = v(actObj.currency || "EUR");
             });
             const overlap = draft.ok && (draft.start < interval.end) && (interval.start < draft.end);
             if(draft.ok && overlap){
+              const rawRecommendedMin = String(interval.phase || '') === 'post'
+                ? Number(interval.endMin)
+                : (String(interval.phase || '') === 'pre'
+                    ? (Number(interval.startMin) - Number(draft.durationMin || 0) - __MV_TIMELINE_CONFLICT_BUFFER_MIN)
+                    : NaN);
               out.conflicts.push({
                 type: 'leg',
                 typeLabel: 'Transporte',
@@ -12943,6 +12955,8 @@ qs("currency").value = v(actObj.currency || "EUR");
                 end: interval.end,
                 endMin: interval.end.getHours()*60 + interval.end.getMinutes(),
                 endHHMM: (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(interval.end) : '',
+                recommendedMin: Number.isFinite(rawRecommendedMin) && rawRecommendedMin >= 0 ? rawRecommendedMin : null,
+                recommendedHHMM: Number.isFinite(rawRecommendedMin) && rawRecommendedMin >= 0 && typeof __mvFmtHHMM === 'function' ? __mvFmtHHMM(rawRecommendedMin % 1440) : '',
                 reason: 'overlap'
               });
             }
@@ -12950,7 +12964,46 @@ qs("currency").value = v(actObj.currency || "EUR");
         }catch{}
       });
     }catch{}
-    try{ out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts); }catch(_){}
+    try{
+      const hit = window.__mvConflictById && window.__mvConflictById[`act:${String(itemId)}`];
+      if(hit && Number(hit.count || 0) > 0){
+        const globalConflicts = Array.isArray(hit.conflicts) ? hit.conflicts : [];
+        globalConflicts.forEach((c)=>{
+          const type = String(c && c.type || '').trim();
+          const refId = String(c && c.id || '').trim();
+          if(!type || !refId) return;
+          if(out.conflicts.some((x)=>String(x && x.type || '') === type && String(x && x.id || '') === refId)) return;
+          const item = (typeof getItemByTypeAndId === 'function') ? getItemByTypeAndId(type, refId) : null;
+          const interval = (typeof __mvTimelineItemInterval === 'function' && item) ? __mvTimelineItemInterval(type, item) : null;
+          const title = type === 'act'
+            ? (String(item && (item.title || item.name) || c && c.title || 'Actividad').trim() || 'Actividad')
+            : (type === 'leg'
+                ? `${String(item && item.from || '—').trim() || '—'} → ${String(item && item.to || '—').trim() || '—'}`
+                : `${String(item && item.city || '—').trim() || '—'} · ${String(item && (item.name || item.place) || 'Alojamiento').trim() || 'Alojamiento'}`);
+          out.conflicts.push({
+            type,
+            typeLabel: type === 'leg' ? 'Transporte' : (type === 'stay' ? 'Alojamiento' : 'Actividad'),
+            id: refId,
+            title,
+            start: interval && interval.start instanceof Date ? interval.start : (c && c.start instanceof Date ? c.start : null),
+            end: interval && interval.end instanceof Date ? interval.end : (c && c.end instanceof Date ? c.end : null),
+            endMin: Number.isFinite(Number(c && c.endMin)) ? Number(c.endMin) : (interval ? Number(interval.endMin) : null),
+            endHHMM: String(c && c.endHHMM || '').trim(),
+            recommendedMin: Number.isFinite(Number(c && c.recommendedMin)) ? Number(c.recommendedMin) : null,
+            recommendedHHMM: String(c && c.recommendedHHMM || '').trim(),
+            reason: String(c && c.reason || 'buffer')
+          });
+        });
+        if(String(hit.recommendedHHMM || '').trim()){
+          out.recommendedStartHHMM = String(hit.recommendedHHMM || '').trim();
+        }
+      }
+    }catch(_){}
+    try{
+      if(!String(out.recommendedStartHHMM || '').trim()){
+        out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts);
+      }
+    }catch(_){}
     return out;
   };
 
@@ -13031,7 +13084,7 @@ qs("currency").value = v(actObj.currency || "EUR");
     const draft = data.draft || {};
     const recommendedHHMM = String(data.recommendedStartHHMM || __mvRecommendedStartHHMMFromConflicts(data.conflicts, 30) || "").trim();
     const conflictHtml = data.conflicts.length
-      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>{ const recLine = String(__mvRecommendedStartHHMMFromConflicts([c], 30) || '').trim(); return `<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}${recLine ? ` · Recomendado: ≥ ${escapeHtml(recLine)}` : ``}</span></li>`; }).join('')}</ul>`
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>{ const recLine = String((c && c.recommendedHHMM) || __mvRecommendedStartHHMMFromConflicts([c], 30) || '').trim(); return `<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}${recLine ? ` · Recomendado: ≥ ${escapeHtml(recLine)}` : ``}</span></li>`; }).join('')}</ul>`
       : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
     host.innerHTML = `
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
@@ -13046,7 +13099,11 @@ qs("currency").value = v(actObj.currency || "EUR");
       if(pill){
         pill.onclick = ()=>{
           try{
-            const hhmm = String(pill.getAttribute('data-act-recommended-pill') || '');
+            const hhmm = String(pill.getAttribute('data-act-recommended-pill') || '').trim();
+            if(!/^\d{2}:\d{2}$/.test(hhmm)){
+              try{ toast('No hay hora recomendada disponible'); }catch(_){}
+              return;
+            }
             const ok = (window.__mvApplyRecommendedTimeToActiveEditor && window.__mvApplyRecommendedTimeToActiveEditor(hhmm));
             if(ok){ try{ toast(`Hora ajustada a ${hhmm}`); }catch(_){} }
           }catch(_){}
@@ -14131,6 +14188,11 @@ function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
     let best = null;
     list.forEach((c)=>{
       try{
+        const explicitRecommendedMin = Number(c && c.recommendedMin);
+        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin >= 0){
+          if(best == null || explicitRecommendedMin > best) best = explicitRecommendedMin;
+          return;
+        }
         let endMin = NaN;
         const rawEnd = c ? c.end : null;
         const end = (rawEnd instanceof Date && !Number.isNaN(rawEnd.getTime())) ? rawEnd : null;
