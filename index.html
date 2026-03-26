@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT</title>
+  <title>V240_A85_EDITOR_LIVE_CONFLICT_DAY_SNAPSHOT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A85_EDITOR_LIVE_CONFLICT_DAY_SNAPSHOT</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A84_EDITOR_LIVE_CONFLICT_RECOMPUTE_ON_INPUT";
+const APP_BUILD = "V240_A85_EDITOR_LIVE_CONFLICT_DAY_SNAPSHOT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -12810,6 +12810,26 @@ function __renderStayEditorInSheet(body, stayObj, itemId, isNew){
       }
     }catch(_){}
     try{
+      if(draft.ok){
+        const liveHit = __mvDraftConflictHitForDay(
+          (typeof curScenario === 'function') ? curScenario() : null,
+          {
+            key:`stay:${String(itemId)}`,
+            kind:'stay',
+            date:String(draft.date || '').trim(),
+            startMin: draft.start.getHours()*60 + draft.start.getMinutes(),
+            endMin: draft.end.getHours()*60 + draft.end.getMinutes(),
+            durationMin: 0
+          },
+          `stay:${String(itemId)}`
+        );
+        if(liveHit && Number(liveHit.count || 0) > 0){
+          const safeLiveRecommended = __mvConflictRecommendedFromHit(liveHit);
+          out.recommendedStartHHMM = safeLiveRecommended.recommendedHHMM || __mvRecommendedStartHHMMFromConflicts(Array.isArray(liveHit.conflicts) ? liveHit.conflicts : []);
+        }
+      }
+    }catch(_){}
+    try{
       if(!out.conflicts.length && draftMatchesSaved){
         const hit = window.__mvConflictById && window.__mvConflictById[`stay:${String(itemId)}`];
         if(hit && Number(hit.count || 0) > 0){
@@ -13196,6 +13216,52 @@ qs("currency").value = v(actObj.currency || "EUR");
     try{
       if(!String(out.recommendedStartHHMM || '').trim()){
         out.recommendedStartHHMM = __mvRecommendedStartHHMMFromConflicts(out.conflicts);
+      }
+    }catch(_){}
+    try{
+      if(draft.ok){
+        const liveHit = __mvDraftConflictHitForDay(
+          (typeof curScenario === 'function') ? curScenario() : null,
+          {
+            key:`act:${String(itemId)}`,
+            kind:'act',
+            date:String(draft.date || '').trim(),
+            startMin: draft.start.getHours()*60 + draft.start.getMinutes(),
+            endMin: draft.end.getHours()*60 + draft.end.getMinutes(),
+            durationMin: Number(draft.durationMin || 0) || 0
+          },
+          `act:${String(itemId)}`
+        );
+        if(liveHit && Number(liveHit.count || 0) > 0){
+          out.conflicts = [];
+          (Array.isArray(liveHit.conflicts) ? liveHit.conflicts : []).forEach((c)=>{
+            const type = String(c && c.type || '').trim();
+            const refId = String(c && c.id || '').trim();
+            if(!type || !refId) return;
+            const item = (typeof getItemByTypeAndId === 'function') ? getItemByTypeAndId(type, refId) : null;
+            const interval = (typeof __mvTimelineItemInterval === 'function' && item) ? __mvTimelineItemInterval(type, item) : null;
+            const title = type === 'act'
+              ? (String(item && (item.title || item.name) || c && c.title || 'Actividad').trim() || 'Actividad')
+              : (type === 'leg'
+                  ? `${String(item && item.from || '—').trim() || '—'} → ${String(item && item.to || '—').trim() || '—'}`
+                  : `${String(item && item.city || '—').trim() || '—'} · ${String(item && (item.name || item.place) || 'Alojamiento').trim() || 'Alojamiento'}`);
+            out.conflicts.push({
+              type,
+              typeLabel: type === 'leg' ? 'Transporte' : (type === 'stay' ? 'Alojamiento' : 'Actividad'),
+              id: refId,
+              title,
+              start: interval && interval.start instanceof Date ? interval.start : (c && c.start instanceof Date ? c.start : null),
+              end: interval && interval.end instanceof Date ? interval.end : (c && c.end instanceof Date ? c.end : null),
+              endMin: Number.isFinite(Number(c && c.endMin)) ? Number(c.endMin) : (interval ? Number(interval.endMin) : null),
+              endHHMM: String(c && c.endHHMM || '').trim(),
+              recommendedMin: Number.isFinite(Number(c && c.recommendedMin)) ? Number(c.recommendedMin) : null,
+              recommendedHHMM: String(c && c.recommendedHHMM || '').trim(),
+              reason: String(c && c.reason || 'buffer')
+            });
+          });
+          const safeLiveRecommended = __mvConflictRecommendedFromHit(liveHit);
+          out.recommendedStartHHMM = safeLiveRecommended.recommendedHHMM || __mvRecommendedStartHHMMFromConflicts(out.conflicts);
+        }
       }
     }catch(_){}
     try{
@@ -14426,6 +14492,66 @@ function __mvBuildScenarioConflictMap(sc){
     });
   }catch(_){}
   return map;
+}
+function __mvDraftConflictHitForDay(scope, draftPayload, excludeKey){
+  try{
+    const sc = scope || ((typeof curScenario === 'function') ? curScenario() : null);
+    const draft = (draftPayload && typeof draftPayload === 'object') ? draftPayload : null;
+    const dayKey = String(draft && draft.date || '').trim().slice(0,10);
+    if(!sc || !draft || !dayKey || !draft.key || !Number.isFinite(draft.startMin) || !Number.isFinite(draft.endMin)) return null;
+    const dayItems = [];
+    const pushDayItem = (payload)=>{
+      if(!payload || !payload.key || !Number.isFinite(payload.startMin) || !Number.isFinite(payload.endMin)) return;
+      if(String(payload.key) === String(excludeKey || '')) return;
+      dayItems.push(payload);
+    };
+    (Array.isArray(sc.activities) ? sc.activities : []).forEach((item)=>{
+      try{
+        const interval = __mvTimelineItemInterval('act', item);
+        if(!interval || String(interval.date || '').trim().slice(0,10) !== dayKey) return;
+        pushDayItem({
+          key:`act:${String(item && item.id || '')}`,
+          kind:'act',
+          startMin: interval.startMin,
+          endMin: interval.endMin,
+          durationMin: __getEventDurationMin(item, 'act')
+        });
+      }catch(_){}
+    });
+    (Array.isArray(sc.stays) ? sc.stays : []).forEach((item)=>{
+      try{
+        const interval = __mvTimelineItemInterval('stay', item);
+        if(!interval || String(interval.date || '').trim().slice(0,10) !== dayKey) return;
+        pushDayItem({
+          key:`stay:${String(item && item.id || '')}`,
+          kind:'stay',
+          startMin: interval.startMin,
+          endMin: interval.endMin,
+          durationMin: __getEventDurationMin(item, 'stay')
+        });
+      }catch(_){}
+    });
+    (Array.isArray(sc.legs) ? sc.legs : []).forEach((item)=>{
+      try{
+        const windows = __mvLegConflictWindows(item);
+        windows.forEach((win)=>{
+          if(String(win.date || '').trim().slice(0,10) !== dayKey) return;
+          pushDayItem({
+            key:`leg:${String(item && item.id || '')}`,
+            kind:'leg',
+            phase: String(win.phase || '').trim(),
+            startMin: win.startMin,
+            endMin: win.endMin
+          });
+        });
+      }catch(_){}
+    });
+    dayItems.push(draft);
+    const map = __computeConflictMapForDayItems(dayItems, __MV_TIMELINE_CONFLICT_BUFFER_MIN);
+    return (map instanceof Map) ? (map.get(String(draft.key)) || null) : null;
+  }catch(_){
+    return null;
+  }
 }
 function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
   try{
