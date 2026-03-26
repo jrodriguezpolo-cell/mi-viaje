@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE</title>
+  <title>V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE";
+const APP_BUILD = "V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -14012,6 +14012,7 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
       return m ? String(m[1] || '') : '';
     };
     const safeRecommended = (min)=>{
+      if(min === null || min === undefined) return null;
       const n = Number(min);
       return Number.isFinite(n) && n >= 0 && n <= 2880 ? n : null;
     };
