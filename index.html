@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A78_LODGING_ADDRESS_LAYOUT_FIX</title>
+  <title>V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A78_LODGING_ADDRESS_LAYOUT_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A78_LODGING_ADDRESS_LAYOUT_FIX";
+const APP_BUILD = "V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -15812,14 +15812,18 @@ function staySummaryLinesHTML(stay, opts){
   }
 
   const nightsLabel = `<span class="font-semibold whitespace-nowrap">${nights}&nbsp;${nights===1?"noche":"noches"}</span>`;
+  const stayMarker = String((opts && (opts.tlMarker || opts.secMarker)) || "").trim();
 
   const lineCheckIn = `Check-in: <span class="font-semibold">${escapeHtml(checkInDateES)}</span>${checkInTime ? ` ${__timeBadgeHTML(checkInISO, checkInTime)}` : ``} <span class="text-slate-500">·</span> ${nightsLabel}`;
   const lineCheckOut = `Check-out: <span class="font-semibold">${escapeHtml(checkOutDateES)}</span>${checkOutTime ? ` ${__timeBadgeHTML(checkOutISO, checkOutTime)}` : ``}`;
+  const stayDateLinesHTML = stayMarker === "Salida"
+    ? `<div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>`
+    : `<div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
+    <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>`;
 
   const __contentHTML = `
     <div class="text-sm font-semibold flex items-center gap-1"><span class="truncate min-w-0">🏨 <span class="font-medium">${escapeHtml(name)}</span><span class="text-slate-400 font-normal"> · </span><span>${escapeHtml(city)}</span></span>${(opts.context==="timeline") ? __tlHowToBtnHTML(__navDest, "transit") : ""}</div>
-    <div class="text-xs text-slate-600 mt-1">${lineCheckIn}</div>
-    <div class="text-xs text-slate-600 mt-1">${lineCheckOut}</div>
+    ${stayDateLinesHTML}
     ${__conflictHTML}
   `;
   return (opts.context==="section")
