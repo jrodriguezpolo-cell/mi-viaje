@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX</title>
+  <title>V240_A79_TRANSPORT_PREVAILS_NO_LEG_TIME_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A79_TRANSPORT_PREVAILS_NO_LEG_TIME_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A78_TIMELINE_CONFLICT_DURATIONMIN_FIX";
+const APP_BUILD = "V240_A79_TRANSPORT_PREVAILS_NO_LEG_TIME_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6149,14 +6149,15 @@ function __mvOpenConflictSectionDetail(kind){
     const title = titleMap[kindKey] || "Conflictos";
     const body = `
       <div class="space-y-3">
-        ${entries.length ? entries.map((entry, idx)=>{ const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null; const rec = __mvConflictRecommendedFromHit(hit); const diagHtml = __mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:entry.key, kind:entry.kind, id:entry.id, startMin:entry.startMin, endMin:Number.isFinite(Number(hit && hit.endMin)) ? Number(hit.endMin) : null, conflictCount:Number(hit && hit.count || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:Array.isArray(hit && hit.conflicts) ? hit.conflicts : [] }); return `
+        ${entries.length ? entries.map((entry, idx)=>{ const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null; const rec = __mvConflictRecommendedFromHit(hit); const hitConflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : []; const isTransportLocked = String(entry.kind || "") === "leg" && hitConflicts.some((c)=>{ const t = String(c && c.type || "").trim(); return t === "act" || t === "stay"; }); const diagHtml = __mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:entry.key, kind:entry.kind, id:entry.id, startMin:entry.startMin, endMin:Number.isFinite(Number(hit && hit.endMin)) ? Number(hit.endMin) : null, conflictCount:Number(hit && hit.count || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:hitConflicts }); return `
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
             <div class="mt-2 text-sm text-slate-600">La correccion usa el boton real de “Hora recomendada (minima)” dentro del editor.</div>
+            ${isTransportLocked ? `<div class="mt-2 text-sm text-slate-600">El transporte prevalece. Corrige la hora en la actividad o el alojamiento en conflicto.</div>` : ``}
             ${diagHtml}
             <div class="mt-3 flex justify-end gap-2">
-              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${rec.recommendedHHMM ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${rec.recommendedHHMM ? '' : 'disabled'}>Corregir hora (${escapeHtml(String(rec.recommendedHHMM || '—'))})</button>
+              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${(rec.recommendedHHMM && !isTransportLocked) ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${(rec.recommendedHHMM && !isTransportLocked) ? '' : 'disabled'}>Corregir hora (${escapeHtml(String((!isTransportLocked && rec.recommendedHHMM) || '—'))})</button>
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
             </div>
           </div>
@@ -6180,6 +6181,12 @@ function __mvOpenConflictSectionDetail(kind){
         const entry = Number.isInteger(idx) ? entries[idx] : null;
         if(!entry) return;
         const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null;
+        const hitConflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
+        const isTransportLocked = String(entry.kind || "") === "leg" && hitConflicts.some((c)=>{ const t = String(c && c.type || "").trim(); return t === "act" || t === "stay"; });
+        if(isTransportLocked){
+          try{ toast("Corrige la hora en la actividad o el alojamiento"); }catch(_){}
+          return;
+        }
         const rec = __mvConflictRecommendedFromHit(hit);
         const recommendedHHMM = String(rec.recommendedHHMM || '').trim();
         const recommendedTargetField = String(rec.recommendedTargetField || '').trim();
@@ -14676,8 +14683,9 @@ function __mvOpenLegConflictInspectorModal(){
     const key = `leg:${String(ctx.id || "").trim()}`;
     const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
     const conflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
+    const isTransportLocked = conflicts.some((c)=>{ const t = String(c && c.type || "").trim(); return t === "act" || t === "stay"; });
     const ownRec = __mvConflictRecommendedFromHit(hit);
-    let recommendedHHMM = String(ownRec.recommendedHHMM || "").trim();
+    let recommendedHHMM = isTransportLocked ? "" : String(ownRec.recommendedHHMM || "").trim();
     const ownDepDate = String((ownLeg && (ownLeg.date || ownLeg.depDate)) || "").trim();
     const ownArrDate = String((ownLeg && (ownLeg.arriveDate || ownLeg.dateIn)) || "").trim();
     const ownDepTime = String((ownLeg && (ownLeg.time || ownLeg.depTime)) || "").trim();
@@ -14743,7 +14751,7 @@ function __mvOpenLegConflictInspectorModal(){
       const id = String(c && c.id || "").trim();
       const pairKey = type && id ? `${type}:${id}` : "";
       if(pairKey && !related.includes(pairKey)) related.push(pairKey);
-      if(!recommendedHHMM && pairKey){
+      if(!recommendedHHMM && !isTransportLocked && pairKey){
         const pairHit = window.__mvConflictById && window.__mvConflictById[pairKey];
         const pairRec = __mvConflictRecommendedFromHit(pairHit);
         if(pairRec.recommendedHHMM) recommendedHHMM = pairRec.recommendedHHMM;
@@ -14772,6 +14780,7 @@ function __mvOpenLegConflictInspectorModal(){
           ${conflicts.length ? detailCards.join("") : `<div class="text-sm text-slate-500">No hay conflictos activos.</div>`}
         </div>
         <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span>${recommendedHHMM ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button>` : `<span class="text-sm font-semibold text-slate-400">—</span>`}</div>
+        ${isTransportLocked ? `<div class="text-sm text-slate-600">El transporte prevalece. Ajusta la hora en la actividad o el alojamiento en conflicto.</div>` : ``}
         ${legDiagHtml}
       </div>
     `;
