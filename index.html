@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED</title>
+  <title>V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED";
+const APP_BUILD = "V240_A75_DIAG_RECOMMENDED_0000_ROOT_CAUSE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6149,11 +6149,12 @@ function __mvOpenConflictSectionDetail(kind){
     const title = titleMap[kindKey] || "Conflictos";
     const body = `
       <div class="space-y-3">
-        ${entries.length ? entries.map((entry, idx)=>{ const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null; const rec = __mvConflictRecommendedFromHit(hit); return `
+        ${entries.length ? entries.map((entry, idx)=>{ const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null; const rec = __mvConflictRecommendedFromHit(hit); const diagHtml = __mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:entry.key, kind:entry.kind, id:entry.id, startMin:entry.startMin, endMin:Number.isFinite(Number(hit && hit.endMin)) ? Number(hit.endMin) : null, conflictCount:Number(hit && hit.count || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:Array.isArray(hit && hit.conflicts) ? hit.conflicts : [] }); return `
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
             <div class="mt-2 text-sm text-slate-600">La correccion usa el boton real de “Hora recomendada (minima)” dentro del editor.</div>
+            ${diagHtml}
             <div class="mt-3 flex justify-end gap-2">
               <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${rec.recommendedHHMM ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${rec.recommendedHHMM ? '' : 'disabled'}>Corregir hora (${escapeHtml(String(rec.recommendedHHMM || '—'))})</button>
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
@@ -13084,6 +13085,7 @@ qs("currency").value = v(actObj.currency || "EUR");
     if(!host) return;
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
+    const hit = window.__mvConflictById && window.__mvConflictById[`act:${String(itemId)}`];
     const computedRecommended = (typeof __mvComputeRecommendedStartFromConflicts === "function") ? __mvComputeRecommendedStartFromConflicts(data.conflicts) : null;
     const recommendedHHMM = String(
       (/^\d{2}:\d{2}$/.test(String(data.recommendedStartHHMM || "").trim()) ? data.recommendedStartHHMM : "") ||
@@ -13098,8 +13100,11 @@ qs("currency").value = v(actObj.currency || "EUR");
       <div><span class="font-medium text-slate-800">Fin calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.end))}</div>
       <div><span class="font-medium text-slate-800">Eventos comparables:</span> ${escapeHtml(String(data.compared.length))}</div>
       ${recommendedHHMM ? `<div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-slate-800">Hora recomendada (mínima):</span><button type="button" data-act-recommended-pill="${escapeHtml(recommendedHHMM)}" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
+      ${(recommendedHHMM === "00:00") ? `<div class="mt-1 text-[11px] text-amber-800">DIAG: recommendedMin=${escapeHtml(computedRecommended && computedRecommended.recommendedMin != null ? String(computedRecommended.recommendedMin) : "null")} source=${escapeHtml((Array.isArray(data.conflicts) && data.conflicts.some((c)=>Number.isFinite(Number(c && c.recommendedMin)))) ? "explicitRecommendedMin" : "endMin+buffer")} endMin=${escapeHtml(Array.isArray(data.conflicts) && data.conflicts.length ? String(Number.isFinite(Number(data.conflicts[0] && data.conflicts[0].endMin)) ? Number(data.conflicts[0].endMin) : "null") : "null")} buffer=${escapeHtml(String(__MV_TIMELINE_CONFLICT_BUFFER_MIN))}</div>` : ``}
+      ${Array.isArray(data.conflicts) ? data.conflicts.filter((c)=>String(c && c.type || "") === "leg").map((c)=>`<div class="mt-1 text-[11px] text-amber-800">DIAG LEG: phase=${escapeHtml(String(c && c.phase || c && c.legPhase || "—"))} win.startMin=${escapeHtml(Number.isFinite(Number(c && c.startMin)) ? String(Number(c.startMin)) : "null")} win.endMin=${escapeHtml(Number.isFinite(Number(c && c.endMin)) ? String(Number(c.endMin)) : "null")} arrival/departure=${escapeHtml(String(c && c.reason || "—"))}</div>`).join("") : ``}
       ${draft.ok ? '' : `<div class="mt-1 text-amber-700">${escapeHtml(String(draft.reason || 'Datos temporales insuficientes'))}</div>`}
       <div class="mt-2"><span class="font-medium text-slate-800">Conflictos reales:</span>${conflictHtml}</div>
+      ${__mvRecommendedDiagHTML({ title:"Diagnóstico recomendado", itemKey:`act:${String(itemId)}`, kind:"act", id:String(itemId), startMin:(draft.start instanceof Date && !Number.isNaN(draft.start.getTime())) ? (draft.start.getHours()*60 + draft.start.getMinutes()) : null, endMin:(draft.end instanceof Date && !Number.isNaN(draft.end.getTime())) ? (draft.end.getHours()*60 + draft.end.getMinutes()) : null, conflictCount:Number(hit && hit.count || data.conflicts.length || 0), bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN, conflicts:Array.isArray(data.conflicts) ? data.conflicts : [] })}
     `;
     try{
       const pill = host.querySelector('[data-act-recommended-pill]');
@@ -14229,6 +14234,108 @@ function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
     return { recommendedMin:null, recommendedHHMM:null };
   }
 }
+function __mvBuildRecommendedDiag(conflicts, bufferMin=30){
+  const diag = {
+    bufferMin: Math.max(0, Math.floor(Number(bufferMin || 0) || 0)),
+    entries: [],
+    bestRecommendedMin: null,
+    recommendedHHMM: null,
+    zeroOrigin: ""
+  };
+  try{
+    const list = Array.isArray(conflicts) ? conflicts : [];
+    list.forEach((c, idx)=>{
+      try{
+        const entry = {
+          index: idx,
+          reason: String((c && c.reason) || "").trim() || "buffer",
+          rawStartMin: Number.isFinite(Number(c && c.startMin)) ? Number(c.startMin) : null,
+          rawEndMin: Number.isFinite(Number(c && c.endMin)) ? Number(c.endMin) : null,
+          rawEndHHMM: String((c && c.endHHMM) || "").trim() || null,
+          rawRecommendedMin: Number.isFinite(Number(c && c.recommendedMin)) ? Number(c.recommendedMin) : null,
+          rawRecommendedHHMM: String((c && c.recommendedHHMM) || "").trim() || null,
+          branch: "none",
+          endMinFinal: null,
+          candidateFinal: null
+        };
+        const explicitRecommendedMin = Number(c && c.recommendedMin);
+        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin >= 0){
+          entry.branch = "explicitRecommendedMin";
+          entry.candidateFinal = explicitRecommendedMin;
+        }else{
+          let endMin = NaN;
+          const rawEnd = c ? c.end : null;
+          const end = (rawEnd instanceof Date && !Number.isNaN(rawEnd.getTime())) ? rawEnd : null;
+          if(end){
+            endMin = end.getHours()*60 + end.getMinutes();
+          }else if(c && Number.isFinite(Number(c.endMin))){
+            endMin = Number(c.endMin);
+          }else if(typeof rawEnd === "number" && Number.isFinite(rawEnd)){
+            endMin = rawEnd;
+          }else if(typeof rawEnd === "string" && String(rawEnd).trim()){
+            endMin = (typeof timeToMinutes === "function") ? timeToMinutes(String(rawEnd).trim()) : NaN;
+          }else{
+            const endHHMM = String((c && c.endHHMM) || "").trim();
+            if(endHHMM){
+              endMin = (typeof timeToMinutes === "function") ? timeToMinutes(endHHMM) : NaN;
+            }
+          }
+          if(Number.isFinite(endMin)){
+            entry.branch = "endMin+buffer";
+            entry.endMinFinal = endMin;
+            const isPureOverlap = String((c && c.reason) || "").trim().toLowerCase() === "overlap";
+            entry.candidateFinal = endMin + (isPureOverlap ? 0 : diag.bufferMin);
+          }
+        }
+        if(Number.isFinite(entry.candidateFinal)){
+          if(diag.bestRecommendedMin == null || entry.candidateFinal > diag.bestRecommendedMin){
+            diag.bestRecommendedMin = entry.candidateFinal;
+          }
+          if(entry.candidateFinal === 0 && !diag.zeroOrigin){
+            diag.zeroOrigin = `branch=${entry.branch} rawRecommendedMin=${entry.rawRecommendedMin} endMinFinal=${entry.endMinFinal} rawEndMin=${entry.rawEndMin} rawEndHHMM=${entry.rawEndHHMM}`;
+          }
+        }
+        diag.entries.push(entry);
+      }catch(_){}
+    });
+    if(Number.isFinite(diag.bestRecommendedMin) && typeof __mvFmtHHMM === "function"){
+      diag.recommendedHHMM = __mvFmtHHMM(diag.bestRecommendedMin % 1440);
+      if(diag.recommendedHHMM === "00:00" && !diag.zeroOrigin){
+        diag.zeroOrigin = `bestRecommendedMin=${diag.bestRecommendedMin}`;
+      }
+    }
+  }catch(_){}
+  return diag;
+}
+function __mvRecommendedDiagHTML(opts){
+  try{
+    const options = (opts && typeof opts === "object") ? opts : {};
+    const title = String(options.title || "Diagnóstico recomendado").trim();
+    const itemKey = String(options.itemKey || "").trim();
+    const kind = String(options.kind || "").trim();
+    const id = String(options.id || "").trim();
+    const startMin = Number.isFinite(Number(options.startMin)) ? Number(options.startMin) : null;
+    const endMin = Number.isFinite(Number(options.endMin)) ? Number(options.endMin) : null;
+    const conflictCount = Math.max(0, Number(options.conflictCount || 0) || 0);
+    const diag = __mvBuildRecommendedDiag(options.conflicts, options.bufferMin);
+    const extra = Array.isArray(options.extraLines) ? options.extraLines.filter(Boolean) : [];
+    return `
+      <div class="mt-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-[11px] leading-4 text-amber-900">
+        <div class="font-semibold">${escapeHtml(title)}</div>
+        <div class="mt-1">itemKey=${escapeHtml(itemKey || "—")} / kind=${escapeHtml(kind || "—")} / id=${escapeHtml(id || "—")}</div>
+        <div>startMin=${escapeHtml(startMin == null ? "null" : String(startMin))} / endMin=${escapeHtml(endMin == null ? "null" : String(endMin))} / bufferMin=${escapeHtml(String(diag.bufferMin))} / conflictCount=${escapeHtml(String(conflictCount))}</div>
+        ${extra.length ? `<div class="mt-1">${extra.map((line)=>`<div>${escapeHtml(String(line))}</div>`).join("")}</div>` : ``}
+        <div class="mt-1 space-y-1">
+          ${diag.entries.length ? diag.entries.map((entry)=>`<div>• reason=${escapeHtml(entry.reason)} | raw{startMin=${escapeHtml(entry.rawStartMin == null ? "null" : String(entry.rawStartMin))}, endMin=${escapeHtml(entry.rawEndMin == null ? "null" : String(entry.rawEndMin))}, endHHMM=${escapeHtml(entry.rawEndHHMM || "null")}, recommendedMin=${escapeHtml(entry.rawRecommendedMin == null ? "null" : String(entry.rawRecommendedMin))}, recommendedHHMM=${escapeHtml(entry.rawRecommendedHHMM || "null")}} | branch=${escapeHtml(entry.branch)} | endMinFinal=${escapeHtml(entry.endMinFinal == null ? "null" : String(entry.endMinFinal))} | candidate=${escapeHtml(entry.candidateFinal == null ? "null" : String(entry.candidateFinal))}</div>`).join("") : `<div>• sin conflictos en array</div>`}
+        </div>
+        <div class="mt-1 font-medium">Resultado final: bestRecommendedMin=${escapeHtml(diag.bestRecommendedMin == null ? "null" : String(diag.bestRecommendedMin))} / recommendedHHMM=${escapeHtml(diag.recommendedHHMM || "null")}</div>
+        ${(diag.bestRecommendedMin === 0 || diag.recommendedHHMM === "00:00") ? `<div class="mt-1 font-semibold text-amber-950">⚠️ recomendado=00:00 → origen: ${escapeHtml(diag.zeroOrigin || "sin origen identificado")}</div>` : ``}
+      </div>
+    `;
+  }catch(_){
+    return "";
+  }
+}
 function __mvRecommendedStartHHMMFromConflicts(conflicts, bufferMin=30){
   try{
     const out = __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin);
@@ -14617,6 +14724,22 @@ function __mvOpenLegConflictInspectorModal(){
         if(pairRec.recommendedHHMM) recommendedHHMM = pairRec.recommendedHHMM;
       }
     });
+    const legDiagHtml = __mvRecommendedDiagHTML({
+      title:"Diagnóstico recomendado",
+      itemKey:key,
+      kind:"leg",
+      id:String(ctx.id || "").trim(),
+      startMin:Number.isFinite(Number(hit && hit.startMin)) ? Number(hit.startMin) : null,
+      endMin:Number.isFinite(Number(hit && hit.endMin)) ? Number(hit.endMin) : null,
+      conflictCount:Number(hit && hit.count || conflicts.length || 0),
+      bufferMin:__MV_TIMELINE_CONFLICT_BUFFER_MIN,
+      conflicts,
+      extraLines:[
+        `leg.dep=${ownDepTime || "—"} / leg.arr=${ownArrTime || "—"}`,
+        `leg.depDate=${ownDepDate || "—"} / leg.arrDate=${ownArrDate || "—"}`,
+        `phase/resolution=${recommendedTargetField === "timeIn" ? "después de llegada" : "antes de salida"}`
+      ]
+    });
     const body = `
       <div class="space-y-3">
         <div class="text-sm text-slate-700">Este transporte tiene ${conflicts.length} conflicto${conflicts.length===1 ? "" : "s"}.</div>
@@ -14624,6 +14747,7 @@ function __mvOpenLegConflictInspectorModal(){
           ${conflicts.length ? detailCards.join("") : `<div class="text-sm text-slate-500">No hay conflictos activos.</div>`}
         </div>
         <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span>${recommendedHHMM ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button>` : `<span class="text-sm font-semibold text-slate-400">—</span>`}</div>
+        ${legDiagHtml}
       </div>
     `;
     const btnJump = document.createElement("button");
