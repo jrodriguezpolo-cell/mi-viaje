@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A75_LEG_EVENT_RECOMMENDED_TIME_FIX</title>
+  <title>V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A75_LEG_EVENT_RECOMMENDED_TIME_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A75_LEG_EVENT_RECOMMENDED_TIME_FIX";
+const APP_BUILD = "V240_A75_FIX_RECOMMENDED_0000_CONFLICTS_UNIFIED";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -6149,13 +6149,13 @@ function __mvOpenConflictSectionDetail(kind){
     const title = titleMap[kindKey] || "Conflictos";
     const body = `
       <div class="space-y-3">
-        ${entries.length ? entries.map((entry, idx)=>{ return `
+        ${entries.length ? entries.map((entry, idx)=>{ const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null; const rec = __mvConflictRecommendedFromHit(hit); return `
           <div class="rounded-2xl border border-slate-200 bg-white px-3 py-3">
             <div class="font-semibold text-slate-900">${escapeHtml(entry.title)}</div>
             <div class="mt-1 text-sm text-slate-500">${escapeHtml(__fmtDateES(entry.date))} · ${escapeHtml(__mvFmtHHMM(entry.startMin % 1440))}</div>
             <div class="mt-2 text-sm text-slate-600">La correccion usa el boton real de “Hora recomendada (minima)” dentro del editor.</div>
             <div class="mt-3 flex justify-end gap-2">
-              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${String(entry.recommendedHHMM || '').trim() ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${String(entry.recommendedHHMM || '').trim() ? '' : 'disabled'}>Corregir hora (${escapeHtml(String(entry.recommendedHHMM || '—'))})</button>
+              <button type="button" class="tap px-3 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold ${rec.recommendedHHMM ? '' : 'opacity-50'}" data-conflict-detail-fix="${idx}" ${rec.recommendedHHMM ? '' : 'disabled'}>Corregir hora (${escapeHtml(String(rec.recommendedHHMM || '—'))})</button>
               <button type="button" class="tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold" data-conflict-detail-go="${idx}">Ir a cronograma</button>
             </div>
           </div>
@@ -6179,8 +6179,9 @@ function __mvOpenConflictSectionDetail(kind){
         const entry = Number.isInteger(idx) ? entries[idx] : null;
         if(!entry) return;
         const hit = window.__mvConflictById && entry.key ? window.__mvConflictById[entry.key] : null;
-        const recommendedHHMM = String(hit && hit.recommendedHHMM || entry.recommendedHHMM || "").trim();
-        const recommendedTargetField = String(hit && hit.recommendedTargetField || "").trim();
+        const rec = __mvConflictRecommendedFromHit(hit);
+        const recommendedHHMM = String(rec.recommendedHHMM || '').trim();
+        const recommendedTargetField = String(rec.recommendedTargetField || '').trim();
         if(!/^\d{2}:\d{2}$/.test(recommendedHHMM)){
           try{ toast("No hay hora recomendada disponible"); }catch(_){}
           return;
@@ -12994,8 +12995,9 @@ qs("currency").value = v(actObj.currency || "EUR");
             reason: String(c && c.reason || 'buffer')
           });
         });
-        if(String(hit.recommendedHHMM || '').trim()){
-          out.recommendedStartHHMM = String(hit.recommendedHHMM || '').trim();
+        const safeHitRecommended = __mvConflictRecommendedFromHit(hit);
+        if(safeHitRecommended.recommendedHHMM){
+          out.recommendedStartHHMM = safeHitRecommended.recommendedHHMM;
         }
       }
     }catch(_){}
@@ -13082,9 +13084,14 @@ qs("currency").value = v(actObj.currency || "EUR");
     if(!host) return;
     const data = __sheetActCollectConflicts();
     const draft = data.draft || {};
-    const recommendedHHMM = String(data.recommendedStartHHMM || __mvRecommendedStartHHMMFromConflicts(data.conflicts, 30) || "").trim();
+    const computedRecommended = (typeof __mvComputeRecommendedStartFromConflicts === "function") ? __mvComputeRecommendedStartFromConflicts(data.conflicts) : null;
+    const recommendedHHMM = String(
+      (/^\d{2}:\d{2}$/.test(String(data.recommendedStartHHMM || "").trim()) ? data.recommendedStartHHMM : "") ||
+      (computedRecommended && /^\d{2}:\d{2}$/.test(String(computedRecommended.recommendedHHMM || "").trim()) ? computedRecommended.recommendedHHMM : "") ||
+      ""
+    ).trim();
     const conflictHtml = data.conflicts.length
-      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>{ const recLine = String((c && c.recommendedHHMM) || __mvRecommendedStartHHMMFromConflicts([c], 30) || '').trim(); return `<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}${recLine ? ` · Recomendado: ≥ ${escapeHtml(recLine)}` : ``}</span></li>`; }).join('')}</ul>`
+      ? `<ul class="mt-1 space-y-1">${data.conflicts.map(c=>{ const recObj = (typeof __mvComputeRecommendedStartFromConflicts === "function") ? __mvComputeRecommendedStartFromConflicts([c]) : null; const recLine = String((c && /^\d{2}:\d{2}$/.test(String(c.recommendedHHMM || "").trim()) ? c.recommendedHHMM : "") || (recObj && /^\d{2}:\d{2}$/.test(String(recObj.recommendedHHMM || "").trim()) ? recObj.recommendedHHMM : '')).trim(); return `<li>• <span class="font-medium">${escapeHtml(c.title)}</span> <span class="text-slate-500">(${escapeHtml(String(c.typeLabel || 'Evento'))}) · ${escapeHtml(__fmtInspectorDT(c.start))} → ${escapeHtml(__fmtInspectorDT(c.end))}${/^\d{2}:\d{2}$/.test(recLine) ? ` · Recomendado: ≥ ${escapeHtml(recLine)}` : ``}</span></li>`; }).join('')}</ul>`
       : `<div class="mt-1 text-emerald-700 font-medium">0 conflictos detectados</div>`;
     host.innerHTML = `
       <div><span class="font-medium text-slate-800">Inicio calculado:</span> ${escapeHtml(__fmtInspectorDT(draft.start))}</div>
@@ -14230,6 +14237,18 @@ function __mvRecommendedStartHHMMFromConflicts(conflicts, bufferMin=30){
     return null;
   }
 }
+function __mvConflictRecommendedFromHit(hit){
+  try{
+    const recommendedMin = Number(hit && hit.recommendedMin);
+    const recommendedTargetField = String(hit && hit.recommendedTargetField || '').trim() || null;
+    if(!Number.isFinite(recommendedMin) || recommendedMin < 0) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
+    const recommendedHHMM = (typeof __mvFmtHHMM === 'function') ? __mvFmtHHMM(recommendedMin % 1440) : String(hit && hit.recommendedHHMM || '').trim();
+    if(!/^\d{2}:\d{2}$/.test(String(recommendedHHMM || '').trim())) return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField };
+    return { recommendedMin, recommendedHHMM:String(recommendedHHMM).trim(), recommendedTargetField };
+  }catch(_){
+    return { recommendedMin:null, recommendedHHMM:null, recommendedTargetField:null };
+  }
+}
 function __getEventDurationMin(item, kind){
   try{
     const k = String(kind || '').trim();
@@ -14525,7 +14544,8 @@ function __mvOpenLegConflictInspectorModal(){
     const key = `leg:${String(ctx.id || "").trim()}`;
     const hit = (window.__mvConflictById && window.__mvConflictById[key]) || null;
     const conflicts = Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
-    const recommendedHHMM = String((hit && hit.recommendedHHMM) || "").trim();
+    const ownRec = __mvConflictRecommendedFromHit(hit);
+    let recommendedHHMM = String(ownRec.recommendedHHMM || "").trim();
     const ownDepDate = String((ownLeg && (ownLeg.date || ownLeg.depDate)) || "").trim();
     const ownArrDate = String((ownLeg && (ownLeg.arriveDate || ownLeg.dateIn)) || "").trim();
     const ownDepTime = String((ownLeg && (ownLeg.time || ownLeg.depTime)) || "").trim();
@@ -14591,6 +14611,11 @@ function __mvOpenLegConflictInspectorModal(){
       const id = String(c && c.id || "").trim();
       const pairKey = type && id ? `${type}:${id}` : "";
       if(pairKey && !related.includes(pairKey)) related.push(pairKey);
+      if(!recommendedHHMM && pairKey){
+        const pairHit = window.__mvConflictById && window.__mvConflictById[pairKey];
+        const pairRec = __mvConflictRecommendedFromHit(pairHit);
+        if(pairRec.recommendedHHMM) recommendedHHMM = pairRec.recommendedHHMM;
+      }
     });
     const body = `
       <div class="space-y-3">
@@ -14598,7 +14623,7 @@ function __mvOpenLegConflictInspectorModal(){
         <div class="space-y-2">
           ${conflicts.length ? detailCards.join("") : `<div class="text-sm text-slate-500">No hay conflictos activos.</div>`}
         </div>
-        ${recommendedHHMM ? `<div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span><button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button></div>` : ``}
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-sm text-slate-700">Recomendado empezar a:</span>${recommendedHHMM ? `<button type="button" class="tap inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800" data-leg-conflict-recommended="${escapeHtml(recommendedHHMM)}" data-leg-conflict-target="${escapeHtml(recommendedTargetField)}">${escapeHtml(recommendedHHMM)}</button>` : `<span class="text-sm font-semibold text-slate-400">—</span>`}</div>
       </div>
     `;
     const btnJump = document.createElement("button");
@@ -23276,7 +23301,12 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         const conflicts = (data && Array.isArray(data.conflicts)) ? data.conflicts : [];
         if(conflicts.length > 0){
-          const recommendedHHMM = String((data && data.recommendedStartHHMM) || __mvRecommendedStartHHMMFromConflicts(conflicts, 30) || "").trim();
+          const computedRecommended = (typeof __mvComputeRecommendedStartFromConflicts === "function") ? __mvComputeRecommendedStartFromConflicts(conflicts) : null;
+          const recommendedHHMM = String(
+            (data && /^\d{2}:\d{2}$/.test(String(data.recommendedStartHHMM || "").trim()) ? data.recommendedStartHHMM : "") ||
+            (computedRecommended && /^\d{2}:\d{2}$/.test(String(computedRecommended.recommendedHHMM || "").trim()) ? computedRecommended.recommendedHHMM : "") ||
+            ""
+          ).trim();
           const body = `
             <div class="text-sm text-slate-700">Hay conflicto horario con ${conflicts.length} evento${conflicts.length===1?'':'s'} existente${conflicts.length===1?'':'s'} considerando desplazamiento (+30 min).</div>
             <div class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
