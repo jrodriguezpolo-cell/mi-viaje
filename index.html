@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A97_TRIP_SUMMARY_TRANSPORT_DURATION</title>
+  <title>V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1712,7 +1712,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A97_TRIP_SUMMARY_TRANSPORT_DURATION</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2084,7 +2084,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A97_TRIP_SUMMARY_TRANSPORT_DURATION";
+const APP_BUILD = "V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19974,25 +19974,6 @@ function __mvExecutiveSummaryData(){
     if(!key) return;
     cityCounts.set(key, (cityCounts.get(key) || 0) + 1);
   };
-  const durationFromDateTimes = (startDate, startTime, endDate, endTime)=>{
-    const depDate = safeDate(startDate);
-    const arrDate = safeDate(endDate) || depDate;
-    const depMin = timeToMinutes(startTime);
-    const arrMin = timeToMinutes(endTime);
-    if(!depDate || !Number.isFinite(depMin) || depMin < 0 || !Number.isFinite(arrMin) || arrMin < 0) return "";
-    const start = new Date(`${depDate}T00:00:00`);
-    const end = new Date(`${arrDate}T00:00:00`);
-    const dayDiff = Math.round((end.getTime() - start.getTime()) / 86400000);
-    if(!Number.isFinite(dayDiff)) return "";
-    const totalMin = (dayDiff * 1440) + (arrMin - depMin);
-    if(!Number.isFinite(totalMin) || totalMin <= 0) return "";
-    const hh = Math.floor(totalMin / 60);
-    const mm = totalMin % 60;
-    if(hh && mm) return `${hh}h ${mm}m`;
-    if(hh) return `${hh}h`;
-    return `${mm}m`;
-  };
-
   const transportItems = (Array.isArray(sc && sc.legs) ? sc.legs : [])
     .map((leg)=>{
       const from = String(leg && leg.from || "").trim();
@@ -20003,14 +19984,14 @@ function __mvExecutiveSummaryData(){
       const arrTime = String(leg && (leg.arriveTime || leg.timeIn) || "").trim();
       if(!from || !to || !depDate || !depTime) return null;
       bumpCity(to);
-      const durationLabel =
-        String(leg && leg.duration || "").trim() ||
-        (typeof legDurationText === "function" ? String(legDurationText(leg) || "").trim() : "") ||
-        durationFromDateTimes(depDate, depTime, arrDate, arrTime);
+      const legParts = (typeof buildLegSummaryParts === "function") ? buildLegSummaryParts(leg) : null;
+      const durationHTML = String(legParts && legParts.durText || "").trim();
+      const durationLabel = durationHTML.replace(/&nbsp;/g, " ");
       return {
         from, to, depDate, depTime, arrDate, arrTime,
         mode: String(leg && leg.mode || "").trim().toLowerCase(),
         tripType: String(leg && leg.tripType || "").trim(),
+        durationHTML,
         durationLabel,
         sortKey: `${depDate}T${depTime}`
       };
@@ -20109,7 +20090,7 @@ function __mvExecutiveSummaryHTML(){
           <div class="font-semibold text-slate-900">Transporte: ${escapeHtml(item.from)} → ${escapeHtml(item.to)}${tripTypeLabel(item.tripType) ? ` <span class="ml-2 text-xs font-semibold text-slate-500">${escapeHtml(tripTypeLabel(item.tripType))}</span>` : ""}</div>
           <div class="mt-2 text-sm text-slate-700">Salida: ${escapeHtml(lineDateTime(item.depDate, item.depTime))}</div>
           <div class="mt-1 text-sm text-slate-700">Llegada: ${escapeHtml(lineDateTime(item.arrDate, item.arrTime))}</div>
-          ${item.durationLabel ? `<div class="mt-1 text-sm text-slate-700">Duración: ${escapeHtml(item.durationLabel)}</div>` : ``}
+          ${(item.durationHTML || item.durationLabel) ? `<div class="mt-1 text-sm text-slate-700">Duración: ${item.durationHTML || escapeHtml(item.durationLabel)}</div>` : ``}
         </div>`).join("")
     : `<div class="text-sm text-slate-500">No hay transportes.</div>`;
   const stayHtml = data.stayItems.length
