@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000</title>
+  <title>V240_A77_FIX_RECOMMENDED_0000_DIAG</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1698,7 +1698,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A77_FIX_RECOMMENDED_0000_DIAG</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2066,7 +2066,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A76_FIX_SAFE_RECOMMENDED_NULL_TO_0000";
+const APP_BUILD = "V240_A77_FIX_RECOMMENDED_0000_DIAG";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -14199,11 +14199,15 @@ function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
   try{
     const list = Array.isArray(conflicts) ? conflicts : [];
     let best = null;
+    let bestSource = null;
     list.forEach((c)=>{
       try{
         const explicitRecommendedMin = Number(c && c.recommendedMin);
-        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin >= 0){
-          if(best == null || explicitRecommendedMin > best) best = explicitRecommendedMin;
+        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin > 0){
+          if(best == null || explicitRecommendedMin > best){
+            best = explicitRecommendedMin;
+            bestSource = "explicitRecommendedMin";
+          }
           return;
         }
         let endMin = NaN;
@@ -14226,13 +14230,16 @@ function __mvComputeRecommendedStartFromConflicts(conflicts, bufferMin=30){
         if(!Number.isFinite(endMin)) return;
         const isPureOverlap = String((c && c.reason) || "").trim().toLowerCase() === "overlap";
         const candidate = endMin + (isPureOverlap ? 0 : Math.max(0, Math.floor(Number(bufferMin || 0) || 0)));
-        if(best == null || candidate > best) best = candidate;
+        if(best == null || candidate > best){
+          best = candidate;
+          bestSource = "endMin+buffer";
+        }
       }catch(_){}
     });
-    if(best == null) return { recommendedMin:null, recommendedHHMM:null };
-    return { recommendedMin:best, recommendedHHMM: __mvFmtHHMM(best % 1440) };
+    if(best == null) return { recommendedMin:null, recommendedHHMM:null, source:null };
+    return { recommendedMin:best, recommendedHHMM: __mvFmtHHMM(best % 1440), source:bestSource };
   }catch(_){
-    return { recommendedMin:null, recommendedHHMM:null };
+    return { recommendedMin:null, recommendedHHMM:null, source:null };
   }
 }
 function __mvBuildRecommendedDiag(conflicts, bufferMin=30){
@@ -14241,7 +14248,8 @@ function __mvBuildRecommendedDiag(conflicts, bufferMin=30){
     entries: [],
     bestRecommendedMin: null,
     recommendedHHMM: null,
-    zeroOrigin: ""
+    zeroOrigin: "",
+    finalSource: null
   };
   try{
     const list = Array.isArray(conflicts) ? conflicts : [];
@@ -14260,7 +14268,7 @@ function __mvBuildRecommendedDiag(conflicts, bufferMin=30){
           candidateFinal: null
         };
         const explicitRecommendedMin = Number(c && c.recommendedMin);
-        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin >= 0){
+        if(Number.isFinite(explicitRecommendedMin) && explicitRecommendedMin > 0){
           entry.branch = "explicitRecommendedMin";
           entry.candidateFinal = explicitRecommendedMin;
         }else{
@@ -14291,6 +14299,7 @@ function __mvBuildRecommendedDiag(conflicts, bufferMin=30){
         if(Number.isFinite(entry.candidateFinal)){
           if(diag.bestRecommendedMin == null || entry.candidateFinal > diag.bestRecommendedMin){
             diag.bestRecommendedMin = entry.candidateFinal;
+            diag.finalSource = entry.branch;
           }
           if(entry.candidateFinal === 0 && !diag.zeroOrigin){
             diag.zeroOrigin = `branch=${entry.branch} rawRecommendedMin=${entry.rawRecommendedMin} endMinFinal=${entry.endMinFinal} rawEndMin=${entry.rawEndMin} rawEndHHMM=${entry.rawEndHHMM}`;
@@ -14329,7 +14338,7 @@ function __mvRecommendedDiagHTML(opts){
         <div class="mt-1 space-y-1">
           ${diag.entries.length ? diag.entries.map((entry)=>`<div>• reason=${escapeHtml(entry.reason)} | raw{startMin=${escapeHtml(entry.rawStartMin == null ? "null" : String(entry.rawStartMin))}, endMin=${escapeHtml(entry.rawEndMin == null ? "null" : String(entry.rawEndMin))}, endHHMM=${escapeHtml(entry.rawEndHHMM || "null")}, recommendedMin=${escapeHtml(entry.rawRecommendedMin == null ? "null" : String(entry.rawRecommendedMin))}, recommendedHHMM=${escapeHtml(entry.rawRecommendedHHMM || "null")}} | branch=${escapeHtml(entry.branch)} | endMinFinal=${escapeHtml(entry.endMinFinal == null ? "null" : String(entry.endMinFinal))} | candidate=${escapeHtml(entry.candidateFinal == null ? "null" : String(entry.candidateFinal))}</div>`).join("") : `<div>• sin conflictos en array</div>`}
         </div>
-        <div class="mt-1 font-medium">Resultado final: bestRecommendedMin=${escapeHtml(diag.bestRecommendedMin == null ? "null" : String(diag.bestRecommendedMin))} / recommendedHHMM=${escapeHtml(diag.recommendedHHMM || "null")}</div>
+        <div class="mt-1 font-medium">Resultado final: bestRecommendedMin=${escapeHtml(diag.bestRecommendedMin == null ? "null" : String(diag.bestRecommendedMin))} / recommendedHHMM=${escapeHtml(diag.recommendedHHMM || "null")} / source=${escapeHtml(diag.finalSource || "null")}</div>
         ${(diag.bestRecommendedMin === 0 || diag.recommendedHHMM === "00:00") ? `<div class="mt-1 font-semibold text-amber-950">⚠️ recomendado=00:00 → origen: ${escapeHtml(diag.zeroOrigin || "sin origen identificado")}</div>` : ``}
       </div>
     `;
