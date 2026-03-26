@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT</title>
+  <title>V240_A94_EXEC_SUMMARY_AND_PRINT_PDF</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1193,6 +1193,27 @@ div[data-acc-body="acts"]{
 /* Notes UI polish: ensure global modal above Event Sheet */
 #modalBackdrop{ z-index: 9000 !important; }
 #modalBox{ z-index: 9100 !important; }
+body.mvExecPrintMode #modalBackdrop{ background: white !important; }
+body.mvExecPrintMode #modalBox{ inset: 0 !important; padding: 0 !important; align-items: flex-start !important; justify-content: center !important; background: white !important; }
+body.mvExecPrintMode #modalBox > div{ width: 210mm !important; max-width: 210mm !important; min-height: 297mm !important; border-radius: 0 !important; box-shadow: none !important; border: none !important; }
+body.mvExecPrintMode #modalTitle,
+body.mvExecPrintMode #modalClose,
+body.mvExecPrintMode #modalFooter{ display: none !important; }
+body.mvExecPrintMode #modalBody{ padding: 0 !important; }
+@media print{
+  body *{ visibility:hidden !important; }
+  body.mvExecPrintMode #modalBackdrop,
+  body.mvExecPrintMode #modalBox,
+  body.mvExecPrintMode #modalBox *{ visibility:visible !important; }
+  body.mvExecPrintMode #modalBackdrop{ display:block !important; background:white !important; }
+  body.mvExecPrintMode #modalBox{ display:flex !important; position:fixed !important; inset:0 !important; padding:0 !important; background:white !important; }
+  body.mvExecPrintMode #modalBox > div{ width:210mm !important; max-width:210mm !important; min-height:297mm !important; margin:0 auto !important; border:none !important; box-shadow:none !important; border-radius:0 !important; }
+  body.mvExecPrintMode #modalTitle,
+  body.mvExecPrintMode #modalClose,
+  body.mvExecPrintMode #modalFooter{ display:none !important; }
+  .mvExecPrintSheet{ padding: 14mm 16mm !important; color:#0f172a !important; }
+  .mvExecPrintAvoid{ break-inside: avoid; page-break-inside: avoid; }
+}
 
 /* Note icon + blue dot */
 .notePeekBtn{
@@ -1698,7 +1719,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A94_EXEC_SUMMARY_AND_PRINT_PDF</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -1989,6 +2010,9 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold hidden" id="btnNotifications" data-i18n="tools.notifications">
             Notificaciones
           </button>
+<button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnExecSummaryPdf">
+            Resumen ejecutivo (PDF)
+          </button>
 <div class="accItem" id="toolsAdvancedAcc">
 <button class="accHead tap w-full" type="button" data-acc="toolsAdvanced">
 <div class="accTitle" data-i18n="tools.advanced">Avanzado</div>
@@ -2066,7 +2090,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A78_STAY_EXIT_CARD_ONLY_CHECKOUT";
+const APP_BUILD = "V240_A94_EXEC_SUMMARY_AND_PRINT_PDF";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19915,6 +19939,154 @@ function calcSummary() {
   try { if (window.summaryExpanded) scheduleSyncTopStackHeights(); } catch {}
 }
 
+function __mvExecutiveSummaryData(){
+  const sc = (typeof curScenario === "function") ? curScenario() : null;
+  const targetCur =
+    (document.getElementById("displayCurrency")?.value) ||
+    (state.displayCurrency) ||
+    (document.getElementById("sumCur")?.textContent) ||
+    "EUR";
+  const sumConverted = (arr, fallbackCur="EUR") =>
+    (arr||[]).reduce((acc, x) => {
+      const cost = parseMoney(x?.cost);
+      if (!cost) return acc;
+      const fromCur = (x && x.currency) ? String(x.currency) : (state.displayCurrency || fallbackCur);
+      return acc + convertMoney(cost, fromCur, targetCur);
+    }, 0);
+  const transport = sumConverted(sc && sc.legs, "EUR");
+  const stay = sumConverted(sc && sc.stays, "EUR");
+  const acts = sumConverted(sc && sc.activities, "EUR");
+  const misc = sumConverted(sc && sc.miscExpenses, "EUR");
+  const mealsRaw = parseMoney(sc?.meals?.daily) * (parseInt(sc?.meals?.people || 1, 10)) * (parseInt(sc?.meals?.days || 1, 10));
+  const mealsFromCur = (sc && sc.meals && sc.meals.currency) ? String(sc.meals.currency) : (state.displayCurrency || targetCur);
+  const mealsPlus = convertMoney(mealsRaw, mealsFromCur, targetCur) + misc;
+  const totals = { transport, stay, acts, mealsPlus, total: transport + stay + acts + mealsPlus, currency: targetCur };
+
+  const dated = [];
+  (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{
+    const date = String(leg && (leg.date || leg.depDate) || "").trim();
+    const time = String(leg && (leg.time || leg.depTime) || "").trim() || "23:59";
+    if(date) dated.push({ kind:"leg", date, time, title:`${String(leg && leg.from || "—").trim() || "—"} → ${String(leg && leg.to || "—").trim() || "—"}`, item:leg });
+  });
+  (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stayItem)=>{
+    const date = String(stayItem && stayItem.date || "").trim();
+    const time = String(stayItem && stayItem.time || "").trim() || "23:59";
+    if(date) dated.push({ kind:"stay", date, time, title:`${String(stayItem && stayItem.city || "—").trim() || "—"} · ${String(stayItem && stayItem.name || "Alojamiento").trim() || "Alojamiento"}`, item:stayItem });
+  });
+  (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=>{
+    const date = String(act && act.date || "").trim();
+    const time = String(act && act.time || "").trim() || "23:59";
+    if(date) dated.push({ kind:"act", date, time, title:String(act && (act.title || act.name) || "Actividad").trim() || "Actividad", item:act });
+  });
+  dated.sort((a,b)=> `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`));
+  const first = dated[0] || null;
+  const last = dated[dated.length - 1] || null;
+  const tripDates = first && last
+    ? `${(typeof formatDateShortES === "function" ? formatDateShortES(first.date) : first.date)} → ${(typeof formatDateShortES === "function" ? formatDateShortES(last.date) : last.date)}`
+    : "No hay datos aún";
+
+  const route = [];
+  (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{
+    const from = String(leg && leg.from || "").trim();
+    const to = String(leg && leg.to || "").trim();
+    if(from && !route.includes(from)) route.push(from);
+    if(to && !route.includes(to)) route.push(to);
+  });
+  if(!route.length){
+    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stayItem)=>{ const city = String(stayItem && stayItem.city || "").trim(); if(city && !route.includes(city)) route.push(city); });
+    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=>{ const city = String(act && act.city || "").trim(); if(city && !route.includes(city)) route.push(city); });
+  }
+
+  const topLines = [];
+  (Array.isArray(sc && sc.legs) ? sc.legs : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,4).forEach((leg)=>{
+    const date = String(leg && leg.date || "").trim();
+    const time = String(leg && leg.time || "").trim();
+    topLines.push({ label:"Transporte", text:`${String(leg && leg.from || "—").trim() || "—"} → ${String(leg && leg.to || "—").trim() || "—"} · ${date ? ((typeof formatDateShortES === "function" ? formatDateShortES(date) : date)) : "—"}${time ? ` · ${time}` : ""}` });
+  });
+  (Array.isArray(sc && sc.stays) ? sc.stays : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,3).forEach((stayItem)=>{
+    const date = String(stayItem && stayItem.date || "").trim();
+    topLines.push({ label:"Alojamiento", text:`${String(stayItem && stayItem.name || "Alojamiento").trim() || "Alojamiento"} · ${String(stayItem && stayItem.city || "—").trim() || "—"}${date ? ` · ${typeof formatDateShortES === "function" ? formatDateShortES(date) : date}` : ""}` });
+  });
+  (Array.isArray(sc && sc.activities) ? sc.activities : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,5).forEach((act)=>{
+    const date = String(act && act.date || "").trim();
+    const time = String(act && act.time || "").trim();
+    topLines.push({ label:"Actividad", text:`${String(act && (act.title || act.name) || "Actividad").trim() || "Actividad"}${date ? ` · ${typeof formatDateShortES === "function" ? formatDateShortES(date) : date}` : ""}${time ? ` · ${time}` : ""}` });
+  });
+
+  return { totals, tripDates, route, topLines: topLines.slice(0,10) };
+}
+
+function __mvExecutiveSummaryHTML(){
+  const data = __mvExecutiveSummaryData();
+  const totals = data.totals;
+  const fmt = (n)=> fmtNum2(Number(n || 0));
+  const routeText = data.route.length ? data.route.join(" → ") : "No hay datos aún";
+  const topHtml = data.topLines.length
+    ? data.topLines.map((line)=>`<li class="py-1 border-b border-slate-100 last:border-b-0"><span class="font-semibold text-slate-800">${escapeHtml(line.label)}:</span> <span class="text-slate-700">${escapeHtml(line.text)}</span></li>`).join("")
+    : `<li class="py-1 text-slate-500">No hay datos aún</li>`;
+  return `
+    <div id="mvExecutiveSummaryPrintable" class="mvExecPrintSheet text-slate-900">
+      <div class="space-y-6">
+        <div class="mvExecPrintAvoid">
+          <div class="text-2xl font-extrabold tracking-tight">Resumen ejecutivo del viaje</div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mvExecPrintAvoid">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Fechas del viaje</div>
+            <div class="mt-2 text-base font-semibold text-slate-900">${escapeHtml(data.tripDates)}</div>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
+            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Ruta principal</div>
+            <div class="mt-2 text-base font-semibold text-slate-900">${escapeHtml(routeText)}</div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Totales económicos</div>
+          <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div><div class="text-xs text-slate-500">Total</div><div class="mt-1 text-lg font-extrabold">${escapeHtml(fmt(totals.total))} ${escapeHtml(totals.currency)}</div></div>
+            <div><div class="text-xs text-slate-500">Transporte</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.transport))}</div></div>
+            <div><div class="text-xs text-slate-500">Alojamiento</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.stay))}</div></div>
+            <div><div class="text-xs text-slate-500">Actividades</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.acts))}</div></div>
+            <div><div class="text-xs text-slate-500">Varios</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.mealsPlus))}</div></div>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Top hitos</div>
+          <ul class="mt-3 text-sm">${topHtml}</ul>
+        </div>
+        <div class="text-xs text-slate-500 mvExecPrintAvoid">Webapp: ${escapeHtml(String(typeof MV_WEBAPP_URL !== "undefined" ? MV_WEBAPP_URL : location.origin || ""))}</div>
+      </div>
+    </div>
+  `;
+}
+
+function __mvPrintExecutiveSummary(){
+  try{
+    document.body.classList.add("mvExecPrintMode");
+    setTimeout(()=>{ try{ window.print(); }catch(_){} }, 60);
+  }catch(_){}
+}
+
+if(!window.__mvExecAfterPrintBound){
+  window.__mvExecAfterPrintBound = true;
+  window.addEventListener("afterprint", ()=>{ try{ document.body.classList.remove("mvExecPrintMode"); }catch(_){} });
+}
+
+function openExecutiveSummaryModal(){
+  const body = __mvExecutiveSummaryHTML();
+  const btnPrint = document.createElement("button");
+  btnPrint.type = "button";
+  btnPrint.className = "tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold";
+  btnPrint.textContent = "Exportar a PDF";
+  btnPrint.onclick = ()=>{ try{ __mvPrintExecutiveSummary(); }catch(_){} };
+  const btnClose = document.createElement("button");
+  btnClose.type = "button";
+  btnClose.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
+  btnClose.textContent = "Cerrar";
+  btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
+  showModal("Resumen ejecutivo del viaje", body, [btnClose, btnPrint]);
+}
+
 /* --------------------------- Gemini helpers -------------------------- */
 function getGeminiKey() {
   return localStorage.getItem(LS_KEY_GEMINI) || "";
@@ -22897,6 +23069,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
   const btnClose = $("toolsClose");
   const btnPrefs = $("btnPrefs");
   const btnNotifications = $("btnNotifications");
+  const btnExecSummaryPdf = $("btnExecSummaryPdf");
 
   function openTools(){
     if (!backdrop || !sheet) return;
@@ -23382,6 +23555,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
   if (btnHardRefreshApp) btnHardRefreshApp.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); __hardRefreshApp(); });
   if (btnPrefs) btnPrefs.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openPreferencesModal(); });
   if (btnNotifications) btnNotifications.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openNotificationsModal(); });
+  if (btnExecSummaryPdf) btnExecSummaryPdf.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); closeTools(); openExecutiveSummaryModal(); });
   __setVisibleBuildLabel();
   __setVersionedManifestHref();
   __renderToolsDiagnostics();
