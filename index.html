@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION</title>
+  <title>V240_A99_TRIP_SUMMARY_PRINT_FULL_DOCUMENT</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1712,7 +1712,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A99_TRIP_SUMMARY_PRINT_FULL_DOCUMENT</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2084,7 +2084,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A98_TRIP_SUMMARY_REUSE_TRANSPORT_DURATION";
+const APP_BUILD = "V240_A99_TRIP_SUMMARY_PRINT_FULL_DOCUMENT";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20153,14 +20153,53 @@ function __mvExecutiveSummaryHTML(){
 
 function __mvPrintExecutiveSummary(){
   try{
-    const root = document.getElementById("mvExecutivePrintRoot");
-    if(root){
-      root.innerHTML = __mvExecutiveSummaryHTML();
-      root.classList.remove("hidden");
-      root.setAttribute("aria-hidden", "false");
+    const data = __mvExecutiveSummaryData();
+    const printable = __mvExecutiveSummaryHTML();
+    const printWin = window.open("", "_blank");
+    if(!printWin){
+      const root = document.getElementById("mvExecutivePrintRoot");
+      if(root){
+        root.innerHTML = printable;
+        root.classList.remove("hidden");
+        root.setAttribute("aria-hidden", "false");
+      }
+      document.body.classList.add("mvExecPrintMode");
+      setTimeout(()=>{ try{ window.print(); }catch(_){} }, 60);
+      return;
     }
-    document.body.classList.add("mvExecPrintMode");
-    setTimeout(()=>{ try{ window.print(); }catch(_){} }, 60);
+    const doc = printWin.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(data.title || "Viaje")}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html,body{margin:0;padding:0;background:#fff;color:#0f172a;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;}
+    .mvPrintWrap{max-width:210mm;margin:0 auto;padding:14mm 16mm;box-sizing:border-box;}
+    .mvExecPrintAvoid{break-inside:avoid;page-break-inside:avoid;}
+    @page{size:A4;margin:12mm;}
+    @media print{
+      html,body{background:#fff !important;}
+      .mvPrintWrap{max-width:none;width:auto;margin:0;padding:0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="mvPrintWrap">${printable}</div>
+</body>
+</html>`);
+    doc.close();
+    const triggerPrint = ()=>{
+      try{ printWin.focus(); }catch(_){}
+      setTimeout(()=>{
+        try{ printWin.print(); }catch(_){}
+      }, 120);
+    };
+    if(doc.readyState === "complete") triggerPrint();
+    else printWin.addEventListener("load", triggerPrint, { once:true });
   }catch(_){}
 }
 
