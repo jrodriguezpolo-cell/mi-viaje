@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A94_EXEC_SUMMARY_AND_PRINT_PDF</title>
+  <title>V240_A95_TRIP_SUMMARY_FULL_LISTS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1719,7 +1719,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A94_EXEC_SUMMARY_AND_PRINT_PDF</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A95_TRIP_SUMMARY_FULL_LISTS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2011,7 +2011,7 @@ La sincronización automática se hace al abrir la app o volver a primer plano.
             Notificaciones
           </button>
 <button class="tap w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-semibold" id="btnExecSummaryPdf">
-            Resumen ejecutivo (PDF)
+            Resumen del viaje
           </button>
 <div class="accItem" id="toolsAdvancedAcc">
 <button class="accHead tap w-full" type="button" data-acc="toolsAdvanced">
@@ -2090,7 +2090,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A94_EXEC_SUMMARY_AND_PRINT_PDF";
+const APP_BUILD = "V240_A95_TRIP_SUMMARY_FULL_LISTS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19962,86 +19962,95 @@ function __mvExecutiveSummaryData(){
   const mealsPlus = convertMoney(mealsRaw, mealsFromCur, targetCur) + misc;
   const totals = { transport, stay, acts, mealsPlus, total: transport + stay + acts + mealsPlus, currency: targetCur };
 
-  const dated = [];
-  (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{
-    const date = String(leg && (leg.date || leg.depDate) || "").trim();
-    const time = String(leg && (leg.time || leg.depTime) || "").trim() || "23:59";
-    if(date) dated.push({ kind:"leg", date, time, title:`${String(leg && leg.from || "—").trim() || "—"} → ${String(leg && leg.to || "—").trim() || "—"}`, item:leg });
-  });
-  (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stayItem)=>{
-    const date = String(stayItem && stayItem.date || "").trim();
-    const time = String(stayItem && stayItem.time || "").trim() || "23:59";
-    if(date) dated.push({ kind:"stay", date, time, title:`${String(stayItem && stayItem.city || "—").trim() || "—"} · ${String(stayItem && stayItem.name || "Alojamiento").trim() || "Alojamiento"}`, item:stayItem });
-  });
-  (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=>{
-    const date = String(act && act.date || "").trim();
-    const time = String(act && act.time || "").trim() || "23:59";
-    if(date) dated.push({ kind:"act", date, time, title:String(act && (act.title || act.name) || "Actividad").trim() || "Actividad", item:act });
-  });
-  dated.sort((a,b)=> `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`));
-  const first = dated[0] || null;
-  const last = dated[dated.length - 1] || null;
-  const tripDates = first && last
-    ? `${(typeof formatDateShortES === "function" ? formatDateShortES(first.date) : first.date)} → ${(typeof formatDateShortES === "function" ? formatDateShortES(last.date) : last.date)}`
-    : "No hay datos aún";
+  const transportItems = (Array.isArray(sc && sc.legs) ? sc.legs : [])
+    .map((leg)=>{
+      const from = String(leg && leg.from || "").trim();
+      const to = String(leg && leg.to || "").trim();
+      const depDate = String(leg && (leg.date || leg.depDate) || "").trim();
+      const depTime = String(leg && (leg.time || leg.depTime) || "").trim();
+      const arrDate = String(leg && (leg.arriveDate || leg.dateIn) || "").trim();
+      const arrTime = String(leg && (leg.arriveTime || leg.timeIn) || "").trim();
+      if(!from || !to || !depDate || !depTime) return null;
+      return {
+        from, to, depDate, depTime, arrDate, arrTime,
+        tripType: String(leg && leg.tripType || "").trim(),
+        durationLabel: String(leg && leg.duration || "").trim() || (typeof legDurationText === "function" ? String(legDurationText(leg) || "").trim() : ""),
+        sortKey: `${depDate}T${depTime}`
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=> a.sortKey.localeCompare(b.sortKey));
 
-  const route = [];
-  (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{
-    const from = String(leg && leg.from || "").trim();
-    const to = String(leg && leg.to || "").trim();
-    if(from && !route.includes(from)) route.push(from);
-    if(to && !route.includes(to)) route.push(to);
-  });
-  if(!route.length){
-    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stayItem)=>{ const city = String(stayItem && stayItem.city || "").trim(); if(city && !route.includes(city)) route.push(city); });
-    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=>{ const city = String(act && act.city || "").trim(); if(city && !route.includes(city)) route.push(city); });
-  }
+  const stayItems = (Array.isArray(sc && sc.stays) ? sc.stays : [])
+    .map((stayItem)=>{
+      const name = String(stayItem && stayItem.name || "").trim() || "Alojamiento";
+      const city = String(stayItem && stayItem.city || "").trim();
+      const checkInDate = String(stayItem && stayItem.date || "").trim();
+      const checkInTime = String(stayItem && stayItem.time || "").trim();
+      const checkOutDate = String((stayItem && (stayItem.checkoutDate || stayItem.checkout || stayItem.dateOut || stayItem.endDate)) || "").trim();
+      const checkOutTime = String((stayItem && (stayItem.checkoutTime || stayItem.checkout_time)) || "").trim();
+      const nights = Number.isFinite(Number(stayItem && stayItem.nights)) ? Math.max(1, parseInt(stayItem.nights,10)) : null;
+      const sortKey = `${checkInDate || "9999-99-99"}T${checkInTime || "23:59"}`;
+      return { name, city, checkInDate, checkInTime, checkOutDate, checkOutTime, nights, sortKey };
+    })
+    .sort((a,b)=> a.sortKey.localeCompare(b.sortKey));
 
-  const topLines = [];
-  (Array.isArray(sc && sc.legs) ? sc.legs : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,4).forEach((leg)=>{
-    const date = String(leg && leg.date || "").trim();
-    const time = String(leg && leg.time || "").trim();
-    topLines.push({ label:"Transporte", text:`${String(leg && leg.from || "—").trim() || "—"} → ${String(leg && leg.to || "—").trim() || "—"} · ${date ? ((typeof formatDateShortES === "function" ? formatDateShortES(date) : date)) : "—"}${time ? ` · ${time}` : ""}` });
-  });
-  (Array.isArray(sc && sc.stays) ? sc.stays : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,3).forEach((stayItem)=>{
-    const date = String(stayItem && stayItem.date || "").trim();
-    topLines.push({ label:"Alojamiento", text:`${String(stayItem && stayItem.name || "Alojamiento").trim() || "Alojamiento"} · ${String(stayItem && stayItem.city || "—").trim() || "—"}${date ? ` · ${typeof formatDateShortES === "function" ? formatDateShortES(date) : date}` : ""}` });
-  });
-  (Array.isArray(sc && sc.activities) ? sc.activities : []).slice().sort((a,b)=> `${String(a?.date||"")}T${String(a?.time||"23:59")}`.localeCompare(`${String(b?.date||"")}T${String(b?.time||"23:59")}`)).slice(0,5).forEach((act)=>{
-    const date = String(act && act.date || "").trim();
-    const time = String(act && act.time || "").trim();
-    topLines.push({ label:"Actividad", text:`${String(act && (act.title || act.name) || "Actividad").trim() || "Actividad"}${date ? ` · ${typeof formatDateShortES === "function" ? formatDateShortES(date) : date}` : ""}${time ? ` · ${time}` : ""}` });
-  });
+  const activityItems = (Array.isArray(sc && sc.activities) ? sc.activities : [])
+    .map((act)=>{
+      const title = String(act && (act.title || act.name) || "").trim() || "Actividad";
+      const city = String(act && act.city || "").trim();
+      const date = String(act && act.date || "").trim();
+      const time = String(act && act.time || "").trim();
+      const durationLabel = String(act && act.duration || "").trim() || (typeof actDurationText === "function" ? String(actDurationText(act) || "").trim() : "");
+      const sortKey = `${date || "9999-99-99"}T${time || "23:59"}`;
+      return { title, city, date, time, durationLabel, sortKey };
+    })
+    .sort((a,b)=> a.sortKey.localeCompare(b.sortKey));
 
-  return { totals, tripDates, route, topLines: topLines.slice(0,10) };
+  return { totals, transportItems, stayItems, activityItems };
 }
 
 function __mvExecutiveSummaryHTML(){
   const data = __mvExecutiveSummaryData();
   const totals = data.totals;
   const fmt = (n)=> fmtNum2(Number(n || 0));
-  const routeText = data.route.length ? data.route.join(" → ") : "No hay datos aún";
-  const topHtml = data.topLines.length
-    ? data.topLines.map((line)=>`<li class="py-1 border-b border-slate-100 last:border-b-0"><span class="font-semibold text-slate-800">${escapeHtml(line.label)}:</span> <span class="text-slate-700">${escapeHtml(line.text)}</span></li>`).join("")
-    : `<li class="py-1 text-slate-500">No hay datos aún</li>`;
+  const fmtDate = (iso)=> iso ? (typeof formatDateShortES === "function" ? formatDateShortES(iso) : iso) : "—";
+  const lineDateTime = (date, time)=> date ? `${fmtDate(date)}${time ? ` ${time}` : ""}` : "—";
+  const tripTypeLabel = (raw)=>{
+    const key = String(raw || "").trim().toLowerCase();
+    return key === "return" ? "Vuelta" : (key === "outbound" || key === "oneway" ? "Ida" : "");
+  };
+  const transportHtml = data.transportItems.length
+    ? data.transportItems.map((item)=>`
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="font-semibold text-slate-900">Transporte: ${escapeHtml(item.from)} → ${escapeHtml(item.to)}${tripTypeLabel(item.tripType) ? ` <span class="ml-2 text-xs font-semibold text-slate-500">${escapeHtml(tripTypeLabel(item.tripType))}</span>` : ""}</div>
+          <div class="mt-2 text-sm text-slate-700">Salida: ${escapeHtml(lineDateTime(item.depDate, item.depTime))}</div>
+          <div class="mt-1 text-sm text-slate-700">Llegada: ${escapeHtml(lineDateTime(item.arrDate, item.arrTime))}</div>
+          ${item.durationLabel ? `<div class="mt-1 text-sm text-slate-700">Duración: ${escapeHtml(item.durationLabel)}</div>` : ``}
+        </div>`).join("")
+    : `<div class="text-sm text-slate-500">No hay transportes.</div>`;
+  const stayHtml = data.stayItems.length
+    ? data.stayItems.map((item)=>`
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="font-semibold text-slate-900">Alojamiento: ${escapeHtml(item.name)}${item.city ? ` (${escapeHtml(item.city)})` : ""}</div>
+          <div class="mt-2 text-sm text-slate-700">Check-in: ${escapeHtml(lineDateTime(item.checkInDate, item.checkInTime))}</div>
+          <div class="mt-1 text-sm text-slate-700">Check-out: ${escapeHtml(lineDateTime(item.checkOutDate, item.checkOutTime))}</div>
+          ${item.nights ? `<div class="mt-1 text-sm text-slate-700">Noches: ${escapeHtml(String(item.nights))}</div>` : ``}
+        </div>`).join("")
+    : `<div class="text-sm text-slate-500">No hay alojamientos.</div>`;
+  const activityHtml = data.activityItems.length
+    ? data.activityItems.map((item)=>`
+        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
+          <div class="font-semibold text-slate-900">Actividad: ${escapeHtml(item.title)}${item.city ? ` (${escapeHtml(item.city)})` : ""}</div>
+          <div class="mt-2 text-sm text-slate-700">Fecha: ${escapeHtml(lineDateTime(item.date, item.time))}</div>
+          ${item.durationLabel ? `<div class="mt-1 text-sm text-slate-700">Duración: ${escapeHtml(item.durationLabel)}</div>` : ``}
+        </div>`).join("")
+    : `<div class="text-sm text-slate-500">No hay actividades.</div>`;
   return `
     <div id="mvExecutiveSummaryPrintable" class="mvExecPrintSheet text-slate-900">
       <div class="space-y-6">
-        <div class="mvExecPrintAvoid">
-          <div class="text-2xl font-extrabold tracking-tight">Resumen ejecutivo del viaje</div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mvExecPrintAvoid">
-          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Fechas del viaje</div>
-            <div class="mt-2 text-base font-semibold text-slate-900">${escapeHtml(data.tripDates)}</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-            <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Ruta principal</div>
-            <div class="mt-2 text-base font-semibold text-slate-900">${escapeHtml(routeText)}</div>
-          </div>
-        </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
-          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Totales económicos</div>
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Totales</div>
           <div class="mt-3 grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div><div class="text-xs text-slate-500">Total</div><div class="mt-1 text-lg font-extrabold">${escapeHtml(fmt(totals.total))} ${escapeHtml(totals.currency)}</div></div>
             <div><div class="text-xs text-slate-500">Transporte</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.transport))}</div></div>
@@ -20050,11 +20059,18 @@ function __mvExecutiveSummaryHTML(){
             <div><div class="text-xs text-slate-500">Varios</div><div class="mt-1 text-base font-semibold">${escapeHtml(fmt(totals.mealsPlus))}</div></div>
           </div>
         </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 mvExecPrintAvoid">
-          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Top hitos</div>
-          <ul class="mt-3 text-sm">${topHtml}</ul>
+        <div class="space-y-3">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Transporte</div>
+          ${transportHtml}
         </div>
-        <div class="text-xs text-slate-500 mvExecPrintAvoid">Webapp: ${escapeHtml(String(typeof MV_WEBAPP_URL !== "undefined" ? MV_WEBAPP_URL : location.origin || ""))}</div>
+        <div class="space-y-3">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Alojamiento</div>
+          ${stayHtml}
+        </div>
+        <div class="space-y-3">
+          <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Actividades</div>
+          ${activityHtml}
+        </div>
       </div>
     </div>
   `;
@@ -20084,7 +20100,7 @@ function openExecutiveSummaryModal(){
   btnClose.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
   btnClose.textContent = "Cerrar";
   btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-  showModal("Resumen ejecutivo del viaje", body, [btnClose, btnPrint]);
+  showModal("Resumen del viaje", body, [btnClose, btnPrint]);
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
