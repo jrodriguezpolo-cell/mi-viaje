@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A112_TOMORROW_SUMMARY_ICS_BUTTON</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX";
+const APP_BUILD = "V240_A112_TOMORROW_SUMMARY_ICS_BUTTON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29251,6 +29251,7 @@ document.addEventListener("DOMContentLoaded", function(){
                 <div class="mt-2 text-xs text-slate-500">Los avisos se incluyen en cada evento del .ics.</div>
               </div>
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportICS" type="button" data-i18n="tools.exportICS">Exportar a Calendario (.ics)</button>
+              <button class="tap px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-sm font-semibold text-emerald-800" id="btnTomorrowSummaryICS" type="button">Resumen de mañana (ICS)</button>
               <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeLegs" type="button" data-i18n="tools.ics.includeTransport">Incluir Transporte</button>
@@ -29326,6 +29327,20 @@ document.addEventListener("DOMContentLoaded", function(){
               window.__mvExportICS();
             }else{
               try{ toast("ICS: pendiente"); }catch(_){ console.log("ICS pending"); }
+            }
+          }catch(_){}
+        }, true);
+      }
+      var btnTomorrowSummaryICS = document.getElementById("btnTomorrowSummaryICS");
+      if(btnTomorrowSummaryICS && !btnTomorrowSummaryICS.__mvBound){
+        btnTomorrowSummaryICS.__mvBound = true;
+        btnTomorrowSummaryICS.addEventListener("click", function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          try{
+            if(typeof window.__mvExportTomorrowSummaryICS === "function"){
+              window.__mvExportTomorrowSummaryICS();
+            }else{
+              try{ toast("Resumen de mañana: pendiente"); }catch(_){}
             }
           }catch(_){}
         }, true);
@@ -30346,6 +30361,203 @@ function __mvICS_BuildEventsFromState(){
 window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateConflictFabVisibility==="function") __mvUpdateConflictFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} });
 
 const MV_WEBAPP_URL = "https://jrodriguezpolo-cell.github.io/mi-viaje/";
+
+function __mvTomorrowYMDLocal(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function __mvTomorrowSummaryDateLabel(iso){
+  return (typeof formatDateShortES === "function" ? formatDateShortES(iso) : iso) || iso || "—";
+}
+
+function __mvTomorrowSummaryTips(items, destination){
+  const list = [];
+  const acts = items.filter(it => it && it.kind === "act");
+  const total = items.length;
+  const totalActMinutes = acts.reduce((sum, it)=> sum + Math.max(0, Number(it.durationMin || 0) || 0), 0);
+  if (acts.length >= 2 || totalActMinutes >= 240) list.push("Calzado cómodo: mañana pinta a día activo.");
+  if (total >= 4) list.push("Plan apretado: revisa horarios y deja margen entre trayectos.");
+  if (items.length >= 3) {
+    const ordered = items
+      .filter(it => Number.isFinite(it.sortMin))
+      .sort((a,b)=> a.sortMin - b.sortMin);
+    let tight = false;
+    for(let i=1;i<ordered.length;i++){
+      if((ordered[i].sortMin - ordered[i-1].sortMin) <= 90){ tight = true; break; }
+    }
+    if(tight) list.push("Batería/powerbank: tendrás varios movimientos en poco tiempo.");
+  }
+  const dest = String(destination || "").trim();
+  if(dest){
+    const metroCities = ["new york","nueva york","london","londres","paris","parís","rome","roma","barcelona","tokyo","tokio","madrid"];
+    if(metroCities.includes(dest.toLowerCase())) list.push(`Moverse: prioriza metro o transporte público en ${dest}.`);
+    else list.push(`Moverse: valora caminar y transporte público en ${dest}.`);
+  }
+  if(!list.length) list.push("Mañana no hay eventos planificados: aprovecha para revisar reservas y billetes.");
+  return list.slice(0,5);
+}
+
+function __mvTomorrowSummaryItems(sc, tomorrowIso){
+  const items = [];
+  const add = (entry)=>{ if(entry) items.push(entry); };
+  (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach(function(leg){
+    try{
+      const depDate = String(leg && leg.date || "").trim();
+      const arrDate = String(leg && (leg.arriveDate || leg.dateIn || leg.arrivalDate || leg.endDate || "") || "").trim();
+      if(depDate !== tomorrowIso && arrDate !== tomorrowIso) return;
+      const parts = (typeof buildLegSummaryParts === "function") ? buildLegSummaryParts(leg) : null;
+      const from = String(leg && (leg.from || leg.placeOut) || "").trim() || "—";
+      const to = String(leg && (leg.to || leg.placeIn) || "").trim() || "—";
+      const depTime = String(leg && (leg.time || leg.depTime || leg.departTime || leg.departureTime) || "").trim();
+      const arrTime = String(leg && (leg.arriveTime || leg.arrivalTime || leg.arrTime || leg.timeIn || leg.endTime) || "").trim();
+      const startLabel = depTime || "(sin hora)";
+      const endLabel = arrTime || "(sin hora)";
+      const durText = String(parts && parts.durText || "").replace(/<[^>]+>/g, "").trim();
+      add({
+        kind: "leg",
+        sortMin: Number.isFinite(typeof timeToMinutes === "function" ? timeToMinutes(depTime) : NaN) ? timeToMinutes(depTime) : 9999,
+        line: `[Transporte] ${from} → ${to} · ${startLabel}${arrTime ? `–${endLabel}` : ""}${durText ? ` · Duración ${durText}` : ""}`
+      });
+    }catch(_){}
+  });
+  (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach(function(stay){
+    try{
+      const checkInDate = String(stay && stay.date || "").trim();
+      const checkOutDate = String(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate) || "").trim();
+      const name = String(stay && (stay.name || stay.hotel) || "").trim() || "Alojamiento";
+      const city = String(stay && stay.city || "").trim();
+      if(checkInDate === tomorrowIso){
+        const t = String(stay && stay.time || "").trim();
+        add({
+          kind: "stay",
+          sortMin: Number.isFinite(typeof timeToMinutes === "function" ? timeToMinutes(t) : NaN) ? timeToMinutes(t) : 9998,
+          line: `[Alojamiento] ${name}${city ? ` (${city})` : ""} · Check-in ${t || "(sin hora)"}`
+        });
+      }
+      if(checkOutDate === tomorrowIso){
+        const t = String(stay && (stay.checkoutTime || stay.checkout_time) || "").trim();
+        add({
+          kind: "stay",
+          sortMin: Number.isFinite(typeof timeToMinutes === "function" ? timeToMinutes(t) : NaN) ? timeToMinutes(t) : 9998,
+          line: `[Alojamiento] ${name}${city ? ` (${city})` : ""} · Check-out ${t || "(sin hora)"}`
+        });
+      }
+    }catch(_){}
+  });
+  (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach(function(act){
+    try{
+      const date = String(act && act.date || "").trim();
+      if(date !== tomorrowIso) return;
+      const title = String(act && (act.title || act.name) || "Actividad").trim();
+      const city = String(act && act.city || "").trim();
+      const t = String(act && act.time || "").trim();
+      const durMin = (typeof __tlActDurationMinutes === "function") ? Math.max(0, Math.floor(__tlActDurationMinutes(act) || 0)) : Math.max(0, parseInt(act && act.durationMin,10) || 0);
+      const durText = durMin > 0
+        ? `${Math.floor(durMin / 60)}h${durMin % 60 ? ` ${durMin % 60}m` : ""}`.replace(/^0h\s*/, "")
+        : "";
+      add({
+        kind: "act",
+        sortMin: Number.isFinite(typeof timeToMinutes === "function" ? timeToMinutes(t) : NaN) ? timeToMinutes(t) : 9997,
+        durationMin: durMin,
+        line: `[Actividad] ${title}${city ? ` (${city})` : ""} · ${t || "(sin hora)"}${durText ? ` · ${durText}` : ""}`
+      });
+    }catch(_){}
+  });
+  return items.sort(function(a,b){
+    const am = Number.isFinite(a && a.sortMin) ? a.sortMin : 9999;
+    const bm = Number.isFinite(b && b.sortMin) ? b.sortMin : 9999;
+    return am - bm || String(a && a.line || "").localeCompare(String(b && b.line || ""));
+  });
+}
+
+function __mvTomorrowSummaryDestination(sc){
+  try{
+    const firstLeg = (Array.isArray(sc && sc.legs) ? sc.legs : []).find(Boolean);
+    const legDest = String(firstLeg && (firstLeg.to || firstLeg.placeIn) || "").trim();
+    if(legDest) return legDest;
+    const counts = new Map();
+    const pushCity = (city)=>{
+      const c = String(city || "").trim();
+      if(!c) return;
+      counts.set(c, (counts.get(c) || 0) + 1);
+    };
+    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach(it => pushCity(it && it.city));
+    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach(it => pushCity(it && it.city));
+    let best = "";
+    let bestCount = 0;
+    counts.forEach((count, city)=>{
+      if(count > bestCount){ best = city; bestCount = count; }
+    });
+    return best;
+  }catch(_){
+    return "";
+  }
+}
+
+window.__mvExportTomorrowSummaryICS = function(){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
+    const hasData = !!(sc && (
+      (Array.isArray(sc.legs) && sc.legs.length) ||
+      (Array.isArray(sc.stays) && sc.stays.length) ||
+      (Array.isArray(sc.activities) && sc.activities.length)
+    ));
+    if(!hasData){
+      try{ toast("No hay datos del viaje"); }catch(_){}
+      return;
+    }
+    const tomorrowIso = __mvTomorrowYMDLocal();
+    const items = __mvTomorrowSummaryItems(sc, tomorrowIso);
+    const destination = __mvTomorrowSummaryDestination(sc);
+    const tips = __mvTomorrowSummaryTips(items, destination);
+    const tomorrowLabel = __mvTomorrowSummaryDateLabel(tomorrowIso);
+    const start = new Date(`${tomorrowIso}T20:00:00`);
+    const end = new Date(`${tomorrowIso}T20:05:00`);
+    const dtstamp = __mvICS_FormatDT(new Date());
+    const lines = [];
+    lines.push(`Fecha: ${tomorrowLabel}`);
+    lines.push("");
+    if(items.length){
+      lines.push("Eventos de mañana:");
+      items.forEach(function(item){ lines.push(`- ${item.line}`); });
+    }else{
+      lines.push("Mañana no hay eventos planificados.");
+    }
+    lines.push("");
+    lines.push("Tips del día:");
+    tips.forEach(function(t){ lines.push(`- ${t}`); });
+    lines.push("");
+    lines.push(`Mi Viaje: ${MV_WEBAPP_URL}`);
+    const deep = MV_WEBAPP_URL + "#day=" + encodeURIComponent(tomorrowIso);
+    const ics =
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Mi Viaje//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:tomorrow-summary-${tomorrowIso.replace(/-/g,"")}@mv
+DTSTAMP:${dtstamp}
+DTSTART:${__mvICS_FormatDT(start)}
+DTEND:${__mvICS_FormatDT(end)}
+SUMMARY:${__mvICS_Escape("Resumen de mañana — Mi Viaje")}
+DESCRIPTION:${__mvICS_Escape(lines.join("\n"))}
+URL:${deep}
+END:VEVENT
+END:VCALENDAR`;
+    __mvDownloadTextFile(`mi-viaje-manana-${tomorrowIso}.ics`, ics);
+    try{ toast("📅 Resumen de mañana (.ics) generado"); }catch(_){}
+  }catch(e){
+    console.log("Tomorrow summary ICS failed", e);
+    try{ toast("❌ No se pudo generar el resumen de mañana"); }catch(_){}
+  }
+};
 
 window.__mvExportICS = function(){
   try{
