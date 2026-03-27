@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES</title>
+  <title>V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1193,18 +1193,21 @@ div[data-acc-body="acts"]{
 /* Notes UI polish: ensure global modal above Event Sheet */
 #modalBackdrop{ z-index: 9000 !important; }
 #modalBox{ z-index: 9100 !important; }
-body.mvExecPrintMode #modalBackdrop{ background: white !important; }
-body.mvExecPrintMode #modalBackdrop,
-body.mvExecPrintMode #modalBox{ display:none !important; }
-body.mvExecPrintMode #mvExecutivePrintRoot{
+#mvPrintRoot{ display:none; }
+body.mv-printing > *:not(#mvPrintRoot){ display:none !important; }
+body.mv-printing #mvPrintRoot{
   display:block !important;
-  position:fixed !important;
-  inset:0 !important;
-  overflow:auto !important;
+  position:absolute !important;
+  inset:0 auto auto 0 !important;
+  width:100% !important;
+  min-height:100vh !important;
+  height:auto !important;
+  max-height:none !important;
+  overflow:visible !important;
   background:white !important;
   z-index:99999 !important;
 }
-body.mvExecPrintMode #mvExecutivePrintRoot .mvExecPrintSheet{
+body.mv-printing #mvPrintRoot .mvExecPrintSheet{
   width:210mm !important;
   max-width:210mm !important;
   min-height:auto !important;
@@ -1215,16 +1218,16 @@ body.mvExecPrintMode #mvExecutivePrintRoot .mvExecPrintSheet{
 }
 @media print{
   body *{ visibility:hidden !important; }
-  body.mvExecPrintMode #mvExecutivePrintRoot,
-  body.mvExecPrintMode #mvExecutivePrintRoot *{ visibility:visible !important; }
-  body.mvExecPrintMode #mvExecutivePrintRoot{
+  body.mv-printing #mvPrintRoot,
+  body.mv-printing #mvPrintRoot *{ visibility:visible !important; }
+  body.mv-printing #mvPrintRoot{
     display:block !important;
     position:static !important;
     inset:auto !important;
     overflow:visible !important;
     background:white !important;
   }
-  body.mvExecPrintMode #mvExecutivePrintRoot .mvExecPrintSheet{
+  body.mv-printing #mvPrintRoot .mvExecPrintSheet{
     width:210mm !important;
     max-width:210mm !important;
     min-height:auto !important;
@@ -1741,7 +1744,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -1949,7 +1952,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 <div class="font-extrabold" id="modalTitle" data-i18n="app.modalTitle">Ventana</div>
 <button aria-label="Close" class="tap px-3 py-2 rounded-xl hover:bg-slate-50" id="modalClose" style="position:relative; z-index:6200;" data-i18n-aria="sheet.close" title="Close" data-i18n-title="sheet.close">✕</button>
 </div>
-<div class="hidden" id="mvExecutivePrintRoot" aria-hidden="true"></div>
+<div id="mvPrintRoot" aria-hidden="true"></div>
 <div class="p-5" id="modalBody"></div>
 <div class="px-5 py-4 border-t border-slate-200 flex justify-end gap-2" id="modalFooter"></div>
 </div>
@@ -2113,7 +2116,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES";
+const APP_BUILD = "V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20182,14 +20185,17 @@ function __mvExecutiveSummaryHTML(){
 
 function __mvPrintExecutiveSummary(){
   try{
-    const root = document.getElementById("mvExecutivePrintRoot");
+    const root = document.getElementById("mvPrintRoot");
     if(root){
       root.innerHTML = __mvExecutiveSummaryHTML();
-      root.classList.remove("hidden");
       root.setAttribute("aria-hidden", "false");
     }
-    document.body.classList.add("mvExecPrintMode");
-    setTimeout(()=>{ try{ window.print(); }catch(_){} }, 60);
+    document.body.classList.add("mv-printing");
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        setTimeout(()=>{ try{ window.print(); }catch(_){} }, 40);
+      });
+    });
   }catch(_){}
 }
 
@@ -20197,11 +20203,10 @@ if(!window.__mvExecAfterPrintBound){
   window.__mvExecAfterPrintBound = true;
   window.addEventListener("afterprint", ()=>{
     try{
-      document.body.classList.remove("mvExecPrintMode");
-      const root = document.getElementById("mvExecutivePrintRoot");
+      document.body.classList.remove("mv-printing");
+      const root = document.getElementById("mvPrintRoot");
       if(root){
         root.innerHTML = "";
-        root.classList.add("hidden");
         root.setAttribute("aria-hidden", "true");
       }
     }catch(_){}
