@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A114_TOMORROW_TIPS_GEMINI_ENRICH</title>
+  <title>V240_A115_TOTALS_TIPS_GEMINI_ENRICH</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A114_TOMORROW_TIPS_GEMINI_ENRICH</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A115_TOTALS_TIPS_GEMINI_ENRICH</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A114_TOMORROW_TIPS_GEMINI_ENRICH";
+const APP_BUILD = "V240_A115_TOTALS_TIPS_GEMINI_ENRICH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19771,6 +19771,7 @@ function applySummaryFold() {
             <div>• Alojamientos: ${escapeHtml(String((activeScenario.stays || []).length))}</div>
           </div>
         </div>
+        ${__mvTripAdviceDetailCardHTML(activeScenario)}
       `;
     } else {
       // Qualitative compare (MVP) under economic breakdown
@@ -19939,9 +19940,15 @@ function applySummaryFold() {
             ${__q.map(l=>`<div>• ${escapeHtml(l)}</div>`).join("")}
           </div>
         </div>
+        ${__mvTripAdviceDetailCardHTML(activeScenario)}
       `;
 
     }
+  }
+
+  const tripAdviceBtn = document.getElementById("btnTripAdviceGemini");
+  if (tripAdviceBtn) {
+    tripAdviceBtn.onclick = () => { try{ __mvEnrichTripAdviceWithGemini(); }catch(_){} };
   }
 
   // Stable binding with reflow correction (prevents content jump/covering)
@@ -20020,19 +20027,13 @@ function calcSummary() {
   try { if (window.summaryExpanded) scheduleSyncTopStackHeights(); } catch {}
 }
 
-function __mvTripAdviceHTML(sc){
+function __mvTripAdviceBullets(sc){
   try{
     const safeArr = (arr)=> Array.isArray(arr) ? arr : [];
     const legs = safeArr(sc && sc.legs);
     const stays = safeArr(sc && sc.stays);
     const acts = safeArr(sc && sc.activities);
-    if(!legs.length && !stays.length && !acts.length){
-      return `
-        <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
-          <div class="font-extrabold text-slate-900">Consejos del viaje</div>
-          <div class="mt-2 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>
-        </div>`;
-    }
+    if(!legs.length && !stays.length && !acts.length) return [];
     const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
     const cityCounts = new Map();
     const bumpCity = (city)=>{
@@ -20103,8 +20104,22 @@ function __mvTripAdviceHTML(sc){
     if(tightPlan) advice.push("Plan apretado: deja margen entre actividades y revisa trayectos antes de salir.");
     if((dates.length >= 4) || acts.length >= 4) advice.push("Batería/powerbank: te vendrá bien para mapas, billetes y fotos en días largos.");
 
-    const bullets = advice.filter(Boolean).slice(0, 6);
-    if(!bullets.length) return "";
+    return advice.filter(Boolean).slice(0, 6);
+  }catch(_){
+    return [];
+  }
+}
+
+function __mvTripAdviceHTML(sc){
+  try{
+    const bullets = __mvTripAdviceBullets(sc);
+    if(!bullets.length){
+      return `
+        <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <div class="font-extrabold text-slate-900">Consejos del viaje</div>
+          <div class="mt-2 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>
+        </div>`;
+    }
     return `
       <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
         <div class="font-extrabold text-slate-900">Consejos del viaje</div>
@@ -20126,6 +20141,103 @@ function __mvOpenTripAdviceModal(){
       </div>`;
     showModal("Consejos del viaje", body, []);
   }catch(_){}
+}
+
+function __mvTripAdviceDetailCardHTML(sc){
+  try{
+    const bullets = __mvTripAdviceBullets(sc);
+    const hasGemini = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
+    const aiCache = window.__mvTripAdviceAICache || null;
+    const basicHtml = bullets.length
+      ? `<div class="mt-2 text-sm text-slate-700 grid gap-1">${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div>`
+      : `<div class="mt-2 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>`;
+    return `
+      <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+        <div class="font-extrabold text-slate-900">Consejos del viaje</div>
+        <div class="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Tips básicos</div>
+        ${basicHtml}
+        <div class="mt-3">
+          ${hasGemini
+            ? `<button id="btnTripAdviceGemini" class="tap px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-800 font-semibold w-full" type="button">Mejorar consejos con IA</button>`
+            : `<div class="text-sm text-slate-500">Configura Gemini en Herramientas para consejos con IA.</div>`}
+          <div id="tripAdviceGeminiStatus" class="mt-2 text-sm text-slate-500"></div>
+        </div>
+        <div id="tripAdviceGeminiResult" class="mt-3">${aiCache ? __mvTomorrowTipsAIHTML(aiCache) : ``}</div>
+      </div>
+    `;
+  }catch(_){
+    return "";
+  }
+}
+
+function __mvTripAdviceAIPrompt(sc){
+  try{
+    const data = __mvExecutiveSummaryData();
+    const ov = data && data.overview ? data.overview : {};
+    const destination = String((data && data.title) || "Viaje").replace(/^Viaje\s+/i, "").trim() || "No disponible";
+    const lines = [
+      `Destino principal: ${destination || "No disponible"}`,
+      `Fechas del viaje: ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateStart) : ov.dateStart) || "—"} → ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateEnd) : ov.dateEnd) || "—"}${ov.dayCount ? ` (${ov.dayCount} días)` : ""}`,
+      `Transportes: ${Number(ov.transportCount || 0)}`,
+      `Alojamientos: ${Number(ov.stayCount || 0)}`,
+      `Actividades: ${Number(ov.activityCount || 0)}`
+    ];
+    const bullets = __mvTripAdviceBullets(sc);
+    if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
+    return `Eres un asistente práctico de viaje.
+Idioma: español.
+
+Resumen del itinerario:
+${lines.join("\n")}
+
+Devuelve SOLO JSON válido con este formato:
+{"bullets":["...","..."]}
+
+Instrucciones:
+- 6 a 10 bullets máximo
+- consejos prácticos y accionables
+- habla de ropa por época sin inventar clima real ni temperaturas
+- incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
+- NO inventes nombres ni datos que no estén presentes
+- evita texto largo`;
+  }catch(_){
+    return "";
+  }
+}
+
+async function __mvEnrichTripAdviceWithGemini(){
+  const statusEl = document.getElementById("tripAdviceGeminiStatus");
+  const resultEl = document.getElementById("tripAdviceGeminiResult");
+  const btn = document.getElementById("btnTripAdviceGemini");
+  try{
+    const key = (typeof getGeminiKey === "function") ? String(getGeminiKey() || "").trim() : "";
+    if(!key){
+      if(statusEl) statusEl.textContent = "Configura Gemini en Herramientas para consejos con IA.";
+      return;
+    }
+    if(btn) btn.disabled = true;
+    if(statusEl) statusEl.textContent = "Generando…";
+    if(window.__mvTripAdviceAICache){
+      if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(window.__mvTripAdviceAICache);
+      if(statusEl) statusEl.textContent = "";
+      if(btn) btn.disabled = false;
+      return;
+    }
+    const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
+    const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
+    const payload = {
+      bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : []
+    };
+    if(!payload.bullets.length) throw new Error("EMPTY_TRIP_AI_TIPS");
+    window.__mvTripAdviceAICache = payload;
+    if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(payload);
+    if(statusEl) statusEl.textContent = "";
+  }catch(e){
+    console.log("Trip advice Gemini failed", e);
+    if(statusEl) statusEl.textContent = "No se ha podido generar con IA. Usa los tips básicos.";
+  }finally{
+    if(btn) btn.disabled = false;
+  }
 }
 
 function __mvExecutiveSummaryData(){
