@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A106_TRIP_SUMMARY_FLOATING_CLOSE_AND_PDF</title>
+  <title>V240_A107_TIPS_IN_TOTALS_DETAIL</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A106_TRIP_SUMMARY_FLOATING_CLOSE_AND_PDF</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A107_TIPS_IN_TOTALS_DETAIL</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2136,7 +2136,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A106_TRIP_SUMMARY_FLOATING_CLOSE_AND_PDF";
+const APP_BUILD = "V240_A107_TIPS_IN_TOTALS_DETAIL";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19739,7 +19739,7 @@ function applySummaryFold() {
         <div class="row"><span class="lbl">${escapeHtml(t("app.meals"))}</span><span class="val">${fmt(aS.meals)}</span></div>
         <hr class="my-2 border-slate-200"/>
         <div class="row"><span class="total">${escapeHtml(t("app.total"))} ${curSym ? curSym : ""}</span><span class="total">${fmt(aS.total)}</span></div>
-        
+        ${__mvTripAdviceHTML(sc)}
       `;
     } else {
       // Qualitative compare (MVP) under economic breakdown
@@ -19908,6 +19908,7 @@ function applySummaryFold() {
             ${__q.map(l=>`<div>• ${escapeHtml(l)}</div>`).join("")}
           </div>
         </div>
+        ${__mvTripAdviceHTML(sc)}
       `;
 
     }
@@ -19983,6 +19984,103 @@ function calcSummary() {
   applySummaryFold();
   // Ensure main content padding matches Totales expanded height (prevents sections hiding under Totales).
   try { if (window.summaryExpanded) scheduleSyncTopStackHeights(); } catch {}
+}
+
+function __mvTripAdviceHTML(sc){
+  try{
+    const safeArr = (arr)=> Array.isArray(arr) ? arr : [];
+    const legs = safeArr(sc && sc.legs);
+    const stays = safeArr(sc && sc.stays);
+    const acts = safeArr(sc && sc.activities);
+    if(!legs.length && !stays.length && !acts.length){
+      return `
+        <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <div class="font-extrabold text-slate-900">Consejos del viaje</div>
+          <div class="mt-2 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>
+        </div>`;
+    }
+    const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    const cityCounts = new Map();
+    const bumpCity = (city)=>{
+      const key = String(city || "").trim();
+      if(!key) return;
+      cityCounts.set(key, (cityCounts.get(key) || 0) + 1);
+    };
+    legs.forEach((leg)=>{ bumpCity(leg && leg.to); });
+    stays.forEach((stay)=>{ bumpCity(stay && stay.city); });
+    acts.forEach((act)=>{ bumpCity(act && act.city); });
+    const firstLegDestination = String(legs[0] && (legs[0].to || legs[0].destination) || "").trim();
+    const mainCity = firstLegDestination || (Array.from(cityCounts.entries()).sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(b[0]))[0]?.[0] || "");
+
+    const dates = [];
+    const pushDate = (value)=>{
+      const iso = String(value || "").trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) dates.push(iso);
+    };
+    legs.forEach((leg)=>{ pushDate(leg && leg.date); pushDate(leg && (leg.arriveDate || leg.dateIn)); });
+    stays.forEach((stay)=>{ pushDate(stay && stay.date); pushDate(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate)); });
+    acts.forEach((act)=>{ pushDate(act && act.date); });
+    dates.sort();
+    const startMonthIdx = dates[0] ? Math.max(0, Math.min(11, parseInt(String(dates[0]).slice(5,7),10) - 1)) : null;
+
+    const actsByDate = new Map();
+    let actsWithoutTime = 0;
+    acts.forEach((act)=>{
+      const date = String(act && act.date || "").trim();
+      const time = String(act && act.time || "").trim();
+      if(!time) actsWithoutTime++;
+      if(!date) return;
+      const arr = actsByDate.get(date) || [];
+      arr.push(act);
+      actsByDate.set(date, arr);
+    });
+    let busyDays = 0;
+    let tightPlan = false;
+    actsByDate.forEach((dayActs)=>{
+      if(dayActs.length >= 2) busyDays++;
+      const sorted = dayActs.slice().sort((a,b)=> (timeToMinutes(a && a.time) ?? 9999) - (timeToMinutes(b && b.time) ?? 9999));
+      for(let i=1;i<sorted.length;i++){
+        const prev = sorted[i-1];
+        const cur = sorted[i];
+        const prevStart = timeToMinutes(prev && prev.time);
+        const curStart = timeToMinutes(cur && cur.time);
+        const prevDur = (typeof __tlActDurationMinutes === "function") ? (__tlActDurationMinutes(prev) || 0) : 0;
+        if(Number.isFinite(prevStart) && Number.isFinite(curStart) && prevDur > 0 && curStart < (prevStart + prevDur + 45)){
+          tightPlan = true;
+          break;
+        }
+      }
+      if(tightPlan) return;
+    });
+    if(actsWithoutTime >= 3) tightPlan = true;
+
+    const advice = [];
+    if(busyDays >= 2) advice.push("Calzado cómodo: tienes varios días con bastante actividad.");
+    if(startMonthIdx !== null) advice.push(`Capas: ${monthNames[startMonthIdx]} puede traer cambios de temperatura a lo largo del día.`);
+    advice.push("Chubasquero plegable: mejor llevar una capa ligera por si cambia el tiempo.");
+    const bigCityNeedTransit = /new york|nueva york|londres|par[ií]s|roma|barcelona|tokio|tokyo/i.test(mainCity);
+    if(mainCity){
+      advice.push(bigCityNeedTransit
+        ? `Moverse: prioriza metro/transporte público en ${mainCity}.`
+        : `Moverse: valora caminar + transporte público en ${mainCity}.`);
+    }else{
+      advice.push("Moverse: valora caminar + transporte público para los desplazamientos del viaje.");
+    }
+    if(tightPlan) advice.push("Plan apretado: deja margen entre actividades y revisa trayectos antes de salir.");
+    if((dates.length >= 4) || acts.length >= 4) advice.push("Batería/powerbank: te vendrá bien para mapas, billetes y fotos en días largos.");
+
+    const bullets = advice.filter(Boolean).slice(0, 6);
+    if(!bullets.length) return "";
+    return `
+      <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+        <div class="font-extrabold text-slate-900">Consejos del viaje</div>
+        <div class="mt-2 text-sm text-slate-700 grid gap-1">
+          ${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}
+        </div>
+      </div>`;
+  }catch(_){
+    return "";
+  }
 }
 
 function __mvExecutiveSummaryData(){
