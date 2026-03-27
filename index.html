@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES</title>
+  <title>V240_A102_TRIP_SUMMARY_PDF_MULTI_PAGE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1744,7 +1744,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A102_TRIP_SUMMARY_PDF_MULTI_PAGE_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2116,7 +2116,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A95_TRIP_SUMMARY_PDF_ALL_PAGES";
+const APP_BUILD = "V240_A102_TRIP_SUMMARY_PDF_MULTI_PAGE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20183,19 +20183,99 @@ function __mvExecutiveSummaryHTML(){
   `;
 }
 
+function __mvExecutiveSummaryPrintDocumentHTML(title, bodyHTML){
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(title || "Viaje")}</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      color: #0f172a;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    .mvPrintDoc {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 0;
+      box-sizing: border-box;
+      position: static !important;
+      overflow: visible !important;
+      height: auto !important;
+      max-height: none !important;
+      transform: none !important;
+    }
+    .mvExecPrintSheet {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0;
+      color: #0f172a;
+    }
+    .mvExecPrintSheet .space-y-6 > * + * { margin-top: 24px; }
+    .mvExecPrintSheet .space-y-3 > * + * { margin-top: 12px; }
+    .mvExecPrintSheet .rounded-2xl {
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+    }
+    .mvExecPrintSheet .font-semibold { font-weight: 600; }
+    .mvExecPrintSheet .font-extrabold { font-weight: 800; }
+    .mvExecPrintSheet .uppercase { text-transform: uppercase; }
+    .mvExecPrintSheet .tracking-wide { letter-spacing: .04em; }
+    .mvExecPrintSheet .text-slate-900 { color: #0f172a; }
+    .mvExecPrintSheet .text-slate-700 { color: #334155; }
+    .mvExecPrintSheet .text-slate-500 { color: #64748b; }
+    .mvExecPrintSheet .text-xs { font-size: 12px; }
+    .mvExecPrintSheet .text-sm { font-size: 14px; }
+    .mvExecPrintSheet .text-lg { font-size: 20px; }
+    .mvExecPrintSheet .grid { display: grid; }
+    .mvExecPrintSheet .grid-cols-1 { grid-template-columns: 1fr; }
+    .mvExecPrintSheet .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mvExecPrintSheet .sm\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mvExecPrintSheet .sm\\:grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .mvExecPrintSheet .gap-2 { gap: 8px; }
+    .mvExecPrintSheet .gap-3 { gap: 12px; }
+    .mvExecPrintSheet .mt-1 { margin-top: 4px; }
+    .mvExecPrintSheet .mt-2 { margin-top: 8px; }
+    .mvExecPrintSheet .mt-3 { margin-top: 12px; }
+    .mvExecPrintSheet .ml-2 { margin-left: 8px; }
+    .mvExecPrintAvoid { break-inside: avoid; page-break-inside: avoid; }
+    @media print {
+      .mvPrintDoc { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mvPrintDoc">${bodyHTML}</div>
+</body>
+</html>`;
+}
+
 function __mvPrintExecutiveSummary(){
   try{
-    const root = document.getElementById("mvPrintRoot");
-    if(root){
-      root.innerHTML = __mvExecutiveSummaryHTML();
-      root.setAttribute("aria-hidden", "false");
-    }
-    document.body.classList.add("mv-printing");
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        setTimeout(()=>{ try{ window.print(); }catch(_){} }, 40);
-      });
-    });
+    const data = __mvExecutiveSummaryData();
+    const summaryHTML = __mvExecutiveSummaryHTML();
+    const w = window.open("", "_blank");
+    if(!w) return;
+    w.document.open();
+    w.document.write(__mvExecutiveSummaryPrintDocumentHTML(data.title || "Viaje", summaryHTML));
+    w.document.close();
+    w.onload = ()=>{
+      setTimeout(()=>{
+        try{ w.focus(); }catch(_){}
+        try{ w.print(); }catch(_){}
+      }, 250);
+    };
   }catch(_){}
 }
 
