@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A108_TOTALS_DETAIL_TOGGLE_FIX</title>
+  <title>V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A108_TOTALS_DETAIL_TOGGLE_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -1780,7 +1780,10 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 <option value="JPY">¥</option>
 </select>
 </div>
-<button class="tap ml-auto px-3 py-1.5 rounded-xl text-sm font-extrabold text-slate-900 border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle"><span data-i18n="app.detail">Detalle</span> ▾</button>
+<div class="ml-auto flex items-center gap-2">
+<button class="tap px-3 py-1.5 rounded-xl text-sm font-extrabold text-slate-900 border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTipsToggle">Tips</button>
+<button class="tap px-3 py-1.5 rounded-xl text-sm font-extrabold text-slate-900 border border-slate-200 bg-white hover:bg-slate-50 whitespace-nowrap" id="stickyTotalToggle"><span data-i18n="app.detail">Detalle</span> ▾</button>
+</div>
 </div>
 <div class="hidden bg-white/95 backdrop-blur border-t border-slate-200" id="stickySummaryDetail">
 <div class="max-w-6xl mx-auto px-4 py-3">
@@ -2136,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A108_TOTALS_DETAIL_TOGGLE_FIX";
+const APP_BUILD = "V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19740,7 +19743,6 @@ function applySummaryFold() {
         <div class="row"><span class="lbl">${escapeHtml(t("app.meals"))}</span><span class="val">${fmt(aS.meals)}</span></div>
         <hr class="my-2 border-slate-200"/>
         <div class="row"><span class="total">${escapeHtml(t("app.total"))} ${curSym ? curSym : ""}</span><span class="total">${fmt(aS.total)}</span></div>
-        ${__mvTripAdviceHTML(sc)}
       `;
     } else {
       // Qualitative compare (MVP) under economic breakdown
@@ -19909,13 +19911,16 @@ function applySummaryFold() {
             ${__q.map(l=>`<div>• ${escapeHtml(l)}</div>`).join("")}
           </div>
         </div>
-        ${__mvTripAdviceHTML(sc)}
       `;
 
     }
   }
 
   // Stable binding with reflow correction (prevents content jump/covering)
+  const tipsBtn = document.getElementById("stickyTipsToggle");
+  if (tipsBtn) {
+    tipsBtn.onclick = () => { try{ __mvOpenTripAdviceModal(); }catch(_){} };
+  }
   if (toggleBtn) {
     toggleBtn.onclick = () => {
       const topOffset = __tlGetTopOffsetPx();
@@ -20084,6 +20089,17 @@ function __mvTripAdviceHTML(sc){
   }
 }
 
+function __mvOpenTripAdviceModal(){
+  try{
+    const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
+    const body = `
+      <div class="max-h-[70vh] overflow-y-auto pr-1">
+        ${__mvTripAdviceHTML(sc)}
+      </div>`;
+    showModal("Consejos del viaje", body, []);
+  }catch(_){}
+}
+
 function __mvExecutiveSummaryData(){
   const sc = (typeof curScenario === "function") ? curScenario() : null;
   const targetCur =
@@ -20216,6 +20232,7 @@ function __mvExecutiveSummaryData(){
 
 function __mvExecutiveSummaryHTML(){
   const data = __mvExecutiveSummaryData();
+  const adviceHtml = __mvTripAdviceHTML((typeof curScenario === "function") ? curScenario() : emptyScenario());
   const totals = data.totals;
   const overview = data.overview || {};
   const fmt = (n)=> fmtNum2(Number(n || 0));
@@ -20297,6 +20314,7 @@ function __mvExecutiveSummaryHTML(){
           <div class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Actividades</div>
           ${activityHtml}
         </div>
+        ${adviceHtml}
       </div>
     </div>
   `;
