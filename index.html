@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A112_TOMORROW_SUMMARY_ICS_BUTTON</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A113_DAILY_TOMORROW_TIPS_ICS_DEEPLINK</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A112_TOMORROW_SUMMARY_ICS_BUTTON";
+const APP_BUILD = "V240_A113_DAILY_TOMORROW_TIPS_ICS_DEEPLINK";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -3545,23 +3545,25 @@ function __getICSExportPrefs(){
       minutes: minutes,
       includeLegs: parsed && parsed.includeLegs !== false,
       includeStays: parsed && parsed.includeStays !== false,
-      includeActivities: parsed && parsed.includeActivities !== false
+      includeActivities: parsed && parsed.includeActivities !== false,
+      includeTomorrowTips: !!(parsed && parsed.includeTomorrowTips === true)
     };
   }catch(_){
-    return { minutes: 60, includeLegs: true, includeStays: true, includeActivities: true };
+    return { minutes: 60, includeLegs: true, includeStays: true, includeActivities: true, includeTomorrowTips: false };
   }
 }
 
 function __saveICSExportPrefs(next){
   try{
-    var safe = Object.assign({ minutes: 60, includeLegs: true, includeStays: true, includeActivities: true }, next || {});
+    var safe = Object.assign({ minutes: 60, includeLegs: true, includeStays: true, includeActivities: true, includeTomorrowTips: false }, next || {});
     var minutes = Number(safe.minutes || 60);
     if([15,30,60,120].indexOf(minutes) === -1) minutes = 60;
     localStorage.setItem(MV_ICS_ALERT_MINUTES_KEY, String(minutes));
     localStorage.setItem(MV_ICS_INCLUDE_TYPES_KEY, JSON.stringify({
       includeLegs: safe.includeLegs !== false,
       includeStays: safe.includeStays !== false,
-      includeActivities: safe.includeActivities !== false
+      includeActivities: safe.includeActivities !== false,
+      includeTomorrowTips: safe.includeTomorrowTips === true
     }));
     return true;
   }catch(_){
@@ -3575,6 +3577,7 @@ function __renderICSExportPrefs(){
     var sel = document.getElementById("toolsICSAlertMinutes");
     if(sel) sel.value = String(prefs.minutes);
     [
+      ["btnICSIncludeTomorrowTips", prefs.includeTomorrowTips],
       ["btnICSIncludeLegs", prefs.includeLegs],
       ["btnICSIncludeStays", prefs.includeStays],
       ["btnICSIncludeActivities", prefs.includeActivities]
@@ -29253,6 +29256,9 @@ document.addEventListener("DOMContentLoaded", function(){
               <button class="tap px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold" id="btnExportICS" type="button" data-i18n="tools.exportICS">Exportar a Calendario (.ics)</button>
               <button class="tap px-4 py-2 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-sm font-semibold text-emerald-800" id="btnTomorrowSummaryICS" type="button">Resumen de mañana (ICS)</button>
               <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <div class="flex flex-wrap gap-2">
+                  <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeTomorrowTips" type="button">Añadir recordatorio diario (Tips de mañana)</button>
+                </div>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeLegs" type="button" data-i18n="tools.ics.includeTransport">Incluir Transporte</button>
                   <button class="tap px-3 py-2 rounded-xl border text-sm font-semibold" id="btnICSIncludeStays" type="button" data-i18n="tools.ics.includeStays">Incluir Alojamiento</button>
@@ -29346,6 +29352,7 @@ document.addEventListener("DOMContentLoaded", function(){
         }, true);
       }
       [
+        ["btnICSIncludeTomorrowTips", "includeTomorrowTips"],
         ["btnICSIncludeLegs", "includeLegs"],
         ["btnICSIncludeStays", "includeStays"],
         ["btnICSIncludeActivities", "includeActivities"]
@@ -30358,7 +30365,7 @@ function __mvICS_BuildEventsFromState(){
   };
 })();
 
-window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateConflictFabVisibility==="function") __mvUpdateConflictFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} });
+window.addEventListener("load", ()=>{ try{ console.log("[MV] onload -> renderAll"); if(typeof renderAll==="function") renderAll(); else if(typeof renderTimeline==="function") renderTimeline(); }catch(e){ console.error(e); } try{ if(typeof updatePendingSaveFabVisibility==="function") updatePendingSaveFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateConflictFabVisibility==="function") __mvUpdateConflictFabVisibility(); }catch(_){} try{ if(typeof __mvUpdateGlobalFabs==="function") __mvUpdateGlobalFabs(); }catch(_){} try{ __mvMaybeOpenTomorrowTipsFromURL(); }catch(_){} });
 
 const MV_WEBAPP_URL = "https://jrodriguezpolo-cell.github.io/mi-viaje/";
 
@@ -30366,6 +30373,18 @@ function __mvTomorrowYMDLocal(){
   const d = new Date();
   d.setHours(0,0,0,0);
   d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function __mvAddDaysYMD(iso, days){
+  const s = String(iso || "").trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  const d = new Date(`${s}T00:00:00`);
+  if(!Number.isFinite(d.getTime())) return "";
+  d.setDate(d.getDate() + Number(days || 0));
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -30500,6 +30519,129 @@ function __mvTomorrowSummaryDestination(sc){
   }
 }
 
+function __mvTomorrowSummaryModalHTML(targetIso, subtitle){
+  const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
+  const items = __mvTomorrowSummaryItems(sc || {}, targetIso);
+  const destination = __mvTomorrowSummaryDestination(sc || {});
+  const tips = __mvTomorrowSummaryTips(items, destination);
+  const label = __mvTomorrowSummaryDateLabel(targetIso);
+  const eventsHtml = items.length
+    ? `<div class="space-y-2">${items.map(function(item){
+        return `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">${escapeHtml(item.line)}</div>`;
+      }).join("")}</div>`
+    : `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">Mañana no hay eventos planificados.</div>`;
+  const tipsHtml = tips.length
+    ? `<ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">${tips.map(function(t){ return `<li>${escapeHtml(t)}</li>`; }).join("")}</ul>`
+    : `<div class="text-sm text-slate-500">No hay consejos disponibles.</div>`;
+  return `
+    <div class="space-y-4">
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div class="text-lg font-extrabold text-slate-900">Mañana</div>
+        <div class="text-sm text-slate-500">${escapeHtml(subtitle || "")}</div>
+        <div class="mt-1 text-sm font-semibold text-slate-700">${escapeHtml(label)}</div>
+      </div>
+      <div class="space-y-2">
+        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Eventos</div>
+        ${eventsHtml}
+      </div>
+      <div class="space-y-2">
+        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips</div>
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">${tipsHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+function __mvOpenTomorrowTipsModal(targetIso, subtitle){
+  try{
+    const btnClose = document.createElement("button");
+    btnClose.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+    btnClose.type = "button";
+    btnClose.textContent = "Cerrar";
+    btnClose.onclick = function(){ try{ closeModal(); }catch(_){} };
+    showModal("Mañana", __mvTomorrowSummaryModalHTML(targetIso, subtitle || "Desde tu calendario"), [btnClose]);
+  }catch(_){}
+}
+
+function __mvMaybeOpenTomorrowTipsFromURL(){
+  try{
+    if(window.__mvTomorrowTipsOpenedFromURL) return;
+    const url = new URL(String(location.href || ""), location.origin);
+    const mode = String(url.searchParams.get("mvTips") || "").trim().toLowerCase();
+    if(mode !== "tomorrow") return;
+    const base = String(url.searchParams.get("d") || "").trim();
+    const targetIso = /^\d{4}-\d{2}-\d{2}$/.test(base) ? __mvAddDaysYMD(base, 1) : __mvTomorrowYMDLocal();
+    if(!targetIso) return;
+    window.__mvTomorrowTipsOpenedFromURL = true;
+    setTimeout(function(){
+      try{ __mvOpenTomorrowTipsModal(targetIso, "Desde tu calendario"); }catch(_){}
+    }, 250);
+  }catch(_){}
+}
+
+function __mvScenarioDateSpan(sc){
+  try{
+    const dates = [];
+    const push = (v)=>{
+      const s = String(v || "").trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) dates.push(s);
+    };
+    (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach(function(leg){
+      push(leg && leg.date);
+      push(leg && (leg.arriveDate || leg.dateIn || leg.arrivalDate || leg.endDate));
+    });
+    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach(function(stay){
+      push(stay && stay.date);
+      push(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate));
+    });
+    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach(function(act){
+      push(act && act.date);
+    });
+    if(!dates.length) return null;
+    dates.sort();
+    return { start: dates[0], end: dates[dates.length - 1] };
+  }catch(_){
+    return null;
+  }
+}
+
+function __mvBuildTomorrowTipsReminderICSBody(sc, dtstamp){
+  try{
+    const span = __mvScenarioDateSpan(sc);
+    if(!span || !span.start || !span.end) return "";
+    const events = [];
+    let cur = span.start;
+    while(cur && cur <= span.end){
+      const start = new Date(`${cur}T20:00:00`);
+      const end = new Date(`${cur}T20:05:00`);
+      const nextIso = __mvAddDaysYMD(cur, 1) || __mvTomorrowYMDLocal();
+      const nextLabel = __mvTomorrowSummaryDateLabel(nextIso);
+      const deep = `${MV_WEBAPP_URL}?mvTips=tomorrow&d=${encodeURIComponent(cur)}`;
+      const desc = [
+        "Toca para ver los eventos y consejos de mañana en Mi Viaje.",
+        `Mañana: ${nextLabel}`,
+        deep
+      ].join("\n\n");
+      events.push([
+        "BEGIN:VEVENT",
+        `UID:tips-${cur.replace(/-/g,"")}@mv`,
+        `DTSTAMP:${dtstamp}`,
+        `DTSTART:${__mvICS_FormatDT(start)}`,
+        `DTEND:${__mvICS_FormatDT(end)}`,
+        `SUMMARY:${__mvICS_Escape("Mi Viaje · Tips de mañana")}`,
+        `DESCRIPTION:${__mvICS_Escape(desc)}`,
+        `URL:${deep}`,
+        __mvICS_AlarmsBlock().trimEnd(),
+        "END:VEVENT"
+      ].join("\n"));
+      cur = __mvAddDaysYMD(cur, 1);
+    }
+    return events.join("\n");
+  }catch(_){
+    return "";
+  }
+}
+
 window.__mvExportTomorrowSummaryICS = function(){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
@@ -30563,12 +30705,14 @@ window.__mvExportICS = function(){
   try{
     const prefs = __getICSExportPrefs();
     const dtstamp = __mvICS_FormatDT(new Date());
+    const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
     const events = __mvICS_BuildEventsFromState();
-    if(!events.length){
+    const extraTomorrowTips = (prefs && prefs.includeTomorrowTips) ? __mvBuildTomorrowTipsReminderICSBody(sc || {}, dtstamp) : "";
+    if(!events.length && !extraTomorrowTips){
       try{ toast("No hay cambios desde la última exportación"); }catch(_){} 
       return;
     }
-    const body = events.map(function(ev){
+    const baseBody = events.map(function(ev){
       const deep = MV_WEBAPP_URL + "#open=" + encodeURIComponent(String((ev && ev.kind) || "") + ":" + String((ev && ev.id) || ""));
       const descBase = String((ev && ev.description) || "").trim();
       const note = String((ev && ev.note) || "").trim();
@@ -30599,6 +30743,7 @@ window.__mvExportICS = function(){
         "END:VEVENT"
       ].join("\n");
     }).join("\n");
+    const body = [baseBody, extraTomorrowTips].filter(Boolean).join("\n");
 
     const ics =
 `BEGIN:VCALENDAR
