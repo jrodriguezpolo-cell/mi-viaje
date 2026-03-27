@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A104_PRINT_LAYOUT_NO_OVERLAP_FIX</title>
+  <title>V240_A105_TRIP_SUMMARY_FLOATING_PDF_BUTTON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1189,6 +1189,24 @@ div[data-acc-body="acts"]{
 }
 .notePeekBtn:active{ transform: scale(0.98); }
 
+.mvSummaryModalShell{ position:relative; padding-bottom:110px; }
+.mv-summary-fab{
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  pointer-events: none;
+}
+.mv-summary-fab > button{
+  pointer-events: auto;
+  box-shadow: 0 10px 28px rgba(15,23,42,0.18);
+}
+@media print{
+  .mv-summary-fab{ display:none !important; }
+}
+
 
 /* Notes UI polish: ensure global modal above Event Sheet */
 #modalBackdrop{ z-index: 9000 !important; }
@@ -1744,7 +1762,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A104_PRINT_LAYOUT_NO_OVERLAP_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A105_TRIP_SUMMARY_FLOATING_PDF_BUTTON</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2116,7 +2134,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A104_PRINT_LAYOUT_NO_OVERLAP_FIX";
+const APP_BUILD = "V240_A105_TRIP_SUMMARY_FLOATING_PDF_BUTTON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20403,18 +20421,21 @@ if(!window.__mvExecAfterPrintBound){
 
 function openExecutiveSummaryModal(){
   const data = __mvExecutiveSummaryData();
-  const body = __mvExecutiveSummaryHTML();
-  const btnPrint = document.createElement("button");
-  btnPrint.type = "button";
-  btnPrint.className = "tap h-10 px-4 rounded-2xl bg-slate-900 text-white font-semibold";
-  btnPrint.textContent = "Exportar a PDF";
-  btnPrint.onclick = ()=>{ try{ __mvPrintExecutiveSummary(); }catch(_){} };
+  const body = `
+    <div class="mvSummaryModalShell">
+      ${__mvExecutiveSummaryHTML()}
+      <div class="mv-summary-fab">
+        <button class="tap h-11 px-5 rounded-2xl bg-slate-900 text-white font-semibold" type="button" onclick="try{ __mvPrintExecutiveSummary(); }catch(_){}">
+          Imprimir / Guardar PDF
+        </button>
+      </div>
+    </div>`;
   const btnClose = document.createElement("button");
   btnClose.type = "button";
   btnClose.className = "tap h-10 px-4 rounded-2xl border border-slate-300 text-slate-700 font-semibold";
   btnClose.textContent = "Cerrar";
   btnClose.onclick = ()=>{ try{ closeModal(); }catch(_){} };
-  showModal(data.title || "Viaje", body, [btnClose, btnPrint]);
+  showModal(data.title || "Viaje", body, [btnClose]);
 }
 
 /* --------------------------- Gemini helpers -------------------------- */
