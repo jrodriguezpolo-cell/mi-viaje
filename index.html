@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY</title>
+  <title>V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A109_TOTALS_TIPS_MODAL_AND_TRIP_SUMMARY";
+const APP_BUILD = "V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19706,15 +19706,19 @@ function applySummaryFold() {
     };
 
 
+    const activeScenarioKey = String(state && state.scenario || "A");
+    const activeScenario = sc || emptyScenario();
+    const activeSummary = sumFor(activeScenario);
     const aS = sumFor(state.scenarios.A || emptyScenario());
     const bS = sumFor(state.scenarios.B || emptyScenario());
     const bHasData = (bS.total > 0.00001) || (state.scenarios.B?.legs?.length) || (state.scenarios.B?.stays?.length) || (state.scenarios.B?.activities?.length) || (parseMoney(state.scenarios.B?.meals?.daily) > 0);
+    const compareEnabled = scenarioCount > 1 && bHasData;
 
     // Sticky bar: best scenario quick hint
     const bestEl = document.getElementById("stickyBestAB");
     if (bestEl) {
-      if (!bHasData) {
-        bestEl.textContent = __tFmt("app.bestScenario", { letter: "A" });
+      if (!compareEnabled) {
+        bestEl.textContent = __tFmt("app.bestScenario", { letter: activeScenarioKey });
       } else {
         bestEl.textContent = __tFmt("app.bestScenario", { letter: aS.total <= bS.total ? "A" : "B" });
       }
@@ -19735,14 +19739,35 @@ function applySummaryFold() {
       [t("app.total"), aS.total, bS.total]
     ];
 
-    if (!bHasData) {
+    if (!compareEnabled) {
+      const tripDates = [];
+      const pushDate = (value)=>{
+        const iso = String(value || "").trim();
+        if(/^\d{4}-\d{2}-\d{2}$/.test(iso)) tripDates.push(iso);
+      };
+      (Array.isArray(activeScenario.legs) ? activeScenario.legs : []).forEach((leg)=>{ pushDate(leg && leg.date); pushDate(leg && (leg.arriveDate || leg.dateIn)); });
+      (Array.isArray(activeScenario.stays) ? activeScenario.stays : []).forEach((stay)=>{ pushDate(stay && stay.date); pushDate(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate)); });
+      (Array.isArray(activeScenario.activities) ? activeScenario.activities : []).forEach((act)=>{ pushDate(act && act.date); });
+      tripDates.sort();
+      const tripDayCount = tripDates.length
+        ? Math.max(1, Math.round((new Date(`${tripDates[tripDates.length - 1]}T00:00:00`) - new Date(`${tripDates[0]}T00:00:00`)) / 86400000) + 1)
+        : 0;
       inner.innerHTML = `
-        <div class="row"><span class="lbl">${escapeHtml(t("app.transport"))}</span><span class="val">${fmt(aS.transport)}</span></div>
-        <div class="row"><span class="lbl">${escapeHtml(t("app.stays"))}</span><span class="val">${fmt(aS.stay)}</span></div>
-        <div class="row"><span class="lbl">${escapeHtml(t("app.activities"))}</span><span class="val">${fmt(aS.acts)}</span></div>
-        <div class="row"><span class="lbl">${escapeHtml(t("app.meals"))}</span><span class="val">${fmt(aS.meals)}</span></div>
+        <div class="row"><span class="lbl">${escapeHtml(t("app.transport"))}</span><span class="val">${fmt(activeSummary.transport)}</span></div>
+        <div class="row"><span class="lbl">${escapeHtml(t("app.stays"))}</span><span class="val">${fmt(activeSummary.stay)}</span></div>
+        <div class="row"><span class="lbl">${escapeHtml(t("app.activities"))}</span><span class="val">${fmt(activeSummary.acts)}</span></div>
+        <div class="row"><span class="lbl">${escapeHtml(t("app.meals"))}</span><span class="val">${fmt(activeSummary.meals)}</span></div>
         <hr class="my-2 border-slate-200"/>
-        <div class="row"><span class="total">${escapeHtml(t("app.total"))} ${curSym ? curSym : ""}</span><span class="total">${fmt(aS.total)}</span></div>
+        <div class="row"><span class="total">${escapeHtml(t("app.total"))} ${curSym ? curSym : ""}</span><span class="total">${fmt(activeSummary.total)}</span></div>
+        <div class="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+          <div class="font-extrabold text-slate-900">Micro resumen</div>
+          <div class="mt-2 text-sm text-slate-700 grid gap-1">
+            <div>• Días: ${escapeHtml(String(tripDayCount || 0))}</div>
+            <div>• Trayectos: ${escapeHtml(String((activeScenario.legs || []).length))}</div>
+            <div>• Actividades: ${escapeHtml(String((activeScenario.activities || []).length))}</div>
+            <div>• Alojamientos: ${escapeHtml(String((activeScenario.stays || []).length))}</div>
+          </div>
+        </div>
       `;
     } else {
       // Qualitative compare (MVP) under economic breakdown
