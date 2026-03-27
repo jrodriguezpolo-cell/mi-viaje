@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A110_TOTALS_DETAIL_SINGLE_SCENARIO_FIX</title>
+  <title>V240_A114_TOMORROW_TIPS_GEMINI_ENRICH</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A113_DAILY_TOMORROW_TIPS_ICS_DEEPLINK</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A114_TOMORROW_TIPS_GEMINI_ENRICH</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A113_DAILY_TOMORROW_TIPS_ICS_DEEPLINK";
+const APP_BUILD = "V240_A114_TOMORROW_TIPS_GEMINI_ENRICH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -30525,6 +30525,8 @@ function __mvTomorrowSummaryModalHTML(targetIso, subtitle){
   const destination = __mvTomorrowSummaryDestination(sc || {});
   const tips = __mvTomorrowSummaryTips(items, destination);
   const label = __mvTomorrowSummaryDateLabel(targetIso);
+  const hasGemini = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
+  const aiCache = (window.__mvTomorrowTipsAICache && window.__mvTomorrowTipsAICache[targetIso]) || null;
   const eventsHtml = items.length
     ? `<div class="space-y-2">${items.map(function(item){
         return `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">${escapeHtml(item.line)}</div>`;
@@ -30545,11 +30547,98 @@ function __mvTomorrowSummaryModalHTML(targetIso, subtitle){
         ${eventsHtml}
       </div>
       <div class="space-y-2">
-        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips</div>
+        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips básicos</div>
         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">${tipsHtml}</div>
       </div>
+      ${hasGemini ? `
+      <div class="space-y-2">
+        <button id="btnTomorrowTipsGemini" data-target-iso="${escapeHtml(targetIso)}" class="tap px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-800 font-semibold w-full" type="button">Mejorar consejos con IA</button>
+        <div id="tomorrowTipsGeminiStatus" class="text-sm text-slate-500"></div>
+      </div>` : ``}
+      <div id="tomorrowTipsGeminiResult">${aiCache ? __mvTomorrowTipsAIHTML(aiCache) : ``}</div>
     </div>
   `;
+}
+
+function __mvTomorrowTipsAIHTML(payload){
+  try{
+    const bullets = Array.isArray(payload && payload.bullets) ? payload.bullets.filter(Boolean).slice(0,8) : [];
+    if(!bullets.length) return "";
+    return `
+      <div class="space-y-2">
+        <div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos IA</div>
+        <div class="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3">
+          <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">${bullets.map(function(t){ return `<li>${escapeHtml(t)}</li>`; }).join("")}</ul>
+        </div>
+      </div>
+    `;
+  }catch(_){
+    return "";
+  }
+}
+
+function __mvTomorrowTipsAIPrompt(targetIso){
+  const sc = (typeof curScenario === "function") ? curScenario() : ((state && state.scenarios) ? state.scenarios[state.scenario] : null);
+  const items = __mvTomorrowSummaryItems(sc || {}, targetIso);
+  const destination = __mvTomorrowSummaryDestination(sc || {});
+  const label = __mvTomorrowSummaryDateLabel(targetIso);
+  const eventsText = items.length
+    ? items.map(function(it){ return `- ${it.line}`; }).join("\n")
+    : "- No hay eventos planificados";
+  return `Eres un asistente práctico de viaje.
+Idioma: español.
+Fecha: ${label}
+Destino/Ciudad principal: ${destination || "No disponible"}
+
+Eventos de mañana:
+${eventsText}
+
+Devuelve SOLO JSON válido con este formato:
+{"bullets":["...","..."]}
+
+Instrucciones:
+- 5 a 8 bullets máximo
+- consejos prácticos y accionables
+- temas válidos: calzado, capas, mochila, agua, tiempos, antelación en transportes, entradas, batería
+- NO inventes clima ni temperaturas
+- NO inventes datos de eventos que no estén en la lista
+- si faltan horas o duración, da consejos genéricos para confirmar horarios`;
+}
+
+async function __mvEnrichTomorrowTipsWithGemini(targetIso){
+  const statusEl = document.getElementById("tomorrowTipsGeminiStatus");
+  const resultEl = document.getElementById("tomorrowTipsGeminiResult");
+  const btn = document.getElementById("btnTomorrowTipsGemini");
+  try{
+    const key = (typeof getGeminiKey === "function") ? String(getGeminiKey() || "").trim() : "";
+    if(!key){
+      if(statusEl) statusEl.textContent = "Configura Gemini en Herramientas.";
+      return;
+    }
+    if(btn) btn.disabled = true;
+    if(statusEl) statusEl.textContent = "Generando consejos…";
+    window.__mvTomorrowTipsAICache = window.__mvTomorrowTipsAICache || {};
+    if(window.__mvTomorrowTipsAICache[targetIso]){
+      if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(window.__mvTomorrowTipsAICache[targetIso]);
+      if(statusEl) statusEl.textContent = "";
+      if(btn) btn.disabled = false;
+      return;
+    }
+    const prompt = __mvTomorrowTipsAIPrompt(targetIso);
+    const out = await geminiGenerateJSON(prompt);
+    const payload = {
+      bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,8) : []
+    };
+    if(!payload.bullets.length) throw new Error("EMPTY_AI_TIPS");
+    window.__mvTomorrowTipsAICache[targetIso] = payload;
+    if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(payload);
+    if(statusEl) statusEl.textContent = "";
+  }catch(e){
+    console.log("Tomorrow Gemini tips failed", e);
+    if(statusEl) statusEl.textContent = "No se ha podido generar con IA. Usa los tips básicos.";
+  }finally{
+    if(btn) btn.disabled = false;
+  }
 }
 
 function __mvOpenTomorrowTipsModal(targetIso, subtitle){
@@ -30560,6 +30649,18 @@ function __mvOpenTomorrowTipsModal(targetIso, subtitle){
     btnClose.textContent = "Cerrar";
     btnClose.onclick = function(){ try{ closeModal(); }catch(_){} };
     showModal("Mañana", __mvTomorrowSummaryModalHTML(targetIso, subtitle || "Desde tu calendario"), [btnClose]);
+    setTimeout(function(){
+      try{
+        const btn = document.getElementById("btnTomorrowTipsGemini");
+        if(btn && !btn.__mvBound){
+          btn.__mvBound = true;
+          btn.addEventListener("click", function(e){
+            try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+            try{ __mvEnrichTomorrowTipsWithGemini(String(btn.dataset.targetIso || targetIso || "").trim()); }catch(_){}
+          });
+        }
+      }catch(_){}
+    }, 0);
   }catch(_){}
 }
 
