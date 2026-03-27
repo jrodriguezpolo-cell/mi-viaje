@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A100_TRIP_SUMMARY_PRINT_ALL_PAGES_FIX</title>
+  <title>V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1194,70 +1194,43 @@ div[data-acc-body="acts"]{
 #modalBackdrop{ z-index: 9000 !important; }
 #modalBox{ z-index: 9100 !important; }
 body.mvExecPrintMode #modalBackdrop{ background: white !important; }
-body.mvExecPrintMode #modalBox{
-  display:flex !important;
+body.mvExecPrintMode #modalBackdrop,
+body.mvExecPrintMode #modalBox{ display:none !important; }
+body.mvExecPrintMode #mvExecutivePrintRoot{
+  display:block !important;
   position:fixed !important;
   inset:0 !important;
-  padding:0 !important;
-  align-items:flex-start !important;
-  justify-content:center !important;
+  overflow:auto !important;
   background:white !important;
+  z-index:99999 !important;
 }
-body.mvExecPrintMode #modalBox > div{
+body.mvExecPrintMode #mvExecutivePrintRoot .mvExecPrintSheet{
   width:210mm !important;
   max-width:210mm !important;
-  min-height:297mm !important;
+  min-height:auto !important;
   max-height:none !important;
   height:auto !important;
-  overflow:visible !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  border:none !important;
-}
-body.mvExecPrintMode #modalTitle,
-body.mvExecPrintMode #modalClose,
-body.mvExecPrintMode #modalFooter{ display:none !important; }
-body.mvExecPrintMode #modalBody{
-  padding:0 !important;
-  height:auto !important;
-  max-height:none !important;
+  margin:0 auto !important;
   overflow:visible !important;
 }
-body.mvExecPrintMode #mvExecutiveSummaryPrintable{
-  height:auto !important;
-  max-height:none !important;
-  overflow:visible !important;
-}
-body.mvExecPrintMode #mvExecutivePrintRoot{ display:block !important; }
 @media print{
   body *{ visibility:hidden !important; }
-  body.mvExecPrintMode #modalBackdrop,
-  body.mvExecPrintMode #modalBox,
-  body.mvExecPrintMode #modalBox *{ visibility:visible !important; }
-  body.mvExecPrintMode #modalBackdrop{ display:block !important; background:white !important; }
-  body.mvExecPrintMode #modalBox{
-    display:flex !important;
+  body.mvExecPrintMode #mvExecutivePrintRoot,
+  body.mvExecPrintMode #mvExecutivePrintRoot *{ visibility:visible !important; }
+  body.mvExecPrintMode #mvExecutivePrintRoot{
+    display:block !important;
     position:static !important;
     inset:auto !important;
-    padding:0 !important;
+    overflow:visible !important;
     background:white !important;
   }
-  body.mvExecPrintMode #modalBox > div{
+  body.mvExecPrintMode #mvExecutivePrintRoot .mvExecPrintSheet{
     width:210mm !important;
     max-width:210mm !important;
     min-height:auto !important;
     max-height:none !important;
     height:auto !important;
     margin:0 auto !important;
-    border:none !important;
-    box-shadow:none !important;
-    border-radius:0 !important;
-    overflow:visible !important;
-  }
-  body.mvExecPrintMode #modalBody,
-  body.mvExecPrintMode #mvExecutiveSummaryPrintable{
-    height:auto !important;
-    max-height:none !important;
     overflow:visible !important;
   }
   .mvExecPrintSheet{ padding: 14mm 16mm !important; color:#0f172a !important; }
@@ -1768,7 +1741,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A100_TRIP_SUMMARY_PRINT_ALL_PAGES_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2140,7 +2113,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A100_TRIP_SUMMARY_PRINT_ALL_PAGES_FIX";
+const APP_BUILD = "V240_A101_TRIP_SUMMARY_PRINT_ROOT_ALL_PAGES";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
