@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE</title>
+  <title>V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE";
+const APP_BUILD = "V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -9953,6 +9953,9 @@ function scrollToNextTimelineItem() {
 }
 
 function showModal(title, bodyHtml, footerButtons = []) {
+  try{
+    document.querySelectorAll('[data-modal-extra="1"]').forEach(function(el){ try{ el.remove(); }catch(_){} });
+  }catch(_){}
   $("modalTitle").textContent = title;
   $("modalBody").innerHTML = bodyHtml;
   const footer = $("modalFooter");
@@ -9976,6 +9979,9 @@ function __mvDetailsAccordion(title, text){
 
 
 function closeModal() {
+  try{
+    document.querySelectorAll('[data-modal-extra="1"]').forEach(function(el){ try{ el.remove(); }catch(_){} });
+  }catch(_){}
   $("modalBackdrop").classList.add("hidden");
   $("modalBox").classList.add("hidden");
 }
@@ -20147,14 +20153,80 @@ function __mvTripAdviceHTML(sc){
   }
 }
 
+function __mvTripAdviceCachedPayload(sc){
+  try{
+    const signature = __mvTripAdviceGeminiCacheSignature(sc);
+    return (window.__mvTripAdviceAICache && window.__mvTripAdviceAICache.__signature === signature)
+      ? window.__mvTripAdviceAICache
+      : (__mvLoadTripAdviceGeminiCache(signature) || null);
+  }catch(_){
+    return null;
+  }
+}
+
+function __mvTripAdviceModalBodyHTML(sc){
+  try{
+    const bullets = __mvTripAdviceBullets(sc);
+    const aiCache = __mvTripAdviceCachedPayload(sc);
+    const basicHtml = bullets.length
+      ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips básicos</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div></div>`
+      : `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>`;
+    const aiHtml = aiCache ? `${__mvTomorrowTipsAIHTML(aiCache)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>` : ``;
+    return `
+      <div class="max-h-[70vh] overflow-y-auto pr-1 space-y-3">
+        ${basicHtml}
+        <div id="tripAdviceModalGeminiStatus" class="text-sm text-slate-500"></div>
+        <div id="tripAdviceModalGeminiResult">${aiHtml}</div>
+      </div>`;
+  }catch(_){
+    return `<div class="text-sm text-slate-600">No se pudieron cargar los consejos.</div>`;
+  }
+}
+
 function __mvOpenTripAdviceModal(){
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
-    const body = `
-      <div class="max-h-[70vh] overflow-y-auto pr-1">
-        ${__mvTripAdviceHTML(sc)}
-      </div>`;
-    showModal("Consejos del viaje", body, []);
+    showModal("Consejos del viaje", __mvTripAdviceModalBodyHTML(sc), []);
+    const titleEl = document.getElementById("modalTitle");
+    const closeBtn = document.getElementById("modalClose");
+    const header = titleEl && titleEl.parentElement;
+    if(header && closeBtn){
+      const hasGemini = __mvHasGeminiKey();
+      const aiCache = __mvTripAdviceCachedPayload(sc);
+      const wrap = document.createElement("div");
+      wrap.setAttribute("data-modal-extra", "1");
+      wrap.className = "ml-auto mr-2 flex items-center gap-2";
+
+      const aiBtn = document.createElement("button");
+      aiBtn.type = "button";
+      aiBtn.id = "btnTripAdviceGeminiModal";
+      aiBtn.className = `tap px-3 py-2 rounded-xl border text-sm font-semibold ${hasGemini ? "border-violet-200 bg-violet-50 text-violet-800 hover:bg-violet-100" : "border-slate-200 bg-slate-100 text-slate-400"}`;
+      aiBtn.textContent = "IA";
+      aiBtn.onclick = function(){
+        try{
+          if(!__mvHasGeminiKey()){
+            toast("Configura Gemini en Ajustes para usar IA");
+            return;
+          }
+          __mvEnrichTripAdviceWithGemini({ scope: "modal" });
+        }catch(_){}
+      };
+      wrap.appendChild(aiBtn);
+
+      if(hasGemini && aiCache){
+        const refreshBtn = document.createElement("button");
+        refreshBtn.type = "button";
+        refreshBtn.id = "btnTripAdviceGeminiRefresh";
+        refreshBtn.className = "tap px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-semibold";
+        refreshBtn.textContent = "Actualizar";
+        refreshBtn.onclick = function(){
+          try{ __mvEnrichTripAdviceWithGemini({ scope: "modal", force: true }); }catch(_){}
+        };
+        wrap.appendChild(refreshBtn);
+      }
+
+      header.insertBefore(wrap, closeBtn);
+    }
   }catch(_){}
 }
 
@@ -20300,10 +20372,12 @@ Instrucciones:
   }
 }
 
-async function __mvEnrichTripAdviceWithGemini(){
-  const statusEl = document.getElementById("tripAdviceGeminiStatus");
-  const resultEl = document.getElementById("tripAdviceGeminiResult");
-  const btn = document.getElementById("btnTipsGemini");
+async function __mvEnrichTripAdviceWithGemini(opts){
+  const cfg = opts || {};
+  const inModal = cfg.scope === "modal";
+  const statusEl = document.getElementById(inModal ? "tripAdviceModalGeminiStatus" : "tripAdviceGeminiStatus");
+  const resultEl = document.getElementById(inModal ? "tripAdviceModalGeminiResult" : "tripAdviceGeminiResult");
+  const btn = document.getElementById(inModal ? "btnTripAdviceGeminiModal" : "btnTipsGemini");
   try{
     const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
     const signature = __mvTripAdviceGeminiCacheSignature(sc);
@@ -20313,7 +20387,7 @@ async function __mvEnrichTripAdviceWithGemini(){
       return;
     }
     if(btn) btn.disabled = true;
-    const cached = window.__mvTripAdviceAICache || __mvLoadTripAdviceGeminiCache(signature);
+    const cached = cfg.force ? null : (__mvTripAdviceCachedPayload(sc) || null);
     if(cached){
       window.__mvTripAdviceAICache = cached;
       if(resultEl) resultEl.innerHTML = `${__mvTomorrowTipsAIHTML(cached)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>`;
@@ -20327,6 +20401,7 @@ async function __mvEnrichTripAdviceWithGemini(){
       bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
       meta: { signature: signature }
     };
+    payload.__signature = signature;
     if(!payload.bullets.length) throw new Error("EMPTY_TRIP_AI_TIPS");
     window.__mvTripAdviceAICache = payload;
     __mvSaveTripAdviceGeminiCache(signature, payload);
