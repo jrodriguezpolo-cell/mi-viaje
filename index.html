@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A117_TOMORROW_SUMMARY_ICS_DEEPLINK_FIX</title>
+  <title>V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A117_TOMORROW_SUMMARY_ICS_DEEPLINK_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A117_TOMORROW_SUMMARY_ICS_DEEPLINK_FIX";
+const APP_BUILD = "V240_A117_TOTALS_TIPS_GEMINI_AND_CACHE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -19947,11 +19947,23 @@ function applySummaryFold() {
   }
 
   try{
-    console.log("[tipsTotales] hasGeminiKey=", !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim()));
+    console.log("[tipsTotales] hasGeminiKey=", __mvHasGeminiKey());
   }catch(_){}
   const tripAdviceBtn = document.getElementById("btnTipsGemini");
   if (tripAdviceBtn) {
     tripAdviceBtn.onclick = () => { try{ __mvEnrichTripAdviceWithGemini(); }catch(_){} };
+  }
+  const tripAdviceConfigBtn = document.getElementById("btnTipsGeminiConfig");
+  if (tripAdviceConfigBtn) {
+    tripAdviceConfigBtn.onclick = () => {
+      try{
+        if (typeof closeModal === "function") closeModal();
+      }catch(_){}
+      try{
+        const btnGeminiKey = document.getElementById("btnGeminiKey");
+        if(btnGeminiKey) btnGeminiKey.click();
+      }catch(_){}
+    };
   }
 
   // Stable binding with reflow correction (prevents content jump/covering)
@@ -20146,11 +20158,91 @@ function __mvOpenTripAdviceModal(){
   }catch(_){}
 }
 
+function __mvHasGeminiKey(){
+  return !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
+}
+
+function __mvTripAdviceGeminiCacheSignature(sc){
+  try{
+    const safe = (arr, mapper)=> (Array.isArray(arr) ? arr : []).map(mapper);
+    return JSON.stringify({
+      scenario: String(state && state.scenario || "A"),
+      scenarioCount: Math.max(1, parseInt(state && state.scenarioCount, 10) || 1),
+      legs: safe(sc && sc.legs, function(leg){
+        return [
+          String(leg && leg.id || ""),
+          String(leg && leg.date || ""),
+          String(leg && leg.time || ""),
+          String(leg && (leg.arriveDate || leg.dateIn || "") || ""),
+          String(leg && (leg.arriveTime || leg.timeIn || "") || ""),
+          String(leg && leg.from || ""),
+          String(leg && leg.to || "")
+        ];
+      }),
+      stays: safe(sc && sc.stays, function(stay){
+        return [
+          String(stay && stay.id || ""),
+          String(stay && stay.date || ""),
+          String(stay && stay.time || ""),
+          String(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate || "") || ""),
+          String(stay && (stay.checkoutTime || stay.checkout_time || "") || ""),
+          String(stay && (stay.name || stay.hotel || "") || ""),
+          String(stay && stay.city || "")
+        ];
+      }),
+      acts: safe(sc && sc.activities, function(act){
+        return [
+          String(act && act.id || ""),
+          String(act && act.date || ""),
+          String(act && act.time || ""),
+          String((typeof __tlActDurationMinutes === "function") ? (__tlActDurationMinutes(act) || 0) : (act && act.durationMin || 0)),
+          String(act && (act.title || act.name || "") || ""),
+          String(act && act.city || "")
+        ];
+      })
+    });
+  }catch(_){
+    return "";
+  }
+}
+
+function __mvLoadTripAdviceGeminiCache(signature){
+  try{
+    if(!signature) return null;
+    const raw = localStorage.getItem("MV_TIPS_GEMINI_CACHE_V1");
+    const parsed = raw ? JSON.parse(raw) : {};
+    const hit = parsed && parsed[signature];
+    if(!hit || !Array.isArray(hit.bullets) || !hit.bullets.length) return null;
+    return hit;
+  }catch(_){
+    return null;
+  }
+}
+
+function __mvSaveTripAdviceGeminiCache(signature, payload){
+  try{
+    if(!signature || !payload || !Array.isArray(payload.bullets) || !payload.bullets.length) return false;
+    const raw = localStorage.getItem("MV_TIPS_GEMINI_CACHE_V1");
+    const parsed = raw ? JSON.parse(raw) : {};
+    parsed[signature] = {
+      ts: Date.now(),
+      bullets: payload.bullets.slice(0, 10),
+      text: payload.bullets.join("\n"),
+      meta: payload.meta || {}
+    };
+    localStorage.setItem("MV_TIPS_GEMINI_CACHE_V1", JSON.stringify(parsed));
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
 function __mvTripAdviceDetailCardHTML(sc){
   try{
     const bullets = __mvTripAdviceBullets(sc);
-    const hasGemini = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
-    const aiCache = window.__mvTripAdviceAICache || null;
+    const hasGemini = __mvHasGeminiKey();
+    const signature = __mvTripAdviceGeminiCacheSignature(sc);
+    const aiCache = window.__mvTripAdviceAICache || __mvLoadTripAdviceGeminiCache(signature) || null;
     const basicHtml = bullets.length
       ? `<div class="mt-2 text-sm text-slate-700 grid gap-1">${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div>`
       : `<div class="mt-2 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>`;
@@ -20162,10 +20254,10 @@ function __mvTripAdviceDetailCardHTML(sc){
         <div class="mt-3">
           ${hasGemini
             ? `<button id="btnTipsGemini" class="tap px-4 py-3 rounded-2xl border border-violet-200 bg-violet-50 hover:bg-violet-100 text-violet-800 font-semibold w-full" type="button">Mejorar consejos con IA</button>`
-            : `<div class="text-sm text-slate-500">Configura Gemini en Herramientas para consejos con IA.</div>`}
+            : `<div class="space-y-2"><button id="btnTipsGeminiConfig" class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold w-full" type="button">Configurar Gemini</button><div class="text-sm text-slate-500">Configura Gemini para generar consejos.</div></div>`}
           <div id="tripAdviceGeminiStatus" class="mt-2 text-sm text-slate-500"></div>
         </div>
-        <div id="tripAdviceGeminiResult" class="mt-3">${aiCache ? __mvTomorrowTipsAIHTML(aiCache) : ``}</div>
+        <div id="tripAdviceGeminiResult" class="mt-3">${aiCache ? `${__mvTomorrowTipsAIHTML(aiCache)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>` : ``}</div>
       </div>
     `;
   }catch(_){
@@ -20213,31 +20305,37 @@ async function __mvEnrichTripAdviceWithGemini(){
   const resultEl = document.getElementById("tripAdviceGeminiResult");
   const btn = document.getElementById("btnTipsGemini");
   try{
-    const key = (typeof getGeminiKey === "function") ? String(getGeminiKey() || "").trim() : "";
+    const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
+    const signature = __mvTripAdviceGeminiCacheSignature(sc);
+    const key = __mvHasGeminiKey() && typeof getGeminiKey === "function" ? String(getGeminiKey() || "").trim() : "";
     if(!key){
-      if(statusEl) statusEl.textContent = "Configura Gemini en Herramientas para consejos con IA.";
+      if(statusEl) statusEl.textContent = "Configura Gemini para generar consejos.";
       return;
     }
     if(btn) btn.disabled = true;
-    if(statusEl) statusEl.textContent = "Generando…";
-    if(window.__mvTripAdviceAICache){
-      if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(window.__mvTripAdviceAICache);
-      if(statusEl) statusEl.textContent = "";
+    const cached = window.__mvTripAdviceAICache || __mvLoadTripAdviceGeminiCache(signature);
+    if(cached){
+      window.__mvTripAdviceAICache = cached;
+      if(resultEl) resultEl.innerHTML = `${__mvTomorrowTipsAIHTML(cached)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>`;
+      if(statusEl) statusEl.textContent = "Consejos actualizados";
       if(btn) btn.disabled = false;
       return;
     }
-    const sc = (typeof curScenario === "function") ? curScenario() : emptyScenario();
+    if(statusEl) statusEl.textContent = "Generando consejos…";
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
     const payload = {
-      bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : []
+      bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
+      meta: { signature: signature }
     };
     if(!payload.bullets.length) throw new Error("EMPTY_TRIP_AI_TIPS");
     window.__mvTripAdviceAICache = payload;
+    __mvSaveTripAdviceGeminiCache(signature, payload);
     if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(payload);
-    if(statusEl) statusEl.textContent = "";
+    if(statusEl) statusEl.textContent = "Consejos actualizados";
   }catch(e){
     console.log("Trip advice Gemini failed", e);
     if(statusEl) statusEl.textContent = "No se ha podido generar con IA. Usa los tips básicos.";
+    try{ toast("No se pudieron generar consejos con IA"); }catch(_){}
   }finally{
     if(btn) btn.disabled = false;
   }
