@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX</title>
+  <title>V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX";
+const APP_BUILD = "V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -15277,7 +15277,45 @@ try{
   else __initEventSheetBindings();
 }catch{}
 
-const LS_KEY_GEMINI = "miviaje\.gemini\.key";
+const LS_KEY_GEMINI = "mvGeminiApiKey";
+
+function __getGeminiApiKey(){
+  try{
+    const primary = String(localStorage.getItem(LS_KEY_GEMINI) || "").trim();
+    if(primary) return primary;
+    const legacyKeys = ["miviaje.gemini.key", "miViaje.geminiApiKey", "mv.geminiApiKey", "GEMINI_API_KEY"];
+    for(const k of legacyKeys){
+      const v = String(localStorage.getItem(k) || "").trim();
+      if(v){
+        try{ localStorage.setItem(LS_KEY_GEMINI, v); }catch(_){}
+        return v;
+      }
+    }
+  }catch(_){}
+  return "";
+}
+
+function __setGeminiApiKey(key){
+  try{
+    const v = String(key || "").trim();
+    if(!v) return false;
+    localStorage.setItem(LS_KEY_GEMINI, v);
+    return true;
+  }catch(_){
+    return false;
+  }
+}
+
+function __clearGeminiApiKey(){
+  try{
+    [LS_KEY_GEMINI, "miviaje.gemini.key", "miViaje.geminiApiKey", "mv.geminiApiKey", "GEMINI_API_KEY"].forEach(function(k){
+      try{ localStorage.removeItem(k); }catch(_){}
+    });
+    return true;
+  }catch(_){
+    return false;
+  }
+}
 
 /* --------------------------- Read-only mode -------------------------- */
 const LS_KEY_READONLY = "miviaje.readonly";
@@ -20876,10 +20914,10 @@ function openExecutiveSummaryModal(){
 
 /* --------------------------- Gemini helpers -------------------------- */
 function getGeminiKey() {
-  return localStorage.getItem(LS_KEY_GEMINI) || "";
+  return __getGeminiApiKey();
 }
 function setGeminiKey(key) {
-  localStorage.setItem(LS_KEY_GEMINI, key.trim());
+  __setGeminiApiKey(key);
 }
 function cleanJsonText(t) {
   t = String(t || "").trim();
@@ -23914,25 +23952,17 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   function __mvGetGeminiKey(){
     try{
-      const candidates = ["miViaje.geminiApiKey","mv.geminiApiKey","GEMINI_API_KEY"];
-      for (const k of candidates){
-        const v = localStorage.getItem(k);
-        if (v && String(v).trim()) return { key: String(v).trim(), source: k };
-      }
+      const primary = __getGeminiApiKey();
+      if(primary) return { key: primary, source: LS_KEY_GEMINI };
     }catch(e){}
     return { key: "", source: "" };
   }
 
   function __mvSetGeminiKey(newKey){
-    const v = String(newKey || "").trim();
     try{
-      if (!v) return false;
-      localStorage.setItem("miViaje.geminiApiKey", v);
-      // Compat (no rompe nada si no se usa aún)
-      localStorage.setItem("mv.geminiApiKey", v);
-      localStorage.setItem("GEMINI_API_KEY", v);
-      console.log("[GeminiKey] guardada en localStorage (miViaje.geminiApiKey)");
-      return true;
+      const ok = __setGeminiApiKey(newKey);
+      if(ok) console.log("[GeminiKey] guardada en localStorage (mvGeminiApiKey)");
+      return ok;
     }catch(e){
       console.error("[GeminiKey] error guardando", e);
       return false;
@@ -23941,9 +23971,7 @@ $("btnTrips").addEventListener("click", openTripsModal);
 
   function __mvClearGeminiKey(){
     try{
-      localStorage.removeItem("miViaje.geminiApiKey");
-      localStorage.removeItem("mv.geminiApiKey");
-      localStorage.removeItem("GEMINI_API_KEY");
+      __clearGeminiApiKey();
       console.log("[GeminiKey] borrada de localStorage");
       return true;
     }catch(e){
