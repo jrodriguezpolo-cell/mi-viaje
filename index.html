@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A122_CITY_RECS_MOREOPTIONS_AND_AI_BUTTONS_FIX</title>
+  <title>V240_A123_CITY_RECS_VIEWED_EXCLUDE_ALREADY_IN_TRIP</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A122_CITY_RECS_MOREOPTIONS_AND_AI_BUTTONS_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A123_CITY_RECS_VIEWED_EXCLUDE_ALREADY_IN_TRIP</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A122_CITY_RECS_MOREOPTIONS_AND_AI_BUTTONS_FIX";
+const APP_BUILD = "V240_A123_CITY_RECS_VIEWED_EXCLUDE_ALREADY_IN_TRIP";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -25722,7 +25722,22 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
     },
     __mvOpenSeenCityRecsModal(cityKey){
       const cityName = this.__mvCityNameFromKey(cityKey);
-      const seenItems = this.__mvGetSeen(cityName).filter((item)=> item && item.status === "seen");
+      const tripActivityKeys = this.__mvTripActivityRecoKeys();
+      const excludedKeys = [];
+      const seenItems = this.__mvGetSeen(cityName).filter((item)=>{
+        if(!item || item.status !== "seen") return false;
+        const titleOnly = this.__mvRecoNorm(item.title || "");
+        const cityPart = this.__mvRecoNorm(cityName || item.cityKey || "");
+        const fullKey = cityPart ? `${cityPart}|${titleOnly}` : titleOnly;
+        const inTrip = !!(titleOnly && (tripActivityKeys.has(fullKey) || tripActivityKeys.has(titleOnly)));
+        if(inTrip && excludedKeys.length < 3) excludedKeys.push(fullKey || titleOnly);
+        return !inTrip;
+      });
+      try{
+        if(window.__mvDebug){
+          console.log("[citySeen] total=", this.__mvGetSeen(cityName).length, "excluded=", (this.__mvGetSeen(cityName).length - seenItems.length), "examples=", excludedKeys);
+        }
+      }catch{}
       const cards = seenItems.length ? seenItems.map((item)=>{
         const reco = this.__mvPoolItemToReco(item, cityName);
         const body = [
@@ -26888,6 +26903,24 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       }catch(e){
         return s.replace(/\s+/g," ").trim();
       }
+    },
+    __mvRecoNorm(raw){
+      const base = this.__aiNormTitle(raw || "");
+      return String(base || "")
+        .replace(/[.,;:()\[\]!?-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    },
+    __mvTripActivityRecoKeys(){
+      const trip = this.bridge.readTrip();
+      const keys = new Set();
+      (Array.isArray(trip.activities) ? trip.activities : []).forEach((act)=>{
+        const title = this.__mvRecoNorm(act && (act.title || act.name) || "");
+        const city = this.__mvRecoNorm(act && (act.city || act.location || act.place) || "");
+        if(title) keys.add(title);
+        if(title && city) keys.add(`${city}|${title}`);
+      });
+      return keys;
     },
     __aiISOAddDays(iso, delta){
       const s = String(iso||"").trim();
