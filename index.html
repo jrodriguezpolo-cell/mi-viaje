@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A121_REMOVE_TIPS_FROM_DETALLE</title>
+  <title>V240_A121_CITY_RECS_POOL_PERSISTENCE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A121_REMOVE_TIPS_FROM_DETALLE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A121_CITY_RECS_POOL_PERSISTENCE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A121_REMOVE_TIPS_FROM_DETALLE";
+const APP_BUILD = "V240_A121_CITY_RECS_POOL_PERSISTENCE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -21709,6 +21709,7 @@ function __aiOpenPendingReviewModal(){
                       if(!k) return;
                       try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
                       try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+                      try{ aiModule.__mvResetCityPool(k); }catch{}
                     });
                   }catch{}
                   toast(t("ai.gaps.resetCity"));
@@ -25310,6 +25311,14 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       this.loadPrefs();
       this.bindUI();
       this.render();
+      try{
+        window.__mvGetCityPool = this.__mvGetCityPool.bind(this);
+        window.__mvGetNextRecs = this.__mvGetNextRecs.bind(this);
+        window.__mvMarkSelected = this.__mvMarkSelected.bind(this);
+        window.__mvMarkDismissed = this.__mvMarkDismissed.bind(this);
+        window.__mvGetSeen = this.__mvGetSeen.bind(this);
+        window.__mvIngestGeminiCityRecs = this.__mvIngestGeminiCityRecs.bind(this);
+      }catch{}
       return this.state;
     },
     loadPrefs(){
@@ -25328,6 +25337,319 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
           currentAction: (this.state.currentAction === "unified") ? "unified" : (this.state.currentAction === "sensitive") ? "sensitive" : (this.state.currentAction === "transport") ? "transport" : "summary"
         }));
       }catch{}
+    },
+    __mvCityRecsStoreKey(){
+      return "mv_city_recs_pool_v1";
+    },
+    __mvLoadCityRecsStore(){
+      try{
+        const raw = localStorage.getItem(this.__mvCityRecsStoreKey());
+        if(raw){
+          const data = JSON.parse(raw);
+          if(data && data.version === 1 && data.cities && typeof data.cities === "object"){
+            return data;
+          }
+        }
+      }catch{}
+      return { version: 1, cities: {} };
+    },
+    __mvSaveCityRecsStore(store){
+      try{
+        localStorage.setItem(this.__mvCityRecsStoreKey(), JSON.stringify(store || { version:1, cities:{} }));
+      }catch{}
+    },
+    __mvCityRecsSlug(raw){
+      const s = this.__aiNormTitle(raw || "");
+      return String(s || "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "item";
+    },
+    __mvCityRecsShortHash(raw){
+      const src = String(raw || "");
+      let hash = 0;
+      for(let i=0;i<src.length;i++){
+        hash = ((hash << 5) - hash) + src.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash).toString(36).slice(0,8) || "0";
+    },
+    __mvCityRecsRangeSummary(trip){
+      const dates = [];
+      const add = (v)=>{
+        const s = String(v || "").trim().slice(0,10);
+        if(/^\d{4}-\d{2}-\d{2}$/.test(s)) dates.push(s);
+      };
+      (Array.isArray(trip && trip.legs) ? trip.legs : []).forEach((leg)=>{
+        add(leg && (leg.date || leg.day || leg.depDate || leg.departDate || leg.startDate));
+        add(leg && (leg.arriveDate || leg.dateIn || leg.arrivalDate || leg.endDate));
+      });
+      (Array.isArray(trip && trip.stays) ? trip.stays : []).forEach((stay)=>{
+        add(stay && (stay.checkinDate || stay.checkInDate || stay.inDate || stay.startDate || stay.date));
+        add(stay && (stay.checkoutDate || stay.checkOutDate || stay.outDate || stay.endDate || stay.dateOut));
+      });
+      (Array.isArray(trip && trip.activities) ? trip.activities : []).forEach((act)=>{
+        add(act && (act.date || act.day || act.startDate));
+      });
+      dates.sort();
+      return {
+        minDate: dates[0] || "",
+        maxDate: dates[dates.length-1] || ""
+      };
+    },
+    __mvCityRecsContextHash(cityKey){
+      const trip = this.bridge.readTrip();
+      const range = this.__mvCityRecsRangeSummary(trip);
+      const city = String(cityKey || "").trim();
+      const actSummary = (Array.isArray(trip.activities) ? trip.activities : [])
+        .filter((act)=>{
+          const actCity = this.__aiCityKey(act && (act.city || act.location || act.place || ""));
+          return actCity === city;
+        })
+        .map((act)=>{
+          const id = String(act && act.id || "");
+          const title = String(act && (act.title || act.name) || "");
+          const date = String(act && (act.date || act.day || act.startDate) || "");
+          return `${id}|${title}|${date}`;
+        })
+        .sort()
+        .join("||");
+      return `${city}::${range.minDate}::${range.maxDate}::${this.__mvCityRecsShortHash(actSummary)}`;
+    },
+    __mvNormalizeRecoDetails(item){
+      const details = (item && item.details && typeof item.details === "object") ? item.details : null;
+      const queEs = String((details && details.queEs) || item && (item.what || item.summary || item.tagline) || "").trim();
+      const historia = String((details && details.historia) || item && (item.history || item.historia) || "").trim();
+      const consejoPro = String((details && details.consejoPro) || item && (item.pro || item.proTip || item.why) || "").trim();
+      return { queEs, historia, consejoPro };
+    },
+    __mvPoolRecoTitleSlug(entry){
+      return this.__mvCityRecsSlug(entry && entry.title || "");
+    },
+    __mvEnsureCityPoolEntry(store, cityKey, contextHash){
+      if(!store.cities[cityKey]){
+        store.cities[cityKey] = {
+          contextHash: String(contextHash || ""),
+          items: {},
+          order: []
+        };
+      }
+      const entry = store.cities[cityKey];
+      if(!entry.items || typeof entry.items !== "object") entry.items = {};
+      if(!Array.isArray(entry.order)) entry.order = [];
+      if(contextHash && entry.contextHash !== contextHash){
+        entry.contextHash = String(contextHash);
+      }
+      return entry;
+    },
+    __mvSeedLocalCityRecsIntoPool(rawCity, contextHash){
+      const cityName = String(rawCity || "").trim();
+      const cityKey = this.__aiCityKey(cityName);
+      if(!cityKey) return null;
+      const store = this.__mvLoadCityRecsStore();
+      const entry = this.__mvEnsureCityPoolEntry(store, cityKey, contextHash || this.__mvCityRecsContextHash(cityKey));
+      const seenTitles = new Set(entry.order.map((id)=>{
+        const item = entry.items[id];
+        return item ? this.__mvPoolRecoTitleSlug(item) : "";
+      }).filter(Boolean));
+      let changed = false;
+      let catalog = [];
+      try{
+        if(window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function"){
+          const arr = window.__MV_POI.getPOIsForCity(cityName);
+          if(Array.isArray(arr)) catalog = arr;
+        }
+      }catch{}
+      catalog.forEach((item, idx)=>{
+        const title = String(item && item.title || "").trim();
+        if(!title) return;
+        const titleSlug = this.__mvCityRecsSlug(title);
+        const stableId = `local:${cityKey}:${this.__mvCityRecsSlug(item && item.id || titleSlug || idx)}`;
+        if(entry.items[stableId] || seenTitles.has(titleSlug)) return;
+        const details = this.__mvNormalizeRecoDetails(item);
+        const adapted = this.adaptProposal({
+          title,
+          summary: String(item && (item.summary || item.tagline || details.queEs) || "").trim(),
+          why: String(item && (item.why || item.pro || details.consejoPro) || "").trim()
+        });
+        entry.items[stableId] = {
+          id: stableId,
+          cityKey,
+          source: "local",
+          status: "new",
+          createdAt: Date.now(),
+          lastShownAt: null,
+          selectedAt: null,
+          dismissedAt: null,
+          title,
+          tagline: String(item && item.tagline || "").trim(),
+          summary: String(adapted && adapted.summary || item && (item.summary || item.tagline || details.queEs) || "").trim(),
+          why: String(adapted && adapted.why || item && (item.why || item.pro || details.consejoPro) || "").trim(),
+          details
+        };
+        entry.order.push(stableId);
+        seenTitles.add(titleSlug);
+        changed = true;
+      });
+      if(changed) this.__mvSaveCityRecsStore(store);
+      return { store, entry, cityKey };
+    },
+    __mvPoolItemToReco(item, rawCity){
+      const details = this.__mvNormalizeRecoDetails(item);
+      const summary = String(item && (item.summary || item.tagline || details.queEs) || "").trim();
+      const why = String(item && (item.why || details.consejoPro) || "").trim();
+      return {
+        id: String(item && item.id || ""),
+        city: String(rawCity || "").trim(),
+        title: String(item && item.title || "").trim(),
+        tagline: String(item && item.tagline || summary || details.queEs || "").trim(),
+        summary,
+        why,
+        what: details.queEs || summary,
+        history: details.historia || "",
+        pro: details.consejoPro || why,
+        details
+      };
+    },
+    __mvGetCityPool(rawCity){
+      const cityName = String(rawCity || "").trim();
+      const cityKey = this.__aiCityKey(cityName);
+      const contextHash = this.__mvCityRecsContextHash(cityKey);
+      const seeded = this.__mvSeedLocalCityRecsIntoPool(cityName, contextHash);
+      const store = seeded && seeded.store ? seeded.store : this.__mvLoadCityRecsStore();
+      const entry = this.__mvEnsureCityPoolEntry(store, cityKey, contextHash);
+      this.__mvSaveCityRecsStore(store);
+      return { store, entry, cityKey, cityName, contextHash };
+    },
+    __mvGetNextRecs(rawCity, count=5){
+      const { store, entry, cityKey, cityName, contextHash } = this.__mvGetCityPool(rawCity);
+      const now = Date.now();
+      const items = entry.order.map((id)=>entry.items[id]).filter(Boolean);
+      const active = items.filter((item)=> item.status !== "selected" && item.status !== "dismissed");
+      const fresh = active.filter((item)=> item.status === "new");
+      const seen = active
+        .filter((item)=> item.status === "seen")
+        .sort((a,b)=> ((a.lastShownAt || 0) - (b.lastShownAt || 0)) || ((a.createdAt || 0) - (b.createdAt || 0)));
+      const picked = fresh.concat(seen).slice(0, Math.max(1, parseInt(count,10) || 5));
+      picked.forEach((item)=>{
+        item.status = "seen";
+        item.lastShownAt = now;
+      });
+      this.__mvSaveCityRecsStore(store);
+      try{
+        window.__mvCityRecsVisibleBatches = window.__mvCityRecsVisibleBatches || {};
+        window.__mvCityRecsVisibleBatches[cityKey] = {
+          contextHash,
+          cityName,
+          ids: picked.map((item)=>item.id)
+        };
+      }catch{}
+      return picked.map((item)=> this.__mvPoolItemToReco(item, cityName));
+    },
+    __mvGetVisibleCityRecs(rawCity, count=5, forceNext=false){
+      const cityName = String(rawCity || "").trim();
+      const cityKey = this.__aiCityKey(cityName);
+      const { entry, contextHash } = this.__mvGetCityPool(cityName);
+      const batch = (window.__mvCityRecsVisibleBatches && window.__mvCityRecsVisibleBatches[cityKey]) ? window.__mvCityRecsVisibleBatches[cityKey] : null;
+      if(!forceNext && batch && batch.contextHash === contextHash && Array.isArray(batch.ids) && batch.ids.length){
+        const cachedItems = batch.ids.map((id)=>entry.items[id]).filter(Boolean);
+        if(cachedItems.length){
+          return cachedItems.slice(0, Math.max(1, parseInt(count,10) || 5)).map((item)=> this.__mvPoolItemToReco(item, cityName));
+        }
+      }
+      return this.__mvGetNextRecs(cityName, count);
+    },
+    __mvMarkSelected(rawCity, itemId){
+      const { store, entry, cityKey } = this.__mvGetCityPool(rawCity);
+      const id = String(itemId || "").trim();
+      const item = entry.items[id];
+      if(!item) return;
+      item.status = "selected";
+      item.selectedAt = Date.now();
+      this.__mvSaveCityRecsStore(store);
+      try{
+        if(window.__mvCityRecsVisibleBatches && window.__mvCityRecsVisibleBatches[cityKey]){
+          window.__mvCityRecsVisibleBatches[cityKey].ids = (window.__mvCityRecsVisibleBatches[cityKey].ids || []).filter((x)=>x !== id);
+        }
+      }catch{}
+    },
+    __mvMarkDismissed(rawCity, itemId){
+      const { store, entry, cityKey } = this.__mvGetCityPool(rawCity);
+      const id = String(itemId || "").trim();
+      const item = entry.items[id];
+      if(!item) return;
+      item.status = "dismissed";
+      item.dismissedAt = Date.now();
+      this.__mvSaveCityRecsStore(store);
+      try{
+        if(window.__mvCityRecsVisibleBatches && window.__mvCityRecsVisibleBatches[cityKey]){
+          window.__mvCityRecsVisibleBatches[cityKey].ids = (window.__mvCityRecsVisibleBatches[cityKey].ids || []).filter((x)=>x !== id);
+        }
+      }catch{}
+    },
+    __mvGetSeen(rawCity){
+      const { entry } = this.__mvGetCityPool(rawCity);
+      return entry.order.map((id)=>entry.items[id]).filter((item)=> item && item.status === "seen");
+    },
+    __mvResetCityPool(rawCity){
+      const cityName = String(rawCity || "").trim();
+      const cityKey = this.__aiCityKey(cityName);
+      if(!cityKey) return;
+      const store = this.__mvLoadCityRecsStore();
+      if(store && store.cities && store.cities[cityKey]){
+        delete store.cities[cityKey];
+        this.__mvSaveCityRecsStore(store);
+      }
+      try{
+        if(window.__mvCityRecsVisibleBatches) delete window.__mvCityRecsVisibleBatches[cityKey];
+      }catch{}
+    },
+    __mvIngestGeminiCityRecs(rawCity, geminiItems, contextHash){
+      const cityName = String(rawCity || "").trim();
+      const cityKey = this.__aiCityKey(cityName);
+      if(!cityKey) return [];
+      const store = this.__mvLoadCityRecsStore();
+      const entry = this.__mvEnsureCityPoolEntry(store, cityKey, contextHash || this.__mvCityRecsContextHash(cityKey));
+      const titleSlugs = new Set(entry.order.map((id)=>{
+        const item = entry.items[id];
+        return item ? this.__mvPoolRecoTitleSlug(item) : "";
+      }).filter(Boolean));
+      const added = [];
+      (Array.isArray(geminiItems) ? geminiItems : []).forEach((raw)=>{
+        const title = String(raw && raw.title || "").trim();
+        if(!title) return;
+        const details = {
+          queEs: String(raw && (raw.queEs || raw.what) || "").trim(),
+          historia: String(raw && (raw.historia || raw.history) || "").trim(),
+          consejoPro: String(raw && (raw.consejoPro || raw.pro || raw.proTip) || "").trim()
+        };
+        const titleSlug = this.__mvCityRecsSlug(title);
+        if(titleSlugs.has(titleSlug)) return;
+        const id = `gemini:${cityKey}:${titleSlug}:${this.__mvCityRecsShortHash([details.queEs, details.historia, details.consejoPro].join("|"))}`;
+        if(entry.items[id]) return;
+        entry.items[id] = {
+          id,
+          cityKey,
+          source: "gemini",
+          status: "new",
+          createdAt: Date.now(),
+          lastShownAt: null,
+          selectedAt: null,
+          dismissedAt: null,
+          title,
+          tagline: String(raw && raw.tagline || "").trim(),
+          summary: String(raw && (raw.summary || details.queEs) || "").trim(),
+          why: String(raw && (raw.why || details.consejoPro) || "").trim(),
+          details
+        };
+        entry.order.push(id);
+        titleSlugs.add(titleSlug);
+        added.push(entry.items[id]);
+      });
+      this.__mvSaveCityRecsStore(store);
+      try{
+        if(window.__mvCityRecsVisibleBatches) delete window.__mvCityRecsVisibleBatches[cityKey];
+      }catch{}
+      return added;
     },
     bridge: {
       readTrip(){
@@ -25650,8 +25972,8 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
                   });
                   const ms = document.getElementById("mainScroll");
                   const scrollTop = ms ? (ms.scrollTop||0) : 0;
-
-                  try{ aiModule.__aiToggleCityPage(keyRaw); }catch{}
+                  try{ aiModule.state.__forceNextCityRecsKey = keyRaw; }catch{}
+                  try{ if(window.__mvCityRecsVisibleBatches) delete window.__mvCityRecsVisibleBatches[keyRaw]; }catch{}
 
                   // refrescar SOLO la acción actual, preservando UI
                   try{ aiModule.refreshCurrentAction({ force:true, preserveOpenMap: openMap, preserveScrollTop: scrollTop }); }catch{}
@@ -25678,11 +26000,12 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
               const gap = sec && Array.isArray(sec.gaps) ? sec.gaps[gidx] : null;
               const spot = gap && gap.spots ? gap.spots[i] : null;
               if(spot){
+                const spotDetails = (spot && spot.details && typeof spot.details === "object") ? spot.details : {};
                 const bodyHtml = `
                   <div class="grid gap-2">
-                    ${__mvDetailsAccordion("Qué es", spot.what || spot.tagline || "—")}
-                    ${__mvDetailsAccordion("Historia", spot.history || "—")}
-                    ${__mvDetailsAccordion("Consejo pro", spot.pro || spot.proTip || "—")}
+                    ${__mvDetailsAccordion("Qué es", spotDetails.queEs || spot.what || spot.summary || spot.tagline || "—")}
+                    ${__mvDetailsAccordion("Historia", spotDetails.historia || spot.history || "—")}
+                    ${__mvDetailsAccordion("Consejo pro", spotDetails.consejoPro || spot.pro || spot.proTip || spot.why || "—")}
                   </div>
                 `;
                 const btn = document.createElement("button");
@@ -26115,22 +26438,11 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       const existing = new Set((Array.isArray(trip.activities)?trip.activities:[])
         .map(a=> this.__aiNormTitle(a && (a.title||a.name)))
         .filter(Boolean));
-      const used = new Set();
       return (Array.isArray(cities) ? cities : []).slice(0,6).map((row)=>{
-        const poi = (window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function") ? window.__MV_POI.getPOIsForCity(row.city) : [];
-        const proposals = (poi||[]).filter((item)=>{
+        const proposals = this.__mvGetVisibleCityRecs(row.city, 5).filter((item)=>{
           const t = this.__aiNormTitle(item && item.title);
-          if(!t) return false;
-          if(existing.has(t) || used.has(t)) return false;
-          used.add(t);
-          return true;
-        }).map((item, idx)=>({
-          id: `poi:${row.key}:${item.id || idx}`,
-          city: row.city,
-          title: String(item.title||"").trim(),
-          summary: String(item.tagline||"").trim(),
-          why: String(item.pro || item.tagline || "").trim()
-        }));
+          return t && !existing.has(t);
+        });
         return {
           city: row.city,
           key: row.key,
@@ -26469,143 +26781,27 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       const cityName = String(city||"").trim();
       if(!cityName) return [];
       const key = this.__aiCityKey(cityName);
-      // Caché estable por ciudad (pool ordenado de propuestas) para evitar cambios "a lo loco" entre sesiones.
-      const __recoCachePrefix = "MV_AI_RECO_POOL_V1:";
-      const __recoCacheV = 1;
-      let __cachedPool = null;
-      try{
-        const raw = localStorage.getItem(__recoCachePrefix + key);
-        if(raw){
-          const data = JSON.parse(raw);
-          if(data && data.v === __recoCacheV && Array.isArray(data.pool) && data.pool.length){
-            __cachedPool = data.pool;
-          }
-        }
-      }catch(e){}
-
-      // Base catalog: catálogo concreto 10/5 (sin genéricos)
-      let catalog = [];
-      try{
-        if(window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function"){
-          const arr = window.__MV_POI.getPOIsForCity(cityName);
-          if(Array.isArray(arr)) catalog = arr;
-        }
-      }catch(e){}
-
-      // Deduplicate by normalized title (keeps first occurrence).
-      if(Array.isArray(catalog)){
-        const seen = new Set();
-        catalog = catalog.filter((it)=>{
-          const t = this.__aiNormTitle((it && it.title) || "");
-          if(!t) return false;
-          if(seen.has(t)) return false;
-          seen.add(t);
-          return true;
-        });
-      }
-
       const existing = existingTitlesSet || new Set();
       const n = Math.max(1, parseInt(maxN,10)||5);
-      const idx = Math.max(0, parseInt(offsetIndex,10)||0);
-      const startAt = idx * n;
-
-      let pool = [];
-
-      if(__cachedPool){
-        pool = Array.isArray(__cachedPool) ? __cachedPool.slice() : [];
-      }else{
-        const ranked = (Array.isArray(catalog)?catalog:[])
-          .map((item)=>{
-            const adapted = this.adaptProposal(item);
-            return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
-          })
-          .filter((it)=>{
-            const t = this.__aiNormTitle(it.title||"");
-            return t;
-          })
-          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
-
-        // Guardar el pool ya ordenado (sin score) para estabilidad.
-        pool = ranked.map(({score, ...rest})=> rest);
-        try{
-          if(pool && pool.length){
-            localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
-          }
-        }catch(e){}
-      }
-
-      // Filtrar duplicados existentes (cronograma) en cada render
-      const ranked = (Array.isArray(pool)?pool:[])
+      const forceNext = String(this.state && this.state.__forceNextCityRecsKey || "").trim() === key;
+      const picked = this.__mvGetVisibleCityRecs(cityName, n, forceNext)
         .filter((it)=>{
           const t = this.__aiNormTitle(it.title||"");
           return t && !existing.has(t);
         });
-
-      // Slice simple (sin wrap-around): si la "segunda página" tiene menos de 5, se muestran menos.
-      const picked = ranked.slice(startAt, startAt + n);
-
+      if(forceNext && this.state) this.state.__forceNextCityRecsKey = "";
       return picked;
     },
     // V226C1B0BO: contador de propuestas disponibles (tras dedupe) por ciudad
     __aiAvailableProposalCountForCity(city, existingTitlesSet){
       const cityName = String(city||"").trim();
       if(!cityName) return 0;
-      const key = this.__aiCityKey(cityName);
-      const __recoCachePrefix = "MV_AI_RECO_POOL_V1:";
-      const __recoCacheV = 1;
-      let __cachedPool = null;
-      try{
-        const raw = localStorage.getItem(__recoCachePrefix + key);
-        if(raw){
-          const data = JSON.parse(raw);
-          if(data && data.v === __recoCacheV && Array.isArray(data.pool)) __cachedPool = data.pool;
-        }
-      }catch(e){}
-      let catalog = [];
-      try{
-        if(window.__MV_POI && typeof window.__MV_POI.getPOIsForCity === "function"){
-          const arr = window.__MV_POI.getPOIsForCity(cityName);
-          if(Array.isArray(arr)) catalog = arr;
-        }
-      }catch(e){}
-      // Deduplicate by normalized title (keeps first occurrence).
-      if(Array.isArray(catalog)){
-        const seen = new Set();
-        catalog = catalog.filter((it)=>{
-          const t = this.__aiNormTitle((it && it.title) || "");
-          if(!t) return false;
-          if(seen.has(t)) return false;
-          seen.add(t);
-          return true;
-        });
-      }
-      let pool = [];
-      if(__cachedPool){
-        pool = Array.isArray(__cachedPool) ? __cachedPool.slice() : [];
-      }else{
-        const ranked = (Array.isArray(catalog)?catalog:[])
-          .map((item)=>{
-            const adapted = this.adaptProposal(item);
-            return Object.assign({}, adapted, { city: cityName, score: this.scoreProposal(adapted) });
-          })
-          .filter((it)=>{
-            const t = this.__aiNormTitle(it.title||"");
-            return t;
-          })
-          .sort((a,b)=> (b.score - a.score) || String(a.title).localeCompare(String(b.title), "es"));
-        pool = ranked.map(({score, ...rest})=> rest);
-        try{
-          if(pool && pool.length){
-            localStorage.setItem(__recoCachePrefix + key, JSON.stringify({ v: __recoCacheV, ts: Date.now(), pool }));
-          }
-        }catch(e){}
-      }
       const existing = existingTitlesSet || new Set();
-      const ranked = (Array.isArray(pool)?pool:[]).filter((it)=>{
-        const t = this.__aiNormTitle(it.title||"");
-        return t && !existing.has(t);
-      });
-      return ranked.length;
+      const { entry } = this.__mvGetCityPool(cityName);
+      return entry.order.map((id)=>entry.items[id]).filter((it)=>{
+        const t = this.__aiNormTitle(it && it.title || "");
+        return t && !existing.has(t) && it.status !== "selected" && it.status !== "dismissed";
+      }).length;
     },
     // V226C1B0BN: paginación por ciudad para botón "Más opciones" (5/5)
     __aiMoreOptionsLSKey(cityKey){
@@ -26982,50 +27178,19 @@ __aiBuildDayBuckets(trip){
         if(homeCityKey && __aiCityKey(city) === homeCityKey) continue;
 
         const cityKey = __aiCityKey(city);
-        const __mvCityPage = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
-
-        const pois = getPOIsForCity(city);
         // V226C1B0BO: contar disponibles (tras dedupe contra cronograma) para UI
         try{
           if(cityKey && !__cityAvailMeta[cityKey]){
-            const __seen = new Set();
-            let __avail = 0;
-            for(const pp of (Array.isArray(pois)?pois:[])){
-              const tt = String(pp && pp.title || "").trim().toLowerCase();
-              if(!tt) continue;
-              if(__seen.has(tt)) continue;
-              __seen.add(tt);
-              if(scheduledTitles.has(tt)) continue;
-              __avail++;
-            }
-            const __page = (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(cityKey) : 0;
-            __cityAvailMeta[cityKey] = { available: __avail, page: __page, pages: (__avail > 5 ? 2 : 1) };
+            const __avail = this.__aiAvailableProposalCountForCity(city, scheduledTitles);
+            __cityAvailMeta[cityKey] = { available: __avail };
           }
         }catch(e){}
-        if(!pois.length){
-          // si no hay catálogo concreto para esa ciudad, no inventamos genéricos: saltamos
+        if(!__cityAvailMeta[cityKey] || !__cityAvailMeta[cityKey].available){
           continue;
         }
 
         const gapBlocks = gaps.map((g,gi)=>{
-          // elegir 5 por ciudad (paginación 5/5) + dedupe contra cronograma + wrap-around
-          // elegir por ciudad (paginación 5/5) + dedupe contra cronograma (sin wrap-around en 2ª página)
-          const avail = [];
-          const seen = new Set();
-          for(const p of (Array.isArray(pois)?pois:[])){
-            const tt = String(p && p.title || "").trim().toLowerCase();
-            if(!tt || seen.has(tt)) continue;
-            seen.add(tt);
-            if(scheduledTitles.has(tt)) continue;
-            avail.push(p);
-          }
-          let __page = (Number(__mvCityPage)||0) === 1 ? 1 : 0;
-          if(__page === 1 && avail.length <= 5){
-            __page = 0;
-            try{ if(typeof this.__aiSetCityPage === "function") this.__aiSetCityPage(cityKey, 0); }catch(e){}
-          }
-          const startAt = __page * 5;
-          const show = avail.slice(startAt, startAt + 5);
+          const show = this.__aiTopProposalsForCity(city, scheduledTitles, 5, 0);
 
 
           const hhmm = (dt)=> `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
@@ -27112,15 +27277,7 @@ __aiBuildDayBuckets(trip){
         // V226C1B0BO: contador + hint de página (paginación 5/5 por ciudad)
         const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
         const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
-        const __pagesN = (__availN > 5) ? 2 : 1;
-
-        // Si ya no hay 2 páginas (por dedupe o cambios), forzar página 0 para evitar arrancar en 2/2 con listas cortas
-        const __storedPage = (sec && sec.cityKey && typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(sec.cityKey) : 0;
-        const __pageN = (__pagesN > 1) ? (__storedPage % 2) : 0;
-        if(sec && sec.cityKey && __pagesN === 1 && __storedPage !== 0 && typeof this.__aiSetCityPage === "function"){ try{ this.__aiSetCityPage(sec.cityKey,0); }catch{} }
-
-        const __pageLabel = (__pagesN > 1) ? ` · ${t("ai.gaps.viewing").replace("{p}", String(__pageN+1))}` : ``;
-        const __availLabel = `${t("ai.gaps.available")}: ${__availN}${__pageLabel}`;
+        const __availLabel = `${t("ai.gaps.available")}: ${__availN}`;
         const __disableMore = !(__availN > 5);
 
         const __totalSlots = (sec && Array.isArray(sec.gaps)) ? sec.gaps.reduce((acc,g)=> acc + (parseInt(g && g.slots,10)||0), 0) : 0;
@@ -27240,6 +27397,7 @@ __aiBuildDayBuckets(trip){
               if(sp.history) noteParts.push(`Historia: ${sp.history}`);
               if(sp.pro) noteParts.push(`Consejo pro: ${sp.pro}`);
               items.push({
+                recId: String(sp.id || ""),
                 title: sp.title || sp.name || "",
                 city,
                 date,
@@ -27249,6 +27407,11 @@ __aiBuildDayBuckets(trip){
               });
             }
             const res = this.bridge.addActivities(items, { source:"ai-discover", notePrefix:"IA" });
+            try{
+              items.forEach((it)=>{
+                if(it && it.city && it.recId) this.__mvMarkSelected(it.city, it.recId);
+              });
+            }catch{}
             try{ alert(`${t("ai.gaps.addedN").replace("{n}", String(res && typeof res.added==="number" ? res.added : 0))}` + (res && res.error ? `
 (Nota: activities array inicializada / revisa escenario)` : ``)); }catch{}
             // limpiar checks
@@ -27912,7 +28075,6 @@ loadTripGapsFill(opts){
           city,
           cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city)),
           availableCount: (typeof this.__aiAvailableProposalCountForCity === "function") ? this.__aiAvailableProposalCountForCity(city, existingTitles) : proposals.length,
-          availablePage: (typeof this.__aiGetCityPage === "function") ? this.__aiGetCityPage(((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city))) : 0,
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -27952,7 +28114,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(t("ai.gaps.available"))}: ${Math.max(0, parseInt(blk.availableCount,10)||0)}${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? (' · ' + t("ai.gaps.viewing").replace("{p}", String((parseInt(blk.availablePage,10)||0)+1))) : ''}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? t("ai.gaps.moreOptions") : t("ai.gaps.noMoreOptions")}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();" ${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "" : "disabled"}>${escapeHtml(t("ai.gaps.moreOptions"))}</button>` : ``}
+                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(t("ai.gaps.available"))}: ${Math.max(0, parseInt(blk.availableCount,10)||0)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed" title="${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? t("ai.gaps.moreOptions") : t("ai.gaps.noMoreOptions")}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();" ${(Math.max(0, parseInt(blk.availableCount,10)||0) > 5) ? "" : "disabled"}>${escapeHtml(t("ai.gaps.moreOptions"))}</button>` : ``}
                 <div>${blk.proposals.length} ${escapeHtml(t("ai.gaps.proposals"))}</div>
               </div>
             </div>
@@ -28004,6 +28166,7 @@ loadTripGapsFill(opts){
                 if(!k) return;
                 try{ localStorage.removeItem("MV_POI_RECO_CACHE_V1:"+k); }catch{}
                 try{ localStorage.removeItem("MV_AI_RECO_POOL_V1:"+k); }catch{}
+                try{ aiModule.__mvResetCityPool(k); }catch{}
               });
             }catch{}
             try{ toast(t("ai.gaps.resetCity")); }catch{}
