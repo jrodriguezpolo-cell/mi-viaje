@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE</title>
+  <title>V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE";
+const APP_BUILD = "V240_A118C_TIPS_GEMINI_PERSIST_LOCALSTORAGE_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20156,9 +20156,14 @@ function __mvTripAdviceHTML(sc){
 function __mvTripAdviceCachedPayload(sc){
   try{
     const signature = __mvTripAdviceGeminiCacheSignature(sc);
-    return (window.__mvTripAdviceAICache && window.__mvTripAdviceAICache.__signature === signature)
-      ? window.__mvTripAdviceAICache
-      : (__mvLoadTripAdviceGeminiCache(signature) || null);
+    if(window.__mvTripAdviceAICache && window.__mvTripAdviceAICache.__signature === signature){
+      return window.__mvTripAdviceAICache;
+    }
+    const fromStorage = __mvLoadTripAdviceGeminiCache(signature) || null;
+    if(fromStorage){
+      window.__mvTripAdviceAICache = Object.assign({}, fromStorage, { __signature: signature });
+    }
+    return fromStorage;
   }catch(_){
     return null;
   }
@@ -20270,8 +20275,16 @@ function __mvLoadTripAdviceGeminiCache(signature){
     const scenarioLetter = String(state && state.scenario || "A");
     const raw = localStorage.getItem(`mvTipsGeminiCache_v1_${scenarioLetter}`);
     const hit = raw ? JSON.parse(raw) : null;
-    if(!hit || hit.signature !== signature || !Array.isArray(hit.bullets) || !hit.bullets.length) return null;
-    return hit;
+    if(!hit || hit.signature !== signature) return null;
+    let bullets = Array.isArray(hit.bullets) ? hit.bullets.slice().filter(Boolean) : [];
+    if(!bullets.length && hit.tipsText){
+      bullets = String(hit.tipsText || "")
+        .split(/\n+/)
+        .map(s => String(s || "").replace(/^[•\-\s]+/, "").trim())
+        .filter(Boolean);
+    }
+    if(!bullets.length) return null;
+    return Object.assign({}, hit, { bullets: bullets, source: hit.source || "gemini" });
   }catch(_){
     return null;
   }
@@ -20291,6 +20304,7 @@ function __mvSaveTripAdviceGeminiCache(signature, payload){
       meta: payload.meta || {}
     };
     localStorage.setItem(`mvTipsGeminiCache_v1_${scenarioLetter}`, JSON.stringify(value));
+    try{ window.__mvTripAdviceAICache = Object.assign({}, value, { __signature: signature }); }catch(_){}
     return true;
   }catch(_){
     return false;
