@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE</title>
+  <title>V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A118_TIPS_GEMINI_BUTTON_WIRED_AND_CACHE";
+const APP_BUILD = "V240_A118B_TIPS_GEMINI_CACHE_AND_BADGE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20171,7 +20171,10 @@ function __mvTripAdviceModalBodyHTML(sc){
     const basicHtml = bullets.length
       ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips básicos</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div></div>`
       : `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>`;
-    const aiHtml = aiCache ? `${__mvTomorrowTipsAIHTML(aiCache)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>` : ``;
+    const aiBadge = (aiCache && String(aiCache.source || "").toLowerCase() === "gemini")
+      ? `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>`
+      : ``;
+    const aiHtml = aiCache ? `${aiBadge}${__mvTomorrowTipsAIHTML(aiCache)}` : ``;
     return `
       <div class="max-h-[70vh] overflow-y-auto pr-1 space-y-3">
         ${basicHtml}
@@ -20236,43 +20239,26 @@ function __mvHasGeminiKey(){
 
 function __mvTripAdviceGeminiCacheSignature(sc){
   try{
-    const safe = (arr, mapper)=> (Array.isArray(arr) ? arr : []).map(mapper);
-    return JSON.stringify({
-      scenario: String(state && state.scenario || "A"),
-      scenarioCount: Math.max(1, parseInt(state && state.scenarioCount, 10) || 1),
-      legs: safe(sc && sc.legs, function(leg){
-        return [
-          String(leg && leg.id || ""),
-          String(leg && leg.date || ""),
-          String(leg && leg.time || ""),
-          String(leg && (leg.arriveDate || leg.dateIn || "") || ""),
-          String(leg && (leg.arriveTime || leg.timeIn || "") || ""),
-          String(leg && leg.from || ""),
-          String(leg && leg.to || "")
-        ];
-      }),
-      stays: safe(sc && sc.stays, function(stay){
-        return [
-          String(stay && stay.id || ""),
-          String(stay && stay.date || ""),
-          String(stay && stay.time || ""),
-          String(stay && (stay.checkoutDate || stay.checkout || stay.dateOut || stay.endDate || "") || ""),
-          String(stay && (stay.checkoutTime || stay.checkout_time || "") || ""),
-          String(stay && (stay.name || stay.hotel || "") || ""),
-          String(stay && stay.city || "")
-        ];
-      }),
-      acts: safe(sc && sc.activities, function(act){
-        return [
-          String(act && act.id || ""),
-          String(act && act.date || ""),
-          String(act && act.time || ""),
-          String((typeof __tlActDurationMinutes === "function") ? (__tlActDurationMinutes(act) || 0) : (act && act.durationMin || 0)),
-          String(act && (act.title || act.name || "") || ""),
-          String(act && act.city || "")
-        ];
-      })
-    });
+    const data = __mvExecutiveSummaryData();
+    const ov = data && data.overview ? data.overview : {};
+    const addCity = (set, value)=>{
+      const s = String(value || "").trim();
+      if(s) set.add(s);
+    };
+    const citySet = new Set();
+    (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{ addCity(citySet, leg && leg.from); addCity(citySet, leg && leg.to); });
+    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stay)=> addCity(citySet, stay && stay.city));
+    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=> addCity(citySet, act && act.city));
+    const citiesSummary = Array.from(citySet).sort((a,b)=> a.localeCompare(b)).slice(0, 12).join("|");
+    return [
+      String(state && state.scenario || "A"),
+      String(ov.dateStart || ""),
+      String(ov.dateEnd || ""),
+      String(ov.transportCount || 0),
+      String(ov.stayCount || 0),
+      String(ov.activityCount || 0),
+      citiesSummary
+    ].join("::");
   }catch(_){
     return "";
   }
@@ -20281,10 +20267,10 @@ function __mvTripAdviceGeminiCacheSignature(sc){
 function __mvLoadTripAdviceGeminiCache(signature){
   try{
     if(!signature) return null;
-    const raw = localStorage.getItem("MV_TIPS_GEMINI_CACHE_V1");
-    const parsed = raw ? JSON.parse(raw) : {};
-    const hit = parsed && parsed[signature];
-    if(!hit || !Array.isArray(hit.bullets) || !hit.bullets.length) return null;
+    const scenarioLetter = String(state && state.scenario || "A");
+    const raw = localStorage.getItem(`mvTipsGeminiCache_v1_${scenarioLetter}`);
+    const hit = raw ? JSON.parse(raw) : null;
+    if(!hit || hit.signature !== signature || !Array.isArray(hit.bullets) || !hit.bullets.length) return null;
     return hit;
   }catch(_){
     return null;
@@ -20294,15 +20280,17 @@ function __mvLoadTripAdviceGeminiCache(signature){
 function __mvSaveTripAdviceGeminiCache(signature, payload){
   try{
     if(!signature || !payload || !Array.isArray(payload.bullets) || !payload.bullets.length) return false;
-    const raw = localStorage.getItem("MV_TIPS_GEMINI_CACHE_V1");
-    const parsed = raw ? JSON.parse(raw) : {};
-    parsed[signature] = {
-      ts: Date.now(),
+    const scenarioLetter = String(state && state.scenario || "A");
+    const value = {
+      signature: signature,
+      generatedAt: new Date().toISOString(),
+      build: APP_BUILD,
+      source: "gemini",
       bullets: payload.bullets.slice(0, 10),
-      text: payload.bullets.join("\n"),
+      tipsText: payload.bullets.join("\n"),
       meta: payload.meta || {}
     };
-    localStorage.setItem("MV_TIPS_GEMINI_CACHE_V1", JSON.stringify(parsed));
+    localStorage.setItem(`mvTipsGeminiCache_v1_${scenarioLetter}`, JSON.stringify(value));
     return true;
   }catch(_){
     return false;
@@ -20390,7 +20378,7 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     const cached = cfg.force ? null : (__mvTripAdviceCachedPayload(sc) || null);
     if(cached){
       window.__mvTripAdviceAICache = cached;
-      if(resultEl) resultEl.innerHTML = `${__mvTomorrowTipsAIHTML(cached)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>`;
+      if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTomorrowTipsAIHTML(cached)}`;
       if(statusEl) statusEl.textContent = "Consejos actualizados";
       if(btn) btn.disabled = false;
       return;
@@ -20398,6 +20386,7 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     if(statusEl) statusEl.textContent = "Generando consejos…";
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
     const payload = {
+      source: "gemini",
       bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
       meta: { signature: signature }
     };
@@ -20405,7 +20394,7 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     if(!payload.bullets.length) throw new Error("EMPTY_TRIP_AI_TIPS");
     window.__mvTripAdviceAICache = payload;
     __mvSaveTripAdviceGeminiCache(signature, payload);
-    if(resultEl) resultEl.innerHTML = __mvTomorrowTipsAIHTML(payload);
+    if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTomorrowTipsAIHTML(payload)}`;
     if(statusEl) statusEl.textContent = "Consejos actualizados";
   }catch(e){
     console.log("Trip advice Gemini failed", e);
