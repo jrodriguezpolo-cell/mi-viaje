@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX</title>
+  <title>V240_A120_OVERNIGHT_TRANSPORT_CONFLICT_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A120_OVERNIGHT_TRANSPORT_CONFLICT_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A119_WEBAPP_GEMINI_KEY_WIRING_FIX";
+const APP_BUILD = "V240_A120_OVERNIGHT_TRANSPORT_CONFLICT_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -14407,7 +14407,25 @@ function __mvConflictMapKeys(kind, item){
 function __computeConflictMapForDayItems(dayItems, bufferMin){
   const map = new Map();
   try{
-    const list = Array.isArray(dayItems) ? dayItems.filter(Boolean).slice() : [];
+    const rawList = Array.isArray(dayItems) ? dayItems.filter(Boolean).slice() : [];
+    const seenEntries = new Set();
+    const list = rawList.filter(function(entry){
+      try{
+        const sig = [
+          String(entry && entry.key || ""),
+          String(entry && entry.kind || ""),
+          String(entry && entry.phase || ""),
+          String(entry && entry.date || ""),
+          String(Number.isFinite(Number(entry && entry.startMin)) ? Number(entry.startMin) : ""),
+          String(Number.isFinite(Number(entry && entry.endMin)) ? Number(entry.endMin) : "")
+        ].join("|");
+        if(seenEntries.has(sig)) return false;
+        seenEntries.add(sig);
+        return true;
+      }catch(_){
+        return true;
+      }
+    });
     const kindFromKey = (key)=>{
       const m = String(key || '').match(/^(act|leg|stay):/);
       return m ? String(m[1] || '') : '';
@@ -14464,6 +14482,7 @@ function __computeConflictMapForDayItems(dayItems, bufferMin){
       const cur = list[i];
       const next = list[i+1];
       if(!cur || !next) continue;
+      if(String(cur.key || "") === String(next.key || "")) continue;
       if(!Number.isFinite(cur.startMin) || !Number.isFinite(cur.endMin) || !Number.isFinite(next.startMin)) continue;
       const safeBuffer = Math.max(0, Math.floor(Number(bufferMin || 0) || 0));
       const curKind = String(cur.kind || kindFromKey(cur.key)).trim();
