@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A124_IA_CITY_RECS_GEMINI_MORE_AND_PERSIST</title>
+  <title>V240_A125_IA_CITY_RECS_UI_FIX_ASKIA_HIDE_ALIGN_DISCARD</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A124_IA_CITY_RECS_GEMINI_MORE_AND_PERSIST</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A125_IA_CITY_RECS_UI_FIX_ASKIA_HIDE_ALIGN_DISCARD</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A124_IA_CITY_RECS_GEMINI_MORE_AND_PERSIST";
+const APP_BUILD = "V240_A125_IA_CITY_RECS_UI_FIX_ASKIA_HIDE_ALIGN_DISCARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -25599,6 +25599,25 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         return item && item.status === "new" && item.status !== "selected" && item.status !== "dismissed" && t && !existing.has(t);
       }).length;
     },
+    __mvCountFreshLocalCityRecs(rawCity, existingTitlesSet){
+      const { entry } = this.__mvGetCityPool(rawCity);
+      const existing = existingTitlesSet || new Set();
+      return entry.order.map((id)=>entry.items[id]).filter((item)=>{
+        const t = this.__aiNormTitle(item && item.title || "");
+        return item && item.source === "local" && item.status === "new" && t && !existing.has(t);
+      }).length;
+    },
+    __mvCountRecoverableSeenCityRecs(rawCity){
+      const cityName = String(rawCity || "").trim();
+      const tripActivityKeys = this.__mvTripActivityRecoKeys();
+      return this.__mvGetSeen(cityName).filter((item)=>{
+        if(!item || item.status !== "seen") return false;
+        const titleOnly = this.__mvRecoNorm(item.title || "");
+        const cityPart = this.__mvRecoNorm(cityName || item.cityKey || "");
+        const fullKey = cityPart ? `${cityPart}|${titleOnly}` : titleOnly;
+        return !!titleOnly && !tripActivityKeys.has(fullKey) && !tripActivityKeys.has(titleOnly);
+      }).length;
+    },
     __mvResetCityPool(rawCity){
       const cityName = String(rawCity || "").trim();
       const cityKey = this.__aiCityKey(cityName);
@@ -26258,12 +26277,38 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
               }catch{}
               ev.preventDefault(); ev.stopPropagation(); return;
             }
+            const seenBtn = target && target.closest ? target.closest("[data-ai-city-seen]") : null;
+            if(seenBtn){
+              try{
+                const keyRaw = String(seenBtn.getAttribute("data-ai-city-seen")||"").trim();
+                if(keyRaw) aiModule.__mvOpenSeenCityRecsModal(keyRaw);
+              }catch{}
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
 
             const toggle = target && target.closest ? target.closest("[data-ai-day-toggle]") : null;
             if(toggle){
               const bodyId = String(toggle.getAttribute("data-ai-day-toggle")||"");
               const body = bodyId ? document.getElementById(bodyId) : null;
               if(body){ body.classList.toggle("hidden"); }
+              ev.preventDefault(); ev.stopPropagation(); return;
+            }
+            const dismissBtn = target && target.closest ? target.closest("[data-ai-dismiss]") : null;
+            if(dismissBtn){
+              const raw = String(dismissBtn.getAttribute("data-ai-dismiss")||"");
+              const parts = raw.split(":");
+              const sidx = parseInt(parts[0],10);
+              const gidx = parseInt(parts[1],10);
+              const i = parseInt(parts[2],10);
+              const sec = (window.__aiSections||[])[sidx];
+              const gap = sec && Array.isArray(sec.gaps) ? sec.gaps[gidx] : null;
+              const spot = gap && gap.spots ? gap.spots[i] : null;
+              try{
+                if(sec && spot && spot.id){
+                  aiModule.__mvMarkDismissed(sec.city || gap.city || "", spot.id);
+                  aiModule.__mvRefreshCurrentActionPreservingUI();
+                }
+              }catch{}
               ev.preventDefault(); ev.stopPropagation(); return;
             }
             const more = target && target.closest ? target.closest("[data-ai-more]") : null;
@@ -27478,7 +27523,9 @@ __aiBuildDayBuckets(trip){
           if(cityKey && !__cityAvailMeta[cityKey]){
             const __avail = this.__aiAvailableProposalCountForCity(city, scheduledTitles);
             const __fresh = this.__mvCountFreshCityRecs(city, scheduledTitles);
-            __cityAvailMeta[cityKey] = { available: __avail, fresh: __fresh };
+            const __freshLocal = this.__mvCountFreshLocalCityRecs(city, scheduledTitles);
+            const __seenRecoverable = this.__mvCountRecoverableSeenCityRecs(city);
+            __cityAvailMeta[cityKey] = { available: __avail, fresh: __fresh, freshLocal: __freshLocal, seenRecoverable: __seenRecoverable };
           }
         }catch(e){}
         if(!__cityAvailMeta[cityKey] || !__cityAvailMeta[cityKey].available){
@@ -27505,8 +27552,9 @@ __aiBuildDayBuckets(trip){
                       <div class="min-w-0">
                         <div class="font-semibold text-slate-900">${p.title}</div>
                         <div class="text-sm text-slate-600">${p.tagline}</div>
-                        <div class="mt-2">
+                        <div class="mt-2 flex flex-wrap gap-2">
                           <button type="button" class="tap text-xs px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200" data-ai-more="${sectionIndex}:${pi}">Más info</button>
+                          <button type="button" class="tap text-xs px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700" data-ai-dismiss="${sectionIndex}:${pi}">Descartar</button>
                         </div>
                       </div>
                     </label>`;
@@ -27574,6 +27622,8 @@ __aiBuildDayBuckets(trip){
         const __meta = (sec && sec.cityKey && __cityAvailMeta && __cityAvailMeta[sec.cityKey]) ? __cityAvailMeta[sec.cityKey] : null;
         const __availN = __meta ? (parseInt(__meta.available,10)||0) : 0;
         const __freshN = __meta ? (parseInt(__meta.fresh,10)||0) : 0;
+        const __recoverSeenN = __meta ? (parseInt(__meta.seenRecoverable,10)||0) : 0;
+        const __showAskIA = (__freshN <= 0);
         const __availLabel = `${t("ai.gaps.available")}: ${__availN}`;
 
         const __totalSlots = (sec && Array.isArray(sec.gaps)) ? sec.gaps.reduce((acc,g)=> acc + (parseInt(g && g.slots,10)||0), 0) : 0;
@@ -27587,8 +27637,9 @@ __aiBuildDayBuckets(trip){
                       <div class="min-w-0">
                         <div class="font-semibold text-slate-900">${p.title}</div>
                         <div class="text-sm text-slate-600">${p.tagline}</div>
-                        <div class="mt-2">
+                        <div class="mt-2 flex flex-wrap gap-2">
                           <button type="button" class="tap text-xs px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200" data-ai-more="${sidx}:${gi}:${pi}">Más info</button>
+                          <button type="button" class="tap text-xs px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700" data-ai-dismiss="${sidx}:${gi}:${pi}">Descartar</button>
                         </div>
                       </div>
                     </label>`;
@@ -27601,15 +27652,22 @@ __aiBuildDayBuckets(trip){
         }).join("");
 
         return `<div class="rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden">
-                  <div class="tap w-full flex items-center justify-between px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
-                    <div class="min-w-0 text-left">
-                      <div class="font-semibold text-slate-900">${sec.title}</div>
-                      <div class="text-xs text-slate-500">${__totalSlots} hueco(s) disponible(s)</div>
+                  <div class="tap w-full px-4 py-3 bg-white" role="button" tabindex="0" data-ai-day-toggle="${bodyId}" id="${headId}">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0 text-left">
+                        <div class="font-semibold text-slate-900 break-words">${sec.title}</div>
+                        <div class="text-xs text-slate-500 mt-1">${__totalSlots} hueco(s) disponible(s)</div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div>` : ``}
+                        <div class="text-slate-400 font-bold">⌄</div>
+                      </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                      ${sec.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(__availLabel)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="${escapeHtml(t("ai.ui.moreOptions"))}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">${escapeHtml(t("ai.ui.moreOptions"))}</button>${__freshN<=0 ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-violet-200 bg-violet-50 text-violet-800" title="Pedir más a IA (Gemini)" data-ai-city-gemini="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Pedir más a IA</button>` : ``}` : ``}
-                      <div class="text-slate-400 font-bold">⌄</div>
-                    </div>
+                    ${sec.cityKey ? `<div class="mt-3 flex flex-wrap items-center justify-end gap-2">
+                      <button type="button" class="tap inline-flex items-center justify-center h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="${escapeHtml(t("ai.ui.moreOptions"))}" data-ai-more-options="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">${escapeHtml(t("ai.ui.moreOptions"))}</button>
+                      ${__showAskIA ? `<button type="button" class="tap inline-flex items-center justify-center h-9 rounded-full px-3 border border-violet-200 bg-violet-50 text-violet-800" title="Pedir más a IA (Gemini)" data-ai-city-gemini="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Pedir más a IA</button>` : ``}
+                      ${__recoverSeenN > 0 ? `<button type="button" class="tap inline-flex items-center justify-center h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver propuestas vistas" data-ai-city-seen="${escapeHtml(sec.cityKey)}" onclick="event.stopPropagation();">Ver vistas</button>` : ``}
+                    </div>` : ``}
                   </div>
                   <div id="${bodyId}" class="hidden px-4 py-3">
                     ${gapsHtml}
@@ -28372,6 +28430,8 @@ loadTripGapsFill(opts){
           cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(city) : this.__aiCityKey(city)),
           availableCount: (typeof this.__aiAvailableProposalCountForCity === "function") ? this.__aiAvailableProposalCountForCity(city, existingTitles) : proposals.length,
           freshCount: this.__mvCountFreshCityRecs(city, existingTitles),
+          freshLocalCount: this.__mvCountFreshLocalCityRecs(city, existingTitles),
+          seenRecoverableCount: this.__mvCountRecoverableSeenCityRecs(city),
           reason: ctx.reason,
           suggestedTime,
           proposals: proposals.map((pr, idx)=>{
@@ -28411,7 +28471,7 @@ loadTripGapsFill(opts){
                 </div>
               </div>
               <div class="flex flex-col items-end gap-2 text-xs text-slate-500 whitespace-nowrap">
-                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(t("ai.gaps.available"))}: ${Math.max(0, parseInt(blk.availableCount,10)||0)}</div><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="${escapeHtml(t("ai.gaps.moreOptions"))}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">${escapeHtml(t("ai.gaps.moreOptions"))}</button>${(Math.max(0, parseInt(blk.freshCount,10)||0) <= 0) ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-violet-200 bg-violet-50 text-violet-800" title="Pedir más a IA (Gemini)" data-ai-city-gemini="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Pedir más a IA</button>` : ``}` : ``}
+                ${blk.cityKey ? `<div class="text-[11px] font-semibold text-slate-500 whitespace-nowrap">${escapeHtml(t("ai.gaps.available"))}: ${Math.max(0, parseInt(blk.availableCount,10)||0)}</div><div class="flex flex-wrap justify-end gap-2"><button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="${escapeHtml(t("ai.gaps.moreOptions"))}" data-ai-more-options="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">${escapeHtml(t("ai.gaps.moreOptions"))}</button>${(Math.max(0, parseInt(blk.freshLocalCount,10)||0) <= 0) ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-violet-200 bg-violet-50 text-violet-800" title="Pedir más a IA (Gemini)" data-ai-city-gemini="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Pedir más a IA</button>` : ``}${(Math.max(0, parseInt(blk.seenRecoverableCount,10)||0) > 0) ? `<button type="button" class="tap inline-flex items-center justify-center w-[auto] h-9 rounded-full px-3 border border-slate-200 bg-white text-slate-700" title="Ver propuestas vistas" data-ai-city-seen="${escapeHtml(blk.cityKey)}" onclick="event.stopPropagation();">Ver vistas</button>` : ``}</div>` : ``}
                 <div>${blk.proposals.length} ${escapeHtml(t("ai.gaps.proposals"))}</div>
               </div>
             </div>
