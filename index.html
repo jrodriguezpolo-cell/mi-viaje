@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE</title>
+  <title>V240_A129_WEBAPP_ATTACH_OPEN_PREOPEN_WINDOW</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A129_WEBAPP_ATTACH_OPEN_PREOPEN_WINDOW</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE";
+const APP_BUILD = "V240_A129_WEBAPP_ATTACH_OPEN_PREOPEN_WINDOW";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -7224,8 +7224,14 @@ function __renderAttachmentsModal(){
     openInput.onchange = async ()=>{
       try{
         const file = openInput.files && openInput.files[0];
+        const pendingWin = window.__pendingAttachOpenWin || null;
         try{ openInput.value = ""; }catch{}
-        if(!file) return;
+        if(!file){
+          try{
+            if(pendingWin && !pendingWin.closed) pendingWin.close();
+          }catch{}
+          return;
+        }
         const pendingId = String((window.__mvPendingWebAttachOpenId || "")).trim();
         try{
           window.__attachmentsFileCache = window.__attachmentsFileCache || {};
@@ -7234,9 +7240,12 @@ function __renderAttachmentsModal(){
         const openWithBlob = ()=>{
           try{
             const url = URL.createObjectURL(file);
-            let win = null;
-            try{ win = window.open(url, "_blank", "noopener"); }catch(_){ win = null; }
-            if(win){
+            let win = pendingWin;
+            if(win && !win.closed){
+              try{ win.location.href = url; }catch(_){ win = null; }
+              try{ if(win && win.focus) win.focus(); }catch(_){}
+            }
+            if(win && !win.closed){
               setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 60000);
               return true;
             }
@@ -7266,9 +7275,12 @@ function __renderAttachmentsModal(){
                 try{
                   const dataUrl = String(reader.result || "");
                   if(!dataUrl){ resolve(false); return; }
-                  let win = null;
-                  try{ win = window.open(dataUrl, "_blank", "noopener"); }catch(_){ win = null; }
-                  if(win){ resolve(true); return; }
+                  let win = pendingWin;
+                  if(win && !win.closed){
+                    try{ win.location.href = dataUrl; }catch(_){ win = null; }
+                    try{ if(win && win.focus) win.focus(); }catch(_){}
+                  }
+                  if(win && !win.closed){ resolve(true); return; }
                   try{
                     const a = document.createElement("a");
                     a.href = dataUrl;
@@ -7294,12 +7306,19 @@ function __renderAttachmentsModal(){
           });
         }
         if(!ok){
+          try{ if(pendingWin && !pendingWin.closed) pendingWin.close(); }catch{}
           try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
         }
       }catch{
+        try{
+          const pendingWin = window.__pendingAttachOpenWin || null;
+          if(pendingWin && !pendingWin.closed) pendingWin.close();
+        }catch{}
         try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
       }finally{
         try{ window.__mvPendingWebAttachOpenId = null; }catch{}
+        try{ window.__pendingAttachOpenWin = null; }catch{}
+        try{ window.__pendingAttachOpenAt = null; }catch{}
       }
     };
   }
@@ -7377,9 +7396,30 @@ function __handleAttachmentAction(action, id){
     }
     const input = document.getElementById("attOpenFilePicker");
     if(input){
+      let w = null;
+      try{ w = window.open("", "_blank"); }catch(_){ w = null; }
+      if(!w){
+        try{ toast("Safari ha bloqueado la apertura. Mantén pulsado y elige ‘Abrir en nueva pestaña’."); }catch{}
+        return;
+      }
+      try{
+        w.document.write('<title>Mi Viaje</title><p style="font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;padding:16px">Abriendo archivo…</p>');
+        w.document.close();
+      }catch{}
+      try{ window.__pendingAttachOpenWin = w; }catch{}
+      try{ window.__pendingAttachOpenAt = Date.now(); }catch{}
       try{ window.__mvPendingWebAttachOpenId = String(f.id || ""); }catch{}
       try{ input.value = ""; }catch{}
       try{ input.click(); }catch{}
+      setTimeout(()=>{
+        try{
+          const ts = Number(window.__pendingAttachOpenAt || 0);
+          const winRef = window.__pendingAttachOpenWin || null;
+          if(winRef && !winRef.closed && ts && (Date.now() - ts > 45000)) winRef.close();
+        }catch{}
+        try{ window.__pendingAttachOpenWin = null; }catch{}
+        try{ window.__pendingAttachOpenAt = null; }catch{}
+      }, 45000);
       return;
     }
     __pickFileForPreview({ accept: "*/*" });
