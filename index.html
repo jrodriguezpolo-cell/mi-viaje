@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A126_IA_CITY_RECS_BUTTONS_CLEANUP</title>
+  <title>V240_A127_ATTACH_MODAL_BUTTONS_AND_FILENAME_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A126_IA_CITY_RECS_BUTTONS_CLEANUP</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A127_ATTACH_MODAL_BUTTONS_AND_FILENAME_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A126_IA_CITY_RECS_BUTTONS_CLEANUP";
+const APP_BUILD = "V240_A127_ATTACH_MODAL_BUTTONS_AND_FILENAME_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -7127,10 +7127,12 @@ function __renderAttachmentsModal(){
     return `
       <div class="flex items-stretch justify-between gap-3 py-2 border-b border-slate-200/40">
         <button class="tap flex-1 text-left" data-att-id="${__eh(String(f.id||""))}" data-att-action="open">
-          <div class="font-extrabold text-sm">${__eh(name)}</div>
-          ${sub}
+          <div class="flex-1 min-w-0">
+            <div class="font-extrabold text-sm truncate" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${__eh(name)}</div>
+            ${sub}
+          </div>
         </button>
-        <div class="grid grid-cols-2 gap-2 shrink-0">
+        <div class="flex flex-col gap-2 shrink-0 w-[112px]">
           ${kind==="external" ? (`<button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold w-full text-center" data-att-id="${__eh(String(f.id||""))}" data-att-action="copy">Copiar nombre</button>`
             + ``) : ""}
           <button class="tap px-2 py-1 rounded-lg border border-slate-300 text-xs font-extrabold w-full text-center" data-att-id="${__eh(String(f.id||""))}" data-att-action="rename">Renombrar</button>
@@ -7202,9 +7204,28 @@ function __renderAttachmentsModal(){
   const mb = document.getElementById("modalBody");
   if(mb && !mb.__att_bound){
     mb.__att_bound = true;
+    function __findClosestActionEl(ev, selector){
+      const t = ev && ev.target;
+      if(t && t.closest){
+        const c = t.closest(selector);
+        if(c) return c;
+      }
+      if(t && t.parentElement && t.parentElement.closest){
+        const c2 = t.parentElement.closest(selector);
+        if(c2) return c2;
+      }
+      const path = (ev && ev.composedPath) ? ev.composedPath() : [];
+      for(const node of path){
+        if(node && node.matches && node.matches(selector)) return node;
+        if(node && node.closest){
+          const c3 = node.closest(selector);
+          if(c3) return c3;
+        }
+      }
+      return null;
+    }
     mb.addEventListener("click", (e)=>{
-      const t = e.target;
-      const btn = t && t.closest ? t.closest("[data-att-action]") : null;
+      const btn = __findClosestActionEl(e, "[data-att-action]");
       if(!btn) return;
       try{ e.preventDefault(); e.stopPropagation(); }catch{}
       const action = btn.getAttribute("data-att-action");
