@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX</title>
+  <title>V240_A132_WEBAPP_ATTACH_UNIFIED_INAPP_OPEN_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A132_WEBAPP_ATTACH_UNIFIED_INAPP_OPEN_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX";
+const APP_BUILD = "V240_A132_WEBAPP_ATTACH_UNIFIED_INAPP_OPEN_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29444,27 +29444,42 @@ overlay.classList.remove("hidden");
     return new Promise(function(resolve){
       try{
         if(!fileObj){ resolve(false); return; }
-        if(__mvOpenFileBlobInNewTab(fileObj)){ resolve(true); return; }
-        var reader = new FileReader();
-        reader.onload = function(){
-          try{
-            var dataUrl = String(reader.result || "");
-            if(!dataUrl){ resolve(false); return; }
-            var win = null;
-            try{ win = window.open(dataUrl, "_blank", "noopener"); }catch(_){ win = null; }
-            if(win){ resolve(true); return; }
+        try{
+          var readerInline = new FileReader();
+          readerInline.onload = function(){
             try{
-              window.location.href = dataUrl;
-              resolve(true);
-              return;
+              var inlineDataUrl = String(readerInline.result || "");
+              if(inlineDataUrl){
+                __openWebAttachmentPreviewModal(fileObj, inlineDataUrl);
+                resolve(true);
+                return;
+              }
             }catch(_){ }
-            resolve(false);
-          }catch(_){
-            resolve(false);
-          }
-        };
-        reader.onerror = function(){ resolve(false); };
-        reader.readAsDataURL(fileObj);
+            tryFallback();
+          };
+          readerInline.onerror = function(){ tryFallback(); };
+          readerInline.readAsDataURL(fileObj);
+        }catch(_){
+          tryFallback();
+        }
+        function tryFallback(){
+          try{
+            if(__mvOpenFileBlobInNewTab(fileObj)){ resolve(true); return; }
+          }catch(_){ }
+          var reader = new FileReader();
+          reader.onload = function(){
+            try{
+              var dataUrl = String(reader.result || "");
+              if(!dataUrl){ resolve(false); return; }
+              __openWebAttachmentPreviewModal(fileObj, dataUrl);
+              resolve(true);
+            }catch(_){
+              resolve(false);
+            }
+          };
+          reader.onerror = function(){ resolve(false); };
+          reader.readAsDataURL(fileObj);
+        }
       }catch(_){
         resolve(false);
       }
@@ -29549,7 +29564,7 @@ overlay.classList.remove("hidden");
         var fallbackName = String(f.name || f.originalName || "").trim();
         if(fallbackName){
           var byName = await __mvResolveWebAttachmentFile(fallbackName);
-          if(byName) return __mvOpenFileBlobInNewTab(byName);
+          if(byName) return await __mvOpenPickedFileWeb(byName);
         }
         return await __mvPickAndOpenSingleFileWeb(f);
       }
@@ -29570,10 +29585,10 @@ overlay.classList.remove("hidden");
       var realFile = await __mvResolveWebAttachmentFile(relPath);
       if(!realFile){
         var byName2 = await __mvResolveWebAttachmentFile(String(f.name || f.originalName || "").trim());
-        if(byName2) return __mvOpenFileBlobInNewTab(byName2);
+        if(byName2) return await __mvOpenPickedFileWeb(byName2);
         return await __mvPickAndOpenSingleFileWeb(f);
       }
-      return __mvOpenFileBlobInNewTab(realFile);
+      return await __mvOpenPickedFileWeb(realFile);
     }catch(_){
       try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
       return false;
