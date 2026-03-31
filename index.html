@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A130_WEBAPP_ATTACH_OPEN_WEBVIEW_FIX</title>
+  <title>V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A130_WEBAPP_ATTACH_OPEN_WEBVIEW_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A130_WEBAPP_ATTACH_OPEN_WEBVIEW_FIX";
+const APP_BUILD = "V240_A131_WEBAPP_ATTACH_INAPP_VIEWER_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -7243,33 +7243,8 @@ function __renderAttachmentsModal(){
             reader.onload = ()=>{
               try{
                 const dataUrl = String(reader.result || "");
-                const safeName = String(file.name || "Adjunto").replace(/[&<>"']/g, function(ch){
-                  return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[ch] || ch;
-                });
                 if(!dataUrl){ resolve(false); return; }
-                let win = pendingWin;
-                if(!win || win.closed){ resolve(false); return; }
-                const mime = String(file.type || "").toLowerCase();
-                let preview = '<div style="padding:24px;font:16px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#0f172a">Archivo listo. Usa el botón inferior si Safari no muestra vista previa.</div>';
-                if(mime.indexOf("image/") === 0){
-                  preview = '<div style="padding:16px;text-align:center"><img src="'+dataUrl+'" alt="'+safeName+'" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.12)" /></div>';
-                }else if(mime === "application/pdf"){
-                  preview = '<iframe src="'+dataUrl+'" style="width:100%;height:calc(100vh - 96px);border:0"></iframe>';
-                }else if(mime.indexOf("text/") === 0){
-                  preview = '<iframe src="'+dataUrl+'" style="width:100%;height:calc(100vh - 96px);border:0;background:#fff"></iframe>';
-                }
-                win.document.open();
-                win.document.write(
-                  '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>'+safeName+'</title></head><body style="margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif">' +
-                  '<div style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#fff;border-bottom:1px solid rgba(148,163,184,.35)">' +
-                  '<div style="min-width:0"><div style="font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+safeName+'</div><div style="font-size:12px;opacity:.66">Adjunto abierto desde Mi Viaje</div></div>' +
-                  '<a href="'+dataUrl+'" target="_self" rel="noopener" style="flex:0 0 auto;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.7);text-decoration:none;color:#0f172a;font-weight:800;font-size:13px">Abrir archivo</a>' +
-                  '</div>' +
-                  preview +
-                  '</body></html>'
-                );
-                win.document.close();
-                try{ if(win.focus) win.focus(); }catch(_){}
+                __openWebAttachmentPreviewModal(file, dataUrl);
                 resolve(true);
               }catch(_){
                 resolve(false);
@@ -7282,19 +7257,12 @@ function __renderAttachmentsModal(){
           }
         });
         if(!ok){
-          try{ if(pendingWin && !pendingWin.closed) pendingWin.close(); }catch{}
           try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
         }
       }catch{
-        try{
-          const pendingWin = window.__pendingAttachOpenWin || null;
-          if(pendingWin && !pendingWin.closed) pendingWin.close();
-        }catch{}
         try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
       }finally{
         try{ window.__mvPendingWebAttachOpenId = null; }catch{}
-        try{ window.__pendingAttachOpenWin = null; }catch{}
-        try{ window.__pendingAttachOpenAt = null; }catch{}
       }
     };
   }
@@ -7349,6 +7317,39 @@ function __renderAttachmentsModal(){
   }
 }
 
+function __openWebAttachmentPreviewModal(file, dataUrl){
+  try{
+    const f = file || {};
+    const safeName = escapeHtml(String(f.name || "Adjunto"));
+    const mime = String(f.type || "").toLowerCase();
+    let preview = '<div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">Vista previa no disponible para este tipo de archivo.</div>';
+    if(mime.indexOf("image/") === 0){
+      preview = '<div class="rounded-2xl border border-slate-200 bg-slate-50 p-3"><img src="'+dataUrl+'" alt="'+safeName+'" style="display:block;max-width:100%;height:auto;margin:0 auto;border-radius:12px" /></div>';
+    }else if(mime === "application/pdf"){
+      preview = '<div class="rounded-2xl overflow-hidden border border-slate-200 bg-white"><iframe src="'+dataUrl+'" style="width:100%;height:70vh;border:0;background:#fff"></iframe></div>';
+    }else if(mime.indexOf("text/") === 0){
+      preview = '<div class="rounded-2xl overflow-hidden border border-slate-200 bg-white"><iframe src="'+dataUrl+'" style="width:100%;height:70vh;border:0;background:#fff"></iframe></div>';
+    }else if(mime.indexOf("video/") === 0){
+      preview = '<div class="rounded-2xl overflow-hidden border border-slate-200 bg-black p-2"><video src="'+dataUrl+'" controls playsinline style="display:block;max-width:100%;width:100%;height:auto"></video></div>';
+    }else if(mime.indexOf("audio/") === 0){
+      preview = '<div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><audio src="'+dataUrl+'" controls style="width:100%"></audio></div>';
+    }
+    const body = '' +
+      '<div class="space-y-3">' +
+        '<div class="text-sm font-extrabold text-slate-900 truncate">'+safeName+'</div>' +
+        preview +
+        '<div class="text-xs text-slate-500">Adjunto abierto dentro de Mi Viaje.</div>' +
+      '</div>';
+    const btnBack = document.createElement("button");
+    btnBack.className = "tap px-4 py-2 rounded-xl border border-slate-300 font-extrabold";
+    btnBack.textContent = "Volver";
+    btnBack.onclick = (e)=>{ try{ e.preventDefault(); e.stopPropagation(); }catch{} __renderAttachmentsModal(); };
+    showModal("Archivo", body, [btnBack]);
+  }catch(_){
+    try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
+  }
+}
+
 function __handleAttachmentAction(action, id){
   const ctx = window.__attachmentsCtx || {};
   const obj = ctx.obj;
@@ -7372,30 +7373,9 @@ function __handleAttachmentAction(action, id){
     }
     const input = document.getElementById("attOpenFilePicker");
     if(input){
-      let w = null;
-      try{ w = window.open("", "_blank"); }catch(_){ w = null; }
-      if(!w){
-        try{ toast("Safari ha bloqueado la apertura. Mantén pulsado y elige ‘Abrir en nueva pestaña’."); }catch{}
-        return;
-      }
-      try{
-        w.document.write('<title>Mi Viaje</title><p style="font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;padding:16px">Abriendo archivo…</p>');
-        w.document.close();
-      }catch{}
-      try{ window.__pendingAttachOpenWin = w; }catch{}
-      try{ window.__pendingAttachOpenAt = Date.now(); }catch{}
       try{ window.__mvPendingWebAttachOpenId = String(f.id || ""); }catch{}
       try{ input.value = ""; }catch{}
       try{ input.click(); }catch{}
-      setTimeout(()=>{
-        try{
-          const ts = Number(window.__pendingAttachOpenAt || 0);
-          const winRef = window.__pendingAttachOpenWin || null;
-          if(winRef && !winRef.closed && ts && (Date.now() - ts > 45000)) winRef.close();
-        }catch{}
-        try{ window.__pendingAttachOpenWin = null; }catch{}
-        try{ window.__pendingAttachOpenAt = null; }catch{}
-      }, 45000);
       return;
     }
     __pickFileForPreview({ accept: "*/*" });
