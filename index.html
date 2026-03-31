@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER</title>
+  <title>V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER";
+const APP_BUILD = "V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29365,6 +29365,36 @@ overlay.classList.remove("hidden");
   function __mvWebOpenAttachmentPickerToast(){
     return "En webapp necesitas seleccionar el archivo para abrirlo. Elige el adjunto desde Archivos.";
   }
+  function __mvOpenPickedFileWeb(fileObj){
+    return new Promise(function(resolve){
+      try{
+        if(!fileObj){ resolve(false); return; }
+        if(__mvOpenFileBlobInNewTab(fileObj)){ resolve(true); return; }
+        var reader = new FileReader();
+        reader.onload = function(){
+          try{
+            var dataUrl = String(reader.result || "");
+            if(!dataUrl){ resolve(false); return; }
+            var win = null;
+            try{ win = window.open(dataUrl, "_blank", "noopener"); }catch(_){ win = null; }
+            if(win){ resolve(true); return; }
+            try{
+              window.location.href = dataUrl;
+              resolve(true);
+              return;
+            }catch(_){ }
+            resolve(false);
+          }catch(_){
+            resolve(false);
+          }
+        };
+        reader.onerror = function(){ resolve(false); };
+        reader.readAsDataURL(fileObj);
+      }catch(_){
+        resolve(false);
+      }
+    });
+  }
   function __mvPickAndOpenSingleFileWeb(file){
     return new Promise(function(resolve){
       try{
@@ -29380,7 +29410,7 @@ overlay.classList.remove("hidden");
           input.style.top = "0";
           document.body.appendChild(input);
         }
-        input.onchange = function(){
+        input.onchange = async function(){
           try{
             var selectedFile = input.files && input.files[0];
             try{ input.value = ""; }catch(_){ }
@@ -29398,20 +29428,20 @@ overlay.classList.remove("hidden");
                 if(key) map.set(key, selectedFile);
               });
             }catch(_){ }
-            var ok = __mvOpenFileBlobInNewTab(selectedFile);
+            var ok = await __mvOpenPickedFileWeb(selectedFile);
             if(!ok){
-              try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ }
+              try{ toast(t("attach.webOpenUnavailable")); }catch(_){ }
             }
             resolve(!!ok);
           }catch(_){
-            try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
+            try{ toast(t("attach.webOpenUnavailable")); }catch(__){ }
             resolve(false);
           }
         };
         try{ input.value = ""; }catch(_){ }
         input.click();
       }catch(_){
-        try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
+        try{ toast(t("attach.webOpenUnavailable")); }catch(__){ }
         resolve(false);
       }
     });
