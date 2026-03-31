@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX</title>
+  <title>V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A128_WEBAPP_OPEN_PICKER_TOAST_FIX";
+const APP_BUILD = "V240_A128_WEBAPP_ATTACH_OPEN_SELECTED_FILE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -7221,8 +7221,86 @@ function __renderAttachmentsModal(){
   const openInput = document.getElementById("attOpenFilePicker");
   if(openInput && !openInput.__attBound){
     openInput.__attBound = true;
-    openInput.onchange = ()=>{
-      try{ openInput.value = ""; }catch{}
+    openInput.onchange = async ()=>{
+      try{
+        const file = openInput.files && openInput.files[0];
+        try{ openInput.value = ""; }catch{}
+        if(!file) return;
+        const pendingId = String((window.__mvPendingWebAttachOpenId || "")).trim();
+        try{
+          window.__attachmentsFileCache = window.__attachmentsFileCache || {};
+          if(pendingId) window.__attachmentsFileCache[pendingId] = file;
+        }catch{}
+        const openWithBlob = ()=>{
+          try{
+            const url = URL.createObjectURL(file);
+            let win = null;
+            try{ win = window.open(url, "_blank", "noopener"); }catch(_){ win = null; }
+            if(win){
+              setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 60000);
+              return true;
+            }
+            try{
+              const a = document.createElement("a");
+              a.href = url;
+              a.target = "_blank";
+              a.rel = "noopener";
+              a.style.display = "none";
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(()=>{ try{ URL.revokeObjectURL(url); }catch{} }, 60000);
+              return true;
+            }catch(_){
+              try{ URL.revokeObjectURL(url); }catch{}
+            }
+          }catch{}
+          return false;
+        };
+        let ok = openWithBlob();
+        if(!ok){
+          ok = await new Promise((resolve)=>{
+            try{
+              const reader = new FileReader();
+              reader.onload = ()=>{
+                try{
+                  const dataUrl = String(reader.result || "");
+                  if(!dataUrl){ resolve(false); return; }
+                  let win = null;
+                  try{ win = window.open(dataUrl, "_blank", "noopener"); }catch(_){ win = null; }
+                  if(win){ resolve(true); return; }
+                  try{
+                    const a = document.createElement("a");
+                    a.href = dataUrl;
+                    a.target = "_blank";
+                    a.rel = "noopener";
+                    a.style.display = "none";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    resolve(true);
+                    return;
+                  }catch(_){}
+                  resolve(false);
+                }catch(_){
+                  resolve(false);
+                }
+              };
+              reader.onerror = ()=>resolve(false);
+              reader.readAsDataURL(file);
+            }catch(_){
+              resolve(false);
+            }
+          });
+        }
+        if(!ok){
+          try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
+        }
+      }catch{
+        try{ toast("No se pudo abrir el archivo. Prueba 'Compartir' o vuelve a intentarlo."); }catch{}
+      }finally{
+        try{ window.__mvPendingWebAttachOpenId = null; }catch{}
+      }
     };
   }
 
@@ -7299,6 +7377,7 @@ function __handleAttachmentAction(action, id){
     }
     const input = document.getElementById("attOpenFilePicker");
     if(input){
+      try{ window.__mvPendingWebAttachOpenId = String(f.id || ""); }catch{}
       try{ input.value = ""; }catch{}
       try{ input.click(); }catch{}
       return;
