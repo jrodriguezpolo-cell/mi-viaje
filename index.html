@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A128_ATTACH_OPEN_FILEPICKER_WEBAPP_FIX</title>
+  <title>V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A128_ATTACH_OPEN_FILEPICKER_WEBAPP_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A128_ATTACH_OPEN_FILEPICKER_WEBAPP_FIX";
+const APP_BUILD = "V240_A127_WEBAPP_ATTACH_OPEN_FILEPICKER";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29362,6 +29362,60 @@ overlay.classList.remove("hidden");
       return false;
     }
   }
+  function __mvWebOpenAttachmentPickerToast(){
+    return "En webapp necesitas seleccionar el archivo para abrirlo. Elige el adjunto desde Archivos.";
+  }
+  function __mvPickAndOpenSingleFileWeb(file){
+    return new Promise(function(resolve){
+      try{
+        var f = (file && typeof file === "object") ? file : {};
+        var input = document.getElementById("mvWebAttachOpenInput");
+        if(!input){
+          input = document.createElement("input");
+          input.type = "file";
+          input.id = "mvWebAttachOpenInput";
+          input.className = "hidden";
+          input.style.position = "fixed";
+          input.style.left = "-99999px";
+          input.style.top = "0";
+          document.body.appendChild(input);
+        }
+        input.onchange = function(){
+          try{
+            var selectedFile = input.files && input.files[0];
+            try{ input.value = ""; }catch(_){ }
+            if(!selectedFile){ resolve(false); return; }
+            try{
+              var map = __mvEnsureWebTripFilesMap();
+              var rawKeys = [
+                String(f.relPath || f.path || "").trim(),
+                String(f.name || "").trim(),
+                String(f.originalName || "").trim(),
+                String(selectedFile.name || "").trim()
+              ].filter(Boolean);
+              rawKeys.forEach(function(raw){
+                var key = __mvNormalizeWebTripRelPath(raw);
+                if(key) map.set(key, selectedFile);
+              });
+            }catch(_){ }
+            var ok = __mvOpenFileBlobInNewTab(selectedFile);
+            if(!ok){
+              try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ }
+            }
+            resolve(!!ok);
+          }catch(_){
+            try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
+            resolve(false);
+          }
+        };
+        try{ input.value = ""; }catch(_){ }
+        input.click();
+      }catch(_){
+        try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
+        resolve(false);
+      }
+    });
+  }
   function __mvOpenAttachmentWeb(file){
     try{
       var f = (file && typeof file === "object") ? file : {};
@@ -29387,8 +29441,12 @@ overlay.classList.remove("hidden");
       var f = (file && typeof file === "object") ? file : {};
       var relPath = String(f.relPath || f.path || "").trim();
       if(!relPath){
-        try{ toast(t("attach.webOpenUnavailable")); }catch(_){ }
-        return false;
+        var fallbackName = String(f.name || f.originalName || "").trim();
+        if(fallbackName){
+          var byName = await __mvResolveWebAttachmentFile(fallbackName);
+          if(byName) return __mvOpenFileBlobInNewTab(byName);
+        }
+        return await __mvPickAndOpenSingleFileWeb(f);
       }
       var hasFolder = false;
       try{ hasFolder = !!window.__mvWebTripFolderHandle; }catch(_){ }
@@ -29399,17 +29457,20 @@ overlay.classList.remove("hidden");
       if(!hasFolder){
         try{ window.__mvPendingOpenAttachment = f; }catch(_){ }
         var picked = await __mvPickWebTripFolder();
-        if(!picked) return false;
-        return false;
+        if(!picked){
+          return await __mvPickAndOpenSingleFileWeb(f);
+        }
+        return await __mvOpenAttachmentWebFromFolder(f);
       }
       var realFile = await __mvResolveWebAttachmentFile(relPath);
       if(!realFile){
-        try{ toast(t("attach.webFolder.notFound")); }catch(_){ }
-        return false;
+        var byName2 = await __mvResolveWebAttachmentFile(String(f.name || f.originalName || "").trim());
+        if(byName2) return __mvOpenFileBlobInNewTab(byName2);
+        return await __mvPickAndOpenSingleFileWeb(f);
       }
       return __mvOpenFileBlobInNewTab(realFile);
     }catch(_){
-      try{ toast(t("attach.webOpenUnavailable")); }catch(__){ }
+      try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(__){ }
       return false;
     }
   }
@@ -29572,6 +29633,7 @@ overlay.classList.remove("hidden");
             '<div id="mvWebAttachFolderLine" class="text-xs" style="opacity:.8;min-width:0;flex:1"></div>' +
             '<button id="mvWebAttachPickFolderBtn" class="tap" type="button" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px;flex:0 0 auto"></button>' +
             '<input id="mvWebAttachFolderInput" type="file" webkitdirectory directory multiple class="hidden" />' +
+            '<input id="mvWebAttachOpenInput" type="file" class="hidden" />' +
           '</div>'
         ) : '') +
         '<div style="margin-top:10px">' + rows + '</div>'
@@ -29612,7 +29674,11 @@ overlay.classList.remove("hidden");
 
           if(action === "open"){
             if(!hasBridge){
-              Promise.resolve(__mvOpenAttachmentWebFromFolder(f)).catch(function(){ try{ toast(t("attach.webOpenUnavailable")); }catch(_){ } });
+              if(typeof window.showDirectoryPicker !== "function"){
+                __mvPickAndOpenSingleFileWeb(f);
+                return;
+              }
+              __mvOpenAttachmentWebFromFolder(f).catch(function(){ try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ } });
               return;
             }
             var rp = String(rel || f.relPath || "").trim();
