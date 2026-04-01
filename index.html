@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A148_TIPS_GEMINI_DONT_BLOCK_ON_PREMIUM</title>
+  <title>V240_A149_TIPS_GEMINI_PROFILE_AND_GENERIC_PREMIUM</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A148_TIPS_GEMINI_DONT_BLOCK_ON_PREMIUM</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A149_TIPS_GEMINI_PROFILE_AND_GENERIC_PREMIUM</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A148_TIPS_GEMINI_DONT_BLOCK_ON_PREMIUM";
+const APP_BUILD = "V240_A149_TIPS_GEMINI_PROFILE_AND_GENERIC_PREMIUM";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20664,10 +20664,11 @@ function __mvNormalizeTripAdvicePayload(payload){
       requiresPremium: item.requiresPremium === true,
       action: { type: "none", why: "", price: "", where: "", officialUrl: "", mapsQuery: "" },
       premium: {
+        queEs: String(premiumRaw.queEs || "").trim(),
         precio: String(premiumRaw.precio || "").trim(),
         dondeComprar: String(premiumRaw.dondeComprar || "").trim(),
         comparativa: String(premiumRaw.comparativa || premiumRaw.porQue || "").trim(),
-        familia5: String(premiumRaw.familia5 || "").trim(),
+        grupo: String(premiumRaw.grupo || premiumRaw.familia5 || "").trim(),
         enlaceOficial: String(premiumRaw.enlaceOficial || "").trim(),
         comoLlegar: String(premiumRaw.comoLlegar || "").trim()
       }
@@ -20718,10 +20719,11 @@ function __mvTripAdvicePremiumComplete(tip){
     const p = tip && tip.premium;
     if(!p || typeof p !== "object") return false;
     return !!(
+      String(p.queEs || "").trim() &&
       String(p.precio || "").trim() &&
       String(p.dondeComprar || "").trim() &&
       String(p.comparativa || "").trim() &&
-      String(p.familia5 || "").trim() &&
+      String(p.grupo || "").trim() &&
       String(p.enlaceOficial || "").trim() &&
       String(p.comoLlegar || "").trim()
     );
@@ -20775,10 +20777,11 @@ function __mvTripAdviceAIHTML(payload){
       ${tip.text ? `<div class="mt-1 text-sm text-slate-700">${escapeHtml(tip.text)}</div>` : ``}
       ${(tip.requiresPremium === true && !__mvTripAdvicePremiumComplete(tip)) ? `<div class="mt-2 inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Detalles premium pendientes</div>` : ``}
       ${premium ? `<div class="mt-2 grid gap-1 text-[13px] text-slate-500">
+        ${premium.queEs ? `<div><span class="font-semibold text-slate-600">Qué es:</span> ${escapeHtml(premium.queEs)}</div>` : ``}
         ${premium.precio ? `<div><span class="font-semibold text-slate-600">Precio:</span> ${escapeHtml(premium.precio)}</div>` : ``}
         ${premium.dondeComprar ? `<div><span class="font-semibold text-slate-600">Dónde comprar:</span> ${escapeHtml(premium.dondeComprar)}</div>` : ``}
         ${premium.comparativa ? `<div><span class="font-semibold text-slate-600">Comparativa:</span> ${escapeHtml(premium.comparativa)}</div>` : ``}
-        ${premium.familia5 ? `<div><span class="font-semibold text-slate-600">Para familia de 5:</span> ${escapeHtml(premium.familia5)}</div>` : ``}
+        ${premium.grupo ? `<div><span class="font-semibold text-slate-600">Para el grupo:</span> ${escapeHtml(premium.grupo)}</div>` : ``}
         ${premiumOfficial ? `<div><span class="font-semibold text-slate-600">Enlace:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumOfficial)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
         ${premiumMapsUrl ? `<div><span class="font-semibold text-slate-600">Cómo llegar:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumMapsUrl)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
       </div>` : ``}
@@ -21022,9 +21025,17 @@ function __mvTripAdviceAIPrompt(sc){
       `Mes/estación aproximada: ${monthLabel}`,
       `Perfil/Preferencias guardadas: tipo=${(prefs.tripTypes || []).join(", ") || "mixto"}; ritmo=${prefs.pace || "medio"}; grupo=${prefs.group || "familia"}; niños=${prefs.kids ? `sí (${prefs.kidsAges || "sin edades"})` : "sí (2 adultos + 3 niños por defecto)"}; sitios ocultos=${prefs.hiddenSpots ? "sí" : "no"}`
     ];
+    const profileLines = [
+      `Grupo: ${prefs.group || "familia de 5 (2 adultos + 3 niños)"}`,
+      `Niños: ${prefs.kids ? (prefs.kidsAges ? `sí (${prefs.kidsAges})` : "sí") : "sí (rango 4–12 por defecto)"}`,
+      `Mayores: desconocido`,
+      `Movilidad: normal`,
+      `Ritmo: ${prefs.pace || "medio"}`,
+      `Preferencias: evitar colas largas, descansos, comidas fáciles, transporte sencillo${prefs.hiddenSpots ? ", sitios ocultos" : ""}`
+    ];
     const bullets = __mvTripAdviceBullets(sc);
     if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
-    return `DEVUELVE SOLO JSON válido (sin texto extra, sin markdown).
+    return `DEVUELVE SOLO JSON válido (sin markdown, sin explicaciones).
 Si no sabes un dato, usa "no confirmado".
 
 FORMATO:
@@ -21041,10 +21052,11 @@ FORMATO:
           "detalle":"...",
           "requiresPremium": true,
           "premium":{
+            "queEs":"...",
             "precio":"...",
             "dondeComprar":"...",
             "comparativa":"- Opción A: ...\\n- Opción B: ...\\n- Recomendación final: ...",
-            "familia5":"...",
+            "grupo":"...",
             "enlaceOficial":"...",
             "comoLlegar":"..."
           }
@@ -21056,11 +21068,31 @@ FORMATO:
 }
 
 REGLAS:
-- Rellena SIEMPRE al menos 6 items en "general" (ropa/clima, calzado, powerbank, ritmo con niños, documentación, hidratación).
-- En "porCiudad": para cada ciudad visitada, crea al menos 3 items.
+- Rellena SIEMPRE al menos 10 items en "general".
+- En "porCiudad": para cada ciudad visitada, crea al menos 4 items.
 - Para items que impliquen compra/abono/entrada/reserva => requiresPremium=true y premium COMPLETO.
 - Para consejos sin compra (ej: “calzado cómodo”, “hidratarse”) => requiresPremium=false y premium puede omitirse o estar vacío.
 - Para Uber/Lyft => requiresPremium=true pero premium debe explicar “cómo conseguir (apps)”, “rango coste orientativo”, “por qué vs alternativas”, “links oficiales”, y “cómo llegar” puede ser "no aplica".
+- En premium, incluye SIEMPRE queEs + dondeComprar + precio + comparativa + grupo + enlaceOficial. Cómo llegar solo si hay lugar físico concreto; si no, "no aplica".
+
+REGLAS DE CONTENIDO (OBLIGATORIAS)
+A) GENERAL (mínimo 10 items)
+1. Ropa por clima/estación
+2. Calzado según ritmo
+3. Planificación
+4. Ritmo familiar
+5. Powerbank/batería y conectividad
+6. Documentación/seguros/copias digitales
+7. Hidratación/sol/crema si aplica
+8. Mochila/impermeable si aplica
+9. Propinas/costumbres básicas si aplica
+10. Seguridad práctica
+
+B) POR CIUDAD (mínimo 4 items por ciudad visitada)
+- Un item debe ser “Movilidad/Transporte”.
+- Otro debe ser “Reservas/Entradas” si hay actividades típicas.
+- Otro debe ser “Tip familiar”.
+- Otro debe ser “Logística útil”.
 
 CONTEXTO:
 - Perfil: familia de 5 (2 adultos + 3 niños) si no hay otro dato.
@@ -21068,6 +21100,9 @@ CONTEXTO:
 - Fechas/mes aproximado: ${monthLabel}
 - Estilo: turismo + familia + ritmo medio.
 - Si no hay clima real, asume consejos por estación.
+
+PERFIL DEL GRUPO:
+${profileLines.join("\n")}
 
 DATOS DEL VIAJE:
 ${lines.join("\n")}
