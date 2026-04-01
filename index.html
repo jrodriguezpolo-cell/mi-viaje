@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A136_ATTACH_PREVIEW_FOREGROUND_FIX</title>
+  <title>V240_A137_ATTACH_MODAL_LAYOUT_ADD_OPEN_RENAME</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A136_ATTACH_PREVIEW_FOREGROUND_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A137_ATTACH_MODAL_LAYOUT_ADD_OPEN_RENAME</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A136_ATTACH_PREVIEW_FOREGROUND_FIX";
+const APP_BUILD = "V240_A137_ATTACH_MODAL_LAYOUT_ADD_OPEN_RENAME";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29717,6 +29717,11 @@ overlay.classList.remove("hidden");
       var arr = __mvEnsureAttachmentsArray(obj).slice().sort(function(a,b){
         return (Number((a&&a.addedAt)||0) - Number((b&&b.addedAt)||0));
       });
+      var selectedId = String((obj && obj.__mvAttachSelectedId) || ((arr[0] && arr[0].id) || "")).trim();
+      if(selectedId && !arr.some(function(x){ return String((x&&x.id)||"") === selectedId; })){
+        selectedId = String((arr[0] && arr[0].id) || "").trim();
+      }
+      try{ obj.__mvAttachSelectedId = selectedId; }catch(_){ }
 
       var rows = arr.length ? arr.map(function(f){
         var id = String((f&&f.id)||"");
@@ -29734,18 +29739,17 @@ overlay.classList.remove("hidden");
           meta.push('<div class="text-xs" style="opacity:.7">(sin ruta)</div>');
         }
         var sub = meta.join("");
-        var cols = hasBridge ? '4' : '3';
+        var isSelected = (id === selectedId);
+        var rowBg = isSelected ? 'rgba(29,78,216,.08)' : 'transparent';
+        var rowBorder = isSelected ? 'rgba(29,78,216,.35)' : 'rgba(148,163,184,.35)';
         return (
-          '<div class="flex items-stretch justify-between gap-2" style="padding:10px 0;border-bottom:1px solid rgba(148,163,184,.35)">' +
-            '<div class="min-w-0" style="flex:1">' +
+          '<div class="flex items-stretch justify-between gap-2" style="padding:10px;border:1px solid '+rowBorder+';background:'+rowBg+';border-radius:12px;margin-bottom:8px">' +
+            '<button class="tap min-w-0 text-left" style="flex:1" data-att-action="select" data-att-id="'+escapeHtml(id)+'">' +
               '<div style="font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(name)+'</div>' +
               sub +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:repeat('+cols+',minmax(0,1fr));gap:8px;flex:0 0 auto">' +
-              '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="open" data-att-id="'+escapeHtml(id)+'" data-att-rel="'+escapeHtml(rel)+'">'+escapeHtml(t("attach.open"))+'</button>' +
-              '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="copyName" data-att-id="'+escapeHtml(id)+'">'+escapeHtml(t("attachments.copyName"))+'</button>' +
+            '</button>' +
+            '<div style="display:flex;align-items:center;gap:8px;flex:0 0 auto">' +
               '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="rename" data-att-id="'+escapeHtml(id)+'">'+escapeHtml(t("attachments.rename"))+'</button>' +
-              (hasBridge ? '<button class="tap" style="padding:6px 10px;border-radius:12px;border:1px solid rgba(148,163,184,.7);font-weight:800;font-size:12px" data-att-action="delete" data-att-id="'+escapeHtml(id)+'" data-att-rel="'+escapeHtml(rel)+'">'+escapeHtml(t("attach.delete"))+'</button>' : '') +
             '</div>' +
           '</div>'
         );
@@ -29753,7 +29757,10 @@ overlay.classList.remove("hidden");
 
       host.innerHTML = (
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-          '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+            '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' +
+            '<button id="attOpenFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900;'+(arr.length?'':'opacity:.45;pointer-events:none;')+'">'+escapeHtml(t("attach.open"))+'</button>' +
+          '</div>' +
           (!hasBridge ? '<input id="mvWebAttachAddInput" type="file" class="hidden" />' : '') +
         '</div>' +
         (!hasBridge ? (
@@ -29790,6 +29797,30 @@ overlay.classList.remove("hidden");
           if(!ok){ try{ toast(t("attach.noBridge")); }catch(_){ } }
         };
       }
+      var openBtn = document.getElementById("attOpenFile");
+      if(openBtn){
+        openBtn.onclick = function(e){
+          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          var filesNow = __mvEnsureAttachmentsArray(obj);
+          if(!filesNow.length) return;
+          var pickId = String((obj && obj.__mvAttachSelectedId) || "").trim();
+          var idxPick = filesNow.findIndex(function(x){ return String((x&&x.id)||"") === pickId; });
+          if(idxPick < 0) idxPick = 0;
+          var fPick = filesNow[idxPick] || null;
+          if(!fPick) return;
+          if(!hasBridge){
+            if(typeof window.showDirectoryPicker !== "function"){
+              __mvPickAndOpenSingleFileWeb(fPick);
+              return;
+            }
+            __mvOpenAttachmentWebFromFolder(fPick).catch(function(){ try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ } });
+            return;
+          }
+          var rpPick = String(fPick.relPath || fPick.path || "").trim();
+          if(!rpPick){ try{ toast(t("attach.noPathOpen")); }catch(_){ } return; }
+          __mvPostAttachment({ action:"openAttachment", relPath: rpPick });
+        };
+      }
       var webAddInput = document.getElementById("mvWebAttachAddInput");
       if(webAddInput){
         webAddInput.onchange = function(){
@@ -29810,6 +29841,7 @@ overlay.classList.remove("hidden");
               addedAt: Date.now(),
               context: null
             });
+            try{ obj.__mvAttachSelectedId = String(filesAdd[filesAdd.length-1].id || ""); }catch(_){ }
             try{
               window.__attachmentsFileCache = window.__attachmentsFileCache || {};
               window.__attachmentsFileCache[String(filesAdd[filesAdd.length-1].id || "")] = picked;
@@ -29873,23 +29905,9 @@ overlay.classList.remove("hidden");
           __mvPostAttachment({ action:"openAttachment", relPath: rp });
           return;
         }
-
-        if(action === "copyName"){
-          var visibleName = String(f.name || f.originalName || "").trim();
-          if(!visibleName) return;
-          try{
-            if(navigator.clipboard && navigator.clipboard.writeText){
-              Promise.resolve(navigator.clipboard.writeText(visibleName)).then(function(){
-                try{ toast(t("attachments.nameCopied")); }catch(_){ }
-              }).catch(function(){
-                try{ toast(t("attachments.copyFailed")); }catch(_){ }
-              });
-            }else{
-              throw new Error("clipboard unavailable");
-            }
-          }catch(_){
-            try{ toast(t("attachments.copyFailed")); }catch(__){ }
-          }
+        if(action === "select"){
+          try{ obj.__mvAttachSelectedId = String(id || ""); }catch(_){ }
+          __mvRenderAttachList(obj);
           return;
         }
 
@@ -29907,24 +29925,6 @@ overlay.classList.remove("hidden");
           return;
         }
 
-        if(action === "delete"){
-          if(!hasBridge){
-            files.splice(idx, 1);
-            __mvSafeSaveAfterAttachmentChange();
-            __mvUpdateAttachBadge(obj);
-            __mvRenderAttachList(obj);
-            try{ toast(t("attach.deleted")); }catch(_){ }
-            return;
-          }
-          var rp2 = String(rel || f.relPath || "").trim();
-          files.splice(idx, 1);
-          __mvSafeSaveAfterAttachmentChange();
-          if(rp2) __mvPostAttachment({ action:"deleteAttachment", relPath: rp2 });
-          __mvUpdateAttachBadge(obj);
-          __mvRenderAttachList(obj);
-          try{ toast(t("attach.deleted")); }catch(_){ }
-          return;
-        }
       };
       host.addEventListener("click", host.__mvDelegatedHandler, true);
 
