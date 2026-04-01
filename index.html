@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A140_ACTIVITY_REPEAT_DATE_RANGE</title>
+  <title>V240_A141_GAPS_CITY_NO_LOCAL_USE_GEMINI</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A140_ACTIVITY_REPEAT_DATE_RANGE</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A141_GAPS_CITY_NO_LOCAL_USE_GEMINI</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A140_ACTIVITY_REPEAT_DATE_RANGE";
+const APP_BUILD = "V240_A141_GAPS_CITY_NO_LOCAL_USE_GEMINI";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -28484,7 +28484,7 @@ loadTripCities(opts){
         go.addEventListener("click", ()=> wireNav("legs"));
       }
     },
-loadTripGapsFill(opts){
+async loadTripGapsFill(opts){
       this.state.actionInfoHtml = "";
       this.state.actionInfoStatus = "";
       this.renderShell();
@@ -28534,6 +28534,7 @@ loadTripGapsFill(opts){
       const allDays = this.__aiCollectTripDays(trip, stayRanges);
 
       const existingTitles = new Set((Array.isArray(trip.activities)?trip.activities:[]).map(a=> this.__aiNormTitle(a && (a.title||a.name))).filter(Boolean));
+      const hasGeminiKey = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
 
       const parseHM = (s)=>{
         const m = /^(\d{1,2}):(\d{2})$/.exec(String(s||"").trim());
@@ -28652,6 +28653,44 @@ loadTripGapsFill(opts){
         const pick = Math.max(g.s, Math.min(g.e-60, g.s + 15));
         return fmtHM(pick);
       };
+
+      const ensureGeminiStockForGapCity = async (city)=>{
+        if(!hasGeminiKey) return false;
+        const cityName = String(city || "").trim();
+        if(!cityName) return false;
+        const { entry, cityKey } = this.__mvGetCityPool(cityName);
+        const usable = entry.order.map((id)=>entry.items[id]).filter((item)=>{
+          const titleNorm = this.__aiNormTitle(item && item.title || "");
+          return item && titleNorm && !existingTitles.has(titleNorm) && item.status !== "selected" && item.status !== "dismissed";
+        });
+        const usableLocal = usable.filter((item)=> item.source === "local");
+        if(usable.length || usableLocal.length) return false;
+        try{
+          await this.__mvRequestCityRecsWithGemini(cityKey || cityName);
+          return true;
+        }catch{
+          return false;
+        }
+      };
+
+      const gapCityKeysHandled = new Set();
+      const geminiPrefillTasks = [];
+      for(const day of allDays){
+        const b = buckets[day] || { legs:[], checkins:[], checkouts:[], acts:[] };
+        const actN = (b.acts||[]).length;
+        const isGap = (actN === 0) || (actN === 1 && ((b.legs||[]).length + (b.checkins||[]).length + (b.checkouts||[]).length) === 0);
+        if(!isGap) continue;
+        if(isBusyDay(day)) continue;
+        const ctx = this.__aiDayContext(day, trip, stayRanges, b);
+        const city = String(ctx && ctx.city || "").trim();
+        const cityKey = this.__aiCityKey(city);
+        if(!cityKey || gapCityKeysHandled.has(cityKey)) continue;
+        gapCityKeysHandled.add(cityKey);
+        geminiPrefillTasks.push(ensureGeminiStockForGapCity(city));
+      }
+      if(geminiPrefillTasks.length){
+        try{ await Promise.all(geminiPrefillTasks); }catch{}
+      }
 
       const gapBlocks = [];
       const maxBlocks = 6;
