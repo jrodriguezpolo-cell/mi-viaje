@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD</title>
+  <title>V240_A146_TIPS_AI_ACTIONABLE_DETAILS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_AI_ACTIONABLE_DETAILS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD";
+const APP_BUILD = "V240_A146_TIPS_AI_ACTIONABLE_DETAILS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20635,9 +20635,12 @@ function __mvNormalizeTripAdviceTip(raw){
 
 function __mvNormalizeTripAdvicePayload(payload){
   const src = (payload && typeof payload === "object") ? payload : {};
+  const legacyBullets = Array.isArray(src.bullets) ? src.bullets : [];
   const oldGeneral = Array.isArray(src.generalBullets) ? src.generalBullets : [];
   const oldCityTips = (src.cityTips && typeof src.cityTips === "object") ? src.cityTips : {};
-  const generalTips = Array.isArray(src.generalTips) ? src.generalTips.map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text) : oldGeneral.map((txt)=> __mvNormalizeTripAdviceTip({ title: "", text: txt })).filter((tip)=> tip.title || tip.text);
+  const generalTips = Array.isArray(src.generalTips)
+    ? src.generalTips.map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text)
+    : (legacyBullets.length ? legacyBullets : oldGeneral).map((txt)=> __mvNormalizeTripAdviceTip({ title: "", text: txt })).filter((tip)=> tip.title || tip.text);
   const byCityRaw = (src.byCity && typeof src.byCity === "object") ? src.byCity : oldCityTips;
   const byCity = {};
   Object.keys(byCityRaw || {}).forEach((city)=>{
@@ -20903,58 +20906,28 @@ Resumen del itinerario:
 ${lines.join("\n")}
 
 Devuelve SOLO JSON válido con este formato:
-{
-  "generalTips": [
-    {
-      "title": "string corto",
-      "text": "1-2 frases",
-      "action": {
-        "type": "none",
-        "why": "",
-        "price": "",
-        "where": "",
-        "officialUrl": "",
-        "mapsQuery": ""
-      }
-    }
-  ],
-  "byCity": {
-    "Nueva York": [
-      {
-        "title": "string corto",
-        "text": "1-2 frases",
-        "action": {
-          "type": "none",
-          "why": "",
-          "price": "",
-          "where": "",
-          "officialUrl": "",
-          "mapsQuery": ""
-        }
-      }
-    ]
-  }
-}
+{"bullets":["...","..."]}
 
 Instrucciones:
-- "generalTips": 6 a 10 tips máximo
-- "byCity": una sección por cada ciudad visitada, con 4 a 6 tips por ciudad
-- cada tip debe incluir title y text
-- action.type solo puede ser: "none", "transport_pass", "ticket", "reservation" o "go"
-- si recomiendas algo accionable o comprable, action debe incluir:
-  why = por qué se recomienda frente a alternativas
-  price = precio solo si estás seguro; si dudas usa exactamente "Consultar oficial"
-  where = dónde se compra o gestiona
-  officialUrl = enlace oficial si existe
-  mapsQuery = nombre+ciudad o dirección si es un lugar físico
-- si recomiendas MetroCard, OMNY, abonos, pases o tickets, debes usar action.type="transport_pass" o "ticket" y debes incluir where + officialUrl + why + price y mapsQuery si hay punto físico
-- si existe alternativa, explica en why por qué recomiendas una frente a otra según el tipo de viaje
+- devuelve entre 6 y 12 bullets máximo
+- cada bullet debe ser accionable y útil
+- cuando recomiendes algo que se compra o se gestiona, el propio bullet debe incluir SIEMPRE:
+  "Coste (aprox.): ..."
+  "Dónde comprar: ..."
+  "Por qué: ..."
+  "Cómo llegar: https://www.google.com/maps/search/?api=1&query=..."
+  "Info oficial: ..."
+- si no estás 100% seguro del precio actual, escribe exactamente "Coste (aprox.): variable" o "Coste (aprox.): Consultar oficial"
+- si mencionas MetroCard, OMNY, abonos, pases, tickets o reservas, debes incluir siempre coste + dónde comprar + por qué + cómo llegar + info oficial
+- si hay alternativas, compáralas brevemente en "Por qué"
+- si el itinerario incluye varias ciudades, incluye al menos 1 o 2 bullets específicos por ciudad cuando aplique
 - consejos prácticos y accionables
 - habla de ropa por época sin inventar clima real ni temperaturas
 - incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
-- estructura obligatoria: primero consejos generales, luego consejos por ciudad
 - NO inventes nombres ni datos que no estén presentes
-- prioriza web oficial frente a webs de terceros
+- prioriza web oficial frente a webs de terceros; si no la conoces, escribe "Info oficial: web del operador (verifica)"
+- ejemplo de formato válido de bullet:
+  "Nueva York · Transporte: MetroCard/OMNY. Coste (aprox.): variable (consulta MTA). Dónde comprar: máquinas en estaciones / app OMNY. Por qué: suele ser más eficiente y barato que taxi en desplazamientos urbanos. Cómo llegar: https://www.google.com/maps/search/?api=1&query=MetroCard+vending+machine+New+York. Info oficial: https://new.mta.info (verifica)."
 - evita texto largo y devuelve SOLO JSON, sin markdown ni comentarios`;
   }catch(_){
     return "";
@@ -20988,6 +20961,7 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
     const payload = __mvNormalizeTripAdvicePayload({
       source: "gemini",
+      bullets: Array.isArray(out && out.bullets) ? out.bullets : [],
       generalTips: Array.isArray(out && out.generalTips) ? out.generalTips : [],
       byCity: (out && out.byCity && typeof out.byCity === "object") ? out.byCity : {},
       meta: { signature: signature }
