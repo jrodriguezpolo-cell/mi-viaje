@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI</title>
+  <title>V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI";
+const APP_BUILD = "V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -11065,6 +11065,52 @@ function __ensurePreferences() {
   return p;
 }
 
+const MV_TRAVEL_PREFS_KEY = "mvTravelPrefs_v1";
+function __mvDefaultTravelPrefs(){
+  return {
+    tripTypes: [],
+    pace: "medio",
+    group: "pareja",
+    kids: false,
+    kidsAges: "",
+    hiddenSpots: false
+  };
+}
+function __mvLoadTravelPrefs(){
+  try{
+    const raw = localStorage.getItem(MV_TRAVEL_PREFS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const base = __mvDefaultTravelPrefs();
+    base.tripTypes = Array.isArray(parsed && parsed.tripTypes) ? parsed.tripTypes.map(x=>String(x||"").trim()).filter(Boolean) : [];
+    base.pace = String(parsed && parsed.pace || base.pace).trim() || base.pace;
+    base.group = String(parsed && parsed.group || base.group).trim() || base.group;
+    base.kids = parsed && parsed.kids === true;
+    base.kidsAges = String(parsed && parsed.kidsAges || "").trim();
+    base.hiddenSpots = parsed && parsed.hiddenSpots === true;
+    return base;
+  }catch(_){
+    return __mvDefaultTravelPrefs();
+  }
+}
+function __mvSaveTravelPrefs(next){
+  try{
+    const safe = Object.assign(__mvDefaultTravelPrefs(), next || {});
+    safe.tripTypes = Array.isArray(safe.tripTypes) ? safe.tripTypes.map(x=>String(x||"").trim()).filter(Boolean) : [];
+    safe.pace = String(safe.pace || "medio").trim() || "medio";
+    safe.group = String(safe.group || "pareja").trim() || "pareja";
+    safe.kids = safe.kids === true;
+    safe.kidsAges = String(safe.kidsAges || "").trim();
+    safe.hiddenSpots = safe.hiddenSpots === true;
+    localStorage.setItem(MV_TRAVEL_PREFS_KEY, JSON.stringify(safe));
+    return safe;
+  }catch(_){
+    return __mvDefaultTravelPrefs();
+  }
+}
+function __mvGetTravelPrefs(){
+  return __mvLoadTravelPrefs();
+}
+
 function __normFold(s){
   try{ return (s||"").toString().trim().toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,""); }
   catch{ return (s||"").toString().trim().toLowerCase(); }
@@ -11077,6 +11123,7 @@ function __normFold(s){
 
 function openPreferencesModal(){
   const p = __ensurePreferences();
+  const travelPrefs = __mvGetTravelPrefs();
   const tastesAll = [
     ["Naturaleza","prefs.taste.nature"],
     ["Cultura","prefs.taste.culture"],
@@ -11132,6 +11179,19 @@ const cities = (p.citiesVisited||[]).map((c,i)=>{
     <button type="button" class="prefCityDel tap px-2 py-1 rounded-full hover:bg-slate-200" data-city-idx="${i}">✕</button>
   </div>`;
 }).join("") || `<div class="text-sm text-slate-500">${escapeHtml(t("prefs.noCities"))}</div>`;
+
+  const tripTypeOptions = [
+    ["cultural","cultural"],
+    ["parques-tematicos","parques-temáticos"],
+    ["naturaleza","naturaleza"],
+    ["relax","relax"],
+    ["gastronomia","gastronomía"],
+    ["compras","compras"]
+  ];
+  const tripTypesHtml = tripTypeOptions.map(([value,label])=>{
+    const on = travelPrefs.tripTypes.includes(value);
+    return `<label class="inline-flex items-center gap-2 px-3 py-2 rounded-full border ${on?"bg-slate-900 text-white border-slate-900":"bg-white text-slate-800 border-slate-200"}"><input type="checkbox" class="prefTravelType" value="${escapeHtml(value)}" ${on?"checked":""}>${escapeHtml(label)}</label>`;
+  }).join(" ");
 
   const body = `
   <div class="space-y-5">
@@ -11192,6 +11252,47 @@ const cities = (p.citiesVisited||[]).map((c,i)=>{
         <input id="prefCityInput" type="text" class="flex-1 h-10 px-3 rounded-xl border border-slate-200" placeholder="${escapeHtml(t("prefs.addCity"))}" />
         <button type="button" id="prefCityAdd" class="tap px-4 h-10 rounded-xl bg-slate-900 text-white font-extrabold">${escapeHtml(t("prefs.add"))}</button>
       </div>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+      <div class="font-extrabold">Preferencias del viaje</div>
+      <div class="text-xs text-slate-500 mt-1">Personalizan Tips e IA del viaje.</div>
+      <div class="mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-2">Tipo de viaje</div>
+        <div class="flex flex-wrap gap-2">${tripTypesHtml}</div>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Ritmo</div>
+          <select id="prefTravelPace" class="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white">
+            <option value="tranquilo" ${travelPrefs.pace==="tranquilo"?"selected":""}>tranquilo</option>
+            <option value="medio" ${travelPrefs.pace==="medio"?"selected":""}>medio</option>
+            <option value="intenso" ${travelPrefs.pace==="intenso"?"selected":""}>intenso</option>
+          </select>
+        </label>
+        <label class="block">
+          <div class="text-xs font-bold text-slate-600 mb-1">Grupo</div>
+          <select id="prefTravelGroup" class="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white">
+            <option value="pareja" ${travelPrefs.group==="pareja"?"selected":""}>pareja</option>
+            <option value="familia" ${travelPrefs.group==="familia"?"selected":""}>familia</option>
+            <option value="amigos" ${travelPrefs.group==="amigos"?"selected":""}>amigos</option>
+          </select>
+        </label>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3">
+        <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <input id="prefTravelKids" type="checkbox" ${travelPrefs.kids ? "checked" : ""}>
+          Niños
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <input id="prefTravelHiddenSpots" type="checkbox" ${travelPrefs.hiddenSpots ? "checked" : ""}>
+          Priorizar sitios ocultos
+        </label>
+      </div>
+      <label class="block mt-3">
+        <div class="text-xs font-bold text-slate-600 mb-1">Edades niños (opcional)</div>
+        <input id="prefTravelKidsAges" type="text" class="w-full h-10 px-3 rounded-xl border border-slate-200" placeholder="Ej: 4, 8" value="${escapeHtml(travelPrefs.kidsAges || "")}" />
+      </label>
     </div>
 
   </div>`;
@@ -11398,6 +11499,16 @@ function __savePreferencesFromModal(){
 
   // cities already mutated live; just normalize struct
   __prefsEnsureCitiesStruct(p);
+
+  const travelTypes = Array.from(document.querySelectorAll(".prefTravelType:checked")).map((el)=> String(el.value || "").trim()).filter(Boolean);
+  __mvSaveTravelPrefs({
+    tripTypes: travelTypes,
+    pace: String($("prefTravelPace")?.value || "medio").trim() || "medio",
+    group: String($("prefTravelGroup")?.value || "pareja").trim() || "pareja",
+    kids: !!$("prefTravelKids")?.checked,
+    kidsAges: String($("prefTravelKidsAges")?.value || "").trim(),
+    hiddenSpots: !!$("prefTravelHiddenSpots")?.checked
+  });
 
   saveState();
   toast(t("prefs.saved"));
@@ -20350,17 +20461,10 @@ function __mvTripAdviceBullets(sc){
     const acts = safeArr(sc && sc.activities);
     if(!legs.length && !stays.length && !acts.length) return [];
     const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-    const cityCounts = new Map();
-    const bumpCity = (city)=>{
-      const key = String(city || "").trim();
-      if(!key) return;
-      cityCounts.set(key, (cityCounts.get(key) || 0) + 1);
-    };
-    legs.forEach((leg)=>{ bumpCity(leg && leg.to); });
-    stays.forEach((stay)=>{ bumpCity(stay && stay.city); });
-    acts.forEach((act)=>{ bumpCity(act && act.city); });
-    const firstLegDestination = String(legs[0] && (legs[0].to || legs[0].destination) || "").trim();
-    const mainCity = firstLegDestination || (Array.from(cityCounts.entries()).sort((a,b)=> (b[1]-a[1]) || a[0].localeCompare(b[0]))[0]?.[0] || "");
+    const cityMeta = __mvTripAdviceCitiesMeta(sc);
+    const citiesVisited = cityMeta.citiesVisited || [];
+    const mainCity = citiesVisited[0] || "";
+    const prefs = __mvGetTravelPrefs();
 
     const dates = [];
     const pushDate = (value)=>{
@@ -20418,11 +20522,95 @@ function __mvTripAdviceBullets(sc){
     }
     if(tightPlan) advice.push("Plan apretado: deja margen entre actividades y revisa trayectos antes de salir.");
     if((dates.length >= 4) || acts.length >= 4) advice.push("Batería/powerbank: te vendrá bien para mapas, billetes y fotos en días largos.");
+    if(String(prefs.group || "") === "familia" || prefs.kids) advice.push("Familia: prioriza pausas, agua y tiempos colchón en los cambios de plan.");
+    if((prefs.tripTypes || []).includes("parques-tematicos")) advice.push("Parques temáticos: lleva batería, reservas y revisa descansos/comidas con antelación.");
+    if((prefs.tripTypes || []).includes("compras")) advice.push("Compras: reserva huecos concretos para evitar cargar bolsas todo el día.");
+    if(prefs.hiddenSpots) advice.push("Sitios ocultos: combina imprescindibles con bloques flexibles para descubrir zonas menos obvias.");
 
     return advice.filter(Boolean).slice(0, 6);
   }catch(_){
     return [];
   }
+}
+
+function __mvTripAdviceCitiesMeta(sc){
+  try{
+    const safeArr = (arr)=> Array.isArray(arr) ? arr : [];
+    const norm = (v)=> String(v || "").trim().replace(/\s+/g, " ");
+    const keyOf = (v)=>{
+      const s = norm(v).toLowerCase();
+      try{ return s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(_){ return s; }
+    };
+    const map = new Map();
+    const ensure = (city)=>{
+      const name = norm(city);
+      const key = keyOf(name);
+      if(!key) return null;
+      if(!map.has(key)) map.set(key, { city: name, stayDays: 0, activityCount: 0, arrivingLegs: 0 });
+      return map.get(key);
+    };
+    const legs = safeArr(sc && sc.legs);
+    const stays = safeArr(sc && sc.stays);
+    const acts = safeArr(sc && sc.activities);
+    const homeCity = norm(legs[0] && (legs[0].from || legs[0].fromCity || legs[0].origin || legs[0].originCity) || stays[0] && stays[0].city || acts[0] && acts[0].city || "");
+    const homeKey = keyOf(homeCity);
+    legs.forEach((leg)=>{
+      const row = ensure(leg && (leg.to || leg.toCity || leg.destination || leg.destinationCity));
+      if(row) row.arrivingLegs += 1;
+      ensure(leg && (leg.from || leg.fromCity || leg.origin || leg.originCity));
+    });
+    stays.forEach((stay)=>{
+      const row = ensure(stay && stay.city);
+      if(!row) return;
+      const inDate = String(stay && (stay.date || stay.checkinDate || stay.checkInDate || stay.startDate) || "").trim();
+      const outDate = String(stay && (stay.checkoutDate || stay.checkOutDate || stay.endDate || stay.dateOut) || "").trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(inDate) && /^\d{4}-\d{2}-\d{2}$/.test(outDate)){
+        const diff = Math.round((new Date(`${outDate}T00:00:00`).getTime() - new Date(`${inDate}T00:00:00`).getTime()) / 86400000);
+        row.stayDays += Math.max(1, diff);
+      }else{
+        row.stayDays += Math.max(1, parseInt(stay && stay.nights || 1, 10) || 1);
+      }
+    });
+    acts.forEach((act)=>{
+      const row = ensure(act && (act.city || act.place || act.location));
+      if(row) row.activityCount += 1;
+    });
+    const citiesVisited = Array.from(map.entries())
+      .filter(([key])=> key && key !== homeKey)
+      .map(([,row])=> row)
+      .sort((a,b)=> (b.stayDays - a.stayDays) || (b.activityCount - a.activityCount) || (b.arrivingLegs - a.arrivingLegs) || a.city.localeCompare(b.city, "es"))
+      .map((row)=> row.city);
+    return { baseCity: homeCity, citiesVisited, weights: Array.from(map.values()) };
+  }catch(_){
+    return { baseCity: "", citiesVisited: [], weights: [] };
+  }
+}
+
+function __mvTripAdvicePrefsHash(){
+  try{
+    const prefs = __mvGetTravelPrefs();
+    return JSON.stringify({
+      tripTypes: (prefs.tripTypes || []).slice().sort(),
+      pace: prefs.pace || "medio",
+      group: prefs.group || "pareja",
+      kids: prefs.kids === true,
+      kidsAges: prefs.kidsAges || "",
+      hiddenSpots: prefs.hiddenSpots === true
+    });
+  }catch(_){
+    return "{}";
+  }
+}
+
+function __mvTripAdviceAIHTML(payload){
+  const general = Array.isArray(payload && payload.generalBullets) ? payload.generalBullets.filter(Boolean) : [];
+  const cityTips = (payload && payload.cityTips && typeof payload.cityTips === "object") ? payload.cityTips : {};
+  const cityEntries = Object.entries(cityTips).filter(([city, arr])=> String(city || "").trim() && Array.isArray(arr) && arr.length);
+  return `
+    <div class="space-y-3">
+      ${general.length ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos generales</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${general.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div></div>` : ``}
+      ${cityEntries.map(([city, arr])=>`<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos por ciudad</div><div class="mt-2 font-extrabold text-slate-900">${escapeHtml(city)}</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${arr.map(item=>`<div>• ${escapeHtml(String(item || "").trim())}</div>`).join("")}</div></div>`).join("")}
+    </div>`;
 }
 
 function __mvTripAdviceHTML(sc){
@@ -20473,7 +20661,7 @@ function __mvTripAdviceModalBodyHTML(sc){
     const aiBadge = (aiCache && String(aiCache.source || "").toLowerCase() === "gemini")
       ? `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>`
       : ``;
-    const aiHtml = aiCache ? `${aiBadge}${__mvTomorrowTipsAIHTML(aiCache)}` : ``;
+    const aiHtml = aiCache ? `${aiBadge}${__mvTripAdviceAIHTML(aiCache)}` : ``;
     return `
       <div class="max-h-[70vh] overflow-y-auto pr-1 space-y-3">
         ${basicHtml}
@@ -20540,15 +20728,8 @@ function __mvTripAdviceGeminiCacheSignature(sc){
   try{
     const data = __mvExecutiveSummaryData();
     const ov = data && data.overview ? data.overview : {};
-    const addCity = (set, value)=>{
-      const s = String(value || "").trim();
-      if(s) set.add(s);
-    };
-    const citySet = new Set();
-    (Array.isArray(sc && sc.legs) ? sc.legs : []).forEach((leg)=>{ addCity(citySet, leg && leg.from); addCity(citySet, leg && leg.to); });
-    (Array.isArray(sc && sc.stays) ? sc.stays : []).forEach((stay)=> addCity(citySet, stay && stay.city));
-    (Array.isArray(sc && sc.activities) ? sc.activities : []).forEach((act)=> addCity(citySet, act && act.city));
-    const citiesSummary = Array.from(citySet).sort((a,b)=> a.localeCompare(b)).slice(0, 12).join("|");
+    const cityMeta = __mvTripAdviceCitiesMeta(sc);
+    const citiesSummary = (cityMeta.citiesVisited || []).join("|");
     return [
       String(state && state.scenario || "A"),
       String(ov.dateStart || ""),
@@ -20556,7 +20737,8 @@ function __mvTripAdviceGeminiCacheSignature(sc){
       String(ov.transportCount || 0),
       String(ov.stayCount || 0),
       String(ov.activityCount || 0),
-      citiesSummary
+      citiesSummary,
+      __mvTripAdvicePrefsHash()
     ].join("::");
   }catch(_){
     return "";
@@ -20567,18 +20749,13 @@ function __mvLoadTripAdviceGeminiCache(signature){
   try{
     if(!signature) return null;
     const scenarioLetter = String(state && state.scenario || "A");
-    const raw = localStorage.getItem(`mvTipsGeminiCache_v1_${scenarioLetter}`);
+    const raw = localStorage.getItem(`mvTipsGeminiCache_v2_${scenarioLetter}`);
     const hit = raw ? JSON.parse(raw) : null;
-    if(!hit || hit.signature !== signature) return null;
-    let bullets = Array.isArray(hit.bullets) ? hit.bullets.slice().filter(Boolean) : [];
-    if(!bullets.length && hit.tipsText){
-      bullets = String(hit.tipsText || "")
-        .split(/\n+/)
-        .map(s => String(s || "").replace(/^[•\-\s]+/, "").trim())
-        .filter(Boolean);
-    }
-    if(!bullets.length) return null;
-    return Object.assign({}, hit, { bullets: bullets, source: hit.source || "gemini" });
+    if(!hit || hit.signature !== signature || hit.prefsHash !== __mvTripAdvicePrefsHash()) return null;
+    const generalBullets = Array.isArray(hit.generalBullets) ? hit.generalBullets.slice().filter(Boolean) : [];
+    const cityTips = (hit && hit.cityTips && typeof hit.cityTips === "object") ? hit.cityTips : {};
+    if(!generalBullets.length && !Object.keys(cityTips).length) return null;
+    return Object.assign({}, hit, { generalBullets, cityTips, source: hit.source || "gemini" });
   }catch(_){
     return null;
   }
@@ -20586,18 +20763,20 @@ function __mvLoadTripAdviceGeminiCache(signature){
 
 function __mvSaveTripAdviceGeminiCache(signature, payload){
   try{
-    if(!signature || !payload || !Array.isArray(payload.bullets) || !payload.bullets.length) return false;
+    if(!signature || !payload) return false;
     const scenarioLetter = String(state && state.scenario || "A");
     const value = {
       signature: signature,
+      prefsHash: __mvTripAdvicePrefsHash(),
       generatedAt: new Date().toISOString(),
       build: APP_BUILD,
       source: "gemini",
-      bullets: payload.bullets.slice(0, 10),
-      tipsText: payload.bullets.join("\n"),
+      generalBullets: Array.isArray(payload.generalBullets) ? payload.generalBullets.slice(0, 10) : [],
+      cityTips: payload.cityTips || {},
       meta: payload.meta || {}
     };
-    localStorage.setItem(`mvTipsGeminiCache_v1_${scenarioLetter}`, JSON.stringify(value));
+    if(!value.generalBullets.length && !Object.keys(value.cityTips || {}).length) return false;
+    localStorage.setItem(`mvTipsGeminiCache_v2_${scenarioLetter}`, JSON.stringify(value));
     try{ window.__mvTripAdviceAICache = Object.assign({}, value, { __signature: signature }); }catch(_){}
     return true;
   }catch(_){
@@ -20625,7 +20804,7 @@ function __mvTripAdviceDetailCardHTML(sc){
             : `<div class="space-y-2"><button id="btnTipsGeminiConfig" class="tap px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold w-full" type="button">Configurar Gemini</button><div class="text-sm text-slate-500">Configura Gemini para generar consejos.</div></div>`}
           <div id="tripAdviceGeminiStatus" class="mt-2 text-sm text-slate-500"></div>
         </div>
-        <div id="tripAdviceGeminiResult" class="mt-3">${aiCache ? `${__mvTomorrowTipsAIHTML(aiCache)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>` : ``}</div>
+        <div id="tripAdviceGeminiResult" class="mt-3">${aiCache ? `${__mvTripAdviceAIHTML(aiCache)}<div class="mt-2 text-xs text-slate-500">(IA, guardado)</div>` : ``}</div>
       </div>
     `;
   }catch(_){
@@ -20637,13 +20816,16 @@ function __mvTripAdviceAIPrompt(sc){
   try{
     const data = __mvExecutiveSummaryData();
     const ov = data && data.overview ? data.overview : {};
-    const destination = String((data && data.title) || "Viaje").replace(/^Viaje\s+/i, "").trim() || "No disponible";
+    const cityMeta = __mvTripAdviceCitiesMeta(sc);
+    const prefs = __mvGetTravelPrefs();
     const lines = [
-      `Destino principal: ${destination || "No disponible"}`,
       `Fechas del viaje: ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateStart) : ov.dateStart) || "—"} → ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateEnd) : ov.dateEnd) || "—"}${ov.dayCount ? ` (${ov.dayCount} días)` : ""}`,
       `Transportes: ${Number(ov.transportCount || 0)}`,
       `Alojamientos: ${Number(ov.stayCount || 0)}`,
-      `Actividades: ${Number(ov.activityCount || 0)}`
+      `Actividades: ${Number(ov.activityCount || 0)}`,
+      `Ciudad base excluida: ${cityMeta.baseCity || "No disponible"}`,
+      `Ciudades del itinerario: ${(cityMeta.citiesVisited || []).join(" | ") || "No disponible"}`,
+      `Preferencias: tipo=${(prefs.tripTypes || []).join(", ") || "mixto"}; ritmo=${prefs.pace || "medio"}; grupo=${prefs.group || "pareja"}; niños=${prefs.kids ? `sí (${prefs.kidsAges || "sin edades"})` : "no"}; sitios ocultos=${prefs.hiddenSpots ? "sí" : "no"}`
     ];
     const bullets = __mvTripAdviceBullets(sc);
     if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
@@ -20654,13 +20836,15 @@ Resumen del itinerario:
 ${lines.join("\n")}
 
 Devuelve SOLO JSON válido con este formato:
-{"bullets":["...","..."]}
+{"generalBullets":["...","..."],"cityTips":{"Nueva York":["..."],"Orlando":["..."]}}
 
 Instrucciones:
-- 6 a 10 bullets máximo
+- "generalBullets": 6 a 10 bullets máximo
+- "cityTips": una sección por cada ciudad visitada, con 4 a 6 bullets por ciudad
 - consejos prácticos y accionables
 - habla de ropa por época sin inventar clima real ni temperaturas
 - incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
+- estructura obligatoria: primero consejos generales, luego consejos por ciudad
 - NO inventes nombres ni datos que no estén presentes
 - evita texto largo`;
   }catch(_){
@@ -20686,7 +20870,7 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     const cached = cfg.force ? null : (__mvTripAdviceCachedPayload(sc) || null);
     if(cached){
       window.__mvTripAdviceAICache = cached;
-      if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTomorrowTipsAIHTML(cached)}`;
+      if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTripAdviceAIHTML(cached)}`;
       if(statusEl) statusEl.textContent = "Consejos actualizados";
       if(btn) btn.disabled = false;
       return;
@@ -20695,14 +20879,15 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
     const payload = {
       source: "gemini",
-      bullets: Array.isArray(out && out.bullets) ? out.bullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
+      generalBullets: Array.isArray(out && out.generalBullets) ? out.generalBullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
+      cityTips: (out && out.cityTips && typeof out.cityTips === "object") ? Object.fromEntries(Object.entries(out.cityTips).map(([city, arr])=> [String(city || "").trim(), Array.isArray(arr) ? arr.map(x=>String(x || "").trim()).filter(Boolean).slice(0,6) : []]).filter(([city, arr])=> city && arr.length)) : {},
       meta: { signature: signature }
     };
     payload.__signature = signature;
-    if(!payload.bullets.length) throw new Error("EMPTY_TRIP_AI_TIPS");
+    if(!payload.generalBullets.length && !Object.keys(payload.cityTips).length) throw new Error("EMPTY_TRIP_AI_TIPS");
     window.__mvTripAdviceAICache = payload;
     __mvSaveTripAdviceGeminiCache(signature, payload);
-    if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTomorrowTipsAIHTML(payload)}`;
+    if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTripAdviceAIHTML(payload)}`;
     if(statusEl) statusEl.textContent = "Consejos actualizados";
   }catch(e){
     console.log("Trip advice Gemini failed", e);
