@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A134_ATTACH_MODAL_REBIND_AND_PREVIEW_FRONT_FIX</title>
+  <title>V240_A135_ATTACH_MODAL_STABLE_BINDINGS_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A134_ATTACH_MODAL_REBIND_AND_PREVIEW_FRONT_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A135_ATTACH_MODAL_STABLE_BINDINGS_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A134_ATTACH_MODAL_REBIND_AND_PREVIEW_FRONT_FIX";
+const APP_BUILD = "V240_A135_ATTACH_MODAL_STABLE_BINDINGS_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -29750,7 +29750,8 @@ overlay.classList.remove("hidden");
 
       host.innerHTML = (
         '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">' +
-          (hasBridge ? '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' : '') +
+          '<button id="attAddFile" class="tap" style="padding:10px 12px;border-radius:16px;border:1px solid rgba(148,163,184,.7);font-weight:900">'+escapeHtml(t("attach.addBtn"))+'</button>' +
+          (!hasBridge ? '<input id="mvWebAttachAddInput" type="file" class="hidden" />' : '') +
         '</div>' +
         (!hasBridge ? (
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 12px;border:1px solid rgba(148,163,184,.35);border-radius:14px;background:rgba(248,250,252,.9)">' +
@@ -29765,10 +29766,17 @@ overlay.classList.remove("hidden");
       if(!hasBridge) __mvRenderWebAttachFolderInfo();
 
       var addBtn = document.getElementById("attAddFile");
-      if(addBtn && !addBtn.__mvBound){
-        addBtn.__mvBound = true;
-        addBtn.addEventListener("click", function(e){
+      if(addBtn){
+        addBtn.onclick = function(e){
           try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+          if(!hasBridge){
+            var webInput = document.getElementById("mvWebAttachAddInput");
+            if(webInput){
+              try{ webInput.value = ""; }catch(_){ }
+              try{ webInput.click(); }catch(_){ }
+            }
+            return;
+          }
           var ctxPayload = {};
           try{
             var es = window.__eventSheetCtx || {};
@@ -29777,86 +29785,145 @@ overlay.classList.remove("hidden");
           }catch(_){}
           var ok = __mvPostAttachment({ action:"pickAttachment", context: ctxPayload });
           if(!ok){ try{ toast(t("attach.noBridge")); }catch(_){ } }
-        }, true);
+        };
+      }
+      var webAddInput = document.getElementById("mvWebAttachAddInput");
+      if(webAddInput){
+        webAddInput.onchange = function(){
+          try{
+            var picked = webAddInput.files && webAddInput.files[0];
+            try{ webAddInput.value = ""; }catch(_){ }
+            if(!picked) return;
+            var filesAdd = __mvEnsureAttachmentsArray(obj);
+            filesAdd.push({
+              id: String((Date.now()) + "_" + Math.random().toString(36).slice(2,8)),
+              name: String(picked.name || "Adjunto"),
+              originalName: String(picked.name || ""),
+              relPath: "",
+              path: "",
+              url: "",
+              dataUrl: "",
+              blobUrl: "",
+              addedAt: Date.now(),
+              context: null
+            });
+            try{
+              window.__attachmentsFileCache = window.__attachmentsFileCache || {};
+              window.__attachmentsFileCache[String(filesAdd[filesAdd.length-1].id || "")] = picked;
+            }catch(_){ }
+            __mvSafeSaveAfterAttachmentChange();
+            __mvRenderAttachList(obj);
+            try{ toast("Adjunto añadido"); }catch(_){ }
+          }catch(_){}
+        };
       }
 
-      if(!host.__mvDelegated){
-        host.__mvDelegated = true;
-        host.addEventListener("click", function(e){
-          var btn = e.target && e.target.closest ? e.target.closest("[data-att-action]") : null;
-          if(!btn) return;
-          try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-          var action = String(btn.getAttribute("data-att-action")||"");
-          var id = String(btn.getAttribute("data-att-id")||"");
-          var rel = String(btn.getAttribute("data-att-rel")||"");
-          if(!action || !id) return;
+      function __mvFindClosestAttachAction(ev, selector){
+        var tNode = ev && ev.target;
+        if(tNode && tNode.closest){
+          var c = tNode.closest(selector);
+          if(c) return c;
+        }
+        if(tNode && tNode.parentElement && tNode.parentElement.closest){
+          var c2 = tNode.parentElement.closest(selector);
+          if(c2) return c2;
+        }
+        var path = (ev && ev.composedPath) ? ev.composedPath() : [];
+        for(var pi=0; pi<path.length; pi++){
+          var node = path[pi];
+          if(node && node.matches && node.matches(selector)) return node;
+          if(node && node.closest){
+            var c3 = node.closest(selector);
+            if(c3) return c3;
+          }
+        }
+        return null;
+      }
+      if(host.__mvDelegatedHandler){
+        try{ host.removeEventListener("click", host.__mvDelegatedHandler, true); }catch(_){}
+      }
+      host.__mvDelegatedHandler = function(e){
+        var btn = __mvFindClosestAttachAction(e, "[data-att-action]");
+        if(!btn) return;
+        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+        var action = String(btn.getAttribute("data-att-action")||"");
+        var id = String(btn.getAttribute("data-att-id")||"");
+        var rel = String(btn.getAttribute("data-att-rel")||"");
+        if(!action || !id) return;
 
-          var files = __mvEnsureAttachmentsArray(obj);
-          var idx = files.findIndex(function(x){ return String(x && x.id)===String(id); });
-          if(idx < 0) return;
-          var f = files[idx] || {};
+        var files = __mvEnsureAttachmentsArray(obj);
+        var idx = files.findIndex(function(x){ return String(x && x.id)===String(id); });
+        if(idx < 0) return;
+        var f = files[idx] || {};
 
-          if(action === "open"){
-            if(!hasBridge){
-              if(typeof window.showDirectoryPicker !== "function"){
-                __mvPickAndOpenSingleFileWeb(f);
-                return;
-              }
-              __mvOpenAttachmentWebFromFolder(f).catch(function(){ try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ } });
+        if(action === "open"){
+          if(!hasBridge){
+            if(typeof window.showDirectoryPicker !== "function"){
+              __mvPickAndOpenSingleFileWeb(f);
               return;
             }
-            var rp = String(rel || f.relPath || "").trim();
-            if(!rp){ try{ toast(t("attach.noPathOpen")); }catch(_){ } return; }
-            __mvPostAttachment({ action:"openAttachment", relPath: rp });
+            __mvOpenAttachmentWebFromFolder(f).catch(function(){ try{ toast(__mvWebOpenAttachmentPickerToast()); }catch(_){ } });
             return;
           }
+          var rp = String(rel || f.relPath || "").trim();
+          if(!rp){ try{ toast(t("attach.noPathOpen")); }catch(_){ } return; }
+          __mvPostAttachment({ action:"openAttachment", relPath: rp });
+          return;
+        }
 
-          if(action === "copyName"){
-            var visibleName = String(f.name || f.originalName || "").trim();
-            if(!visibleName) return;
-            try{
-              if(navigator.clipboard && navigator.clipboard.writeText){
-                Promise.resolve(navigator.clipboard.writeText(visibleName)).then(function(){
-                  try{ toast(t("attachments.nameCopied")); }catch(_){ }
-                }).catch(function(){
-                  try{ toast(t("attachments.copyFailed")); }catch(_){ }
-                });
-              }else{
-                throw new Error("clipboard unavailable");
-              }
-            }catch(_){
-              try{ toast(t("attachments.copyFailed")); }catch(__){ }
+        if(action === "copyName"){
+          var visibleName = String(f.name || f.originalName || "").trim();
+          if(!visibleName) return;
+          try{
+            if(navigator.clipboard && navigator.clipboard.writeText){
+              Promise.resolve(navigator.clipboard.writeText(visibleName)).then(function(){
+                try{ toast(t("attachments.nameCopied")); }catch(_){ }
+              }).catch(function(){
+                try{ toast(t("attachments.copyFailed")); }catch(_){ }
+              });
+            }else{
+              throw new Error("clipboard unavailable");
             }
-            return;
+          }catch(_){
+            try{ toast(t("attachments.copyFailed")); }catch(__){ }
           }
+          return;
+        }
 
-          if(action === "rename"){
-            var currentName = String(f.name || f.originalName || "").trim();
-            var nextName = prompt(t("attachments.renamePrompt"), currentName);
-            if(nextName == null) return;
-            nextName = String(nextName || "").trim();
-            if(!nextName) return;
-            files[idx].name = nextName;
-            __mvSafeSaveAfterAttachmentChange();
-            __mvUpdateAttachBadge(obj);
-            __mvRenderAttachList(obj);
-            try{ toast(t("attach.renameDone")); }catch(_){ }
-            return;
-          }
+        if(action === "rename"){
+          var currentName = String(f.name || f.originalName || "").trim();
+          var nextName = prompt(t("attachments.renamePrompt"), currentName);
+          if(nextName == null) return;
+          nextName = String(nextName || "").trim();
+          if(!nextName) return;
+          files[idx].name = nextName;
+          __mvSafeSaveAfterAttachmentChange();
+          __mvUpdateAttachBadge(obj);
+          __mvRenderAttachList(obj);
+          try{ toast(t("attach.renameDone")); }catch(_){ }
+          return;
+        }
 
-          if(action === "delete"){
-            if(!hasBridge) return;
-            var rp2 = String(rel || f.relPath || "").trim();
+        if(action === "delete"){
+          if(!hasBridge){
             files.splice(idx, 1);
             __mvSafeSaveAfterAttachmentChange();
-            if(rp2) __mvPostAttachment({ action:"deleteAttachment", relPath: rp2 });
             __mvUpdateAttachBadge(obj);
             __mvRenderAttachList(obj);
             try{ toast(t("attach.deleted")); }catch(_){ }
             return;
           }
-        }, true);
-      }
+          var rp2 = String(rel || f.relPath || "").trim();
+          files.splice(idx, 1);
+          __mvSafeSaveAfterAttachmentChange();
+          if(rp2) __mvPostAttachment({ action:"deleteAttachment", relPath: rp2 });
+          __mvUpdateAttachBadge(obj);
+          __mvRenderAttachList(obj);
+          try{ toast(t("attach.deleted")); }catch(_){ }
+          return;
+        }
+      };
+      host.addEventListener("click", host.__mvDelegatedHandler, true);
 
       var pickBtn = document.getElementById("mvWebAttachPickFolderBtn");
       if(pickBtn && !pickBtn.__mvBound){
