@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY</title>
+  <title>V240_A147_TIPS_GEMINI_JSON_PARSE_ROBUST</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A147_TIPS_GEMINI_JSON_PARSE_ROBUST</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY";
+const APP_BUILD = "V240_A147_TIPS_GEMINI_JSON_PARSE_ROBUST";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -21653,6 +21653,30 @@ function cleanJsonText(t) {
   return t.trim();
 }
 
+function parseGeminiJsonRobust(rawText) {
+  const raw = String(rawText || "");
+  let cleaned = raw.trim();
+  try {
+    if (cleaned.startsWith("```")) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, "");
+      cleaned = cleaned.replace(/\s*```$/i, "");
+    }
+    cleaned = cleaned.trim();
+    try {
+      return { ok: true, json: JSON.parse(cleaned), cleanedText: cleaned };
+    } catch (_) {}
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const extracted = cleaned.slice(start, end + 1).trim();
+      return { ok: true, json: JSON.parse(extracted), cleanedText: extracted };
+    }
+    return { ok: false, error: "NO_JSON_OBJECT", cleanedText: cleaned };
+  } catch (err) {
+    return { ok: false, error: String(err && err.message || err || "PARSE_ERROR"), cleanedText: cleaned };
+  }
+}
+
 async function geminiGenerateJSON(prompt, schemaHint = "") {
   const key = getGeminiKey();
   if (!key) throw new Error("NO_KEY");
@@ -21671,8 +21695,12 @@ async function geminiGenerateJSON(prompt, schemaHint = "") {
   const data = await r.json();
   if (!r.ok) throw new Error("GEMINI_" + r.status + " " + JSON.stringify(data));
   let txt = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  txt = cleanJsonText(txt);
-  return JSON.parse(txt);
+  const parsed = parseGeminiJsonRobust(txt);
+  if (!parsed.ok) {
+    try { console.log("[gemini-json] parse failed", { error: parsed.error, snippet: String(txt || "").slice(0, 240) }); } catch (_) {}
+    throw new Error("GEMINI_JSON_PARSE " + parsed.error);
+  }
+  return parsed.json;
 }
 
 /* -------------------------- Timezone automation ---------------------- */
