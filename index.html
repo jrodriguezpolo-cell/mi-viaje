@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A139_STAY_LEG_STAY_ARRIVAL_ORDER_FIX</title>
+  <title>V240_A140_ACTIVITY_REPEAT_DATE_RANGE</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A139_STAY_LEG_STAY_ARRIVAL_ORDER_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A140_ACTIVITY_REPEAT_DATE_RANGE</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A139_STAY_LEG_STAY_ARRIVAL_ORDER_FIX";
+const APP_BUILD = "V240_A140_ACTIVITY_REPEAT_DATE_RANGE";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -13230,6 +13230,7 @@ function __renderActEditorInSheet(body, actObj, itemId, isNew){
         <label class="text-xs text-slate-600"><span data-i18n="fld.date">${t("fld.date")}</span></label>
         <input data-act-date="${escapeHtml(String(itemId))}" data-sheet-act="date" type="date"
           class="mt-1 w-full px-3 py-1.5 text-sm rounded-xl border border-slate-200 h-10">
+        <button type="button" data-sheet-act-repeat="${escapeHtml(String(itemId))}" class="tap mt-2 px-3 py-2 rounded-xl border border-slate-300 text-sm font-extrabold text-slate-700 bg-white">Repetir</button>
       </div>
 
       <div class="actRow2">
@@ -13692,6 +13693,99 @@ qs("currency").value = v(actObj.currency || "EUR");
 
   bind("currency", (val)=>{ actObj.currency = String(val||"").trim() || "EUR"; try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
   bind("cost", (val)=>{ const s = String(val||"").trim(); actObj.cost = (s === "") ? null : parseMoney(s); try{ if(typeof __mvRecomputeConflictsAndRefreshUI === "function") __mvRecomputeConflictsAndRefreshUI(); }catch(_){} __renderSheetActInspector(); });
+
+  try{
+    const repeatBtn = wrap.querySelector(`[data-sheet-act-repeat="${CSS.escape(String(itemId))}"]`);
+    if(repeatBtn){
+      repeatBtn.onclick = ()=>{
+        try{
+          const baseDate = String(qs("date")?.value || actObj.date || "").trim();
+          const startId = `mvActRepeatStart_${String(itemId)}_${Date.now()}`;
+          const endId = `mvActRepeatEnd_${String(itemId)}_${Date.now()}`;
+          const bodyHtml = `
+            <div class="space-y-3">
+              <div class="text-sm text-slate-700">Elige el rango de fechas para repetir esta actividad.</div>
+              <div>
+                <label class="text-xs text-slate-600">Desde</label>
+                <input id="${startId}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" value="${escapeHtml(baseDate)}">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600">Hasta</label>
+                <input id="${endId}" type="date" class="mt-1 w-full px-3 py-2 rounded-xl border border-slate-300" value="${escapeHtml(baseDate)}">
+              </div>
+            </div>
+          `;
+          const btnCancel = document.createElement("button");
+          btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+          btnCancel.type = "button";
+          btnCancel.textContent = "Cancelar";
+          btnCancel.onclick = ()=>{ try{ closeModal(); }catch(_){} };
+          const btnApply = document.createElement("button");
+          btnApply.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+          btnApply.type = "button";
+          btnApply.textContent = "Aplicar";
+          btnApply.onclick = ()=>{
+            try{
+              const startISO = String((document.getElementById(startId) || {}).value || "").trim();
+              const endISO = String((document.getElementById(endId) || {}).value || "").trim();
+              if(!(typeof __isValidISODate === "function" ? __isValidISODate(startISO) : /^\d{4}-\d{2}-\d{2}$/.test(startISO))){
+                try{ toast("Fecha inicio no válida"); }catch(_){}
+                return;
+              }
+              if(!(typeof __isValidISODate === "function" ? __isValidISODate(endISO) : /^\d{4}-\d{2}-\d{2}$/.test(endISO))){
+                try{ toast("Fecha fin no válida"); }catch(_){}
+                return;
+              }
+              if(endISO < startISO){
+                try{ toast("La fecha fin debe ser igual o posterior"); }catch(_){}
+                return;
+              }
+              const sc = (typeof curScenario === "function") ? curScenario() : null;
+              if(!sc || !Array.isArray(sc.activities)){
+                try{ toast("No hay escenario activo"); }catch(_){}
+                return;
+              }
+              const titleNorm = String(actObj.title || "").trim().toLowerCase();
+              const cityNorm = String(actObj.city || "").trim().toLowerCase();
+              const timeNorm = String(actObj.time || "").trim();
+              let cur = startISO;
+              let added = 0;
+              let guard = 0;
+              while(cur && cur <= endISO && guard < 800){
+                guard += 1;
+                if(cur !== String(actObj.date || "").trim()){
+                  const exists = sc.activities.some((a)=>{
+                    if(!a) return false;
+                    return String(a.date || "").trim() === cur &&
+                      String(a.time || "").trim() === timeNorm &&
+                      String(a.title || "").trim().toLowerCase() === titleNorm &&
+                      String(a.city || "").trim().toLowerCase() === cityNorm;
+                  });
+                  if(!exists){
+                    const clone = Object.assign({}, actObj, { id: (typeof nowId === "function") ? nowId() : ("act_"+Math.random().toString(36).slice(2,10)), date: cur });
+                    sc.activities.push(clone);
+                    added += 1;
+                  }
+                }
+                cur = (typeof __mvAddDaysISO === "function") ? __mvAddDaysISO(cur, 1) : "";
+              }
+              try{ closeModal(); }catch(_){}
+              try{ if(typeof saveState === "function") saveState(); }catch(_){}
+              try{ if(typeof renderActivities === "function") renderActivities(); }catch(_){}
+              try{ if(typeof renderTimeline === "function") renderTimeline(); }catch(_){}
+              try{ if(typeof calcSummary === "function") calcSummary(); }catch(_){}
+              try{ toast(added > 0 ? `Actividad repetida en ${added} día(s)` : "No se añadieron nuevas repeticiones"); }catch(_){}
+            }catch(_){
+              try{ toast("No se pudo repetir la actividad"); }catch(__){}
+            }
+          };
+          showModal("Repetir actividad", bodyHtml, [btnCancel, btnApply]);
+        }catch(_){
+          try{ toast("No se pudo abrir repetir"); }catch(__){}
+        }
+      };
+    }
+  }catch(_){}
 
   try{ __renderSheetActInspector(); }catch{}
 
