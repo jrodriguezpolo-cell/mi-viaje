@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO</title>
+  <title>V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO";
+const APP_BUILD = "V240_A146_TIPS_ACTIONABLE_DETAILS_METROCARD";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20611,11 +20611,19 @@ function __mvTripAdviceMapsUrl(query){
 function __mvNormalizeTripAdviceTip(raw){
   const item = (raw && typeof raw === "object") ? raw : { title: "", text: String(raw || "").trim() };
   const actionRaw = (item.action && typeof item.action === "object") ? item.action : {};
+  const typeRaw = String(actionRaw.type || "none").trim().toLowerCase();
+  const type = (
+    typeRaw === "buy" ? "ticket" :
+    typeRaw === "book" ? "reservation" :
+    (typeRaw === "none" || typeRaw === "transport_pass" || typeRaw === "ticket" || typeRaw === "reservation" || typeRaw === "go")
+      ? typeRaw
+      : "none"
+  );
   return {
     title: String(item.title || "").trim(),
     text: String(item.text || item.oneLiner || item.summary || "").trim(),
     action: {
-      type: String(actionRaw.type || "none").trim() || "none",
+      type,
       why: String(actionRaw.why || "").trim(),
       price: String(actionRaw.price || "").trim(),
       where: String(actionRaw.where || "").trim(),
@@ -20932,14 +20940,15 @@ Instrucciones:
 - "generalTips": 6 a 10 tips máximo
 - "byCity": una sección por cada ciudad visitada, con 4 a 6 tips por ciudad
 - cada tip debe incluir title y text
-- action.type solo puede ser: "none", "buy", "book" o "go"
+- action.type solo puede ser: "none", "transport_pass", "ticket", "reservation" o "go"
 - si recomiendas algo accionable o comprable, action debe incluir:
   why = por qué se recomienda frente a alternativas
   price = precio solo si estás seguro; si dudas usa exactamente "Consultar oficial"
   where = dónde se compra o gestiona
   officialUrl = enlace oficial si existe
   mapsQuery = nombre+ciudad o dirección si es un lugar físico
-- si recomiendas MetroCard, OMNY, abonos, pases o tickets, debes incluir where + officialUrl + why + price y mapsQuery si hay punto físico
+- si recomiendas MetroCard, OMNY, abonos, pases o tickets, debes usar action.type="transport_pass" o "ticket" y debes incluir where + officialUrl + why + price y mapsQuery si hay punto físico
+- si existe alternativa, explica en why por qué recomiendas una frente a otra según el tipo de viaje`;
 - consejos prácticos y accionables
 - habla de ropa por época sin inventar clima real ni temperaturas
 - incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
