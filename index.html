@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A150_TIPS_GEMINI_PREMIUM_PLUS_TRAVEL_BASICS</title>
+  <title>V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A150_TIPS_GEMINI_PREMIUM_PLUS_TRAVEL_BASICS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A150_TIPS_GEMINI_PREMIUM_PLUS_TRAVEL_BASICS";
+const APP_BUILD = "V240_A146_TIPS_GEMINI_JSON_PREMIUM_FAMILY";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20668,6 +20668,7 @@ function __mvNormalizeTripAdvicePayload(payload){
         precio: String(premiumRaw.precio || "").trim(),
         dondeComprar: String(premiumRaw.dondeComprar || "").trim(),
         comparativa: String(premiumRaw.comparativa || premiumRaw.porQue || "").trim(),
+        instruccionesUso: String(premiumRaw.instruccionesUso || "").trim(),
         grupo: String(premiumRaw.grupo || premiumRaw.familia5 || "").trim(),
         enlaceOficial: String(premiumRaw.enlaceOficial || "").trim(),
         comoLlegar: String(premiumRaw.comoLlegar || "").trim()
@@ -20723,6 +20724,7 @@ function __mvTripAdvicePremiumComplete(tip){
       String(p.precio || "").trim() &&
       String(p.dondeComprar || "").trim() &&
       String(p.comparativa || "").trim() &&
+      String(p.instruccionesUso || "").trim() &&
       String(p.grupo || "").trim() &&
       String(p.enlaceOficial || "").trim() &&
       String(p.comoLlegar || "").trim()
@@ -20781,6 +20783,7 @@ function __mvTripAdviceAIHTML(payload){
         ${premium.precio ? `<div><span class="font-semibold text-slate-600">Precio:</span> ${escapeHtml(premium.precio)}</div>` : ``}
         ${premium.dondeComprar ? `<div><span class="font-semibold text-slate-600">Dónde comprar:</span> ${escapeHtml(premium.dondeComprar)}</div>` : ``}
         ${premium.comparativa ? `<div><span class="font-semibold text-slate-600">Comparativa:</span> ${escapeHtml(premium.comparativa)}</div>` : ``}
+        ${premium.instruccionesUso ? `<div><span class="font-semibold text-slate-600">Cómo usar:</span> ${escapeHtml(premium.instruccionesUso)}</div>` : ``}
         ${premium.grupo ? `<div><span class="font-semibold text-slate-600">Para el grupo:</span> ${escapeHtml(premium.grupo)}</div>` : ``}
         ${premiumOfficial ? `<div><span class="font-semibold text-slate-600">Enlace:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumOfficial)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
         ${premiumMapsUrl ? `<div><span class="font-semibold text-slate-600">Cómo llegar:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumMapsUrl)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
@@ -21025,38 +21028,49 @@ function __mvTripAdviceAIPrompt(sc){
       `Mes/estación aproximada: ${monthLabel}`,
       `Perfil/Preferencias guardadas: tipo=${(prefs.tripTypes || []).join(", ") || "mixto"}; ritmo=${prefs.pace || "medio"}; grupo=${prefs.group || "familia"}; niños=${prefs.kids ? `sí (${prefs.kidsAges || "sin edades"})` : "sí (2 adultos + 3 niños por defecto)"}; sitios ocultos=${prefs.hiddenSpots ? "sí" : "no"}`
     ];
-    const profileLines = [
-      `Grupo: ${prefs.group || "familia de 5 (2 adultos + 3 niños)"}`,
-      `Niños: ${prefs.kids ? (prefs.kidsAges ? `sí (${prefs.kidsAges})` : "sí") : "sí (rango 4–12 por defecto)"}`,
-      `Mayores: desconocido`,
-      `Movilidad: normal`,
-      `Ritmo: ${prefs.pace || "medio"}`,
-      `Preferencias: evitar colas largas, descansos, comidas fáciles, transporte sencillo${prefs.hiddenSpots ? ", sitios ocultos" : ""}`
-    ];
     const bullets = __mvTripAdviceBullets(sc);
-    if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
-    return `DEVUELVE SOLO JSON válido (sin markdown, sin explicaciones).
-Si no sabes un dato, usa "no confirmado".
+    const ciudadesVisitadas = (cityMeta.citiesVisited || []).join(", ") || "No disponible";
+    const rangoFechasYEpoca = `${String(ov.dateStart || "—")} a ${String(ov.dateEnd || "—")}${monthLabel !== "No disponible" ? ` (mes ${monthLabel})` : ""}`;
+    const perfilGrupo = `Familia de 5 miembros (posibles niños). Ritmo ${prefs.pace || "medio"}. Prioriza logística simple, descansos y evitar colas largas.`;
+    const estiloResumen = bullets.length ? bullets.slice(0, 4).join(" | ") : "Viaje urbano + parques; varias actividades diarias; caminatas; transporte público.";
+    return `Eres un asistente de viajes experto y conserje logístico. Debes devolver SOLO JSON válido (sin markdown, sin explicaciones, sin texto fuera del JSON).
 
-FORMATO:
+OBJETIVO:
+Generar consejos de viaje personalizados (generales + por ciudad) para un grupo familiar, y para cada consejo que implique compra/abono/entrada/reserva incluir detalles premium: qué es, precio orientativo, dónde se compra, por qué conviene frente a alternativas, cómo se usa, enlace oficial y “cómo llegar” si aplica.
+
+RESTRICCIÓN ANTI-ALUCINACIÓN (OBLIGATORIA):
+- Si NO estás 100% seguro de un precio o de un dato operativo (vigencia, nombre exacto del abono), NO inventes.
+- En su lugar, usa:
+  - "precio": "no confirmado"
+  - "enlaceOficial": "Web oficial de <servicio> (buscar)"
+  - y explica en "comparativa" la lógica de elección sin números exactos.
+- Si hay alternativas, menciona al menos 2 y por qué elegir una u otra.
+
+ENTRADA (CONTEXTO):
+- Ciudades del viaje: ${ciudadesVisitadas}
+- Fechas y época: ${rangoFechasYEpoca}
+- Perfil del grupo: ${perfilGrupo}
+- Actividades/estilo: ${estiloResumen}
+
+SALIDA: JSON con este formato EXACTO
 {
-  "general": [
+  "general":[
     {"titulo":"...","detalle":"..."}
   ],
-  "porCiudad": [
+  "porCiudad":[
     {
-      "ciudad":"Nueva York",
+      "ciudad":"...",
       "items":[
         {
           "titulo":"...",
           "detalle":"...",
           "requiresPremium": true,
-          "premium":{
+          "premium": {
             "queEs":"...",
             "precio":"...",
             "dondeComprar":"...",
-            "comparativa":"- Opción A: ...\\n- Opción B: ...\\n- Recomendación final: ...",
-            "grupo":"...",
+            "comparativa":"...",
+            "instruccionesUso":"...",
             "enlaceOficial":"...",
             "comoLlegar":"..."
           }
@@ -21067,53 +21081,45 @@ FORMATO:
   "nota":"..."
 }
 
-REGLAS:
-- Rellena SIEMPRE al menos 10 items en "general".
-- En "porCiudad": para cada ciudad visitada, crea al menos 4 items.
-- Para items que impliquen compra/abono/entrada/reserva => requiresPremium=true y premium COMPLETO.
-- Para consejos sin compra (ej: “calzado cómodo”, “hidratarse”) => requiresPremium=false y premium puede omitirse o estar vacío.
-- Para Uber/Lyft => requiresPremium=true pero premium debe explicar “cómo conseguir (apps)”, “rango coste orientativo”, “por qué vs alternativas”, “links oficiales”, y “cómo llegar” puede ser "no aplica".
-- En premium, incluye SIEMPRE queEs + dondeComprar + precio + comparativa + grupo + enlaceOficial. Cómo llegar solo si hay lugar físico concreto; si no, "no aplica".
+REGLAS DE CONTENIDO:
+A) GENERAL (obligatorio: mínimo 10 items, siempre)
+Incluye y adapta al perfil/grupo/época:
+- ropa por clima/estación
+- calzado y ampollas (si andar)
+- planificación (reservas, colas)
+- ritmo familiar (pausas, snacks, baños, si hay niños)
+- batería/powerbank, conectividad
+- documentación/seguros/copias
+- hidratación/sol/lluvia
+- seguridad práctica
+- presupuesto/propinas si aplica (si no seguro: “orientativo/no confirmado”)
+- checklists (mini lista práctica)
 
-REGLAS DE CONTENIDO (OBLIGATORIAS)
-A) GENERAL (mínimo 10 items)
-1. Ropa por clima/estación
-2. Calzado según ritmo
-3. Planificación
-4. Ritmo familiar
-5. Powerbank/batería y conectividad
-6. Documentación/seguros/copias digitales
-7. Hidratación/sol/crema si aplica
-8. Mochila/impermeable si aplica
-9. Propinas/costumbres básicas si aplica
-10. Seguridad práctica
-- En GENERAL debes incluir SIEMPRE consejos concretos sobre:
-  - ropa a llevar según mes/estación y ciudades visitadas
-  - clima probable por ciudad de forma prudente (sin inventar temperaturas exactas si no están confirmadas)
-  - cosas útiles a llevar: powerbank, botella, mochila, cargadores, chubasquero, snacks, documentación, medicación básica si aplica
-  - tips útiles para el viaje: organización del día, descansos, reservas, colas, uso del móvil y batería
-- Aunque mantengas el bloque premium, NO descuides los consejos generales: deben sentirse completos y útiles por sí solos.
-- Si hay varias ciudades, menciona diferencias prácticas entre ellas en ropa/clima/logística cuando ayude.
+B) POR CIUDAD (mínimo 5 items por ciudad visitada)
+Debe incluir:
+1) Movilidad / Transporte (y aquí suele haber premium)
+2) Entradas / reservas (premium si aplica)
+3) Consejo familiar específico (niños/mayores)
+4) Logística del día (mejor hora, evitar colas, descanso)
+5) “Qué llevar” específico (por esa ciudad/época)
 
-B) POR CIUDAD (mínimo 4 items por ciudad visitada)
-- Un item debe ser “Movilidad/Transporte”.
-- Otro debe ser “Reservas/Entradas” si hay actividades típicas.
-- Otro debe ser “Tip familiar”.
-- Otro debe ser “Logística útil”.
+C) PREMIUM (cuando implique compra/abono/entrada/reserva/servicio)
+requiresPremium=true y premium COMPLETO:
+- queEs
+- dondeComprar (físico + online/app si aplica)
+- precio (si no seguro: "no confirmado")
+- comparativa (por qué esta opción vs alternativas; explícito para familia/grupo)
+- instruccionesUso (paso a paso corto)
+- enlaceOficial (si no seguro: "Web oficial de X (buscar)")
+- comoLlegar SOLO si hay lugar físico concreto (si no, "no aplica")
 
-CONTEXTO:
-- Perfil: familia de 5 (2 adultos + 3 niños) si no hay otro dato.
-- Ciudades del viaje: ${(cityMeta.citiesVisited || []).join(" | ") || "No disponible"}
-- Fechas/mes aproximado: ${monthLabel}
-- Estilo: turismo + familia + ritmo medio.
-- Si no hay clima real, asume consejos por estación.
+D) Personalización
+Adapta todo al PERFIL_GRUPO:
+- Si hay niños: prioriza opciones simples, menos transbordos, descansos, colas, baños.
+- Si hay mayores: accesibilidad, escalones, asientos, ritmo.
+- Si movilidad reducida: evita caminatas largas, sugiere alternativas.
 
-PERFIL DEL GRUPO:
-${profileLines.join("\n")}
-
-DATOS DEL VIAJE:
-${lines.join("\n")}
-`;
+DEVUELVE SOLO EL JSON.`;
   }catch(_){
     return "";
   }
