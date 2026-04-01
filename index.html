@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A146_TIPS_AI_ACTIONABLE_DETAILS</title>
+  <title>V240_A146_TIPS_GEMINI_PREMIUM_DETAILS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_AI_ACTIONABLE_DETAILS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_GEMINI_PREMIUM_DETAILS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A146_TIPS_AI_ACTIONABLE_DETAILS";
+const APP_BUILD = "V240_A146_TIPS_GEMINI_PREMIUM_DETAILS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20608,6 +20608,22 @@ function __mvTripAdviceMapsUrl(query){
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
+function __mvTripAdviceDateTimeLabel(ts){
+  try{
+    if(!ts) return "";
+    const d = (ts instanceof Date) ? ts : new Date(ts);
+    if(Number.isNaN(d.getTime())) return "";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yy = String(d.getFullYear()).slice(-2);
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mi = String(d.getMinutes()).padStart(2, "0");
+    return `${dd}/${mm}/${yy} ${hh}:${mi}`;
+  }catch(_){
+    return "";
+  }
+}
+
 function __mvNormalizeTripAdviceTip(raw){
   const item = (raw && typeof raw === "object") ? raw : { title: "", text: String(raw || "").trim() };
   const actionRaw = (item.action && typeof item.action === "object") ? item.action : {};
@@ -20629,7 +20645,8 @@ function __mvNormalizeTripAdviceTip(raw){
       where: String(actionRaw.where || "").trim(),
       officialUrl: String(actionRaw.officialUrl || "").trim(),
       mapsQuery: String(actionRaw.mapsQuery || "").trim()
-    }
+    },
+    premium: null
   };
 }
 
@@ -20638,24 +20655,49 @@ function __mvNormalizeTripAdvicePayload(payload){
   const legacyBullets = Array.isArray(src.bullets) ? src.bullets : [];
   const oldGeneral = Array.isArray(src.generalBullets) ? src.generalBullets : [];
   const oldCityTips = (src.cityTips && typeof src.cityTips === "object") ? src.cityTips : {};
+  const premiumTip = (raw)=>{
+    const item = (raw && typeof raw === "object") ? raw : {};
+    const premiumRaw = (item.premium && typeof item.premium === "object") ? item.premium : {};
+    return {
+      title: String(item.titulo || item.title || "").trim(),
+      text: String(item.detalle || item.text || item.oneLiner || "").trim(),
+      action: { type: "none", why: "", price: "", where: "", officialUrl: "", mapsQuery: "" },
+      premium: {
+        precio: String(premiumRaw.precio || "").trim(),
+        dondeComprar: String(premiumRaw.dondeComprar || "").trim(),
+        porQue: String(premiumRaw.porQue || "").trim(),
+        enlaceOficial: String(premiumRaw.enlaceOficial || "").trim(),
+        comoLlegar: String(premiumRaw.comoLlegar || "").trim()
+      }
+    };
+  };
+  const premiumGeneral = Array.isArray(src.general) ? src.general.map(premiumTip).filter((tip)=> tip.title || tip.text) : [];
+  const premiumCities = Array.isArray(src.porCiudad) ? src.porCiudad : [];
   const generalTips = Array.isArray(src.generalTips)
     ? src.generalTips.map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text)
-    : (legacyBullets.length ? legacyBullets : oldGeneral).map((txt)=> __mvNormalizeTripAdviceTip({ title: "", text: txt })).filter((tip)=> tip.title || tip.text);
+    : (premiumGeneral.length ? premiumGeneral : (legacyBullets.length ? legacyBullets : oldGeneral).map((txt)=> __mvNormalizeTripAdviceTip({ title: "", text: txt })).filter((tip)=> tip.title || tip.text));
   const byCityRaw = (src.byCity && typeof src.byCity === "object") ? src.byCity : oldCityTips;
   const byCity = {};
   Object.keys(byCityRaw || {}).forEach((city)=>{
     const arr = Array.isArray(byCityRaw[city]) ? byCityRaw[city].map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text) : [];
     if(arr.length) byCity[String(city || "").trim()] = arr;
   });
+  premiumCities.forEach((entry)=>{
+    const city = String(entry && entry.ciudad || "").trim();
+    const arr = Array.isArray(entry && entry.items) ? entry.items.map(premiumTip).filter((tip)=> tip.title || tip.text) : [];
+    if(city && arr.length) byCity[city] = arr;
+  });
   return {
     signature: src.signature || "",
     prefsHash: src.prefsHash || "",
     generatedAt: src.generatedAt || "",
+    aiTipsGeminiUpdatedAt: src.aiTipsGeminiUpdatedAt || 0,
     build: src.build || "",
     source: src.source || "gemini",
     generalTips,
     byCity,
-    meta: src.meta || {}
+    meta: src.meta || {},
+    nota: String(src.nota || "").trim()
   };
 }
 
@@ -20663,13 +20705,25 @@ function __mvTripAdviceAIHTML(payload){
   const normalized = __mvNormalizeTripAdvicePayload(payload);
   const general = normalized.generalTips || [];
   const cityEntries = Object.entries(normalized.byCity || {}).filter(([city, arr])=> String(city || "").trim() && Array.isArray(arr) && arr.length);
+  const updatedLabel = __mvTripAdviceDateTimeLabel(normalized.aiTipsGeminiUpdatedAt || normalized.generatedAt || "");
   const tipHtml = (tip)=>{
     const action = tip.action || { type:"none" };
+    const premium = (tip.premium && typeof tip.premium === "object") ? tip.premium : null;
     const officialUrl = String(action.officialUrl || "").trim();
     const mapsUrl = __mvTripAdviceMapsUrl(action.mapsQuery);
+    const premiumOfficial = premium ? String(premium.enlaceOficial || "").trim() : "";
+    const premiumMaps = premium ? String(premium.comoLlegar || "").trim() : "";
+    const premiumMapsUrl = premiumMaps ? (premiumMaps.startsWith("http") ? premiumMaps : __mvTripAdviceMapsUrl(premiumMaps)) : "";
     return `<div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
       ${tip.title ? `<div class="font-semibold text-slate-900">${escapeHtml(tip.title)}</div>` : ``}
       ${tip.text ? `<div class="mt-1 text-sm text-slate-700">${escapeHtml(tip.text)}</div>` : ``}
+      ${premium ? `<div class="mt-2 grid gap-1 text-[13px] text-slate-500">
+        ${premium.precio ? `<div><span class="font-semibold text-slate-600">Precio:</span> ${escapeHtml(premium.precio)}</div>` : ``}
+        ${premium.dondeComprar ? `<div><span class="font-semibold text-slate-600">Dónde comprar:</span> ${escapeHtml(premium.dondeComprar)}</div>` : ``}
+        ${premium.porQue ? `<div><span class="font-semibold text-slate-600">Por qué:</span> ${escapeHtml(premium.porQue)}</div>` : ``}
+        ${premiumOfficial ? `<div><span class="font-semibold text-slate-600">Enlace:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumOfficial)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
+        ${premiumMapsUrl ? `<div><span class="font-semibold text-slate-600">Cómo llegar:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumMapsUrl)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
+      </div>` : ``}
       ${action.why ? `<div class="mt-2 text-sm text-slate-600"><span class="font-semibold text-slate-700">Por qué:</span> ${escapeHtml(action.why)}</div>` : ``}
       ${action.where ? `<div class="mt-1 text-sm text-slate-600"><span class="font-semibold text-slate-700">Dónde:</span> ${escapeHtml(action.where)}</div>` : ``}
       ${action.price ? `<div class="mt-1 text-sm text-slate-600"><span class="font-semibold text-slate-700">Precio:</span> ${escapeHtml(action.price)}</div>` : ``}
@@ -20678,8 +20732,10 @@ function __mvTripAdviceAIHTML(payload){
   };
   return `
     <div class="space-y-3">
+      ${updatedLabel ? `<div class="text-xs text-slate-400">Recomendaciones IA (Gemini) · actualizado: ${escapeHtml(updatedLabel)}</div>` : ``}
       ${general.length ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos generales</div><div class="mt-2 grid gap-2">${general.map(tipHtml).join("")}</div></div>` : ``}
       ${cityEntries.map(([city, arr])=>`<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos por ciudad</div><div class="mt-2 font-extrabold text-slate-900">${escapeHtml(city)}</div><div class="mt-2 grid gap-2">${arr.map(tipHtml).join("")}</div></div>`).join("")}
+      ${normalized.nota ? `<div class="text-xs text-slate-400">${escapeHtml(normalized.nota)}</div>` : ``}
     </div>`;
 }
 
@@ -20728,7 +20784,7 @@ function __mvTripAdviceModalBodyHTML(sc){
     const basicHtml = bullets.length
       ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Tips básicos</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${bullets.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div></div>`
       : `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">Añade transportes/actividades para ver consejos.</div>`;
-    const aiBadge = (aiCache && String(aiCache.source || "").toLowerCase() === "gemini")
+    const aiBadge = (aiCache && String(aiCache.source || "").toLowerCase() === "gemini" && !__mvTripAdviceDateTimeLabel(aiCache.aiTipsGeminiUpdatedAt || aiCache.generatedAt || ""))
       ? `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>`
       : ``;
     const aiHtml = aiCache ? `${aiBadge}${__mvTripAdviceAIHTML(aiCache)}` : ``;
@@ -20839,11 +20895,13 @@ function __mvSaveTripAdviceGeminiCache(signature, payload){
       signature: signature,
       prefsHash: __mvTripAdvicePrefsHash(),
       generatedAt: new Date().toISOString(),
+      aiTipsGeminiUpdatedAt: Number(payload.aiTipsGeminiUpdatedAt || Date.now()),
       build: APP_BUILD,
       source: "gemini",
       generalTips: normalized.generalTips.slice(0, 10),
       byCity: normalized.byCity || {},
-      meta: normalized.meta || {}
+      meta: normalized.meta || {},
+      nota: normalized.nota || ""
     };
     if(!value.generalTips.length && !Object.keys(value.byCity || {}).length) return false;
     localStorage.setItem(`mvTipsGeminiCache_v2_${scenarioLetter}`, JSON.stringify(value));
@@ -20899,36 +20957,55 @@ function __mvTripAdviceAIPrompt(sc){
     ];
     const bullets = __mvTripAdviceBullets(sc);
     if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
-    return `Eres un asistente práctico de viaje.
+    return `Eres un asistente de viajes. Genera consejos prácticos para este viaje.
 Idioma: español.
+IMPORTANTE: Si recomiendas algo que implique COMPRA/ABONO/ENTRADA/RESERVA/TRANSPORTE, DEBES incluir:
+1) qué es y para qué sirve
+2) precio orientativo (si no estás seguro: “precio: no confirmado”)
+3) dónde se compra (online y/o físico)
+4) por qué se recomienda vs alternativas (2-3 bullets)
+5) enlace oficial si existe (si no lo conoces, pon “enlace oficial: buscar en sitio oficial”)
+6) si es físico, añade “cómo llegar” con un enlace de Google Maps usando búsqueda:
+   https://www.google.com/maps/search/?api=1&query=<texto_urlencoded>
 
-Resumen del itinerario:
+Formato de salida OBLIGATORIO (JSON):
+{
+  "general": [
+    {"titulo":"...", "detalle":"..."}
+  ],
+  "porCiudad": [
+    {
+      "ciudad":"Nueva York",
+      "items":[
+        {
+          "titulo":"Transporte público (MetroCard/OMNY)",
+          "detalle":"...",
+          "premium":{
+            "precio":"...",
+            "dondeComprar":"...",
+            "porQue":"- ...\\n- ...",
+            "enlaceOficial":"...",
+            "comoLlegar":"..."
+          }
+        }
+      ]
+    }
+  ],
+  "nota":"Si falta algún dato, indícalo claramente como no confirmado."
+}
+
+Datos del viaje:
 ${lines.join("\n")}
 
-Devuelve SOLO JSON válido con este formato:
-{"bullets":["...","..."]}
-
-Instrucciones:
-- devuelve entre 6 y 12 bullets máximo
-- cada bullet debe ser accionable y útil
-- cuando recomiendes algo que se compra o se gestiona, el propio bullet debe incluir SIEMPRE:
-  "Coste (aprox.): ..."
-  "Dónde comprar: ..."
-  "Por qué: ..."
-  "Cómo llegar: https://www.google.com/maps/search/?api=1&query=..."
-  "Info oficial: ..."
-- si no estás 100% seguro del precio actual, escribe exactamente "Coste (aprox.): variable" o "Coste (aprox.): Consultar oficial"
-- si mencionas MetroCard, OMNY, abonos, pases, tickets o reservas, debes incluir siempre coste + dónde comprar + por qué + cómo llegar + info oficial
-- si hay alternativas, compáralas brevemente en "Por qué"
-- si el itinerario incluye varias ciudades, incluye al menos 1 o 2 bullets específicos por ciudad cuando aplique
-- consejos prácticos y accionables
-- habla de ropa por época sin inventar clima real ni temperaturas
-- incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
-- NO inventes nombres ni datos que no estén presentes
-- prioriza web oficial frente a webs de terceros; si no la conoces, escribe "Info oficial: web del operador (verifica)"
-- ejemplo de formato válido de bullet:
-  "Nueva York · Transporte: MetroCard/OMNY. Coste (aprox.): variable (consulta MTA). Dónde comprar: máquinas en estaciones / app OMNY. Por qué: suele ser más eficiente y barato que taxi en desplazamientos urbanos. Cómo llegar: https://www.google.com/maps/search/?api=1&query=MetroCard+vending+machine+New+York. Info oficial: https://new.mta.info (verifica)."
-- evita texto largo y devuelve SOLO JSON, sin markdown ni comentarios`;
+Reglas:
+- devuelve SOLO JSON válido, sin markdown ni texto extra
+- consejos prácticos, útiles y accionables
+- si un consejo implica compra, abono, entrada, reserva o transporte, usa SIEMPRE el bloque "premium"
+- si no estás seguro de un precio, usa exactamente "precio: no confirmado"
+- no inventes clima real ni temperaturas
+- no inventes datos del itinerario
+- si el viaje tiene varias ciudades, incluye consejos específicos por ciudad
+- prioriza enlaces oficiales y, si faltan, indícalo claramente`;
   }catch(_){
     return "";
   }
@@ -20959,11 +21036,19 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     }
     if(statusEl) statusEl.textContent = "Generando consejos…";
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
+    const isPremiumShape = !!(out && typeof out === "object" && (Array.isArray(out.general) || Array.isArray(out.porCiudad)));
+    const isLegacyShape = !!(out && typeof out === "object" && (Array.isArray(out.bullets) || Array.isArray(out.generalTips) || (out.byCity && typeof out.byCity === "object")));
+    if(!isPremiumShape && !isLegacyShape) throw new Error("INVALID_TRIP_AI_TIPS_JSON");
     const payload = __mvNormalizeTripAdvicePayload({
       source: "gemini",
+      general: Array.isArray(out && out.general) ? out.general : [],
+      porCiudad: Array.isArray(out && out.porCiudad) ? out.porCiudad : [],
+      nota: String(out && out.nota || "").trim(),
       bullets: Array.isArray(out && out.bullets) ? out.bullets : [],
       generalTips: Array.isArray(out && out.generalTips) ? out.generalTips : [],
       byCity: (out && out.byCity && typeof out.byCity === "object") ? out.byCity : {},
+      generatedAt: new Date().toISOString(),
+      aiTipsGeminiUpdatedAt: Date.now(),
       meta: { signature: signature }
     });
     payload.__signature = signature;
@@ -20974,8 +21059,8 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     if(statusEl) statusEl.textContent = "Consejos actualizados";
   }catch(e){
     console.log("Trip advice Gemini failed", e);
-    if(statusEl) statusEl.textContent = "No se ha podido generar con IA. Usa los tips básicos.";
-    try{ toast("No se pudieron generar consejos con IA"); }catch(_){}
+    if(statusEl) statusEl.textContent = "IA: respuesta no válida, mostrando tips anteriores";
+    try{ toast("IA: respuesta no válida, mostrando tips anteriores"); }catch(_){}
   }finally{
     if(btn) btn.disabled = false;
   }
