@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS</title>
+  <title>V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS";
+const APP_BUILD = "V240_A146_GEMINI_ACTIONABLE_RECS_WITH_BUY_INFO";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20602,14 +20602,73 @@ function __mvTripAdvicePrefsHash(){
   }
 }
 
+function __mvTripAdviceMapsUrl(query){
+  const q = String(query || "").trim();
+  if(!q) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+function __mvNormalizeTripAdviceTip(raw){
+  const item = (raw && typeof raw === "object") ? raw : { title: "", text: String(raw || "").trim() };
+  const actionRaw = (item.action && typeof item.action === "object") ? item.action : {};
+  return {
+    title: String(item.title || "").trim(),
+    text: String(item.text || item.oneLiner || item.summary || "").trim(),
+    action: {
+      type: String(actionRaw.type || "none").trim() || "none",
+      why: String(actionRaw.why || "").trim(),
+      price: String(actionRaw.price || "").trim(),
+      where: String(actionRaw.where || "").trim(),
+      officialUrl: String(actionRaw.officialUrl || "").trim(),
+      mapsQuery: String(actionRaw.mapsQuery || "").trim()
+    }
+  };
+}
+
+function __mvNormalizeTripAdvicePayload(payload){
+  const src = (payload && typeof payload === "object") ? payload : {};
+  const oldGeneral = Array.isArray(src.generalBullets) ? src.generalBullets : [];
+  const oldCityTips = (src.cityTips && typeof src.cityTips === "object") ? src.cityTips : {};
+  const generalTips = Array.isArray(src.generalTips) ? src.generalTips.map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text) : oldGeneral.map((txt)=> __mvNormalizeTripAdviceTip({ title: "", text: txt })).filter((tip)=> tip.title || tip.text);
+  const byCityRaw = (src.byCity && typeof src.byCity === "object") ? src.byCity : oldCityTips;
+  const byCity = {};
+  Object.keys(byCityRaw || {}).forEach((city)=>{
+    const arr = Array.isArray(byCityRaw[city]) ? byCityRaw[city].map(__mvNormalizeTripAdviceTip).filter((tip)=> tip.title || tip.text) : [];
+    if(arr.length) byCity[String(city || "").trim()] = arr;
+  });
+  return {
+    signature: src.signature || "",
+    prefsHash: src.prefsHash || "",
+    generatedAt: src.generatedAt || "",
+    build: src.build || "",
+    source: src.source || "gemini",
+    generalTips,
+    byCity,
+    meta: src.meta || {}
+  };
+}
+
 function __mvTripAdviceAIHTML(payload){
-  const general = Array.isArray(payload && payload.generalBullets) ? payload.generalBullets.filter(Boolean) : [];
-  const cityTips = (payload && payload.cityTips && typeof payload.cityTips === "object") ? payload.cityTips : {};
-  const cityEntries = Object.entries(cityTips).filter(([city, arr])=> String(city || "").trim() && Array.isArray(arr) && arr.length);
+  const normalized = __mvNormalizeTripAdvicePayload(payload);
+  const general = normalized.generalTips || [];
+  const cityEntries = Object.entries(normalized.byCity || {}).filter(([city, arr])=> String(city || "").trim() && Array.isArray(arr) && arr.length);
+  const tipHtml = (tip)=>{
+    const action = tip.action || { type:"none" };
+    const officialUrl = String(action.officialUrl || "").trim();
+    const mapsUrl = __mvTripAdviceMapsUrl(action.mapsQuery);
+    return `<div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+      ${tip.title ? `<div class="font-semibold text-slate-900">${escapeHtml(tip.title)}</div>` : ``}
+      ${tip.text ? `<div class="mt-1 text-sm text-slate-700">${escapeHtml(tip.text)}</div>` : ``}
+      ${action.why ? `<div class="mt-2 text-sm text-slate-600"><span class="font-semibold text-slate-700">Por qué:</span> ${escapeHtml(action.why)}</div>` : ``}
+      ${action.where ? `<div class="mt-1 text-sm text-slate-600"><span class="font-semibold text-slate-700">Dónde:</span> ${escapeHtml(action.where)}</div>` : ``}
+      ${action.price ? `<div class="mt-1 text-sm text-slate-600"><span class="font-semibold text-slate-700">Precio:</span> ${escapeHtml(action.price)}</div>` : ``}
+      ${(officialUrl || mapsUrl) ? `<div class="mt-2 flex flex-wrap gap-2">${officialUrl ? `<a class="tap inline-flex items-center justify-center h-8 rounded-full px-3 border border-slate-200 bg-white text-xs font-semibold text-slate-700" href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener">Web oficial</a>` : ``}${mapsUrl ? `<a class="tap inline-flex items-center justify-center h-8 rounded-full px-3 border border-slate-200 bg-white text-xs font-semibold text-slate-700" href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener">Ir a</a>` : ``}</div>` : ``}
+    </div>`;
+  };
   return `
     <div class="space-y-3">
-      ${general.length ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos generales</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${general.map(item=>`<div>• ${escapeHtml(item)}</div>`).join("")}</div></div>` : ``}
-      ${cityEntries.map(([city, arr])=>`<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos por ciudad</div><div class="mt-2 font-extrabold text-slate-900">${escapeHtml(city)}</div><div class="mt-2 text-sm text-slate-700 grid gap-1">${arr.map(item=>`<div>• ${escapeHtml(String(item || "").trim())}</div>`).join("")}</div></div>`).join("")}
+      ${general.length ? `<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos generales</div><div class="mt-2 grid gap-2">${general.map(tipHtml).join("")}</div></div>` : ``}
+      ${cityEntries.map(([city, arr])=>`<div class="rounded-2xl border border-slate-200 bg-white px-4 py-4"><div class="text-xs font-bold uppercase tracking-wide text-slate-500">Consejos por ciudad</div><div class="mt-2 font-extrabold text-slate-900">${escapeHtml(city)}</div><div class="mt-2 grid gap-2">${arr.map(tipHtml).join("")}</div></div>`).join("")}
     </div>`;
 }
 
@@ -20752,10 +20811,9 @@ function __mvLoadTripAdviceGeminiCache(signature){
     const raw = localStorage.getItem(`mvTipsGeminiCache_v2_${scenarioLetter}`);
     const hit = raw ? JSON.parse(raw) : null;
     if(!hit || hit.signature !== signature || hit.prefsHash !== __mvTripAdvicePrefsHash()) return null;
-    const generalBullets = Array.isArray(hit.generalBullets) ? hit.generalBullets.slice().filter(Boolean) : [];
-    const cityTips = (hit && hit.cityTips && typeof hit.cityTips === "object") ? hit.cityTips : {};
-    if(!generalBullets.length && !Object.keys(cityTips).length) return null;
-    return Object.assign({}, hit, { generalBullets, cityTips, source: hit.source || "gemini" });
+    const normalized = __mvNormalizeTripAdvicePayload(hit);
+    if(!normalized.generalTips.length && !Object.keys(normalized.byCity).length) return null;
+    return normalized;
   }catch(_){
     return null;
   }
@@ -20765,17 +20823,18 @@ function __mvSaveTripAdviceGeminiCache(signature, payload){
   try{
     if(!signature || !payload) return false;
     const scenarioLetter = String(state && state.scenario || "A");
+    const normalized = __mvNormalizeTripAdvicePayload(payload);
     const value = {
       signature: signature,
       prefsHash: __mvTripAdvicePrefsHash(),
       generatedAt: new Date().toISOString(),
       build: APP_BUILD,
       source: "gemini",
-      generalBullets: Array.isArray(payload.generalBullets) ? payload.generalBullets.slice(0, 10) : [],
-      cityTips: payload.cityTips || {},
-      meta: payload.meta || {}
+      generalTips: normalized.generalTips.slice(0, 10),
+      byCity: normalized.byCity || {},
+      meta: normalized.meta || {}
     };
-    if(!value.generalBullets.length && !Object.keys(value.cityTips || {}).length) return false;
+    if(!value.generalTips.length && !Object.keys(value.byCity || {}).length) return false;
     localStorage.setItem(`mvTipsGeminiCache_v2_${scenarioLetter}`, JSON.stringify(value));
     try{ window.__mvTripAdviceAICache = Object.assign({}, value, { __signature: signature }); }catch(_){}
     return true;
@@ -20836,17 +20895,58 @@ Resumen del itinerario:
 ${lines.join("\n")}
 
 Devuelve SOLO JSON válido con este formato:
-{"generalBullets":["...","..."],"cityTips":{"Nueva York":["..."],"Orlando":["..."]}}
+{
+  "generalTips": [
+    {
+      "title": "string corto",
+      "text": "1-2 frases",
+      "action": {
+        "type": "none",
+        "why": "",
+        "price": "",
+        "where": "",
+        "officialUrl": "",
+        "mapsQuery": ""
+      }
+    }
+  ],
+  "byCity": {
+    "Nueva York": [
+      {
+        "title": "string corto",
+        "text": "1-2 frases",
+        "action": {
+          "type": "none",
+          "why": "",
+          "price": "",
+          "where": "",
+          "officialUrl": "",
+          "mapsQuery": ""
+        }
+      }
+    ]
+  }
+}
 
 Instrucciones:
-- "generalBullets": 6 a 10 bullets máximo
-- "cityTips": una sección por cada ciudad visitada, con 4 a 6 bullets por ciudad
+- "generalTips": 6 a 10 tips máximo
+- "byCity": una sección por cada ciudad visitada, con 4 a 6 tips por ciudad
+- cada tip debe incluir title y text
+- action.type solo puede ser: "none", "buy", "book" o "go"
+- si recomiendas algo accionable o comprable, action debe incluir:
+  why = por qué se recomienda frente a alternativas
+  price = precio solo si estás seguro; si dudas usa exactamente "Consultar oficial"
+  where = dónde se compra o gestiona
+  officialUrl = enlace oficial si existe
+  mapsQuery = nombre+ciudad o dirección si es un lugar físico
+- si recomiendas MetroCard, OMNY, abonos, pases o tickets, debes incluir where + officialUrl + why + price y mapsQuery si hay punto físico
 - consejos prácticos y accionables
 - habla de ropa por época sin inventar clima real ni temperaturas
 - incluye calzado, capas, powerbank, agua, reservas, antelación en transportes y movilidad en gran ciudad cuando aplique
 - estructura obligatoria: primero consejos generales, luego consejos por ciudad
 - NO inventes nombres ni datos que no estén presentes
-- evita texto largo`;
+- prioriza web oficial frente a webs de terceros
+- evita texto largo y devuelve SOLO JSON, sin markdown ni comentarios`;
   }catch(_){
     return "";
   }
@@ -20877,14 +20977,14 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     }
     if(statusEl) statusEl.textContent = "Generando consejos…";
     const out = await geminiGenerateJSON(__mvTripAdviceAIPrompt(sc));
-    const payload = {
+    const payload = __mvNormalizeTripAdvicePayload({
       source: "gemini",
-      generalBullets: Array.isArray(out && out.generalBullets) ? out.generalBullets.map(x => String(x || "").trim()).filter(Boolean).slice(0,10) : [],
-      cityTips: (out && out.cityTips && typeof out.cityTips === "object") ? Object.fromEntries(Object.entries(out.cityTips).map(([city, arr])=> [String(city || "").trim(), Array.isArray(arr) ? arr.map(x=>String(x || "").trim()).filter(Boolean).slice(0,6) : []]).filter(([city, arr])=> city && arr.length)) : {},
+      generalTips: Array.isArray(out && out.generalTips) ? out.generalTips : [],
+      byCity: (out && out.byCity && typeof out.byCity === "object") ? out.byCity : {},
       meta: { signature: signature }
-    };
+    });
     payload.__signature = signature;
-    if(!payload.generalBullets.length && !Object.keys(payload.cityTips).length) throw new Error("EMPTY_TRIP_AI_TIPS");
+    if(!payload.generalTips.length && !Object.keys(payload.byCity).length) throw new Error("EMPTY_TRIP_AI_TIPS");
     window.__mvTripAdviceAICache = payload;
     __mvSaveTripAdviceGeminiCache(signature, payload);
     if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTripAdviceAIHTML(payload)}`;
