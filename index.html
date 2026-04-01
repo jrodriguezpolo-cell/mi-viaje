@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS</title>
+  <title>V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A144_TIPS_MULTI_CITY_PLUS_FAMILY_PREFS";
+const APP_BUILD = "V240_A145_DISCOVER_GEMINI_USES_TRAVEL_PREFS";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -26163,6 +26163,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       const trip = this.bridge.readTrip();
       const cityKey = this.__aiCityKey(cityName);
       const range = this.__mvCityRecsRangeSummary(trip);
+      const travelPrefs = (typeof __mvGetTravelPrefs === "function") ? (__mvGetTravelPrefs() || {}) : { tripTypes:["mixto"], pace:"medio", group:"pareja", kids:false, kidsAges:"", hiddenSpots:false };
       const existingActs = (Array.isArray(trip.activities) ? trip.activities : [])
         .filter((act)=> this.__aiCityKey(act && (act.city || act.location || act.place || "")) === cityKey)
         .map((act)=> `- ${String(act && (act.title || act.name) || "").trim()} · ${String(act && (act.date || "") || "").trim()}`)
@@ -26173,18 +26174,26 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         const item = entry.items[id];
         return item ? String(item.title || "").trim() : "";
       }).filter(Boolean);
+      const seenTitles = entry.order.map((id)=>entry.items[id]).filter((item)=> item && item.status === "seen").map((item)=> String(item.title || "").trim()).filter(Boolean);
+      const dismissedTitles = entry.order.map((id)=>entry.items[id]).filter((item)=> item && item.status === "dismissed").map((item)=> String(item.title || "").trim()).filter(Boolean);
+      const cityMeta = (typeof __mvTripAdviceCitiesMeta === "function") ? (__mvTripAdviceCitiesMeta(trip) || {}) : { citiesVisited: [] };
+      const cityList = Array.isArray(cityMeta.citiesVisited) ? cityMeta.citiesVisited : [];
       return [
         `Genera 5 propuestas NUEVAS y concretas para la ciudad ${cityName}.`,
-        `Devuelve SOLO JSON con este formato: {"items":[{"title":"","oneLiner":"","whatIs":"","history":"","proTip":""}]}.`,
+        `Devuelve SOLO JSON válido, sin texto adicional, con este formato exacto: {"items":[{"title":"","oneLiner":"","queEs":"","historia":"","consejoPro":""}]}.`,
         `Idioma: español.`,
-        `No repitas títulos ni ideas muy parecidas a estas ya existentes: ${existingTitles.join(" | ") || "ninguna"}.`,
-        `Mantén un formato premium y útil para viaje real.`,
-        `oneLiner: 1 frase corta personalizada.`,
-        `whatIs: breve y claro.`,
-        `history: 3-6 líneas cortas como máximo.`,
-        `proTip: accionable y concreto.`,
+        `Itinerario multi-ciudad del viaje: ${cityList.join(" | ") || "solo esta ciudad"}.`,
+        `Ciudad objetivo: ${cityName}.`,
+        `Preferencias: grupo=${travelPrefs.group || "pareja"}; kids=${travelPrefs.kids ? `sí (${travelPrefs.kidsAges || "sin edades"})` : "no"}; tipo=${(travelPrefs.tripTypes || ["mixto"]).join(", ")}; ritmo=${travelPrefs.pace || "medio"}; sitios ocultos=${travelPrefs.hiddenSpots ? "sí" : "no"}.`,
+        `No repitas títulos ni ideas muy parecidas a estas ya existentes o descartadas: ${existingTitles.concat(seenTitles).concat(dismissedTitles).join(" | ") || "ninguna"}.`,
+        `Mantén un formato premium y útil para viaje real. Propón lugares concretos, nada genérico.`,
+        `title: lugar concreto, máximo 60 chars.`,
+        `oneLiner: 1 frase corta, personalizada.`,
+        `queEs, historia y consejoPro: 2-5 líneas cortas cada uno.`,
+        `Prioriza según preferencias: family-friendly si hay niños/parques; cultural si toca; hidden spots si se pide; más calmado si el ritmo es tranquilo.`,
         `Rango del viaje: ${range.minDate || "—"} a ${range.maxDate || "—"}.`,
-        existingActs ? `Actividades ya previstas en ${cityName}:\n${existingActs}` : `No hay actividades previstas aún en ${cityName}.`
+        existingActs ? `Actividades ya previstas en ${cityName}:\n${existingActs}` : `No hay actividades previstas aún en ${cityName}.`,
+        `No inventes clima, horarios exactos ni disponibilidad.`
       ].join("\n");
     },
     // QA manual A124:
@@ -26198,12 +26207,23 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       if(!cityName) throw new Error("NO_CITY");
       const key = (typeof getGeminiKey === "function") ? String(getGeminiKey() || "").trim() : "";
       if(!key) throw new Error("NO_KEY");
-      const schema = `Devuelve SOLO este JSON: {"items":[{"title":"","oneLiner":"","whatIs":"","history":"","proTip":""}]}`;
+      const schema = `Devuelve SOLO este JSON: {"items":[{"title":"","oneLiner":"","queEs":"","historia":"","consejoPro":""}]}`;
       let added = [];
       let attempts = 0;
       while(added.length < 5 && attempts < 2){
         attempts += 1;
-        const out = await geminiGenerateJSON(this.__mvCityGeminiPrompt(cityName), schema);
+        let out = await geminiGenerateJSON(this.__mvCityGeminiPrompt(cityName), schema);
+        if(typeof out === "string"){
+          try{
+            let cleaned = String(out || "").trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+            const start = cleaned.indexOf("{");
+            const end = cleaned.lastIndexOf("}");
+            if(start >= 0 && end > start) cleaned = cleaned.slice(start, end + 1);
+            out = JSON.parse(cleaned);
+          }catch(_){
+            out = null;
+          }
+        }
         const items = Array.isArray(out) ? out : (Array.isArray(out && out.items) ? out.items : []);
         const batch = this.__mvIngestGeminiCityRecs(cityName, items, this.__mvCityRecsContextHash(cityKey));
         added = added.concat(batch).slice(0,5);
