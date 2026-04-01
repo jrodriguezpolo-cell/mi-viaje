@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A142</title>
+  <title>V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A142</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A142";
+const APP_BUILD = "V240_A143_DISCOVER_CITY_NO_LOCAL_DIRECT_GEMINI";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -27847,9 +27847,7 @@ __aiBuildDayBuckets(trip){
             __cityAvailMeta[cityKey] = { available: __avail, fresh: __fresh, freshLocal: __freshLocal, seenRecoverable: __seenRecoverable };
           }
         }catch(e){}
-        if(!__cityAvailMeta[cityKey] || !__cityAvailMeta[cityKey].available){
-          continue;
-        }
+        const __noCatalog = !__cityAvailMeta[cityKey] || !__cityAvailMeta[cityKey].available;
 
         const gapBlocks = gaps.map((g,gi)=>{
           const show = this.__aiTopProposalsForCity(city, scheduledTitles, 5, 0);
@@ -27888,6 +27886,7 @@ __aiBuildDayBuckets(trip){
             gapMin: __gapMin,
             slots: __slots,
             slotMin: __slotMin,
+            noCatalog: __noCatalog,
             spots: show
           });
 
@@ -27930,6 +27929,7 @@ __aiBuildDayBuckets(trip){
           city: first.city || "",
           cityKey: ((window.__MV_POI && typeof window.__MV_POI.cityKey==="function") ? window.__MV_POI.cityKey(first.city || "") : this.__aiCityKey(first.city || "")),
           day,
+          noCatalog: !!(first && first.noCatalog),
           gaps: idxs.map(i=>sections[i])
         };
       });
@@ -27945,7 +27945,7 @@ __aiBuildDayBuckets(trip){
         const __totalSlots = (sec && Array.isArray(sec.gaps)) ? sec.gaps.reduce((acc,g)=> acc + (parseInt(g && g.slots,10)||0), 0) : 0;
 
         // Empty state claro cuando no quedan propuestas nuevas (tras dedupe real)
-        const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">No quedan propuestas nuevas en esta ciudad.</div>`;
+        const __emptyCityHtml = `<div class="py-4 text-sm text-slate-500 italic">${sec.noCatalog ? "Sin recomendaciones guardadas en local para esta ciudad." : "No quedan propuestas nuevas en esta ciudad."}</div>`;
         const gapsHtml = (__availN===0) ? __emptyCityHtml : sec.gaps.map((g,gi)=>{
           const spotsHtml = (g.spots||[]).map((p,pi)=>{
             return `<label class="flex gap-3 items-start p-3 rounded-xl border border-slate-200 bg-white">
@@ -27983,6 +27983,7 @@ __aiBuildDayBuckets(trip){
                     </div>
                   </div>
                   <div id="${bodyId}" class="hidden px-4 py-3">
+                    ${(__availN===0 && sec.cityKey) ? `<div class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-3"><div class="text-sm text-violet-900">Sin recomendaciones guardadas en local para esta ciudad.</div><button type="button" class="tap inline-flex items-center justify-center h-9 rounded-full px-3 bg-violet-600 text-white text-sm font-semibold" data-ai-city-gemini="${escapeHtml(sec.cityKey)}">Pedir a la IA</button></div>` : ``}
                     ${gapsHtml}
                   </div>
                 </div>`;
