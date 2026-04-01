@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A146_TIPS_GEMINI_PREMIUM_DETAILS</title>
+  <title>V240_A147_TIPS_GEMINI_GENERIC_PLUS_PREMIUM</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A146_TIPS_GEMINI_PREMIUM_DETAILS</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A147_TIPS_GEMINI_GENERIC_PLUS_PREMIUM</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A146_TIPS_GEMINI_PREMIUM_DETAILS";
+const APP_BUILD = "V240_A147_TIPS_GEMINI_GENERIC_PLUS_PREMIUM";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -20665,7 +20665,8 @@ function __mvNormalizeTripAdvicePayload(payload){
       premium: {
         precio: String(premiumRaw.precio || "").trim(),
         dondeComprar: String(premiumRaw.dondeComprar || "").trim(),
-        porQue: String(premiumRaw.porQue || "").trim(),
+        comparativa: String(premiumRaw.comparativa || premiumRaw.porQue || "").trim(),
+        familia5: String(premiumRaw.familia5 || "").trim(),
         enlaceOficial: String(premiumRaw.enlaceOficial || "").trim(),
         comoLlegar: String(premiumRaw.comoLlegar || "").trim()
       }
@@ -20701,6 +20702,44 @@ function __mvNormalizeTripAdvicePayload(payload){
   };
 }
 
+function __mvTripAdviceTipLooksPremiumCandidate(tip){
+  try{
+    const hay = `${String(tip && tip.title || "")} ${String(tip && tip.text || "")}`.toLowerCase();
+    return /(metrocard|omny|abono|pase|pass|ticket|entrada|reserva|transporte|tarjeta|tren|bus|metro)/.test(hay);
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvTripAdvicePremiumComplete(tip){
+  try{
+    const p = tip && tip.premium;
+    if(!p || typeof p !== "object") return false;
+    return !!(
+      String(p.precio || "").trim() &&
+      String(p.dondeComprar || "").trim() &&
+      String(p.comparativa || "").trim() &&
+      String(p.familia5 || "").trim() &&
+      String(p.enlaceOficial || "").trim() &&
+      String(p.comoLlegar || "").trim()
+    );
+  }catch(_){
+    return false;
+  }
+}
+
+function __mvTripAdviceHasMissingPremium(payload){
+  try{
+    const normalized = __mvNormalizeTripAdvicePayload(payload);
+    const all = []
+      .concat(Array.isArray(normalized.generalTips) ? normalized.generalTips : [])
+      .concat(Object.values(normalized.byCity || {}).flat());
+    return all.some((tip)=> __mvTripAdviceTipLooksPremiumCandidate(tip) && !__mvTripAdvicePremiumComplete(tip));
+  }catch(_){
+    return true;
+  }
+}
+
 function __mvTripAdviceAIHTML(payload){
   const normalized = __mvNormalizeTripAdvicePayload(payload);
   const general = normalized.generalTips || [];
@@ -20720,7 +20759,8 @@ function __mvTripAdviceAIHTML(payload){
       ${premium ? `<div class="mt-2 grid gap-1 text-[13px] text-slate-500">
         ${premium.precio ? `<div><span class="font-semibold text-slate-600">Precio:</span> ${escapeHtml(premium.precio)}</div>` : ``}
         ${premium.dondeComprar ? `<div><span class="font-semibold text-slate-600">Dónde comprar:</span> ${escapeHtml(premium.dondeComprar)}</div>` : ``}
-        ${premium.porQue ? `<div><span class="font-semibold text-slate-600">Por qué:</span> ${escapeHtml(premium.porQue)}</div>` : ``}
+        ${premium.comparativa ? `<div><span class="font-semibold text-slate-600">Comparativa:</span> ${escapeHtml(premium.comparativa)}</div>` : ``}
+        ${premium.familia5 ? `<div><span class="font-semibold text-slate-600">Para familia de 5:</span> ${escapeHtml(premium.familia5)}</div>` : ``}
         ${premiumOfficial ? `<div><span class="font-semibold text-slate-600">Enlace:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumOfficial)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
         ${premiumMapsUrl ? `<div><span class="font-semibold text-slate-600">Cómo llegar:</span> <a class="underline decoration-slate-300 underline-offset-2" href="${escapeHtml(premiumMapsUrl)}" target="_blank" rel="noopener">abrir</a></div>` : ``}
       </div>` : ``}
@@ -20946,6 +20986,11 @@ function __mvTripAdviceAIPrompt(sc){
     const ov = data && data.overview ? data.overview : {};
     const cityMeta = __mvTripAdviceCitiesMeta(sc);
     const prefs = __mvGetTravelPrefs();
+    const staySummary = (Array.isArray(data && data.stayItems) ? data.stayItems : [])
+      .map((item)=> `${item.city || item.name || "Ciudad"}: ${item.checkInDate || "?"} → ${item.checkOutDate || "?"}`)
+      .filter(Boolean)
+      .join(" | ") || "No disponible";
+    const monthLabel = String(ov.dateStart || "").trim() ? String(ov.dateStart).slice(5,7) : "No disponible";
     const lines = [
       `Fechas del viaje: ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateStart) : ov.dateStart) || "—"} → ${(typeof formatDateShortES === "function" ? formatDateShortES(ov.dateEnd) : ov.dateEnd) || "—"}${ov.dayCount ? ` (${ov.dayCount} días)` : ""}`,
       `Transportes: ${Number(ov.transportCount || 0)}`,
@@ -20953,25 +20998,38 @@ function __mvTripAdviceAIPrompt(sc){
       `Actividades: ${Number(ov.activityCount || 0)}`,
       `Ciudad base excluida: ${cityMeta.baseCity || "No disponible"}`,
       `Ciudades del itinerario: ${(cityMeta.citiesVisited || []).join(" | ") || "No disponible"}`,
-      `Preferencias: tipo=${(prefs.tripTypes || []).join(", ") || "mixto"}; ritmo=${prefs.pace || "medio"}; grupo=${prefs.group || "pareja"}; niños=${prefs.kids ? `sí (${prefs.kidsAges || "sin edades"})` : "no"}; sitios ocultos=${prefs.hiddenSpots ? "sí" : "no"}`
+      `Fechas/estancia por ciudad: ${staySummary}`,
+      `Mes/estación aproximada: ${monthLabel}`,
+      `Perfil/Preferencias guardadas: tipo=${(prefs.tripTypes || []).join(", ") || "mixto"}; ritmo=${prefs.pace || "medio"}; grupo=${prefs.group || "familia"}; niños=${prefs.kids ? `sí (${prefs.kidsAges || "sin edades"})` : "sí (2 adultos + 3 niños por defecto)"}; sitios ocultos=${prefs.hiddenSpots ? "sí" : "no"}`
     ];
     const bullets = __mvTripAdviceBullets(sc);
     if(bullets.length) lines.push(`Tips básicos actuales: ${bullets.join(" | ")}`);
-    return `Eres un asistente de viajes. Genera consejos prácticos para este viaje.
-Idioma: español.
-IMPORTANTE: Si recomiendas algo que implique COMPRA/ABONO/ENTRADA/RESERVA/TRANSPORTE, DEBES incluir:
-1) qué es y para qué sirve
-2) precio orientativo (si no estás seguro: “precio: no confirmado”)
-3) dónde se compra (online y/o físico)
-4) por qué se recomienda vs alternativas (2-3 bullets)
-5) enlace oficial si existe (si no lo conoces, pon “enlace oficial: buscar en sitio oficial”)
-6) si es físico, añade “cómo llegar” con un enlace de Google Maps usando búsqueda:
+    return `Eres un asistente de viajes para una FAMILIA (por defecto: 5 miembros; 2 adultos + 3 niños) y debes generar consejos prácticos.
+
+PRIORIDAD:
+A) Tips genéricos útiles (ropa/calzado/clima/ritmo/powerbank/documentación/seguridad)
+B) Tips por ciudad con transporte y logística
+C) Si recomiendas un ABONO/ENTRADA/RESERVA/COMPRA, debes dar detalle premium.
+
+REGLA PREMIUM (OBLIGATORIA si aparece cualquier compra/abono/entrada/reserva):
+Para cada recomendación “premium”, incluye:
+1) qué es
+2) precio orientativo (si no seguro: “no confirmado”)
+3) DÓNDE SE COMPRA (online + físico si aplica)
+4) POR QUÉ se recomienda vs alternativas (comparativa breve y explícita)
+5) qué conviene para familia de 5 (ej: “si vais 5…”, “si 3 niños…”, “si usáis mucho…”)
+6) enlace oficial (si no lo sabes: “enlace oficial: no confirmado”)
+7) cómo llegar (Google Maps search):
    https://www.google.com/maps/search/?api=1&query=<texto_urlencoded>
 
-Formato de salida OBLIGATORIO (JSON):
+FORMATO DE SALIDA OBLIGATORIO (JSON):
 {
   "general": [
-    {"titulo":"...", "detalle":"..."}
+    {"titulo":"Ropa y clima", "detalle":"..."},
+    {"titulo":"Calzado", "detalle":"..."},
+    {"titulo":"Powerbank y móvil", "detalle":"..."},
+    {"titulo":"Ritmo con niños", "detalle":"..."},
+    {"titulo":"Documentación", "detalle":"..."}
   ],
   "porCiudad": [
     {
@@ -20979,11 +21037,12 @@ Formato de salida OBLIGATORIO (JSON):
       "items":[
         {
           "titulo":"Transporte público (MetroCard/OMNY)",
-          "detalle":"...",
+          "detalle":"Resumen en 1-2 frases.",
           "premium":{
             "precio":"...",
             "dondeComprar":"...",
-            "porQue":"- ...\\n- ...",
+            "comparativa":"- Opción A: ...\\n- Opción B: ...\\n- Recomendación final: ...",
+            "familia5":"...",
             "enlaceOficial":"...",
             "comoLlegar":"..."
           }
@@ -20991,21 +21050,18 @@ Formato de salida OBLIGATORIO (JSON):
       ]
     }
   ],
-  "nota":"Si falta algún dato, indícalo claramente como no confirmado."
+  "nota":"Si falta un dato, di claramente 'no confirmado'."
 }
 
-Datos del viaje:
+DATOS DEL VIAJE:
 ${lines.join("\n")}
 
-Reglas:
-- devuelve SOLO JSON válido, sin markdown ni texto extra
-- consejos prácticos, útiles y accionables
-- si un consejo implica compra, abono, entrada, reserva o transporte, usa SIEMPRE el bloque "premium"
-- si no estás seguro de un precio, usa exactamente "precio: no confirmado"
-- no inventes clima real ni temperaturas
-- no inventes datos del itinerario
-- si el viaje tiene varias ciudades, incluye consejos específicos por ciudad
-- prioriza enlaces oficiales y, si faltan, indícalo claramente`;
+IMPORTANTE:
+- Aunque no haya compras, SIEMPRE rellena al menos 5 tarjetas en "general".
+- Si mencionas MetroCard/OMNY/abonos: DEBES rellenar "premium" completo (no vale omitido).
+- Comparativa: explícita (económico vs cómodo vs niños vs simplicidad).
+- Si hay clima real disponible, úsalo; si no, da consejos por estación.
+- Devuelve SOLO JSON válido, sin markdown ni texto extra.`;
   }catch(_){
     return "";
   }
@@ -21053,6 +21109,11 @@ async function __mvEnrichTripAdviceWithGemini(opts){
     });
     payload.__signature = signature;
     if(!payload.generalTips.length && !Object.keys(payload.byCity).length) throw new Error("EMPTY_TRIP_AI_TIPS");
+    if(__mvTripAdviceHasMissingPremium(payload)){
+      try{ toast("IA: faltan detalles premium (reintenta Actualizar)"); }catch(_){}
+      if(statusEl) statusEl.textContent = "IA: faltan detalles premium (reintenta Actualizar)";
+      return;
+    }
     window.__mvTripAdviceAICache = payload;
     __mvSaveTripAdviceGeminiCache(signature, payload);
     if(resultEl) resultEl.innerHTML = `<div class="text-xs text-slate-400 mt-1">Recomendaciones de IA (Gemini)</div>${__mvTripAdviceAIHTML(payload)}`;
