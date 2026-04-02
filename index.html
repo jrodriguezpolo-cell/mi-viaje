@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH</title>
+  <title>V240_A150_IA_TRIP_PLAN_WIRING_FIX</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A150_IA_TRIP_PLAN_WIRING_FIX</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH";
+const APP_BUILD = "V240_A150_IA_TRIP_PLAN_WIRING_FIX";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -25690,7 +25690,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <button aria-label="Info" class="tap aiInfoBtn" type="button">i</button>
 </div>
 <div class="aiActionCard" data-ai-desc="Genera una propuesta estructurada de viaje con IA y te deja copiar eventos uno a uno a cualquier simulación." data-ai-title="Planificar viaje completo (IA)">
-<button class="tap aiActionMain" id="aiActionTripPlan" type="button">Planificar viaje completo (IA)</button>
+<button class="tap aiActionMain" id="iaTripPlan" type="button">Planificar viaje completo (IA)</button>
 <button aria-label="Info" class="tap aiInfoBtn" type="button">i</button>
 </div>
 <div class="aiActionCard" data-ai-desc="Detecta ciudades del viaje, localiza huecos (09:00–22:00, mínimo 3h) y propone sitios concretos por día/hueco para añadir a Actividades mediante el bridge seguro." data-ai-title="Descubrir ciudades y completar viaje">
@@ -26938,7 +26938,7 @@ Contexto:
       btnClose.className = "tap px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold";
       btnClose.textContent = "Cerrar";
       btnClose.onclick = ()=> { try{ closeModal(); }catch{} };
-      showModal("Planificar viaje completo (IA)", body, [btnClose]);
+      showModal("Planificar viaje (IA)", body, [btnClose]);
       try{
         const modalBody = document.getElementById("modalBody");
         modalBody.querySelectorAll("[data-ai-trip-plan-apply]").forEach((btn)=>{
@@ -27006,7 +27006,7 @@ Contexto:
           btnGenerate.disabled = false;
         }
       };
-      showModal("Planificar viaje completo (IA)", body, [btnCancel, btnGenerate]);
+      showModal("Planificar viaje (IA)", body, [btnCancel, btnGenerate]);
     },
     __mvCityGeminiPrompt(cityName){
       const trip = this.bridge.readTrip();
@@ -27521,7 +27521,7 @@ Contexto:
         }
       };
       on("aiActionSummary", ()=> this.selectAction("summary"));
-      on("aiActionTripPlan", ()=> this.__mvOpenTripPlanWizard());
+      on("iaTripPlan", ()=> this.__mvOpenTripPlanWizard());
       on("aiActionUnified", ()=> this.selectAction("unified"));
       on("aiActionSensitive", ()=> this.selectAction("sensitive"));
       on("aiActionTransport", ()=> this.selectAction("transport"));
@@ -27841,7 +27841,7 @@ Contexto:
     },
     renderShell(){
       const summaryBtn = document.getElementById("aiActionSummary");
-      const tripPlanBtn = document.getElementById("aiActionTripPlan");
+      const tripPlanBtn = document.getElementById("iaTripPlan");
       const unifiedBtn = document.getElementById("aiActionUnified");
       const citiesBtn = document.getElementById("aiActionCities");
       const sensitiveBtn = document.getElementById("aiActionSensitive");
@@ -30072,7 +30072,7 @@ commitSelectedActivities(){
   const bindAIControls = function(){
     try{
       initAISheet();
-      ["aiPick","aiGenerate","aiActionSummary","aiActionTripPlan","aiActionUnified","aiActionCities","aiActionSensitive","aiActionTransport"].forEach((id)=>{
+      ["aiPick","aiGenerate","aiActionSummary","iaTripPlan","aiActionUnified","aiActionCities","aiActionSensitive","aiActionTransport"].forEach((id)=>{
         const el = document.getElementById(id);
         if(el && el.__aiCtlBound){
           const clone = el.cloneNode(true);
@@ -30231,7 +30231,7 @@ commitSelectedActivities(){
           const mapById = (id)=>{
             switch(String(id||"")){
               case "aiActionSummary": return { key:"summary", title:t("ai.action.summary") };
-              case "aiActionTripPlan": return { key:"tripPlan", title:t("ai.action.tripPlan") };
+              case "iaTripPlan": return { key:"tripPlan", title:t("ai.action.tripPlan") };
               case "aiActionUnified": return { key:"unified", title:t("ai.action.unified") };
               case "aiActionCities": return { key:"cities", title:t("ai.action.cities") };
               case "aiActionSensitive": return { key:"sensitive", title:t("ai.action.sensitive") };
@@ -30264,6 +30264,17 @@ commitSelectedActivities(){
                 console.warn("[AI] Acción no reconocida:", mainBtn.id);
                 return;
               }
+              if(meta.key === "tripPlan"){
+                try{
+                  if(window.aiModule && typeof window.aiModule.__mvOpenTripPlanWizard === "function"){
+                    window.aiModule.__mvOpenTripPlanWizard();
+                  }else{
+                    console.warn("[AI] __mvOpenTripPlanWizard no disponible");
+                  }
+                }catch(err){ console.error(err); }
+                return;
+              }
+
               if(titleEl) titleEl.textContent = meta.title;
               setStage("detail");
 
