@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A148_IA_TRIP_PLAN_EVENT_PUSH_TO_SIM</title>
+  <title>V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A148_IA_TRIP_PLAN_EVENT_PUSH_TO_SIM</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A148_IA_TRIP_PLAN_EVENT_PUSH_TO_SIM";
+const APP_BUILD = "V240_A149_IA_TRIP_PLAN_MENU_AND_PUSH";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -2269,6 +2269,7 @@ const I18N = {
     "ai.gaps.addSelected": "Añadir seleccionadas a Actividades",
     "ai.action.summary": "Resumen contextual del viaje",
     "ai.action.unified": "Descubrir ciudades y completar viaje",
+    "ai.action.tripPlan": "Planificar viaje completo (IA)",
     "ai.action.cities": "Descubrir ciudades",
     "ai.action.sensitive": "Revisar puntos delicados",
     "ai.action.transport": "Revisar tramos de transporte",
@@ -2743,6 +2744,7 @@ const I18N = {
     "ai.gaps.addSelected": "Add selected to Activities",
     "ai.action.summary": "Trip contextual summary",
     "ai.action.unified": "Discover cities & complete the trip",
+    "ai.action.tripPlan": "Plan full trip (AI)",
     "ai.action.cities": "Discover cities",
     "ai.action.sensitive": "Review sensitive points",
     "ai.action.transport": "Review transport legs",
@@ -25687,6 +25689,10 @@ window.addEventListener('DOMContentLoaded', () => {
 <button class="tap aiActionMain" id="aiActionSummary" type="button">Resumen contextual del viaje</button>
 <button aria-label="Info" class="tap aiInfoBtn" type="button">i</button>
 </div>
+<div class="aiActionCard" data-ai-desc="Genera una propuesta estructurada de viaje con IA y te deja copiar eventos uno a uno a cualquier simulación." data-ai-title="Planificar viaje completo (IA)">
+<button class="tap aiActionMain" id="aiActionTripPlan" type="button">Planificar viaje completo (IA)</button>
+<button aria-label="Info" class="tap aiInfoBtn" type="button">i</button>
+</div>
 <div class="aiActionCard" data-ai-desc="Detecta ciudades del viaje, localiza huecos (09:00–22:00, mínimo 3h) y propone sitios concretos por día/hueco para añadir a Actividades mediante el bridge seguro." data-ai-title="Descubrir ciudades y completar viaje">
 <button class="tap aiActionMain" id="aiActionUnified" type="button">Descubrir ciudades y completar viaje</button>
 <button aria-label="Info" class="tap aiInfoBtn" type="button">i</button>
@@ -26063,7 +26069,8 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         entryLabel: "Cronograma",
         entryDescription: "Visión global del viaje y de los hitos del día.",
         preferenceContext: { chips: [], summary: "", tastes: [], pace: "Normal", kids: 0, restrictions: [] },
-        aiPlanTargetScenario: String((state && state.scenario) || "A").trim().toUpperCase()
+        aiPlanTargetScenario: String((state && state.scenario) || "A").trim().toUpperCase(),
+        aiTripPlanReview: null
       };
       this.loadPrefs();
       this.bindUI();
@@ -26655,6 +26662,352 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       }
       try{ toast("No se pudo copiar el evento"); }catch(_){}
     },
+    __mvTripPlanScenarioOptions(defaultSlot){
+      const current = String(defaultSlot || "B").trim().toUpperCase();
+      return ["A","B","C","D"].map((slot)=>`<option value="${escapeHtml(slot)}" ${slot===current ? "selected" : ""}>${escapeHtml(slot)}</option>`).join("");
+    },
+    __mvTripPlanContextSummary(notes){
+      const trip = this.bridge.readTrip();
+      const cities = this.__mvGetItineraryCitiesForDiscover().map((row)=>row.city).filter(Boolean);
+      const range = this.__mvCityRecsRangeSummary(trip);
+      const prefs = (typeof __mvGetTravelPrefs === "function") ? (__mvGetTravelPrefs() || {}) : null;
+      const profile = prefs
+        ? `${prefs.group || "pareja"} · ritmo ${prefs.pace || "medio"}${prefs.kids ? " · con niños" : ""}${prefs.hiddenSpots ? " · prioriza sitios menos típicos" : ""}`
+        : "Familia de 5 miembros (posibles niños). Ritmo medio. Prioriza logística simple, descansos y evitar colas largas.";
+      const acts = Array.isArray(trip.activities) ? trip.activities.length : 0;
+      const stays = Array.isArray(trip.stays) ? trip.stays.length : 0;
+      const legs = Array.isArray(trip.legs) ? trip.legs.length : 0;
+      const style = `Viaje con ${legs} transporte(s), ${stays} alojamiento(s) y ${acts} actividad(es). ${String(notes || "").trim() || "Viaje urbano/familiar con foco en logística simple."}`;
+      return {
+        cities: cities.length ? cities.join(", ") : "Sin ciudades detectadas",
+        range: `${range.minDate || "sin fecha"} a ${range.maxDate || "sin fecha"}`,
+        profile,
+        style
+      };
+    },
+    __mvTripPlanPrompt(targetSlot, notes){
+      const ctx = this.__mvTripPlanContextSummary(notes);
+      return `Devuelve SOLO JSON válido (sin markdown ni texto extra).
+
+Objetivo: crear una propuesta estructurada mínima de viaje para revisión manual.
+
+Formato obligatorio:
+{
+  "tripTitle": "Viaje ...",
+  "events": [
+    { "type":"transport|lodging|activity|misc", "title":"...", "city":"...", "date":"YYYY-MM-DD", "time":"HH:MM", "durationMin":120, "cost":0, "notes":"..." }
+  ]
+}
+
+Reglas:
+- Entre 1 y 6 eventos.
+- Usa solo fechas plausibles dentro del rango dado.
+- Si faltan datos, prioriza activity o misc antes que inventar transportes complejos.
+- No devuelvas explicaciones fuera del JSON.
+
+Contexto:
+- Simulación destino sugerida: ${targetSlot}
+- Ciudades visitadas: ${ctx.cities}
+- Fechas del viaje: ${ctx.range}
+- Perfil del grupo: ${ctx.profile}
+- Estilo y eventos resumen: ${ctx.style}`;
+    },
+    __mvTripPlanFallback(targetSlot, notes){
+      const trip = this.bridge.readTrip();
+      const cities = this.__mvGetItineraryCitiesForDiscover().map((row)=>row.city).filter(Boolean);
+      const range = this.__mvCityRecsRangeSummary(trip);
+      const acts = Array.isArray(trip.activities) ? trip.activities : [];
+      const baseDate = String((acts[0] && acts[0].date) || range.minDate || "").trim() || new Date().toISOString().slice(0,10);
+      const mainCity = cities[0] || "Destino";
+      const secondCity = cities[1] || mainCity;
+      return {
+        tripTitle: `Propuesta base IA · simulación ${targetSlot}`,
+        events: [
+          { type:"activity", title:`Paseo principal por ${mainCity}`, city:mainCity, date:baseDate, time:"10:00", durationMin:120, cost:0, notes:String(notes || "Bloque sugerido para arrancar el viaje").trim() || "Bloque sugerido para arrancar el viaje." },
+          { type:"activity", title:`Visita destacada en ${secondCity}`, city:secondCity, date:baseDate, time:"16:00", durationMin:120, cost:0, notes:"Propuesta base creada como fallback controlado." }
+        ]
+      };
+    },
+    async __mvGenerateTripPlanProposal(targetSlot, notes){
+      const hasGemini = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
+      if(!hasGemini){
+        try{ toast("Configura Gemini para usar IA"); }catch(_){}
+        return this.__mvTripPlanFallback(targetSlot, notes);
+      }
+      try{
+        const out = await geminiGenerateJSON(this.__mvTripPlanPrompt(targetSlot, notes));
+        if(!out || typeof out !== "object" || !Array.isArray(out.events) || !String(out.tripTitle || "").trim()){
+          throw new Error("INVALID_TRIP_PLAN_JSON");
+        }
+        const normalized = {
+          tripTitle: String(out.tripTitle || "").trim(),
+          events: out.events.map((ev)=>({
+            type: /^(transport|lodging|activity|misc)$/.test(String(ev && ev.type || "").trim()) ? String(ev.type).trim() : "activity",
+            title: String(ev && ev.title || "").trim(),
+            city: String(ev && ev.city || "").trim(),
+            date: String(ev && ev.date || "").trim(),
+            time: /^\d{2}:\d{2}$/.test(String(ev && ev.time || "").trim()) ? String(ev.time).trim() : "10:00",
+            durationMin: Math.max(30, parseInt(ev && ev.durationMin, 10) || 120),
+            cost: Number(ev && ev.cost || 0) || 0,
+            notes: String(ev && ev.notes || "").trim()
+          })).filter((ev)=>ev.title && /^\d{4}-\d{2}-\d{2}$/.test(ev.date))
+        };
+        if(!normalized.events.length) throw new Error("EMPTY_TRIP_PLAN");
+        return normalized;
+      }catch(e){
+        try{ console.log("[trip-plan] fallback", e); }catch(_){}
+        return this.__mvTripPlanFallback(targetSlot, notes);
+      }
+    },
+    __mvEnsureScenarioSlot(slot){
+      const slotKey = String(slot || "").trim().toUpperCase();
+      if(!slotKey) return null;
+      if(!state.scenarios || typeof state.scenarios !== "object"){
+        state.scenarios = { A: emptyScenario(), B: emptyScenario(), C: emptyScenario(), D: emptyScenario() };
+      }
+      if(!state.scenarios[slotKey]) state.scenarios[slotKey] = emptyScenario();
+      const idx = ["A","B","C","D"].indexOf(slotKey);
+      if(idx >= 0){
+        state.scenarioCount = Math.max(parseInt(state && state.scenarioCount, 10) || 1, idx + 1);
+      }
+      return state.scenarios[slotKey];
+    },
+    __mvBuildTripPlanEventRecord(event){
+      const ev = event || {};
+      const base = {
+        id: (typeof nowId === "function") ? nowId() : ("trip-plan-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
+        title: String(ev.title || "").trim(),
+        city: String(ev.city || "").trim(),
+        date: String(ev.date || "").trim(),
+        time: /^\d{2}:\d{2}$/.test(String(ev.time || "").trim()) ? String(ev.time).trim() : "10:00",
+        durationMin: Math.max(30, parseInt(ev.durationMin, 10) || 120),
+        cost: String(ev.cost != null ? ev.cost : "").trim(),
+        notes: String(ev.notes || "").trim()
+      };
+      if(ev.type === "transport"){
+        return {
+          kind: "leg",
+          record: {
+            id: base.id,
+            date: base.date,
+            time: base.time,
+            departTime: base.time,
+            from: "Pendiente",
+            to: base.city || base.title || "Destino",
+            notes: base.notes ? `IA · ${base.title} · ${base.notes}` : `IA · ${base.title}`
+          }
+        };
+      }
+      if(ev.type === "lodging"){
+        return {
+          kind: "stay",
+          record: {
+            id: base.id,
+            city: base.city || base.title || "Destino",
+            place: base.title || "Alojamiento",
+            dateIn: base.date,
+            dateOut: base.date,
+            checkIn: base.time,
+            notes: base.notes ? `IA · ${base.notes}` : "IA · propuesta copiada desde planificador"
+          }
+        };
+      }
+      return {
+        kind: "act",
+        record: {
+          id: base.id,
+          title: ev.type === "misc" ? `[Varios] ${base.title}` : base.title,
+          city: base.city,
+          date: base.date,
+          time: base.time,
+          durationMin: base.durationMin,
+          durationH: Math.floor(base.durationMin / 60),
+          durationM: base.durationMin % 60,
+          duration: `${Math.floor(base.durationMin / 60)}h${base.durationMin % 60 ? " " + String(base.durationMin % 60).padStart(2,"0") + "m" : ""}`,
+          cost: String(base.cost || ""),
+          notes: base.notes ? `IA · ${base.notes}` : "IA · propuesta copiada desde planificador",
+          fromAI: true,
+          pendingAIReview: true,
+          aiAddedAt: Date.now()
+        }
+      };
+    },
+    __mvCollectPostInsertConflicts(kind, id){
+      try{
+        const key = `${String(kind || "act")}:${String(id || "").trim()}`;
+        const hit = window.__mvConflictById && window.__mvConflictById[key];
+        return Array.isArray(hit && hit.conflicts) ? hit.conflicts : [];
+      }catch{
+        return [];
+      }
+    },
+    __mvShowCopiedConflictModal(conflicts){
+      const self = this;
+      const list = Array.isArray(conflicts) ? conflicts : [];
+      const body = `
+        <div class="text-sm text-slate-700">Copiado (con conflicto).</div>
+        <div class="mt-3 space-y-2">
+          ${list.length ? list.map((c)=>`
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-slate-700">
+              <div class="font-semibold text-slate-900">${escapeHtml(String(c && c.title || "Evento"))}</div>
+              <div class="mt-1 text-slate-500">${escapeHtml(String(c && c.typeLabel || "Evento"))} · ${escapeHtml(String((typeof __mvFmtHHMM === "function" ? __mvFmtHHMM(c && c.start) : "") || ""))} ${c && c.end ? `→ ${escapeHtml(String((typeof __mvFmtHHMM === "function" ? __mvFmtHHMM(c && c.end) : "") || ""))}` : ""}</div>
+            </div>
+          `).join("") : `<div class="text-sm text-slate-500">Se ha detectado conflicto tras copiar el evento.</div>`}
+        </div>
+      `;
+      const btnOk = document.createElement("button");
+      btnOk.type = "button";
+      btnOk.className = "tap px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold";
+      btnOk.textContent = "Aceptar";
+      btnOk.onclick = ()=> {
+        try{ closeModal(); }catch{}
+        try{ self.__mvOpenTripPlanReview(); }catch{}
+      };
+      showModal("Copiado (con conflicto)", body, [btnOk]);
+    },
+    __mvApplyTripPlanEventToScenario(eventIndex, targetSlot){
+      const review = this.state.aiTripPlanReview;
+      const event = review && Array.isArray(review.events) ? review.events[eventIndex] : null;
+      const originSlot = String(review && review.targetSlot || "").trim().toUpperCase();
+      const slot = String(targetSlot || "").trim().toUpperCase();
+      if(!event || !slot){
+        try{ toast("No se pudo aplicar el evento"); }catch(_){}
+        return;
+      }
+      if(slot === originSlot){
+        try{ toast("Ya está en esta simulación"); }catch(_){}
+        return;
+      }
+      const sc = this.__mvEnsureScenarioSlot(slot);
+      if(!sc){
+        try{ toast("No se encontró la simulación destino"); }catch(_){}
+        return;
+      }
+      const built = this.__mvBuildTripPlanEventRecord(event);
+      if(built.kind === "leg"){
+        sc.legs = Array.isArray(sc.legs) ? sc.legs : [];
+        sc.legs.unshift(built.record);
+      }else if(built.kind === "stay"){
+        sc.stays = Array.isArray(sc.stays) ? sc.stays : [];
+        sc.stays.unshift(built.record);
+      }else{
+        sc.activities = Array.isArray(sc.activities) ? sc.activities : [];
+        sc.activities.unshift(built.record);
+      }
+      try{ saveState(); }catch{}
+      try{ if(typeof renderAll === "function") renderAll(); }catch{}
+      try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
+      const conflicts = this.__mvCollectPostInsertConflicts(built.kind, built.record.id);
+      if(conflicts.length){
+        this.__mvShowCopiedConflictModal(conflicts);
+      }else{
+        try{ toast(`Copiado a simulación ${slot}`); }catch(_){}
+      }
+    },
+    __mvOpenTripPlanReview(){
+      const self = this;
+      const review = this.state.aiTripPlanReview;
+      if(!review || !Array.isArray(review.events)) return;
+      const body = `
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Revisión</div>
+            <div class="mt-1 font-extrabold text-slate-900">${escapeHtml(String(review.tripTitle || "Propuesta IA"))}</div>
+            <div class="mt-1 text-sm text-slate-600">Simulación propuesta: ${escapeHtml(String(review.targetSlot || "B"))}</div>
+          </div>
+          <div class="space-y-3">
+            ${review.events.map((ev, idx)=>`
+              <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="font-extrabold text-slate-900">${escapeHtml(String(ev.type || "").toUpperCase())} · ${escapeHtml(String(ev.title || ""))}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(String(ev.city || "—"))} · ${escapeHtml(String(ev.date || ""))} ${escapeHtml(String(ev.time || ""))} · ${escapeHtml(String(ev.durationMin || 0))} min</div>
+                ${String(ev.notes || "").trim() ? `<div class="mt-2 text-sm text-slate-500">${escapeHtml(String(ev.notes || ""))}</div>` : ``}
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                  <span class="text-[11px] font-semibold text-slate-500">Enviar a</span>
+                  <select class="tap h-9 rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700" data-ai-trip-plan-target="${idx}">
+                    ${self.__mvTripPlanScenarioOptions(review.targetSlot || "B")}
+                  </select>
+                  <button type="button" class="tap inline-flex items-center justify-center h-9 rounded-xl px-3 bg-violet-600 text-white text-sm font-semibold" data-ai-trip-plan-apply="${idx}">Aplicar</button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "tap px-4 py-3 rounded-2xl bg-slate-900 text-white font-extrabold";
+      btnClose.textContent = "Cerrar";
+      btnClose.onclick = ()=> { try{ closeModal(); }catch{} };
+      showModal("Planificar viaje completo (IA)", body, [btnClose]);
+      try{
+        const modalBody = document.getElementById("modalBody");
+        modalBody.querySelectorAll("[data-ai-trip-plan-apply]").forEach((btn)=>{
+          btn.addEventListener("click", ()=>{
+            const idx = parseInt(btn.getAttribute("data-ai-trip-plan-apply") || "-1", 10);
+            const selectEl = modalBody.querySelector(`[data-ai-trip-plan-target="${idx}"]`);
+            const slot = String(selectEl && selectEl.value || review.targetSlot || "B").trim().toUpperCase();
+            self.__mvApplyTripPlanEventToScenario(idx, slot);
+          });
+        });
+      }catch{}
+    },
+    __mvOpenTripPlanWizard(){
+      const self = this;
+      const defaultSlot = "B";
+      const body = `
+        <div class="space-y-4">
+          <div class="text-sm text-slate-600">Genera una propuesta estructurada mínima y revísala antes de copiar eventos a tus simulaciones.</div>
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Guardar propuesta en simulación</label>
+            <select id="aiTripPlanTargetSlot" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700" style="font-size:16px">
+              <option value="B" selected>B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm font-semibold text-slate-700">Preferencias / notas</label>
+            <textarea id="aiTripPlanNotes" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700" rows="3" style="font-size:16px" placeholder="Opcional"></textarea>
+          </div>
+          <div id="aiTripPlanStatus" class="text-sm text-slate-500"></div>
+        </div>
+      `;
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnCancel.textContent = "Cancelar";
+      btnCancel.onclick = ()=> { try{ closeModal(); }catch{} };
+      const btnGenerate = document.createElement("button");
+      btnGenerate.type = "button";
+      btnGenerate.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnGenerate.textContent = "Generar propuesta";
+      btnGenerate.onclick = async ()=>{
+        const slotEl = document.getElementById("aiTripPlanTargetSlot");
+        const notesEl = document.getElementById("aiTripPlanNotes");
+        const statusEl = document.getElementById("aiTripPlanStatus");
+        const targetSlot = String(slotEl && slotEl.value || "B").trim().toUpperCase();
+        const notes = String(notesEl && notesEl.value || "").trim();
+        self.state.aiPlanTargetScenario = targetSlot;
+        if(statusEl) statusEl.textContent = "Generando propuesta…";
+        btnGenerate.disabled = true;
+        try{
+          const proposal = await self.__mvGenerateTripPlanProposal(targetSlot, notes);
+          self.state.aiTripPlanReview = {
+            targetSlot,
+            notes,
+            tripTitle: String(proposal && proposal.tripTitle || "").trim() || `Propuesta IA · simulación ${targetSlot}`,
+            events: Array.isArray(proposal && proposal.events) ? proposal.events : []
+          };
+          self.__mvOpenTripPlanReview();
+        }catch{
+          if(statusEl) statusEl.textContent = "No se pudo generar la propuesta.";
+          try{ toast("No se pudo generar la propuesta"); }catch(_){}
+        }finally{
+          btnGenerate.disabled = false;
+        }
+      };
+      showModal("Planificar viaje completo (IA)", body, [btnCancel, btnGenerate]);
+    },
     __mvCityGeminiPrompt(cityName){
       const trip = this.bridge.readTrip();
       const cityKey = this.__aiCityKey(cityName);
@@ -27168,6 +27521,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         }
       };
       on("aiActionSummary", ()=> this.selectAction("summary"));
+      on("aiActionTripPlan", ()=> this.__mvOpenTripPlanWizard());
       on("aiActionUnified", ()=> this.selectAction("unified"));
       on("aiActionSensitive", ()=> this.selectAction("sensitive"));
       on("aiActionTransport", ()=> this.selectAction("transport"));
@@ -27487,6 +27841,7 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
     },
     renderShell(){
       const summaryBtn = document.getElementById("aiActionSummary");
+      const tripPlanBtn = document.getElementById("aiActionTripPlan");
       const unifiedBtn = document.getElementById("aiActionUnified");
       const citiesBtn = document.getElementById("aiActionCities");
       const sensitiveBtn = document.getElementById("aiActionSensitive");
@@ -27513,12 +27868,18 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         const labelEl = infoToggle.querySelectorAll("span")[1];
         if(labelEl) labelEl.textContent = t("ai.summary.moreInfo");
       }
-      [summaryBtn, citiesBtn, sensitiveBtn, transportBtn, gapsBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
+      [summaryBtn, tripPlanBtn, citiesBtn, sensitiveBtn, transportBtn, gapsBtn].forEach((el)=>{ if(el){ el.classList.remove(...onCls, ...offCls); }});
       if(summaryBtn){
         summaryBtn.textContent = t("ai.action.summary");
         const card = summaryBtn.closest(".aiActionCard");
         if(card) card.setAttribute("data-ai-title", t("ai.action.summary"));
         summaryBtn.classList.add(...(isSummary ? onCls : offCls));
+      }
+      if(tripPlanBtn){
+        tripPlanBtn.textContent = t("ai.action.tripPlan");
+        const card = tripPlanBtn.closest(".aiActionCard");
+        if(card) card.setAttribute("data-ai-title", t("ai.action.tripPlan"));
+        tripPlanBtn.classList.add(...offCls);
       }
       if(unifiedBtn){
         unifiedBtn.textContent = t("ai.action.unified");
@@ -29711,7 +30072,7 @@ commitSelectedActivities(){
   const bindAIControls = function(){
     try{
       initAISheet();
-      ["aiPick","aiGenerate","aiActionSummary","aiActionUnified","aiActionCities","aiActionSensitive","aiActionTransport"].forEach((id)=>{
+      ["aiPick","aiGenerate","aiActionSummary","aiActionTripPlan","aiActionUnified","aiActionCities","aiActionSensitive","aiActionTransport"].forEach((id)=>{
         const el = document.getElementById(id);
         if(el && el.__aiCtlBound){
           const clone = el.cloneNode(true);
@@ -29870,6 +30231,7 @@ commitSelectedActivities(){
           const mapById = (id)=>{
             switch(String(id||"")){
               case "aiActionSummary": return { key:"summary", title:t("ai.action.summary") };
+              case "aiActionTripPlan": return { key:"tripPlan", title:t("ai.action.tripPlan") };
               case "aiActionUnified": return { key:"unified", title:t("ai.action.unified") };
               case "aiActionCities": return { key:"cities", title:t("ai.action.cities") };
               case "aiActionSensitive": return { key:"sensitive", title:t("ai.action.sensitive") };
