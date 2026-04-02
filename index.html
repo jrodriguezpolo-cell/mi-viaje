@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
-  <title>V240_A150_IA_TRIP_PLAN_WIRING_FIX</title>
+  <title>V240_A151_IA_TRIPPLAN_FULL_PROPOSAL_JSON</title>
 <meta content="#1d4ed8" name="theme-color"/>
 <link href="manifest.json?v=V227_B22_SCENARIOS_CD_LAZY_ORDER" rel="manifest"/>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1764,7 +1764,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         <button aria-label="Tools" class="tap w-11 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-lg font-semibold flex items-center justify-center" id="btnTools" title="Tools" data-i18n-title="tools.title" data-i18n-aria="tools.title">⚙️</button>
       </div>
     </div>
-    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A150_IA_TRIP_PLAN_WIRING_FIX</div>
+    <div class="pl-[52px] text-[11px] text-slate-500 font-semibold mt-1 whitespace-nowrap overflow-hidden text-ellipsis truncate max-w-[70vw]" id="buildId">V240_A151_IA_TRIPPLAN_FULL_PROPOSAL_JSON</div>
   </div>
 </header>
 <!-- Sticky mini total bar -->
@@ -2139,7 +2139,7 @@ const fmtHours = (h) => {
 };
 
 
-const APP_BUILD = "V240_A150_IA_TRIP_PLAN_WIRING_FIX";
+const APP_BUILD = "V240_A151_IA_TRIPPLAN_FULL_PROPOSAL_JSON";
 const APP_BUILD_PARAM = "mv_build";
 const APP_REMOTE_BUILD_INFO_PATH = "build.json";
 const APP_IGNORED_REMOTE_BUILD_KEY = "miViaje.ignoredRemoteBuild";
@@ -26671,6 +26671,8 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
       const cities = this.__mvGetItineraryCitiesForDiscover().map((row)=>row.city).filter(Boolean);
       const range = this.__mvCityRecsRangeSummary(trip);
       const prefs = (typeof __mvGetTravelPrefs === "function") ? (__mvGetTravelPrefs() || {}) : null;
+      const appPrefs = this.bridge.readPreferences() || {};
+      const group = appPrefs.group || {};
       const profile = prefs
         ? `${prefs.group || "pareja"} · ritmo ${prefs.pace || "medio"}${prefs.kids ? " · con niños" : ""}${prefs.hiddenSpots ? " · prioriza sitios menos típicos" : ""}`
         : "Familia de 5 miembros (posibles niños). Ritmo medio. Prioriza logística simple, descansos y evitar colas largas.";
@@ -26682,82 +26684,173 @@ const out = shuffled.slice(0, Math.max(0, Math.min(shuffled.length, need)));
         cities: cities.length ? cities.join(", ") : "Sin ciudades detectadas",
         range: `${range.minDate || "sin fecha"} a ${range.maxDate || "sin fecha"}`,
         profile,
-        style
+        style,
+        startDate: range.minDate || "",
+        endDate: range.maxDate || "",
+        adults: Math.max(1, parseInt(group.adults, 10) || 2),
+        kids: Math.max(0, parseInt(group.kids, 10) || 0),
+        seniors: 0,
+        currency: String((state && state.displayCurrency) || "EUR").trim() || "EUR",
+        budgetTotal: 0,
+        pace: String((prefs && prefs.pace) || group.pace || "medio").trim() || "medio",
+        styleTags: (prefs && Array.isArray(prefs.tripTypes) && prefs.tripTypes.length) ? prefs.tripTypes : ["familia","turismo"]
       };
     },
     __mvTripPlanPrompt(targetSlot, notes){
       const ctx = this.__mvTripPlanContextSummary(notes);
-      return `Devuelve SOLO JSON válido (sin markdown ni texto extra).
+      return `Devuelve SOLO un JSON válido, sin markdown y sin texto adicional.
 
-Objetivo: crear una propuesta estructurada mínima de viaje para revisión manual.
+Objetivo: crear un itinerario completo y estructurado para la simulación ${targetSlot}.
 
-Formato obligatorio:
+Debes responder EXACTAMENTE con esta forma:
 {
-  "tripTitle": "Viaje ...",
+  "tripTitle": "Viaje a ...",
+  "assumptions": {
+    "currency": "EUR|USD|...",
+    "party": { "adults": 2, "kids": 3, "seniors": 0 },
+    "budgetTotal": 3500,
+    "style": ["familia", "cultural", "parques"],
+    "pace": "relajado|medio|intenso"
+  },
+  "summary": {
+    "startDate": "YYYY-MM-DD",
+    "endDate": "YYYY-MM-DD",
+    "cities": ["Nueva York", "Orlando"]
+  },
   "events": [
-    { "type":"transport|lodging|activity|misc", "title":"...", "city":"...", "date":"YYYY-MM-DD", "time":"HH:MM", "durationMin":120, "cost":0, "notes":"..." }
-  ]
+    {
+      "kind": "transport|lodging|activity|misc",
+      "title": "Madrid → Nueva York",
+      "city": "Nueva York",
+      "start": "YYYY-MM-DDTHH:MM",
+      "end": "YYYY-MM-DDTHH:MM",
+      "durationMin": 490,
+      "cost": { "amount": 700, "currency": "EUR" },
+      "location": { "from": "MAD", "to": "JFK", "address": "" },
+      "notes": "...",
+      "tags": ["ida", "vuelo"],
+      "source": "gemini_tripplan"
+    }
+  ],
+  "checks": {
+    "hasOvernights": true,
+    "notes": "si hay overnight, reflejar end en día siguiente"
+  }
 }
 
-Reglas:
-- Entre 1 y 6 eventos.
-- Usa solo fechas plausibles dentro del rango dado.
-- Si faltan datos, prioriza activity o misc antes que inventar transportes complejos.
-- No devuelvas explicaciones fuera del JSON.
+Reglas obligatorias:
+- NO devuelvas texto fuera del JSON.
+- start y end siempre con formato YYYY-MM-DDTHH:MM.
+- durationMin debe ser coherente con start y end.
+- Para lodging, usa start como check-in y end como check-out.
+- Para activity, si no hay hora exacta, fija una razonable y explícalo en notes.
+- Incluye transporte principal, alojamientos, actividades por día y costes estimados por evento.
+- Usa la moneda del contexto.
+- Evita solapamientos evidentes dentro de la propia propuesta.
+- Si el presupuesto es bajo, reduce planes caros; si es alto, permite opciones más completas.
 
-Contexto:
+Contexto real del viaje:
 - Simulación destino sugerida: ${targetSlot}
 - Ciudades visitadas: ${ctx.cities}
-- Fechas del viaje: ${ctx.range}
+- Fechas y época: ${ctx.range}
+- Fecha inicio: ${ctx.startDate || "sin fecha"}
+- Fecha fin: ${ctx.endDate || "sin fecha"}
 - Perfil del grupo: ${ctx.profile}
-- Estilo y eventos resumen: ${ctx.style}`;
+- Adultos: ${ctx.adults}
+- Niños: ${ctx.kids}
+- Seniors: ${ctx.seniors}
+- Moneda: ${ctx.currency}
+- Presupuesto total orientativo: ${ctx.budgetTotal}
+- Ritmo: ${ctx.pace}
+- Estilo: ${(ctx.styleTags || []).join(", ")}
+- Resumen del viaje y preferencias: ${ctx.style}`;
     },
-    __mvTripPlanFallback(targetSlot, notes){
-      const trip = this.bridge.readTrip();
-      const cities = this.__mvGetItineraryCitiesForDiscover().map((row)=>row.city).filter(Boolean);
-      const range = this.__mvCityRecsRangeSummary(trip);
-      const acts = Array.isArray(trip.activities) ? trip.activities : [];
-      const baseDate = String((acts[0] && acts[0].date) || range.minDate || "").trim() || new Date().toISOString().slice(0,10);
-      const mainCity = cities[0] || "Destino";
-      const secondCity = cities[1] || mainCity;
-      return {
-        tripTitle: `Propuesta base IA · simulación ${targetSlot}`,
-        events: [
-          { type:"activity", title:`Paseo principal por ${mainCity}`, city:mainCity, date:baseDate, time:"10:00", durationMin:120, cost:0, notes:String(notes || "Bloque sugerido para arrancar el viaje").trim() || "Bloque sugerido para arrancar el viaje." },
-          { type:"activity", title:`Visita destacada en ${secondCity}`, city:secondCity, date:baseDate, time:"16:00", durationMin:120, cost:0, notes:"Propuesta base creada como fallback controlado." }
-        ]
+    __mvTripPlanParseIsoLocal(value){
+      const raw = String(value || "").trim();
+      if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) return null;
+      const dt = new Date(`${raw}:00`);
+      return Number.isNaN(dt.getTime()) ? null : dt;
+    },
+    __mvTripPlanMinutesBetween(startIso, endIso){
+      const start = this.__mvTripPlanParseIsoLocal(startIso);
+      const end = this.__mvTripPlanParseIsoLocal(endIso);
+      if(!start || !end) return 0;
+      return Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
+    },
+    __mvNormalizeTripPlanResponse(out, notes){
+      if(typeof out === "string"){
+        try{ out = JSON.parse(String(out)); }catch(_){ throw new Error("INVALID_TRIP_PLAN_JSON"); }
+      }
+      if(!out || typeof out !== "object") throw new Error("INVALID_TRIP_PLAN_JSON");
+      if(!Array.isArray(out.events) || !String(out.tripTitle || "").trim()) throw new Error("INVALID_TRIP_PLAN_JSON");
+      const ctx = this.__mvTripPlanContextSummary(notes);
+      const assumptions = out.assumptions && typeof out.assumptions === "object" ? out.assumptions : {};
+      const party = assumptions.party && typeof assumptions.party === "object" ? assumptions.party : {};
+      const summary = out.summary && typeof out.summary === "object" ? out.summary : {};
+      const normalized = {
+        tripTitle: String(out.tripTitle || "").trim(),
+        assumptions: {
+          currency: String(assumptions.currency || ctx.currency || "EUR").trim() || "EUR",
+          party: {
+            adults: Math.max(1, parseInt(party.adults, 10) || ctx.adults || 2),
+            kids: Math.max(0, parseInt(party.kids, 10) || ctx.kids || 0),
+            seniors: Math.max(0, parseInt(party.seniors, 10) || ctx.seniors || 0)
+          },
+          budgetTotal: Math.max(0, Number(assumptions.budgetTotal) || ctx.budgetTotal || 0),
+          style: Array.isArray(assumptions.style) && assumptions.style.length ? assumptions.style.map((x)=>String(x || "").trim()).filter(Boolean) : (ctx.styleTags || ["familia","turismo"]),
+          pace: String(assumptions.pace || ctx.pace || "medio").trim() || "medio"
+        },
+        summary: {
+          startDate: String(summary.startDate || ctx.startDate || "").trim(),
+          endDate: String(summary.endDate || ctx.endDate || "").trim(),
+          cities: Array.isArray(summary.cities) && summary.cities.length ? summary.cities.map((x)=>String(x || "").trim()).filter(Boolean) : String(ctx.cities || "").split(",").map((x)=>String(x || "").trim()).filter(Boolean)
+        },
+        checks: out.checks && typeof out.checks === "object" ? out.checks : { hasOvernights:false, notes:"" },
+        events: []
       };
+      normalized.events = out.events.map((ev, idx)=>{
+        const kind = /^(transport|lodging|activity|misc)$/.test(String(ev && ev.kind || "").trim()) ? String(ev.kind).trim() : "activity";
+        const start = String(ev && ev.start || "").trim();
+        const end = String(ev && ev.end || "").trim();
+        const startDt = this.__mvTripPlanParseIsoLocal(start);
+        const endDt = this.__mvTripPlanParseIsoLocal(end);
+        if(!startDt || !endDt) return null;
+        const durationMin = Math.max(30, parseInt(ev && ev.durationMin, 10) || this.__mvTripPlanMinutesBetween(start, end) || (kind === "lodging" ? 1440 : 120));
+        const amount = ev && ev.cost && typeof ev.cost === "object" ? Number(ev.cost.amount) : Number(ev && ev.cost);
+        const costCurrency = String(ev && ev.cost && typeof ev.cost === "object" ? ev.cost.currency : normalized.assumptions.currency).trim() || normalized.assumptions.currency;
+        const loc = ev && ev.location && typeof ev.location === "object" ? ev.location : {};
+        const title = String(ev && ev.title || `${kind} ${idx + 1}`).trim();
+        return {
+          kind,
+          title,
+          city: String(ev && ev.city || loc.to || loc.address || normalized.summary.cities[0] || "").trim(),
+          start,
+          end,
+          durationMin,
+          cost: {
+            amount: Number.isFinite(amount) ? amount : 0,
+            currency: costCurrency
+          },
+          location: {
+            from: String(loc.from || "").trim(),
+            to: String(loc.to || "").trim(),
+            address: String(loc.address || "").trim()
+          },
+          notes: String(ev && ev.notes || "").trim() || (kind === "activity" ? "Hora fijada automáticamente por la IA." : ""),
+          tags: Array.isArray(ev && ev.tags) ? ev.tags.map((x)=>String(x || "").trim()).filter(Boolean) : [],
+          source: String(ev && ev.source || "gemini_tripplan").trim() || "gemini_tripplan"
+        };
+      }).filter(Boolean);
+      if(!normalized.events.length) throw new Error("EMPTY_TRIP_PLAN");
+      return normalized;
     },
     async __mvGenerateTripPlanProposal(targetSlot, notes){
       const hasGemini = !!(typeof getGeminiKey === "function" && String(getGeminiKey() || "").trim());
       if(!hasGemini){
-        try{ toast("Configura Gemini para usar IA"); }catch(_){}
-        return this.__mvTripPlanFallback(targetSlot, notes);
+        throw new Error("NO_KEY");
       }
-      try{
-        const out = await geminiGenerateJSON(this.__mvTripPlanPrompt(targetSlot, notes));
-        if(!out || typeof out !== "object" || !Array.isArray(out.events) || !String(out.tripTitle || "").trim()){
-          throw new Error("INVALID_TRIP_PLAN_JSON");
-        }
-        const normalized = {
-          tripTitle: String(out.tripTitle || "").trim(),
-          events: out.events.map((ev)=>({
-            type: /^(transport|lodging|activity|misc)$/.test(String(ev && ev.type || "").trim()) ? String(ev.type).trim() : "activity",
-            title: String(ev && ev.title || "").trim(),
-            city: String(ev && ev.city || "").trim(),
-            date: String(ev && ev.date || "").trim(),
-            time: /^\d{2}:\d{2}$/.test(String(ev && ev.time || "").trim()) ? String(ev.time).trim() : "10:00",
-            durationMin: Math.max(30, parseInt(ev && ev.durationMin, 10) || 120),
-            cost: Number(ev && ev.cost || 0) || 0,
-            notes: String(ev && ev.notes || "").trim()
-          })).filter((ev)=>ev.title && /^\d{4}-\d{2}-\d{2}$/.test(ev.date))
-        };
-        if(!normalized.events.length) throw new Error("EMPTY_TRIP_PLAN");
-        return normalized;
-      }catch(e){
-        try{ console.log("[trip-plan] fallback", e); }catch(_){}
-        return this.__mvTripPlanFallback(targetSlot, notes);
-      }
+      const out = await geminiGenerateJSON(this.__mvTripPlanPrompt(targetSlot, notes));
+      return this.__mvNormalizeTripPlanResponse(out, notes);
     },
     __mvEnsureScenarioSlot(slot){
       const slotKey = String(slot || "").trim().toUpperCase();
@@ -26774,17 +26867,31 @@ Contexto:
     },
     __mvBuildTripPlanEventRecord(event){
       const ev = event || {};
+      const start = this.__mvTripPlanParseIsoLocal(String(ev.start || "").trim());
+      const end = this.__mvTripPlanParseIsoLocal(String(ev.end || "").trim());
+      const date = start ? `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,"0")}-${String(start.getDate()).padStart(2,"0")}` : "";
+      const time = start ? `${String(start.getHours()).padStart(2,"0")}:${String(start.getMinutes()).padStart(2,"0")}` : "10:00";
+      const endDate = end ? `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,"0")}-${String(end.getDate()).padStart(2,"0")}` : date;
+      const endTime = end ? `${String(end.getHours()).padStart(2,"0")}:${String(end.getMinutes()).padStart(2,"0")}` : "12:00";
+      const currency = String(ev && ev.cost && ev.cost.currency || (state && state.displayCurrency) || "EUR").trim() || "EUR";
+      const amount = Number(ev && ev.cost && ev.cost.amount);
+      const costValue = Number.isFinite(amount) ? String(amount) : "";
       const base = {
         id: (typeof nowId === "function") ? nowId() : ("trip-plan-" + Date.now() + "-" + Math.random().toString(16).slice(2)),
         title: String(ev.title || "").trim(),
         city: String(ev.city || "").trim(),
-        date: String(ev.date || "").trim(),
-        time: /^\d{2}:\d{2}$/.test(String(ev.time || "").trim()) ? String(ev.time).trim() : "10:00",
-        durationMin: Math.max(30, parseInt(ev.durationMin, 10) || 120),
-        cost: String(ev.cost != null ? ev.cost : "").trim(),
-        notes: String(ev.notes || "").trim()
+        date,
+        time,
+        endDate,
+        endTime,
+        durationMin: Math.max(30, parseInt(ev.durationMin, 10) || this.__mvTripPlanMinutesBetween(ev.start, ev.end) || 120),
+        cost: costValue,
+        currency,
+        notes: String(ev.notes || "").trim(),
+        location: ev.location && typeof ev.location === "object" ? ev.location : {},
+        tags: Array.isArray(ev.tags) ? ev.tags : []
       };
-      if(ev.type === "transport"){
+      if(ev.kind === "transport"){
         return {
           kind: "leg",
           record: {
@@ -26792,23 +26899,47 @@ Contexto:
             date: base.date,
             time: base.time,
             departTime: base.time,
-            from: "Pendiente",
-            to: base.city || base.title || "Destino",
-            notes: base.notes ? `IA · ${base.title} · ${base.notes}` : `IA · ${base.title}`
+            arriveDate: base.endDate,
+            arriveTime: base.endTime,
+            from: String(base.location.from || "Pendiente").trim() || "Pendiente",
+            to: String(base.location.to || base.city || base.title || "Destino").trim() || "Destino",
+            placeOut: String(base.location.from || "").trim(),
+            placeIn: String(base.location.to || base.location.address || "").trim(),
+            cost: base.cost || null,
+            currency: base.currency,
+            notes: base.notes ? `IA · ${base.title} · ${base.notes}` : `IA · ${base.title}`,
+            fromAI: true,
+            pendingAIReview: true,
+            aiAddedAt: Date.now()
           }
         };
       }
-      if(ev.type === "lodging"){
+      if(ev.kind === "lodging"){
+        const startDt = this.__mvTripPlanParseIsoLocal(`${base.date}T${base.time}`);
+        const endDt = this.__mvTripPlanParseIsoLocal(`${base.endDate}T${base.endTime}`);
+        const nights = (startDt && endDt) ? Math.max(1, Math.round((endDt.getTime() - startDt.getTime()) / 86400000) || 1) : 1;
         return {
           kind: "stay",
           record: {
             id: base.id,
             city: base.city || base.title || "Destino",
+            name: base.title || "Alojamiento",
             place: base.title || "Alojamiento",
+            address: String(base.location.address || "").trim(),
+            date: base.date,
+            time: base.time,
             dateIn: base.date,
-            dateOut: base.date,
+            dateOut: base.endDate,
             checkIn: base.time,
-            notes: base.notes ? `IA · ${base.notes}` : "IA · propuesta copiada desde planificador"
+            checkoutDate: base.endDate,
+            checkoutTime: base.endTime,
+            nights,
+            cost: base.cost || null,
+            currency: base.currency,
+            notes: base.notes ? `IA · ${base.notes}` : "IA · propuesta copiada desde planificador",
+            fromAI: true,
+            pendingAIReview: true,
+            aiAddedAt: Date.now()
           }
         };
       }
@@ -26816,7 +26947,7 @@ Contexto:
         kind: "act",
         record: {
           id: base.id,
-          title: ev.type === "misc" ? `[Varios] ${base.title}` : base.title,
+          title: ev.kind === "misc" ? `[Varios] ${base.title}` : base.title,
           city: base.city,
           date: base.date,
           time: base.time,
@@ -26825,12 +26956,54 @@ Contexto:
           durationM: base.durationMin % 60,
           duration: `${Math.floor(base.durationMin / 60)}h${base.durationMin % 60 ? " " + String(base.durationMin % 60).padStart(2,"0") + "m" : ""}`,
           cost: String(base.cost || ""),
-          notes: base.notes ? `IA · ${base.notes}` : "IA · propuesta copiada desde planificador",
+          currency: base.currency,
+          location: String(base.location.address || "").trim(),
+          notes: base.notes ? `IA · ${base.notes}${base.tags.length ? ` · Tags: ${base.tags.join(", ")}` : ""}` : "IA · propuesta copiada desde planificador",
           fromAI: true,
           pendingAIReview: true,
           aiAddedAt: Date.now()
         }
       };
+    },
+    __mvInsertFullTripPlanIntoScenario(slot, proposal){
+      const sc = this.__mvEnsureScenarioSlot(slot);
+      if(!sc) throw new Error("NO_TARGET_SCENARIO");
+      sc.legs = Array.isArray(sc.legs) ? sc.legs : [];
+      sc.stays = Array.isArray(sc.stays) ? sc.stays : [];
+      sc.activities = Array.isArray(sc.activities) ? sc.activities : [];
+      const inserted = [];
+      (Array.isArray(proposal && proposal.events) ? proposal.events : []).forEach((event)=>{
+        const built = this.__mvBuildTripPlanEventRecord(event);
+        if(!built || !built.record) return;
+        if(built.kind === "leg") sc.legs.unshift(built.record);
+        else if(built.kind === "stay") sc.stays.unshift(built.record);
+        else sc.activities.unshift(built.record);
+        inserted.push(built);
+      });
+      saveState();
+      try{ if(typeof renderAll === "function") renderAll(); }catch{}
+      try{ if(typeof syncStickyTotalsHeightVar === "function") syncStickyTotalsHeightVar(); }catch{}
+      return inserted;
+    },
+    __mvOpenTripPlanCreatedModal(slot, count){
+      const body = `<div class="text-sm text-slate-700">Propuesta creada en simulación ${escapeHtml(String(slot || ""))} (${escapeHtml(String(count || 0))} eventos).</div>`;
+      const btnClose = document.createElement("button");
+      btnClose.type = "button";
+      btnClose.className = "tap px-4 py-3 rounded-2xl border border-slate-300 font-extrabold text-slate-700 bg-white";
+      btnClose.textContent = "Cerrar";
+      btnClose.onclick = ()=> { try{ closeModal(); }catch{} };
+      const btnGo = document.createElement("button");
+      btnGo.type = "button";
+      btnGo.className = "tap px-4 py-3 rounded-2xl border border-slate-900 font-extrabold text-white bg-slate-900";
+      btnGo.textContent = "Ir a Cronograma";
+      btnGo.onclick = ()=>{
+        try{ closeModal(); }catch{}
+        try{ state.scenario = String(slot || "A").trim().toUpperCase(); }catch{}
+        try{ setView("timeline"); }catch{}
+        try{ renderAll(); }catch{}
+        try{ syncStickyTotalsHeightVar(); }catch{}
+      };
+      showModal("Propuesta creada", body, [btnClose, btnGo]);
     },
     __mvCollectPostInsertConflicts(kind, id){
       try{
@@ -26918,8 +27091,8 @@ Contexto:
           <div class="space-y-3">
             ${review.events.map((ev, idx)=>`
               <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                <div class="font-extrabold text-slate-900">${escapeHtml(String(ev.type || "").toUpperCase())} · ${escapeHtml(String(ev.title || ""))}</div>
-                <div class="mt-1 text-sm text-slate-600">${escapeHtml(String(ev.city || "—"))} · ${escapeHtml(String(ev.date || ""))} ${escapeHtml(String(ev.time || ""))} · ${escapeHtml(String(ev.durationMin || 0))} min</div>
+                <div class="font-extrabold text-slate-900">${escapeHtml(String(ev.kind || ev.type || "").toUpperCase())} · ${escapeHtml(String(ev.title || ""))}</div>
+                <div class="mt-1 text-sm text-slate-600">${escapeHtml(String(ev.city || "—"))} · ${escapeHtml(String(ev.start || ""))} ${ev.end ? `→ ${escapeHtml(String(ev.end || ""))}` : ""} · ${escapeHtml(String(ev.durationMin || 0))} min</div>
                 ${String(ev.notes || "").trim() ? `<div class="mt-2 text-sm text-slate-500">${escapeHtml(String(ev.notes || ""))}</div>` : ``}
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                   <span class="text-[11px] font-semibold text-slate-500">Enviar a</span>
@@ -26956,7 +27129,7 @@ Contexto:
       const defaultSlot = "B";
       const body = `
         <div class="space-y-4">
-          <div class="text-sm text-slate-600">Genera una propuesta estructurada mínima y revísala antes de copiar eventos a tus simulaciones.</div>
+          <div class="text-sm text-slate-600">Genera un itinerario completo con transportes, alojamientos y actividades para guardarlo en una simulación nueva.</div>
           <div>
             <label class="text-sm font-semibold text-slate-700">Guardar propuesta en simulación</label>
             <select id="aiTripPlanTargetSlot" class="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700" style="font-size:16px">
@@ -26996,12 +27169,17 @@ Contexto:
             targetSlot,
             notes,
             tripTitle: String(proposal && proposal.tripTitle || "").trim() || `Propuesta IA · simulación ${targetSlot}`,
-            events: Array.isArray(proposal && proposal.events) ? proposal.events : []
+            events: Array.isArray(proposal && proposal.events) ? proposal.events : [],
+            assumptions: proposal && proposal.assumptions ? proposal.assumptions : null,
+            summary: proposal && proposal.summary ? proposal.summary : null
           };
-          self.__mvOpenTripPlanReview();
-        }catch{
-          if(statusEl) statusEl.textContent = "No se pudo generar la propuesta.";
-          try{ toast("No se pudo generar la propuesta"); }catch(_){}
+          const inserted = self.__mvInsertFullTripPlanIntoScenario(targetSlot, proposal);
+          self.__mvOpenTripPlanCreatedModal(targetSlot, inserted.length);
+        }catch(e){
+          const invalid = String(e && e.message || "").includes("INVALID_TRIP_PLAN_JSON") || String(e && e.message || "").includes("EMPTY_TRIP_PLAN");
+          const noKey = String(e && e.message || "").includes("NO_KEY");
+          if(statusEl) statusEl.textContent = noKey ? "Configura Gemini para usar IA." : (invalid ? "Respuesta IA no válida (JSON)" : "No se pudo generar la propuesta.");
+          try{ toast(noKey ? "Configura Gemini para usar IA" : (invalid ? "Respuesta IA no válida (JSON)" : "No se pudo generar la propuesta")); }catch(_){}
         }finally{
           btnGenerate.disabled = false;
         }
