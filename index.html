@@ -1729,18 +1729,18 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
   import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { firebaseConfig } from './firebase-config.js';
-
+const MI_EMAIL = 'jrodriguezpolo@gmail.com'; // Tu email en minúsculas
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   setPersistence(auth, browserLocalPersistence);
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
-  const MI_EMAIL = "jrodriguezpolo@gmail.com";
+ 
 
  
 window.loginFirebase = () => signInWithRedirect(auth, provider);
   window.logoutFirebase = () => signOut(auth);
-getRedirectResult(auth); // <-- 
+await getRedirectResult(auth); // <-- 
   // Guardamos referencia al state original y funciones de render
   let originalState = null;
   let originalInit = null;
@@ -1755,7 +1755,7 @@ getRedirectResult(auth); // <--
         </div>
       </div>`;
   }
-
+await getRedirectResult(auth);
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       bloquearApp('Inicia sesión para ver el viaje.');
