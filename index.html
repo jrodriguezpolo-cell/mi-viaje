@@ -1729,7 +1729,12 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
   import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { firebaseConfig } from './firebase-config.js';
 
-  const MI_EMAIL = 'jrodriguezpolo@gmail.com';
+  const EMAILS_PERMITIDOS = [
+  'jrodriguezpolo@gmail.com',
+  'maravillasmipais@gmail.com'
+];
+
+const VIAJE_COMPARTIDO_ID = 'mi-viaje-2024';
   
   // IMPORTANTE: Si en firebase-config.js tienes authDomain: "mi-viaje-27178.firebaseapp.com"
   // Cámbialo ahí a "mi-viaje-27178.web.app" para Safari iOS
@@ -1737,15 +1742,16 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
   const auth = getAuth(app);
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
-
+  // IMPORTANTE: Pilla el resultado del redirect ANTES de montar el listener
+await getRedirectResult(auth).catch(e => console.log('No hay redirect pendiente'));
+  
+window.loginFirebase = async () => {
   // 1. Forzar persistencia ANTES de nada
   await setPersistence(auth, browserLocalPersistence);
-  
-  // 2. Capturar resultado si vienes de redirect. El .catch evita error si no hay redirect
-  await getRedirectResult(auth).catch(() => {});
-
+await signInWithRedirect(auth, provider); // 
+  };
   // 3. Funciones globales
-  window.loginFirebase = () => signInWithRedirect(auth, provider);
+ 
   window.logoutFirebase = () => signOut(auth);
 
   // 4. Guardamos referencia al state original y funciones de render
@@ -1766,8 +1772,11 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       bloquearApp('Inicia sesión para ver el viaje.');
-      return;
-    }
+     document.querySelector('button').onclick = loginFirebase;
+  document.querySelector('button').textContent = 'Iniciar sesión con Google';
+  document.querySelector('button').style.background = '#4285f4';
+  return;
+}
     if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
       bloquearApp('Esta cuenta no tiene permiso para ver este viaje.');
       document.querySelector('button').onclick = logoutFirebase;
