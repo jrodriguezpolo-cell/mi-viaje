@@ -1,10 +1,10 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 export const firebaseConfig = {
   apiKey: "AIzaSyAG8uGu1rE6jCGrYzTN2C9KZm11C5t0mbE",
-  authDomain: "mi-viaje-27178.web.app", // No .firebaseapp.com
+  authDomain: "mi-viaje-27178.web.app",
   projectId: "mi-viaje-27178",
   storageBucket: "mi-viaje-27178.firebasestorage.app",
   messagingSenderId: "284807555246",
@@ -12,6 +12,8 @@ export const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Auth / Firestore / Provider (ESM)
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const provider = new GoogleAuthProvider();
