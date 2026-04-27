@@ -1,14 +1,51 @@
-<!DOCTYPE html><html lang="en" id="facebook"><head><title>Error</title><meta charset="utf-8" /><meta http-equiv="Cache-Control" content="no-cache" /><meta name="robots" content="noindex,nofollow" /><style nonce="cguad5ps">html, body { color: #333; font-family: 'Lucida Grande', 'Tahoma', 'Verdana', 'Arial', sans-serif; margin: 0; padding: 0; text-align: center;}
-#header { height: 30px; padding-bottom: 10px; padding-top: 10px; text-align: center;}
-#icon { width: 30px;}
-.core { margin: auto; padding: 1em 0; text-align: left; width: 904px;}
-h1 { font-size: 18px;}
-p { font-size: 13px;}
-.footer { border-top: 1px solid #ddd; color: #777; float: left; font-size: 11px; padding: 5px 8px 6px 0; width: 904px;}</style></head><body><div id="header"><a href="//www.facebook.com/"><img id="icon" src="//static.facebook.com/images/logos/facebook_2x.png" /></a></div><div class="core"><h1>Sorry, something went wrong.</h1><p>We&#039;re working on getting this fixed as soon as we can.</p><p><a id="back" href="//www.facebook.com/">Go back</a></p><div class="footer"> Meta &#169; 2026 &#183; <a href="//www.facebook.com/help/?ref=href052">Help</a></div></div><script nonce="cguad5ps">
-              document.getElementById("back").onclick = function() {
-                if (history.length > 1) {
-                  history.back();
-                  return false;
-                }
-              };
-            </script></body></html><!-- @codegen-command : phps GenerateErrorPages --><!-- @generated SignedSource<<df9c809b58b9859de61d5022430cb24e>> -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Migrar datos a Firebase</title>
+    <meta charset="UTF-8">
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import { firebaseConfig } from './firebase-config.js';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        window.login = () => signInWithPopup(auth, provider);
+        
+        onAuthStateChanged(auth, user => {
+            document.getElementById('status').innerText = user? `Logueado como: ${user.email}` : 'No logueado';
+            document.getElementById('upload').style.display = user? 'block' : 'none';
+        });
+
+        window.migrar = async () => {
+            const file = document.getElementById('file').files[0];
+            if (!file) return alert('Selecciona tu fichero JSON primero');
+            
+            const user = auth.currentUser;
+            if (!user) return alert('Haz login primero');
+            
+            const text = await file.text();
+            const data = JSON.parse(text);
+            
+            await setDoc(doc(db, "viajes", user.uid), data);
+            alert('¡Datos subidos a Firebase! Ya puedes volver a la app principal');
+        }
+    </script>
+</head>
+<body style="font-family: sans-serif; padding: 40px; max-width: 600px; margin: auto;">
+    <h1>Migrar Mi Viaje a Firebase</h1>
+    <p id="status">No logueado</p>
+    <button onclick="login()">1. Login con Google</button>
+    <hr>
+    <div id="upload" style="display:none">
+        <h3>2. Sube tu fichero JSON con los datos del viaje</h3>
+        <input type="file" id="file" accept=".json">
+        <br><br>
+        <button onclick="migrar()">3. Migrar a Firebase</button>
+    </div>
+</body>
+</html>n-command : phps GenerateErrorPages --><!-- @generated SignedSource<<df9c809b58b9859de61d5022430cb24e>> -->
