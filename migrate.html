@@ -14,7 +14,7 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        window.login = () => signInWithPopup(auth, provider);
+        window.login = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
         
         onAuthStateChanged(auth, user => {
             document.getElementById('status').innerText = user? `Logueado como: ${user.email}` : 'No logueado';
@@ -28,15 +28,25 @@
             const user = auth.currentUser;
             if (!user) return alert('Haz login primero');
             
-            const text = await file.text();
-            const data = JSON.parse(text);
-            
-            await setDoc(doc(db, "viajes", user.uid), data);
-            alert('¡Datos subidos a Firebase! Ya puedes volver a la app principal');
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                await setDoc(doc(db, "viajes", user.uid), data);
+                alert('¡Datos subidos a Firebase! Ya puedes volver a la app principal');
+                window.location.href = './';
+            } catch (e) {
+                alert('Error al migrar: ' + e.message);
+            }
         }
     </script>
+    <style>
+        body { font-family: sans-serif; padding: 40px; max-width: 600px; margin: auto; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        input { margin: 10px 0; }
+    </style>
 </head>
-<body style="font-family: sans-serif; padding: 40px; max-width: 600px; margin: auto;">
+<body>
     <h1>Migrar Mi Viaje a Firebase</h1>
     <p id="status">No logueado</p>
     <button onclick="login()">1. Login con Google</button>
@@ -48,4 +58,4 @@
         <button onclick="migrar()">3. Migrar a Firebase</button>
     </div>
 </body>
-</html>n-command : phps GenerateErrorPages --><!-- @generated SignedSource<<df9c809b58b9859de61d5022430cb24e>> -->
+</html>
