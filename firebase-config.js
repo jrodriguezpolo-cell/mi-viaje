@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBbEm22NWKD2Wkbs9JfQx4lV7kD0b4GHhY",
+  apiKey: "AIzaSyAG8uGu1rE6jCGrYzTN2C9KZm11C5t0mbE",
   authDomain: "mi-viaje-27178.firebaseapp.com",
   projectId: "mi-viaje-27178",
   storageBucket: "mi-viaje-27178.firebasestorage.app",
