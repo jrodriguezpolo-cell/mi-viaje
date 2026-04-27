@@ -1768,7 +1768,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
       bloquearApp('Inicia sesión para ver el viaje.');
       return;
     }
-    if (user.email !== MI_EMAIL) {
+    if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
       bloquearApp('Esta cuenta no tiene permiso para ver este viaje.');
       document.querySelector('button').onclick = logoutFirebase;
       document.querySelector('button').textContent = 'Salir';
@@ -1778,7 +1778,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
     
     // Eres tú: cargamos datos de Firestore
     try {
-      const docRef = doc(db, "viajes", user.uid);
+      const docRef = doc(db, "viajes", VIAJE_COMPARTIDO_ID);
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
@@ -1816,7 +1816,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
             try {
               const user = auth.currentUser;
               if (user && user.email === MI_EMAIL) {
-                await setDoc(doc(db, "viajes", user.uid), window.state);
+                await setDoc(doc(db, "viajes", VIAJE_COMPARTIDO_ID), window.state);
                 console.log('Guardado en Firebase ✓');
               }
             } catch (e) { console.error('Error guardando:', e); }
