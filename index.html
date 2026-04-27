@@ -1726,7 +1726,7 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { firebaseConfig } from './firebase-config.js';
 
@@ -1736,9 +1736,10 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
   const provider = new GoogleAuthProvider();
   const MI_EMAIL = "jrodriguezpolo@gmail.com";
 
-  window.loginFirebase = () => signInWithPopup(auth, provider);
+ 
+window.loginFirebase = () => signInWithRedirect(auth, provider);
   window.logoutFirebase = () => signOut(auth);
-
+getRedirectResult(auth); // <-- 
   // Guardamos referencia al state original y funciones de render
   let originalState = null;
   let originalInit = null;
