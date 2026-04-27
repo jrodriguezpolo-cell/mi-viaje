@@ -4,7 +4,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase
 
 export const firebaseConfig = {
   apiKey: "AIzaSyAG8uGu1rE6jCGrYzTN2C9KZm11C5t0mbE",
-  authDomain: "mi-viaje-27178.firebaseapp.com",
+  authDomain: "mi-viaje-27178.web.app", // No .firebaseapp.com
   projectId: "mi-viaje-27178",
   storageBucket: "mi-viaje-27178.firebasestorage.app",
   messagingSenderId: "284807555246",
