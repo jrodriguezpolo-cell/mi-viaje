@@ -1723,28 +1723,32 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
 .accBody{ padding:12px 14px; background:rgba(248,250,252,.9); }
 
 </style>
-
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getAuth, onAuthStateChanged, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
   import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
   import { firebaseConfig } from './firebase-config.js';
-const MI_EMAIL = 'jrodriguezpolo@gmail.com'; // Tu email en minúsculas
+
+  const MI_EMAIL = 'jrodriguezpolo@gmail.com';
+  
+  // IMPORTANTE: Si en firebase-config.js tienes authDomain: "mi-viaje-27178.firebaseapp.com"
+  // Cámbialo ahí a "mi-viaje-27178.web.app" para Safari iOS
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  await setPersistence(auth, browserLocalPersistence);
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
- 
 
- 
-window.loginFirebase = () => signInWithPopup(auth, provider).catch(e => {
-  console.error(e);
-  alert('Error al iniciar sesión: ' + e.message);
-});
+  // 1. Forzar persistencia ANTES de nada
+  await setPersistence(auth, browserLocalPersistence);
+  
+  // 2. Capturar resultado si vienes de redirect. El .catch evita error si no hay redirect
+  await getRedirectResult(auth).catch(() => {});
+
+  // 3. Funciones globales
+  window.loginFirebase = () => signInWithRedirect(auth, provider);
   window.logoutFirebase = () => signOut(auth);
 
-  // Guardamos referencia al state original y funciones de render
+  // 4. Guardamos referencia al state original y funciones de render
   let originalState = null;
   let originalInit = null;
 
@@ -1758,6 +1762,7 @@ window.loginFirebase = () => signInWithPopup(auth, provider).catch(e => {
         </div>
       </div>`;
   }
+
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       bloquearApp('Inicia sesión para ver el viaje.');
@@ -1778,17 +1783,14 @@ window.loginFirebase = () => signInWithPopup(auth, provider).catch(e => {
       
       if (docSnap.exists()) {
         const firebaseData = docSnap.data();
-        // Si el JSON tiene .state lo usamos, si no, usamos el objeto entero
         const loadedState = firebaseData.state ? firebaseData.state : firebaseData;
         
-        // Sobrescribimos el state global con los datos de Firebase
         if (typeof window.state !== 'undefined') {
           Object.assign(window.state, loadedState);
         } else {
           window.state = loadedState;
         }
         
-        // Añadimos botón de salir al header si existe
         setTimeout(() => {
           const header = document.querySelector('header, .header, #header');
           if (header && !document.getElementById('logoutBtn')) {
@@ -1801,26 +1803,25 @@ window.loginFirebase = () => signInWithPopup(auth, provider).catch(e => {
           }
         }, 1000);
         
-        // Llamamos al init original de tu app si existe
         if (typeof window.initApp === 'function') window.initApp();
         else if (typeof window.render === 'function') window.render();
         else if (typeof window.start === 'function') window.start();
-              let saveTimeout;
-       const originalSetItem = localStorage.setItem;
-       localStorage.setItem = function(key, value) {
-         originalSetItem.apply(this, arguments);
-         clearTimeout(saveTimeout);
-         saveTimeout = setTimeout(async () => {
-           try {
-             const user = auth.currentUser;
-             if (user && user.email === MI_EMAIL) {
-               await setDoc(doc(db, "viajes", user.uid), window.state);
-               console.log('Guardado en Firebase ✓');
-             }
-           } catch (e) { console.error('Error guardando:', e); }
-         }, 1000);
-      };
-   // línea borrada
+
+        let saveTimeout;
+        const originalSetItem = localStorage.setItem;
+        localStorage.setItem = function(key, value) {
+          originalSetItem.apply(this, arguments);
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(async () => {
+            try {
+              const user = auth.currentUser;
+              if (user && user.email === MI_EMAIL) {
+                await setDoc(doc(db, "viajes", user.uid), window.state);
+                console.log('Guardado en Firebase ✓');
+              }
+            } catch (e) { console.error('Error guardando:', e); }
+          }, 1000);
+        };
         
       } else {
         document.body.innerHTML = '<h1>No hay datos en Firebase. Usa <a href="./migrate.html">migrate.html</a></h1>';
@@ -1831,6 +1832,7 @@ window.loginFirebase = () => signInWithPopup(auth, provider).catch(e => {
     }
   });
 </script>
+
 
 </head>
 <body class="bg-slate-50 text-slate-900">
