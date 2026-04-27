@@ -2,7 +2,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyAG8uGu1rE6jCGrYzTN2C9KZm11C5t0mbE",
   authDomain: "mi-viaje-27178.firebaseapp.com",
   projectId: "mi-viaje-27178",
