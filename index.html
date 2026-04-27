@@ -1758,33 +1758,61 @@ await signInWithRedirect(auth, provider); //
   let originalState = null;
   let originalInit = null;
 
-  function bloquearApp(msg) {
-    document.body.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;background:#f5f5f5;">
-        <div style="text-align:center;padding:40px;background:white;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-width:400px;">
-          <h1 style="font-size:24px;margin-bottom:16px;">🔒 Acceso privado</h1>
-          <p style="color:#666;margin-bottom:24px;">${msg}</p>
-          <button onclick="loginFirebase()" style="background:#4285f4;color:white;border:none;padding:12px 24px;border-radius:6px;font-size:16px;cursor:pointer;">Login con Google</button>
-        </div>
-      </div>`;
+    function bloquearApp(msg, extraHtml='') {
+    const app = document.getElementById('app');
+    if (app) app.style.display = 'none';
+
+    let screen = document.getElementById('loginScreen');
+    if (!screen) {
+      screen = document.createElement('div');
+      screen.id = 'loginScreen';
+      screen.style.position = 'fixed';
+      screen.style.inset = '0';
+      screen.style.zIndex = '999999';
+      screen.style.display = 'flex';
+      screen.style.alignItems = 'center';
+      screen.style.justifyContent = 'center';
+      screen.style.padding = '24px';
+      screen.style.background = 'linear-gradient(180deg, #f7f8fb 0%, #ffffff 100%)';
+      document.body.appendChild(screen);
+    }
+
+    screen.innerHTML = `
+      <div style="width:min(420px, 100%); background:#fff; border:1px solid #e6e8ef; border-radius:18px; padding:22px; box-shadow:0 14px 40px rgba(22,30,60,.10); text-align:center;">
+        <div style="font-size:42px; line-height:1; margin-bottom:8px;">🔒</div>
+        <div style="font-weight:800; font-size:26px; margin-bottom:6px;">Acceso privado</div>
+        <div style="color:#667085; font-size:16px; margin-bottom:18px;">${msg || 'Inicia sesión para ver el viaje.'}</div>
+        <button id="authBtn" style="width:100%; border:none; border-radius:12px; padding:14px 16px; font-weight:800; font-size:16px; background:#2F6FED; color:#fff; cursor:pointer;">Iniciar sesión con Google</button>
+        ${extraHtml || ''}
+      </div>
+    `;
+  }
+
+  function mostrarApp() {
+    const screen = document.getElementById('loginScreen');
+    if (screen) screen.remove();
+    const app = document.getElementById('app');
+    if (app) app.style.display = '';
   }
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) {
       bloquearApp('Inicia sesión para ver el viaje.');
-     document.querySelector('button').onclick = loginFirebase;
-  document.querySelector('button').textContent = 'Iniciar sesión con Google';
-  document.querySelector('button').style.background = '#4285f4';
+     document.getElementById('authBtn').onclick = loginFirebase;
+  document.getElementById('authBtn').textContent = 'Iniciar sesión con Google';
+  document.getElementById('authBtn').style.background = '#4285f4';
   return;
 }
     if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
       bloquearApp('Esta cuenta no tiene permiso para ver este viaje.');
-      document.querySelector('button').onclick = logoutFirebase;
-      document.querySelector('button').textContent = 'Salir';
-      document.querySelector('button').style.background = '#db4437';
+      document.getElementById('authBtn').onclick = logoutFirebase;
+      document.getElementById('authBtn').textContent = 'Salir';
+      document.getElementById('authBtn').style.background = '#db4437';
       return;
     }
     
+    mostrarApp();
+
     // Eres tú: cargamos datos de Firestore
     try {
       const docRef = doc(db, "viajes", VIAJE_COMPARTIDO_ID);
