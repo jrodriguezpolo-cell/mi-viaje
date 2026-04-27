@@ -1801,7 +1801,21 @@ body:not([data-ios-app="1"]) .mvHideInWeb{ display:none !important; }
         if (typeof window.initApp === 'function') window.initApp();
         else if (typeof window.render === 'function') window.render();
         else if (typeof window.start === 'function') window.start();
-        
+              let saveTimeout;
+       const originalSetItem = localStorage.setItem;
+       localStorage.setItem = function(key, value) {
+         originalSetItem.apply(this, arguments);
+         clearTimeout(saveTimeout);
+         saveTimeout = setTimeout(async () => {
+           try {
+             const user = auth.currentUser;
+             if (user && user.email === MI_EMAIL) {
+               await setDoc(doc(db, "viajes", user.uid), window.state);
+               console.log('Guardado en Firebase ✓');
+             }
+           } catch (e) { console.error('Error guardando:', e); }
+         }, 1000);
+      };
    // línea borrada
         
       } else {
