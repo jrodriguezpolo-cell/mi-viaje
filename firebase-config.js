@@ -7,8 +7,8 @@ const firebaseConfig = {
   authDomain: "mi-viaje-27178.firebaseapp.com",
   projectId: "mi-viaje-27178",
   storageBucket: "mi-viaje-27178.firebasestorage.app",
-  messagingSenderId: "786484548539",
-  appId: "1:786484548539:web:5cb43be619a65e57b3a1fc"
+  messagingSenderId: "284807555246",
+  appId: "1:284807555246:web:b63d757f7db25552fde53f"
 };
 
 const app = initializeApp(firebaseConfig);
