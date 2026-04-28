@@ -2,69 +2,59 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Mi Viaje (Firebase)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Mi Viaje · Firebase</title>
   <style>
-    :root{--bg:#f6f7fb;--card:#fff;--text:#111827;--muted:#6b7280;--primary:#2563eb;--danger:#dc2626;--border:#e5e7eb;}
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial; background:var(--bg); color:var(--text);}
-    #app{display:none; min-height:100vh;}
-    .center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.08);padding:22px;max-width:520px;width:100%;}
-    .h1{font-size:28px;font-weight:800;margin:0 0 8px;}
-    .p{margin:0 0 18px;color:var(--muted);line-height:1.35;}
-    .btn{appearance:none;border:1px solid var(--border);background:#fff;border-radius:14px;padding:14px 16px;font-size:16px;font-weight:700;cursor:pointer;}
-    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
-    .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff;}
-    .row{display:flex;gap:12px;flex-wrap:wrap;}
-    .row .btn{flex:1;min-width:220px;}
-    .small{font-size:12px;color:var(--muted);margin-top:10px;word-break:break-word;}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;}
-    #debug{display:none;margin-top:14px;padding:10px;border-radius:12px;background:#0b1220;color:#cbd5e1;border:1px solid #111827;}
-    #debug pre{margin:0;white-space:pre-wrap;word-break:break-word;}
-    .tag{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;color:var(--muted);margin-bottom:10px;}
+    body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#f6f7fb;color:#0b1220}
+    #app{padding:16px}
+    .card{max-width:520px;margin:48px auto 0;background:#fff;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:22px}
+    .title{font-size:34px;font-weight:800;letter-spacing:-.02em;margin:6px 0 6px}
+    .sub{color:#667085;margin:0 0 18px}
+    .btn{display:block;width:100%;border:0;border-radius:16px;padding:14px 16px;font-size:18px;font-weight:700;cursor:pointer}
+    .btn.primary{background:#2563eb;color:white}
+    .btn.secondary{background:#f3f4f6;color:#111827;margin-top:10px}
+    .badge{display:inline-flex;align-items:center;gap:8px;color:#4b5563;font-weight:700;background:#f3f4f6;border-radius:999px;padding:6px 10px}
+    #loginScreen{display:none}
+    #mainScreen{display:none}
+    #diag{display:none;margin-top:14px;background:#0b1220;color:#e5e7eb;border-radius:12px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:13px;white-space:pre-wrap}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .small{font-size:13px;color:#6b7280}
+    a{color:#2563eb}
   </style>
 </head>
 <body>
-
-  <!-- LOGIN / BLOQUEO -->
-  <div id="gate" class="center">
-    <div class="card">
-      <div class="tag">🔐 Acceso privado</div>
-      <h1 class="h1">Inicia sesión</h1>
-      <p class="p" id="gateMsg">Inicia sesión para ver y sincronizar el viaje.</p>
-      <div class="row">
-        <button class="btn primary" id="loginBtn">Iniciar sesión con Google</button>
-        <button class="btn" id="reloadBtn">Recargar</button>
-      </div>
-      <div class="row" style="margin-top:10px;">
-        <button class="btn danger" id="logoutBtn" style="display:none;">Cerrar sesión</button>
-        <button class="btn" id="toggleDebug">Ver diagnóstico</button>
-      </div>
-      <div id="debug"><pre id="debugText"></pre></div>
-      <div class="small">
-        Si se queda en bucle, revisa en Firebase Auth → <b>Dominios autorizados</b> que estén:
-        <span class="mono">jrodriguezpolo-cell.github.io</span> y <span class="mono">mi-viaje-27178.firebaseapp.com</span>.
-      </div>
-    </div>
-  </div>
-
-  <!-- APP REAL -->
   <div id="app">
-    <!-- TU APP EXISTENTE VA AQUÍ.
-         Si ya tienes un index.html grande, sustituye este contenido por el tuyo.
-         Importante: NO ocultes #app por tu cuenta hasta que auth esté OK. -->
-    <div class="center">
-      <div class="card">
-        <div class="tag">✅ Sesión iniciada</div>
-        <h1 class="h1">Mi Viaje</h1>
-        <p class="p">Autenticado y listo. Aquí iría tu app completa.</p>
-        <div class="small">Usuario: <span id="who" class="mono"></span></div>
+    <div id="loginScreen" class="card">
+      <div class="badge">🔒 Acceso privado</div>
+      <div class="title">Inicia sesión</div>
+      <p class="sub">Inicia sesión para ver el viaje.</p>
+      <button id="btnLogin" class="btn primary">Iniciar sesión con Google</button>
+      <button id="btnReload" class="btn secondary">Recargar</button>
+      <button id="btnToggleDiag" class="btn secondary">Mostrar diagnóstico</button>
+      <div id="diag"></div>
+      <p class="small" style="margin-top:14px">
+        Si falla en iPhone: prueba a desactivar “Navegación privada” y revisa en Firebase Auth → Dominios autorizados que estén:
+        <b>jrodriguezpolo-cell.github.io</b>, <b>mi-viaje-27178.firebaseapp.com</b> y <b>mi-viaje-27178.web.app</b>.
+      </p>
+    </div>
+
+    <div id="mainScreen" class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="badge">✅ Acceso concedido</div>
+          <div id="who" class="small" style="margin-top:10px"></div>
+        </div>
+        <button id="btnLogout" class="btn secondary" style="width:auto;padding:10px 12px">Salir</button>
+      </div>
+      <hr style="border:0;border-top:1px solid #eef2f7;margin:16px 0" />
+      <div class="small">
+        Ya estás logueado. Aquí es donde engancharías tu app real (cronograma, etc.).<br/>
+        Este archivo solo valida que Auth con Redirect funciona en iPhone Safari y GitHub Pages.
       </div>
     </div>
   </div>
 
   <script type="module">
-    // Firebase v10+ (ESM) desde gstatic – compatible con GitHub Pages
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
       getAuth,
@@ -74,135 +64,152 @@
       getRedirectResult,
       signOut,
       setPersistence,
-      browserLocalPersistence
+      browserLocalPersistence,
+      browserSessionPersistence
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    // ====== CONFIG: PON AQUÍ TU CONFIG REAL (la tuya ya estaba bien) ======
+    // ====== CONFIG ======
+    // IMPORTANT: authDomain debe ser el de Firebase (firebaseapp.com o web.app).
     const firebaseConfig = {
       apiKey: "AIzaSyAG8uGu1rE6jCGrYzTN2C9KZm11C5t0mbE",
-      authDomain: "mi-viaje-27178.firebaseapp.com", // importante: usar firebaseapp.com aquí suele ser lo más estable
+      authDomain: "mi-viaje-27178.firebaseapp.com",
       projectId: "mi-viaje-27178",
       storageBucket: "mi-viaje-27178.firebasestorage.app",
       messagingSenderId: "284807555246",
       appId: "1:284807555246:web:b63d757f7db25552fde53f"
     };
 
-    // ====== LISTA BLANCA: esto que tienes en tu código VA PERFECTO así ======
     const EMAILS_PERMITIDOS = [
       "jrodriguezpolo@gmail.com",
-      "maravillasmpais@gmail.com"
-    ].map(s => s.toLowerCase().trim());
+      "maravillasmiapais@gmail.com"
+    ].map(e => e.trim().toLowerCase());
 
     // ====== UI helpers ======
-    const elGate = document.getElementById("gate");
-    const elApp  = document.getElementById("app");
-    const elMsg  = document.getElementById("gateMsg");
-    const elLogin = document.getElementById("loginBtn");
-    const elReload = document.getElementById("reloadBtn");
-    const elLogout = document.getElementById("logoutBtn");
-    const elWho = document.getElementById("who");
-    const elDebug = document.getElementById("debug");
-    const elDebugText = document.getElementById("debugText");
-    const elToggleDebug = document.getElementById("toggleDebug");
+    const elLogin = document.getElementById("loginScreen");
+    const elMain = document.getElementById("mainScreen");
+    const elDiag = document.getElementById("diag");
+    const btnLogin = document.getElementById("btnLogin");
+    const btnReload = document.getElementById("btnReload");
+    const btnToggleDiag = document.getElementById("btnToggleDiag");
+    const btnLogout = document.getElementById("btnLogout");
+    const who = document.getElementById("who");
 
-    function log(...args){
-      const line = args.map(a => (typeof a === "string" ? a : JSON.stringify(a, null, 2))).join(" ");
-      console.log("[auth]", ...args);
-      elDebugText.textContent += (elDebugText.textContent ? "\n" : "") + line;
+    function showLogin() {
+      elMain.style.display = "none";
+      elLogin.style.display = "block";
     }
-    function showDebug(show){
-      elDebug.style.display = show ? "block" : "none";
-      elToggleDebug.textContent = show ? "Ocultar diagnóstico" : "Ver diagnóstico";
-    }
-    function showGate(message){
-      elMsg.textContent = message;
-      elGate.style.display = "flex";
-      elApp.style.display = "none";
-    }
-    function showApp(user){
-      elGate.style.display = "none";
-      elApp.style.display = "block";
-      elWho.textContent = user?.email || "(sin email)";
+    function showMain(user) {
+      elLogin.style.display = "none";
+      elMain.style.display = "block";
+      who.textContent = `Sesión: ${user.email || "(sin email)"} · uid=${user.uid}`;
     }
 
-    elToggleDebug.addEventListener("click", () => showDebug(elDebug.style.display !== "block"));
-    elReload.addEventListener("click", () => location.reload());
+    function logDiag(msg) {
+      const line = String(msg);
+      elDiag.textContent = (elDiag.textContent ? (elDiag.textContent + "\n") : "") + line;
+      console.log("[AUTH]", line);
+    }
 
-    // ====== Init Firebase ======
+    btnToggleDiag.onclick = () => {
+      elDiag.style.display = (elDiag.style.display === "none" || !elDiag.style.display) ? "block" : "none";
+      btnToggleDiag.textContent = (elDiag.style.display === "block") ? "Ocultar diagnóstico" : "Mostrar diagnóstico";
+    };
+    btnReload.onclick = () => location.reload();
+
+    // ====== Firebase init ======
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-
-    // Persistencia local: reduce “user=null” tras redirect en iOS
-    await setPersistence(auth, browserLocalPersistence).catch((e) => {
-      log("setPersistence error:", e?.code || e?.message || e);
-    });
-
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      // ayuda a evitar selecciones raras de cuenta en iOS
-      prompt: "select_account"
-    });
+    // Forzar siempre el selector de cuenta para evitar "cuenta fantasma" en iOS
+    provider.setCustomParameters({ prompt: "select_account" });
 
-    // Botón login
-    elLogin.addEventListener("click", async () => {
-      elLogin.disabled = true;
-      elMsg.textContent = "Abriendo Google…";
-      log("click login -> signInWithRedirect()");
-      try{
-        await signInWithRedirect(auth, provider);
-      }catch(e){
-        log("signInWithRedirect error:", e?.code || e?.message || e);
-        elLogin.disabled = false;
-        showGate("No se pudo iniciar sesión. Reintenta.");
+    // ====== CRITICAL: persistencia antes del redirect (iOS Safari) ======
+    async function ensurePersistence() {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        logDiag("setPersistence: browserLocalPersistence OK");
+      } catch (e) {
+        logDiag("setPersistence local FALLA -> session. " + (e?.code || e?.message || e));
+        try {
+          await setPersistence(auth, browserSessionPersistence);
+          logDiag("setPersistence: browserSessionPersistence OK");
+        } catch (e2) {
+          logDiag("setPersistence session FALLA. " + (e2?.code || e2?.message || e2));
+        }
       }
-    });
-
-    // Botón logout (solo se muestra si email no permitido o ya dentro)
-    elLogout.addEventListener("click", async () => {
-      try{
-        await signOut(auth);
-      }catch(e){
-        log("signOut error:", e?.code || e?.message || e);
-      }
-      location.reload();
-    });
-
-    // 1) Procesar resultado del redirect ANTES de escuchar cambios
-    try{
-      const res = await getRedirectResult(auth);
-      if(res?.user){
-        log("getRedirectResult: OK user=", res.user.email);
-      }else{
-        log("getRedirectResult: no pending redirect");
-      }
-    }catch(e){
-      // Errores típicos si el dominio no está autorizado
-      log("getRedirectResult error:", e?.code || e?.message || e);
-      // Mantener login visible, sin dejar blanco
-      showGate("No se pudo completar el login. Revisa Dominios autorizados en Firebase.");
     }
 
-    // 2) Estado de autenticación
-    onAuthStateChanged(auth, (user) => {
-      log("onAuthStateChanged user=", user ? user.email : null);
+    // ====== FLOW ======
+    showLogin(); // default safe state
 
-      if(!user){
-        elLogout.style.display = "none";
-        showGate("Inicia sesión para ver el viaje.");
-        elLogin.disabled = false;
+    btnLogin.onclick = async () => {
+      try {
+        btnLogin.disabled = true;
+        btnLogin.textContent = "Abriendo Google…";
+        await ensurePersistence();
+        logDiag("signInWithRedirect: start");
+        await signInWithRedirect(auth, provider);
+      } catch (e) {
+        logDiag("signInWithRedirect ERROR: " + (e?.code || e?.message || e));
+        btnLogin.disabled = false;
+        btnLogin.textContent = "Iniciar sesión con Google";
+      }
+    };
+
+    btnLogout.onclick = async () => {
+      await signOut(auth);
+      location.reload();
+    };
+
+    // 1) Resuelve el redirect ANTES de onAuthStateChanged (evita user=null por carrera)
+    await ensurePersistence();
+    try {
+      const res = await getRedirectResult(auth);
+      if (res?.user) {
+        logDiag("getRedirectResult: user=" + (res.user.email || "(sin email)"));
+        // Limpia posibles parámetros de auth en la URL de la página actual (no el handler)
+        try {
+          if (location.hash || location.search) {
+            history.replaceState({}, document.title, location.pathname);
+            logDiag("URL limpia (search/hash removed)");
+          }
+        } catch {}
+      } else {
+        logDiag("getRedirectResult: no pending redirect");
+      }
+    } catch (e) {
+      logDiag("getRedirectResult ERROR: " + (e?.code || e?.message || e));
+    }
+
+    // 2) Estado final
+    onAuthStateChanged(auth, async (user) => {
+      logDiag("onAuthStateChanged user=" + (user ? (user.email || "(sin email)") : "null"));
+
+      if (!user) {
+        showLogin();
+        btnLogin.disabled = false;
+        btnLogin.textContent = "Iniciar sesión con Google";
         return;
       }
 
-      const email = (user.email || "").toLowerCase().trim();
-      if(!EMAILS_PERMITIDOS.includes(email)){
-        elLogout.style.display = "inline-block";
-        elLogin.disabled = false;
-        showGate("Esta cuenta no tiene permiso. Pulsa “Cerrar sesión” y entra con la cuenta correcta.");
+      const email = (user.email || "").toLowerCase();
+      if (!EMAILS_PERMITIDOS.includes(email)) {
+        showLogin();
+        btnLogin.style.display = "none";
+        btnReload.style.display = "none";
+        btnToggleDiag.style.display = "none";
+        elDiag.style.display = "block";
+        elDiag.textContent = "Esta cuenta no tiene permiso:\n" + email + "\n\nPulsa Salir y prueba con otra cuenta.";
+        const btn = document.createElement("button");
+        btn.className = "btn primary";
+        btn.style.marginTop = "12px";
+        btn.textContent = "Salir";
+        btn.onclick = async () => { await signOut(auth); location.reload(); };
+        elLogin.appendChild(btn);
         return;
       }
 
-      elLogout.style.display = "inline-block";
-      showApp(user);
+      showMain(user);
     });
   </script>
 </body>
